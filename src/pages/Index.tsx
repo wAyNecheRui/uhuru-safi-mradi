@@ -1,20 +1,28 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MapPin, Users, Briefcase, Shield, TrendingUp, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
+import { MapPin, Users, Briefcase, Shield, TrendingUp, AlertTriangle, CheckCircle, Clock, Phone, Wifi } from 'lucide-react';
 import IssueReportingForm from '@/components/IssueReportingForm';
 import ProjectMap from '@/components/ProjectMap';
 import ContractorBidding from '@/components/ContractorBidding';
 import GovernmentDashboard from '@/components/GovernmentDashboard';
 import CommunityVoting from '@/components/CommunityVoting';
 import EscrowManagement from '@/components/EscrowManagement';
+import LanguageSelector from '@/components/LanguageSelector';
+import SimplifiedReporting from '@/components/SimplifiedReporting';
+import SMSIntegration from '@/components/SMSIntegration';
+import OfflineSupport from '@/components/OfflineSupport';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedCounty, setSelectedCounty] = useState('Nairobi');
+  const [currentLanguage, setCurrentLanguage] = useState('en');
+
+  const getText = (en: string, sw: string) => {
+    return currentLanguage === 'sw' ? sw : en;
+  };
 
   // Mock data for demonstration
   const projectStats = {
@@ -87,23 +95,31 @@ const Index = () => {
                 <Shield className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Uwazi Kenya</h1>
-                <p className="text-sm text-gray-600">Government Transparency Platform</p>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  {getText('Uwazi Kenya', 'Uwazi Kenya')}
+                </h1>
+                <p className="text-sm text-gray-600">
+                  {getText('Government Transparency Platform', 'Jukwaa la Uwazi wa Serikali')}
+                </p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
+              <LanguageSelector 
+                currentLanguage={currentLanguage}
+                onLanguageChange={setCurrentLanguage}
+              />
               <select 
                 value={selectedCounty} 
                 onChange={(e) => setSelectedCounty(e.target.value)}
                 className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
               >
-                <option value="Nairobi">Nairobi County</option>
-                <option value="Mombasa">Mombasa County</option>
-                <option value="Kisumu">Kisumu County</option>
-                <option value="Nakuru">Nakuru County</option>
+                <option value="Nairobi">{getText('Nairobi County', 'Kaunti ya Nairobi')}</option>
+                <option value="Mombasa">{getText('Mombasa County', 'Kaunti ya Mombasa')}</option>
+                <option value="Kisumu">{getText('Kisumu County', 'Kaunti ya Kisumu')}</option>
+                <option value="Nakuru">{getText('Nakuru County', 'Kaunti ya Nakuru')}</option>
               </select>
               <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                Live Data
+                {getText('Live Data', 'Data ya Moja kwa Moja')}
               </Badge>
             </div>
           </div>
@@ -113,30 +129,34 @@ const Index = () => {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6 h-auto p-1 bg-white shadow-lg rounded-lg">
+          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-7 h-auto p-1 bg-white shadow-lg rounded-lg">
             <TabsTrigger value="overview" className="flex items-center space-x-2 data-[state=active]:bg-green-600 data-[state=active]:text-white">
               <TrendingUp className="h-4 w-4" />
-              <span className="hidden sm:inline">Overview</span>
+              <span className="hidden sm:inline">{getText('Overview', 'Muhtasari')}</span>
             </TabsTrigger>
-            <TabsTrigger value="report" className="flex items-center space-x-2 data-[state=active]:bg-green-600 data-[state=active]:text-white">
+            <TabsTrigger value="simple-report" className="flex items-center space-x-2 data-[state=active]:bg-green-600 data-[state=active]:text-white">
               <MapPin className="h-4 w-4" />
-              <span className="hidden sm:inline">Report Issue</span>
+              <span className="hidden sm:inline">{getText('Quick Report', 'Ripoti Haraka')}</span>
+            </TabsTrigger>
+            <TabsTrigger value="sms" className="flex items-center space-x-2 data-[state=active]:bg-green-600 data-[state=active]:text-white">
+              <Phone className="h-4 w-4" />
+              <span className="hidden sm:inline">{getText('SMS/USSD', 'SMS/USSD')}</span>
+            </TabsTrigger>
+            <TabsTrigger value="offline" className="flex items-center space-x-2 data-[state=active]:bg-green-600 data-[state=active]:text-white">
+              <Wifi className="h-4 w-4" />
+              <span className="hidden sm:inline">{getText('Offline', 'Bila Mtandao')}</span>
             </TabsTrigger>
             <TabsTrigger value="voting" className="flex items-center space-x-2 data-[state=active]:bg-green-600 data-[state=active]:text-white">
               <Users className="h-4 w-4" />
-              <span className="hidden sm:inline">Community</span>
+              <span className="hidden sm:inline">{getText('Community', 'Jamii')}</span>
             </TabsTrigger>
             <TabsTrigger value="bidding" className="flex items-center space-x-2 data-[state=active]:bg-green-600 data-[state=active]:text-white">
               <Briefcase className="h-4 w-4" />
-              <span className="hidden sm:inline">Contractors</span>
+              <span className="hidden sm:inline">{getText('Contractors', 'Wakandarasi')}</span>
             </TabsTrigger>
             <TabsTrigger value="government" className="flex items-center space-x-2 data-[state=active]:bg-green-600 data-[state=active]:text-white">
               <Shield className="h-4 w-4" />
-              <span className="hidden sm:inline">Government</span>
-            </TabsTrigger>
-            <TabsTrigger value="escrow" className="flex items-center space-x-2 data-[state=active]:bg-green-600 data-[state=active]:text-white">
-              <TrendingUp className="h-4 w-4" />
-              <span className="hidden sm:inline">Escrow</span>
+              <span className="hidden sm:inline">{getText('Government', 'Serikali')}</span>
             </TabsTrigger>
           </TabsList>
 
@@ -148,12 +168,14 @@ const Index = () => {
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg font-medium flex items-center">
                     <TrendingUp className="h-5 w-5 mr-2" />
-                    Active Projects
+                    {getText('Active Projects', 'Miradi Inayoendelea')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold">{projectStats.activeProjects}</div>
-                  <p className="text-green-100 text-sm">Ongoing infrastructure work</p>
+                  <p className="text-green-100 text-sm">
+                    {getText('Ongoing infrastructure work', 'Kazi za miundombinu zinazoendelea')}
+                  </p>
                 </CardContent>
               </Card>
 
@@ -161,12 +183,14 @@ const Index = () => {
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg font-medium flex items-center">
                     <Users className="h-5 w-5 mr-2" />
-                    Citizen Reports
+                    {getText('Citizen Reports', 'Ripoti za Wananchi')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold">{projectStats.citizenReports.toLocaleString()}</div>
-                  <p className="text-blue-100 text-sm">Issues reported this month</p>
+                  <p className="text-blue-100 text-sm">
+                    {getText('Issues reported this month', 'Masuala yaliyoripotiwa mwezi huu')}
+                  </p>
                 </CardContent>
               </Card>
 
@@ -174,12 +198,14 @@ const Index = () => {
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg font-medium flex items-center">
                     <Briefcase className="h-5 w-5 mr-2" />
-                    Total Funds
+                    {getText('Total Funds', 'Jumla ya Fedha')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold">{projectStats.totalFunds}</div>
-                  <p className="text-purple-100 text-sm">Allocated this fiscal year</p>
+                  <p className="text-purple-100 text-sm">
+                    {getText('Allocated this fiscal year', 'Zimegawiwa mwaka huu wa fedha')}
+                  </p>
                 </CardContent>
               </Card>
             </div>
@@ -190,7 +216,7 @@ const Index = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center">
                     <MapPin className="h-5 w-5 mr-2 text-green-600" />
-                    Project Map - {selectedCounty}
+                    {getText(`Project Map - ${selectedCounty}`, `Ramani ya Miradi - ${selectedCounty}`)}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -202,7 +228,7 @@ const Index = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center">
                     <AlertTriangle className="h-5 w-5 mr-2 text-orange-600" />
-                    Recent Issues
+                    {getText('Recent Issues', 'Masuala ya Hivi Karibuni')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -219,7 +245,7 @@ const Index = () => {
                         <div className="flex items-center space-x-4">
                           <span className="text-sm text-gray-500">
                             <Users className="h-4 w-4 inline mr-1" />
-                            {issue.votes} votes
+                            {issue.votes} {getText('votes', 'kura')}
                           </span>
                           <span className="text-xs text-gray-400">{issue.reportedAt}</span>
                         </div>
@@ -234,9 +260,19 @@ const Index = () => {
             </div>
           </TabsContent>
 
-          {/* Report Issue Tab */}
-          <TabsContent value="report">
-            <IssueReportingForm />
+          {/* Simplified Reporting Tab */}
+          <TabsContent value="simple-report">
+            <SimplifiedReporting />
+          </TabsContent>
+
+          {/* SMS Integration Tab */}
+          <TabsContent value="sms">
+            <SMSIntegration />
+          </TabsContent>
+
+          {/* Offline Support Tab */}
+          <TabsContent value="offline">
+            <OfflineSupport />
           </TabsContent>
 
           {/* Community Voting Tab */}
@@ -266,17 +302,23 @@ const Index = () => {
         <div className="container mx-auto px-4">
           <div className="text-center">
             <p className="text-gray-400">
-              Built for transparency in Kenyan governance • Powered by citizen participation
+              {getText(
+                'Built for transparency in Kenyan governance • Powered by citizen participation',
+                'Imejengwa kwa uwazi katika utawala wa Kenya • Inaendeshwa na ushiriki wa wananchi'
+              )}
             </p>
-            <div className="flex justify-center space-x-6 mt-4">
+            <div className="flex justify-center space-x-6 mt-4 flex-wrap gap-2">
               <Badge variant="outline" className="bg-gray-800 text-gray-300 border-gray-600">
-                M-Pesa Integration Ready
+                {getText('M-Pesa Integration Ready', 'M-Pesa Tayari Kuunganishwa')}
               </Badge>
               <Badge variant="outline" className="bg-gray-800 text-gray-300 border-gray-600">
-                Blockchain Audit Trail
+                {getText('Blockchain Audit Trail', 'Ukaguzi wa Blockchain')}
               </Badge>
               <Badge variant="outline" className="bg-gray-800 text-gray-300 border-gray-600">
-                SMS/USSD Support
+                {getText('SMS/USSD Support', 'Msaada wa SMS/USSD')}
+              </Badge>
+              <Badge variant="outline" className="bg-gray-800 text-gray-300 border-gray-600">
+                {getText('Offline Capable', 'Inaweza Kutumika Bila Mtandao')}
               </Badge>
             </div>
           </div>
