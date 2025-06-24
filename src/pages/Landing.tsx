@@ -39,13 +39,7 @@ const Landing = () => {
   ];
 
   const handleRoleSelect = (route: string) => {
-    if (route === '/citizen') {
-      navigate('/dashboard');
-    } else {
-      // For now, redirect contractor and government to main dashboard
-      // In future, these would have their own specialized dashboards
-      navigate('/dashboard');
-    }
+    navigate(route);
   };
 
   return (
