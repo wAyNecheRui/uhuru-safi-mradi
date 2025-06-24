@@ -11,9 +11,8 @@ const Landing = () => {
   const userTypes = [
     {
       id: 'citizen',
-      title: 'Mwananchi / Citizen',
+      title: 'Citizen',
       description: 'Report issues, track projects, participate in community decisions',
-      descriptionSw: 'Ripoti masuala, fuatilia miradi, shiriki katika maamuzi ya jamii',
       icon: Users,
       color: 'from-green-500 to-green-600',
       hoverColor: 'hover:from-green-600 hover:to-green-700',
@@ -21,9 +20,8 @@ const Landing = () => {
     },
     {
       id: 'contractor',
-      title: 'Mkandarasi / Contractor',
+      title: 'Contractor',
       description: 'Bid on projects, manage contracts, track payments',
-      descriptionSw: 'Zalisha miradi, simamia mikataba, fuatilia malipo',
       icon: Building,
       color: 'from-blue-500 to-blue-600',
       hoverColor: 'hover:from-blue-600 hover:to-blue-700',
@@ -31,9 +29,8 @@ const Landing = () => {
     },
     {
       id: 'government',
-      title: 'Serikali / Government',
+      title: 'Government',
       description: 'Manage projects, review reports, allocate resources',
-      descriptionSw: 'Simamia miradi, kagua ripoti, gawa rasilimali',
       icon: Gavel,
       color: 'from-purple-500 to-purple-600',
       hoverColor: 'hover:from-purple-600 hover:to-purple-700',
@@ -64,7 +61,7 @@ const Landing = () => {
               <div className="text-center">
                 <h1 className="text-3xl font-bold text-gray-900">Uwazi Kenya</h1>
                 <p className="text-lg text-gray-600 mt-1">
-                  Jukwaa la Uwazi wa Serikali • Government Transparency Platform
+                  Government Transparency Platform
                 </p>
               </div>
             </div>
@@ -76,11 +73,10 @@ const Landing = () => {
       <main className="container mx-auto px-4 py-16">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold text-gray-900 mb-4">
-            Karibu • Welcome
+            Welcome
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-            Chagua aina yako ili kuanza kutumia mfumo wa uwazi wa serikali ya Kenya.<br />
-            <span className="text-gray-500">Choose your role to start using Kenya's government transparency system.</span>
+            Choose your role to start using Kenya's government transparency system.
           </p>
         </div>
 
@@ -103,16 +99,13 @@ const Landing = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="text-center pb-8">
-                  <p className="text-gray-700 mb-3 font-medium">
+                  <p className="text-gray-700 mb-6 font-medium">
                     {userType.description}
-                  </p>
-                  <p className="text-gray-500 text-sm mb-6">
-                    {userType.descriptionSw}
                   </p>
                   <Button 
                     className={`w-full bg-gradient-to-r ${userType.color} ${userType.hoverColor} text-white font-semibold py-3 rounded-lg transition-all duration-300 group-hover:shadow-md`}
                   >
-                    Anza Hapa • Start Here
+                    Start Here
                   </Button>
                 </CardContent>
               </Card>
@@ -123,18 +116,17 @@ const Landing = () => {
         {/* Features Section */}
         <div className="mt-20 text-center">
           <h3 className="text-2xl font-bold text-gray-900 mb-8">
-            Huduma Zetu • Our Services
+            Our Services
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-4xl mx-auto">
             {[
-              { feature: 'M-Pesa Integration', featureSw: 'Muunganisho wa M-Pesa' },
-              { feature: 'SMS/USSD Support', featureSw: 'Msaada wa SMS/USSD' },
-              { feature: 'Offline Access', featureSw: 'Ufikiaji Bila Mtandao' },
-              { feature: 'Real-time Updates', featureSw: 'Masasisho ya Wakati Halisi' }
-            ].map((item, index) => (
+              'M-Pesa Integration',
+              'SMS/USSD Support',
+              'Offline Access',
+              'Real-time Updates'
+            ].map((feature, index) => (
               <div key={index} className="bg-white rounded-lg p-6 shadow-md">
-                <h4 className="font-semibold text-gray-900 mb-2">{item.feature}</h4>
-                <p className="text-sm text-gray-600">{item.featureSw}</p>
+                <h4 className="font-semibold text-gray-900">{feature}</h4>
               </div>
             ))}
           </div>
@@ -145,7 +137,7 @@ const Landing = () => {
       <footer className="bg-gray-900 text-white py-8 mt-16">
         <div className="container mx-auto px-4 text-center">
           <p className="text-gray-400">
-            Imejengwa kwa uwazi katika utawala wa Kenya • Built for transparency in Kenyan governance
+            Built for transparency in Kenyan governance
           </p>
         </div>
       </footer>
