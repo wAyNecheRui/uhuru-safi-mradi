@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -19,6 +18,8 @@ import GovernmentProjects from "./pages/government/GovernmentProjects";
 import GovernmentReports from "./pages/government/GovernmentReports";
 import GovernmentEscrow from "./pages/government/GovernmentEscrow";
 import NotFound from "./pages/NotFound";
+import Auth from "./pages/Auth";
+import ContractorDatabasePage from "./pages/ContractorDatabase";
 
 const queryClient = new QueryClient();
 
@@ -30,6 +31,8 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Landing />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/contractor-database" element={<ContractorDatabasePage />} />
           
           {/* Citizen Routes */}
           <Route path="/citizen" element={<CitizenDashboard />} />

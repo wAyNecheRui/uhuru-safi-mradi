@@ -2,17 +2,16 @@
 import React from 'react';
 import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
-import EnhancedProblemReporting from '@/components/EnhancedProblemReporting';
+import ContractorDatabase from '@/components/ContractorDatabase';
 
-const CitizenReportIssue = () => {
+const ContractorDatabasePage = () => {
   const breadcrumbItems = [
     { label: 'Home', href: '/' },
-    { label: 'Citizen', href: '/citizen' },
-    { label: 'Report Issue' }
+    { label: 'Contractor Database' }
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
       <Header 
         currentLanguage="en"
         onLanguageChange={() => {}}
@@ -23,10 +22,10 @@ const CitizenReportIssue = () => {
       
       <main className="container mx-auto px-4 py-8">
         <BreadcrumbNav items={breadcrumbItems} />
-        <EnhancedProblemReporting />
+        <ContractorDatabase />
       </main>
     </div>
   );
 };
 
-export default CitizenReportIssue;
+export default ContractorDatabasePage;
