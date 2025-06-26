@@ -33,16 +33,19 @@ const App = () => (
           <Route path="/citizen/report" element={<CitizenReportIssue />} />
           <Route path="/citizen/track" element={<CitizenTrackReports />} />
           <Route path="/citizen/voting" element={<CitizenCommunityVoting />} />
+          <Route path="/citizen/workforce" element={<CitizenWorkforce />} />
           
           {/* Contractor Routes */}
           <Route path="/contractor" element={<ContractorDashboard />} />
           <Route path="/contractor/bidding" element={<ContractorBidding />} />
           <Route path="/contractor/projects" element={<ContractorProjects />} />
+          <Route path="/contractor/verification" element={<ContractorVerification />} />
           
           {/* Government Routes */}
           <Route path="/government" element={<GovernmentDashboard />} />
           <Route path="/government/projects" element={<GovernmentProjects />} />
           <Route path="/government/reports" element={<GovernmentReports />} />
+          <Route path="/government/escrow" element={<GovernmentEscrow />} />
           
           {/* Catch-all route */}
           <Route path="*" element={<NotFound />} />
