@@ -11,10 +11,13 @@ import GovernmentDashboard from "./pages/government/GovernmentDashboard";
 import CitizenReportIssue from "./pages/citizen/CitizenReportIssue";
 import CitizenTrackReports from "./pages/citizen/CitizenTrackReports";
 import CitizenCommunityVoting from "./pages/citizen/CitizenCommunityVoting";
+import CitizenWorkforce from "./pages/citizen/CitizenWorkforce";
 import ContractorBidding from "./pages/contractor/ContractorBidding";
 import ContractorProjects from "./pages/contractor/ContractorProjects";
+import ContractorVerification from "./pages/contractor/ContractorVerification";
 import GovernmentProjects from "./pages/government/GovernmentProjects";
 import GovernmentReports from "./pages/government/GovernmentReports";
+import GovernmentEscrow from "./pages/government/GovernmentEscrow";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
