@@ -1,19 +1,20 @@
 
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, Star, Upload, CheckCircle, AlertTriangle, FileText, Award, Building } from 'lucide-react';
+import { Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { VerificationData } from '@/types/contractorVerification';
+import CompanyProfileTab from '@/components/verification/CompanyProfileTab';
+import CertificationsTab from '@/components/verification/CertificationsTab';
+import ProjectsTab from '@/components/verification/ProjectsTab';
+import PerformanceTab from '@/components/verification/PerformanceTab';
 
 const ContractorVerificationSystem = () => {
   const [activeTab, setActiveTab] = useState('profile');
   const { toast } = useToast();
 
-  const verificationData = {
+  const verificationData: VerificationData = {
     companyName: 'Quality Builders Ltd',
     kraPin: 'P051234567X',
     registrationNumber: 'CPL/2018/123456',
@@ -99,228 +100,29 @@ const ContractorVerificationSystem = () => {
         </TabsList>
 
         <TabsContent value="profile" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="shadow-lg">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Building className="h-5 w-5 mr-2 text-blue-600" />
-                  Company Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
-                  <Input value={verificationData.companyName} readOnly />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">KRA PIN</label>
-                  <Input value={verificationData.kraPin} readOnly />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Registration Number</label>
-                  <Input value={verificationData.registrationNumber} readOnly />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Physical Address</label>
-                  <Textarea value={verificationData.physicalAddress} readOnly />
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Years in Business:</span>
-                  <span className="font-semibold">{verificationData.yearsInBusiness} years</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="shadow-lg">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Award className="h-5 w-5 mr-2 text-green-600" />
-                  Verification Status
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Overall Status:</span>
-                  <Badge className={getStatusColor(verificationData.verificationStatus)}>
-                    <CheckCircle className="h-4 w-4 mr-1" />
-                    {verificationData.verificationStatus.toUpperCase()}
-                  </Badge>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4 pt-4">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-blue-600">{verificationData.totalProjects}</div>
-                    <div className="text-sm text-gray-600">Total Projects</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-green-600">{verificationData.completedProjects}</div>
-                    <div className="text-sm text-gray-600">Completed</div>
-                  </div>
-                </div>
-
-                <div className="pt-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-gray-600">Overall Rating:</span>
-                    <div className="flex items-center">
-                      <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                      <span className="ml-1 font-semibold">{verificationData.overallRating}/5.0</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pt-4 border-t">
-                  <h4 className="font-medium mb-2">Specializations:</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {verificationData.specializations.map((spec, index) => (
-                      <Badge key={index} variant="outline" className="text-blue-700 border-blue-300">
-                        {spec}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <CompanyProfileTab 
+            verificationData={verificationData} 
+            getStatusColor={getStatusColor} 
+          />
         </TabsContent>
 
         <TabsContent value="certifications" className="space-y-6">
-          <Card className="shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <FileText className="h-5 w-5 mr-2 text-blue-600" />
-                Professional Certifications
-              </CardTitle>
-              <p className="text-sm text-gray-600">
-                Maintain up-to-date certifications to remain eligible for government contracts.
-              </p>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {verificationData.certifications.map((cert, index) => (
-                  <div key={index} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <h4 className="font-medium text-gray-900">{cert.name}</h4>
-                        <p className="text-sm text-gray-600">Expires: {cert.expiryDate}</p>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <Badge className={getStatusColor(cert.status)}>
-                          {cert.status === 'verified' ? (
-                            <CheckCircle className="h-4 w-4 mr-1" />
-                          ) : (
-                            <AlertTriangle className="h-4 w-4 mr-1" />
-                          )}
-                          {cert.status.toUpperCase()}
-                        </Badge>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDocumentUpload(cert.name)}
-                        >
-                          <Upload className="h-4 w-4 mr-2" />
-                          Update
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-                <h4 className="font-medium text-blue-800 mb-2">Upload New Certification</h4>
-                <div className="flex items-center space-x-3">
-                  <Input placeholder="Certification name" className="flex-1" />
-                  <Button className="bg-blue-600 hover:bg-blue-700">
-                    <Upload className="h-4 w-4 mr-2" />
-                    Upload
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <CertificationsTab 
+            verificationData={verificationData} 
+            getStatusColor={getStatusColor}
+            handleDocumentUpload={handleDocumentUpload}
+          />
         </TabsContent>
 
         <TabsContent value="projects" className="space-y-6">
-          <div className="grid gap-6">
-            {verificationData.recentProjects.map((project) => (
-              <Card key={project.id} className="shadow-lg">
-                <CardContent className="p-6">
-                  <div className="flex flex-col lg:flex-row justify-between items-start gap-4">
-                    <div className="flex-1">
-                      <h3 className="text-xl font-semibold text-gray-900 mb-2">{project.title}</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <span className="text-gray-600">Project Value: </span>
-                          <span className="font-semibold text-green-600">{formatAmount(project.value)}</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-600">Status: </span>
-                          <Badge className={project.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}>
-                            {project.status.replace('_', ' ').toUpperCase()}
-                          </Badge>
-                        </div>
-                        {project.status === 'completed' && (
-                          <>
-                            <div>
-                              <span className="text-gray-600">Completion Date: </span>
-                              <span className="font-medium">{project.completionDate}</span>
-                            </div>
-                            <div>
-                              <span className="text-gray-600">Client Rating: </span>
-                              <div className="flex items-center">
-                                <Star className="h-4 w-4 text-yellow-400 fill-current mr-1" />
-                                <span className="font-semibold">{project.rating}/5.0</span>
-                              </div>
-                            </div>
-                          </>
-                        )}
-                        {project.status === 'in_progress' && (
-                          <>
-                            <div>
-                              <span className="text-gray-600">Progress: </span>
-                              <span className="font-semibold">{project.progress}%</span>
-                            </div>
-                            <div>
-                              <span className="text-gray-600">Expected Completion: </span>
-                              <span className="font-medium">{project.expectedCompletion}</span>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                      {project.clientFeedback && (
-                        <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-                          <p className="text-sm text-gray-700 italic">"{project.clientFeedback}"</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <ProjectsTab 
+            verificationData={verificationData} 
+            formatAmount={formatAmount}
+          />
         </TabsContent>
 
         <TabsContent value="performance" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="shadow-lg">
-              <CardContent className="p-6 text-center">
-                <div className="text-3xl font-bold text-blue-600 mb-2">98%</div>
-                <div className="text-sm text-gray-600">On-Time Completion</div>
-              </CardContent>
-            </Card>
-            <Card className="shadow-lg">
-              <CardContent className="p-6 text-center">
-                <div className="text-3xl font-bold text-green-600 mb-2">4.6</div>
-                <div className="text-sm text-gray-600">Average Rating</div>
-              </CardContent>
-            </Card>
-            <Card className="shadow-lg">
-              <CardContent className="p-6 text-center">
-                <div className="text-3xl font-bold text-purple-600 mb-2">94%</div>
-                <div className="text-sm text-gray-600">Quality Score</div>
-              </CardContent>
-            </Card>
-          </div>
+          <PerformanceTab />
         </TabsContent>
       </Tabs>
     </div>
