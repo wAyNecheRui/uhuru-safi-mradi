@@ -3,6 +3,7 @@ import React from 'react';
 import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
 import EscrowManagement from '@/components/EscrowManagement';
+import ResponsiveContainer from '@/components/ResponsiveContainer';
 
 const GovernmentEscrow = () => {
   const breadcrumbItems = [
@@ -21,9 +22,11 @@ const GovernmentEscrow = () => {
         getText={(en: string) => en}
       />
       
-      <main className="container mx-auto px-4 py-8">
-        <BreadcrumbNav items={breadcrumbItems} />
-        <EscrowManagement />
+      <main>
+        <ResponsiveContainer className="py-6 sm:py-8">
+          <BreadcrumbNav items={breadcrumbItems} />
+          <EscrowManagement />
+        </ResponsiveContainer>
       </main>
     </div>
   );

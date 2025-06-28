@@ -3,6 +3,7 @@ import React from 'react';
 import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
 import ContractorBidding from '@/components/ContractorBidding';
+import ResponsiveContainer from '@/components/ResponsiveContainer';
 
 const ContractorBiddingPage = () => {
   const breadcrumbItems = [
@@ -21,9 +22,11 @@ const ContractorBiddingPage = () => {
         getText={(en: string) => en}
       />
       
-      <main className="container mx-auto px-4 py-8">
-        <BreadcrumbNav items={breadcrumbItems} />
-        <ContractorBidding />
+      <main>
+        <ResponsiveContainer className="py-6 sm:py-8">
+          <BreadcrumbNav items={breadcrumbItems} />
+          <ContractorBidding />
+        </ResponsiveContainer>
       </main>
     </div>
   );

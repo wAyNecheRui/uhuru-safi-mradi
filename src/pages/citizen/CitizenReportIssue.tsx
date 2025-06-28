@@ -3,6 +3,7 @@ import React from 'react';
 import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
 import EnhancedProblemReporting from '@/components/EnhancedProblemReporting';
+import ResponsiveContainer from '@/components/ResponsiveContainer';
 
 const CitizenReportIssue = () => {
   const breadcrumbItems = [
@@ -21,9 +22,11 @@ const CitizenReportIssue = () => {
         getText={(en: string) => en}
       />
       
-      <main className="container mx-auto px-4 py-8">
-        <BreadcrumbNav items={breadcrumbItems} />
-        <EnhancedProblemReporting />
+      <main>
+        <ResponsiveContainer className="py-6 sm:py-8">
+          <BreadcrumbNav items={breadcrumbItems} />
+          <EnhancedProblemReporting />
+        </ResponsiveContainer>
       </main>
     </div>
   );

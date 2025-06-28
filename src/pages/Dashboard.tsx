@@ -16,13 +16,16 @@ import StatsCards from '@/components/StatsCards';
 import RecentIssues from '@/components/RecentIssues';
 import AppFooter from '@/components/AppFooter';
 import TabNavigation from '@/components/TabNavigation';
+import ResponsiveContainer from '@/components/ResponsiveContainer';
+import { useResponsive } from '@/hooks/useResponsive';
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedCounty, setSelectedCounty] = useState('Nairobi');
   const [currentLanguage, setCurrentLanguage] = useState('en');
+  const { isMobile } = useResponsive();
 
-  const getText = (en: string, sw: string) => {
+  const getText = (en: string, sw: string = '') => {
     return currentLanguage === 'sw' ? sw : en;
   };
 
@@ -76,60 +79,62 @@ const Dashboard = () => {
         getText={getText}
       />
 
-      <main className="container mx-auto px-4 py-8">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabNavigation getText={getText} />
+      <main>
+        <ResponsiveContainer className="py-6 sm:py-8">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
+            <TabNavigation getText={getText} />
 
-          {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-6">
-            <StatsCards projectStats={projectStats} getText={getText} />
+            {/* Overview Tab */}
+            <TabsContent value="overview" className="space-y-4 sm:space-y-6">
+              <StatsCards projectStats={projectStats} getText={getText} />
 
-            {/* Map and Recent Issues */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card className="shadow-lg">
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <MapPin className="h-5 w-5 mr-2 text-green-600" />
-                    {getText(`Project Map - ${selectedCounty}`, `Ramani ya Miradi - ${selectedCounty}`)}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <ProjectMap selectedCounty={selectedCounty} />
-                </CardContent>
-              </Card>
+              {/* Map and Recent Issues */}
+              <div className={`grid gap-4 sm:gap-6 ${isMobile ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2'}`}>
+                <Card className="shadow-lg">
+                  <CardHeader>
+                    <CardTitle className="flex items-center text-lg sm:text-xl">
+                      <MapPin className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-green-600" />
+                      {getText(`Project Map - ${selectedCounty}`, `Ramani ya Miradi - ${selectedCounty}`)}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <ProjectMap selectedCounty={selectedCounty} />
+                  </CardContent>
+                </Card>
 
-              <RecentIssues issues={recentIssues} getText={getText} />
-            </div>
-          </TabsContent>
+                <RecentIssues issues={recentIssues} getText={getText} />
+              </div>
+            </TabsContent>
 
-          <TabsContent value="simple-report">
-            <SimplifiedReporting />
-          </TabsContent>
+            <TabsContent value="simple-report">
+              <SimplifiedReporting />
+            </TabsContent>
 
-          <TabsContent value="sms">
-            <SMSIntegration />
-          </TabsContent>
+            <TabsContent value="sms">
+              <SMSIntegration />
+            </TabsContent>
 
-          <TabsContent value="offline">
-            <OfflineSupport />
-          </TabsContent>
+            <TabsContent value="offline">
+              <OfflineSupport />
+            </TabsContent>
 
-          <TabsContent value="voting">
-            <CommunityVoting />
-          </TabsContent>
+            <TabsContent value="voting">
+              <CommunityVoting />
+            </TabsContent>
 
-          <TabsContent value="bidding">
-            <ContractorBidding />
-          </TabsContent>
+            <TabsContent value="bidding">
+              <ContractorBidding />
+            </TabsContent>
 
-          <TabsContent value="government">
-            <GovernmentDashboard />
-          </TabsContent>
+            <TabsContent value="government">
+              <GovernmentDashboard />
+            </TabsContent>
 
-          <TabsContent value="escrow">
-            <EscrowManagement />
-          </TabsContent>
-        </Tabs>
+            <TabsContent value="escrow">
+              <EscrowManagement />
+            </TabsContent>
+          </Tabs>
+        </ResponsiveContainer>
       </main>
 
       <AppFooter getText={getText} />

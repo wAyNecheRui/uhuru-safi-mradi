@@ -3,6 +3,7 @@ import React from 'react';
 import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
 import WorkforceIntegration from '@/components/WorkforceIntegration';
+import ResponsiveContainer from '@/components/ResponsiveContainer';
 
 const CitizenWorkforce = () => {
   const breadcrumbItems = [
@@ -21,9 +22,11 @@ const CitizenWorkforce = () => {
         getText={(en: string) => en}
       />
       
-      <main className="container mx-auto px-4 py-8">
-        <BreadcrumbNav items={breadcrumbItems} />
-        <WorkforceIntegration />
+      <main>
+        <ResponsiveContainer className="py-6 sm:py-8">
+          <BreadcrumbNav items={breadcrumbItems} />
+          <WorkforceIntegration />
+        </ResponsiveContainer>
       </main>
     </div>
   );

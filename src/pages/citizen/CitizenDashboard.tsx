@@ -7,8 +7,12 @@ import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, FileText, Users, MapPin, Clock, CheckCircle } from 'lucide-react';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
 import Header from '@/components/Header';
+import ResponsiveContainer from '@/components/ResponsiveContainer';
+import { useResponsive } from '@/hooks/useResponsive';
 
 const CitizenDashboard = () => {
+  const { isMobile, isTablet } = useResponsive();
+
   const quickActions = [
     {
       title: 'Report an Issue',
@@ -83,93 +87,101 @@ const CitizenDashboard = () => {
         getText={(en: string) => en}
       />
       
-      <main className="container mx-auto px-4 py-8">
-        <BreadcrumbNav />
-        
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Citizen Dashboard</h1>
-          <p className="text-gray-600">Welcome! Report issues, track progress, and participate in your community.</p>
-        </div>
+      <main>
+        <ResponsiveContainer className="py-6 sm:py-8">
+          <BreadcrumbNav />
+          
+          <div className="mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Citizen Dashboard</h1>
+            <p className="text-sm sm:text-base text-gray-600">Welcome! Report issues, track progress, and participate in your community.</p>
+          </div>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {quickActions.map((action) => {
-            const IconComponent = action.icon;
-            return (
-              <Link key={action.title} to={action.href}>
-                <Card className="h-full hover:shadow-lg transition-all duration-200 hover:scale-105 cursor-pointer group">
-                  <CardHeader className="text-center pb-4">
-                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-gray-200 transition-colors">
-                      <IconComponent className={`h-8 w-8 ${action.iconColor}`} />
-                    </div>
-                    <CardTitle className="text-xl">{action.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="text-center">
-                    <p className="text-gray-600 mb-4">{action.description}</p>
-                    <Button className={`w-full ${action.color} text-white`}>
-                      Get Started
-                    </Button>
-                  </CardContent>
-                </Card>
-              </Link>
-            );
-          })}
-        </div>
-
-        {/* Recent Reports */}
-        <Card className="shadow-lg">
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <FileText className="h-5 w-5 mr-2 text-green-600" />
-              My Recent Reports
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {recentReports.length === 0 ? (
-              <div className="text-center py-8">
-                <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500">No reports submitted yet.</p>
-                <Button asChild className="mt-4 bg-green-600 hover:bg-green-700">
-                  <Link to="/citizen/report">Submit Your First Report</Link>
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {recentReports.map((report) => (
-                  <div key={report.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <h3 className="font-semibold text-gray-900">{report.title}</h3>
-                        <div className="flex items-center text-sm text-gray-500 mt-1">
-                          <MapPin className="h-4 w-4 mr-1" />
-                          {report.location}
-                          <Clock className="h-4 w-4 ml-4 mr-1" />
-                          {report.date}
-                        </div>
+          {/* Quick Actions */}
+          <div className={`grid gap-4 sm:gap-6 mb-6 sm:mb-8 ${
+            isMobile ? 'grid-cols-1' : isTablet ? 'grid-cols-2' : 'grid-cols-3'
+          }`}>
+            {quickActions.map((action) => {
+              const IconComponent = action.icon;
+              return (
+                <Link key={action.title} to={action.href}>
+                  <Card className="h-full hover:shadow-lg transition-all duration-200 hover:scale-105 cursor-pointer group">
+                    <CardHeader className="text-center pb-4">
+                      <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 group-hover:bg-gray-200 transition-colors">
+                        <IconComponent className={`h-6 w-6 sm:h-8 sm:w-8 ${action.iconColor}`} />
                       </div>
-                      <Badge variant="outline" className="text-xs font-medium">
-                        {report.id}
-                      </Badge>
-                    </div>
-                    <div className="flex gap-2">
-                      <Badge className={getStatusColor(report.status)}>
-                        {report.status}
-                      </Badge>
-                      <Badge className={getPriorityColor(report.priority)}>
-                        {report.priority} Priority
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
-                <div className="text-center pt-4">
-                  <Button variant="outline" asChild>
-                    <Link to="/citizen/track">View All Reports</Link>
+                      <CardTitle className="text-lg sm:text-xl">{action.title}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="text-center">
+                      <p className="text-sm sm:text-base text-gray-600 mb-4">{action.description}</p>
+                      <Button className={`w-full ${action.color} text-white`} size={isMobile ? "sm" : "default"}>
+                        Get Started
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </Link>
+              );
+            })}
+          </div>
+
+          {/* Recent Reports */}
+          <Card className="shadow-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center text-lg sm:text-xl">
+                <FileText className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-green-600" />
+                My Recent Reports
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {recentReports.length === 0 ? (
+                <div className="text-center py-6 sm:py-8">
+                  <FileText className="h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-sm sm:text-base text-gray-500">No reports submitted yet.</p>
+                  <Button asChild className="mt-4 bg-green-600 hover:bg-green-700" size={isMobile ? "sm" : "default"}>
+                    <Link to="/citizen/report">Submit Your First Report</Link>
                   </Button>
                 </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+              ) : (
+                <div className="space-y-3 sm:space-y-4">
+                  {recentReports.map((report) => (
+                    <div key={report.id} className="border border-gray-200 rounded-lg p-3 sm:p-4 hover:bg-gray-50 transition-colors">
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2 gap-2">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-gray-900 text-sm sm:text-base">{report.title}</h3>
+                          <div className="flex flex-wrap items-center text-xs sm:text-sm text-gray-500 mt-1 gap-3">
+                            <div className="flex items-center">
+                              <MapPin className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                              {report.location}
+                            </div>
+                            <div className="flex items-center">
+                              <Clock className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                              {report.date}
+                            </div>
+                          </div>
+                        </div>
+                        <Badge variant="outline" className="text-xs font-medium self-start">
+                          {report.id}
+                        </Badge>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <Badge className={`text-xs ${getStatusColor(report.status)}`}>
+                          {report.status}
+                        </Badge>
+                        <Badge className={`text-xs ${getPriorityColor(report.priority)}`}>
+                          {report.priority} Priority
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                  <div className="text-center pt-4">
+                    <Button variant="outline" asChild size={isMobile ? "sm" : "default"}>
+                      <Link to="/citizen/track">View All Reports</Link>
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </ResponsiveContainer>
       </main>
     </div>
   );

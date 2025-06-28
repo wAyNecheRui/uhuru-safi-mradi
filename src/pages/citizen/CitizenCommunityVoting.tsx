@@ -3,6 +3,7 @@ import React from 'react';
 import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
 import CommunityVoting from '@/components/CommunityVoting';
+import ResponsiveContainer from '@/components/ResponsiveContainer';
 
 const CitizenCommunityVoting = () => {
   const breadcrumbItems = [
@@ -21,9 +22,11 @@ const CitizenCommunityVoting = () => {
         getText={(en: string) => en}
       />
       
-      <main className="container mx-auto px-4 py-8">
-        <BreadcrumbNav items={breadcrumbItems} />
-        <CommunityVoting />
+      <main>
+        <ResponsiveContainer className="py-6 sm:py-8">
+          <BreadcrumbNav items={breadcrumbItems} />
+          <CommunityVoting />
+        </ResponsiveContainer>
       </main>
     </div>
   );

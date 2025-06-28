@@ -3,6 +3,7 @@ import React from 'react';
 import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
 import GovernmentDashboard from '@/components/GovernmentDashboard';
+import ResponsiveContainer from '@/components/ResponsiveContainer';
 
 const GovernmentDashboardPage = () => {
   return (
@@ -15,9 +16,11 @@ const GovernmentDashboardPage = () => {
         getText={(en: string) => en}
       />
       
-      <main className="container mx-auto px-4 py-8">
-        <BreadcrumbNav />
-        <GovernmentDashboard />
+      <main>
+        <ResponsiveContainer className="py-6 sm:py-8">
+          <BreadcrumbNav />
+          <GovernmentDashboard />
+        </ResponsiveContainer>
       </main>
     </div>
   );
