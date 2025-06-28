@@ -1,10 +1,10 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
-import { Shield, Users, Building, Eye, DollarSign, CheckCircle, TrendingUp, ChevronRight, Info } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Shield, Users, Building, Eye, DollarSign, CheckCircle, TrendingUp, ChevronRight } from 'lucide-react';
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -143,70 +143,97 @@ const Landing = () => {
           {userTypes.map((userType) => {
             const IconComponent = userType.icon;
             return (
-              <HoverCard key={userType.id}>
-                <HoverCardTrigger asChild>
-                  <Card className="group cursor-help transform transition-all duration-300 hover:scale-105 hover:shadow-xl bg-white/10 backdrop-blur-md border-white/20 hover:bg-white/20">
-                    <CardHeader className="text-center pb-4">
-                      <div className={`w-20 h-20 bg-gradient-to-br ${userType.color} rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:shadow-lg transition-all duration-300`}>
-                        <IconComponent className="h-10 w-10 text-white" />
-                      </div>
-                      <CardTitle className="text-2xl font-bold text-white group-hover:text-amber-400 transition-colors">
-                        {userType.title}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="text-center pb-8">
-                      <p className="text-slate-200 mb-6 font-medium">
-                        {userType.description}
-                      </p>
-                      <div className="flex items-center justify-center text-amber-400 font-semibold">
-                        <Info className="w-4 h-4 mr-2" />
-                        Learn More
-                      </div>
-                    </CardContent>
-                  </Card>
-                </HoverCardTrigger>
-                <HoverCardContent className="w-96 p-6 bg-white border border-slate-200 shadow-xl">
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-3 mb-4">
-                      <div className={`w-12 h-12 bg-gradient-to-br ${userType.color} rounded-xl flex items-center justify-center`}>
-                        <IconComponent className="h-6 w-6 text-white" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-bold text-slate-900">{userType.title}</h3>
-                        <p className="text-sm text-slate-600">Role Overview</p>
-                      </div>
-                    </div>
-                    
-                    <p className="text-sm text-slate-700 leading-relaxed">
-                      {userType.detailedDescription.overview}
-                    </p>
-                    
-                    <div>
-                      <h4 className="font-semibold text-slate-900 mb-2">Key Responsibilities:</h4>
-                      <ul className="space-y-1">
-                        {userType.detailedDescription.responsibilities.map((responsibility, index) => (
-                          <li key={index} className="text-sm text-slate-600 flex items-start">
-                            <span className="w-1.5 h-1.5 bg-amber-500 rounded-full mt-2 mr-2 flex-shrink-0"></span>
-                            {responsibility}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                    
-                    <div>
-                      <h4 className="font-semibold text-slate-900 mb-2">Benefits:</h4>
-                      <ul className="space-y-1">
-                        {userType.detailedDescription.benefits.map((benefit, index) => (
-                          <li key={index} className="text-sm text-slate-600 flex items-start">
-                            <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full mt-2 mr-2 flex-shrink-0"></span>
-                            {benefit}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
+              <Card key={userType.id} className="group transform transition-all duration-300 hover:scale-105 hover:shadow-xl bg-white/10 backdrop-blur-md border-white/20 hover:bg-white/20">
+                <CardHeader className="text-center pb-4">
+                  <div className={`w-20 h-20 bg-gradient-to-br ${userType.color} rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:shadow-lg transition-all duration-300`}>
+                    <IconComponent className="h-10 w-10 text-white" />
                   </div>
-                </HoverCardContent>
-              </HoverCard>
+                  <CardTitle className="text-2xl font-bold text-white group-hover:text-amber-400 transition-colors">
+                    {userType.title}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="text-center pb-8">
+                  <p className="text-slate-200 mb-6 font-medium">
+                    {userType.description}
+                  </p>
+                  
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        className="bg-white/20 border-white/30 text-white hover:bg-white/30 hover:text-amber-400 transition-colors"
+                      >
+                        Learn More
+                        <ChevronRight className="w-4 h-4 ml-2" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle className="flex items-center space-x-3 text-2xl">
+                          <div className={`w-12 h-12 bg-gradient-to-br ${userType.color} rounded-xl flex items-center justify-center`}>
+                            <IconComponent className="h-6 w-6 text-white" />
+                          </div>
+                          <span>{userType.title} Role</span>
+                        </DialogTitle>
+                      </DialogHeader>
+                      
+                      <div className="space-y-6 mt-6">
+                        {/* Overview Section */}
+                        <div className="bg-slate-50 rounded-lg p-6">
+                          <h3 className="text-lg font-semibold text-slate-900 mb-3">Role Overview</h3>
+                          <p className="text-slate-700 leading-relaxed">
+                            {userType.detailedDescription.overview}
+                          </p>
+                        </div>
+                        
+                        {/* Responsibilities Section */}
+                        <div>
+                          <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center">
+                            <CheckCircle className="w-5 h-5 text-blue-600 mr-2" />
+                            Key Responsibilities
+                          </h3>
+                          <div className="space-y-3">
+                            {userType.detailedDescription.responsibilities.map((responsibility, index) => (
+                              <div key={index} className="flex items-start space-x-3 p-3 bg-blue-50 rounded-lg">
+                                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                                <p className="text-slate-700 text-sm leading-relaxed">{responsibility}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        
+                        {/* Benefits Section */}
+                        <div>
+                          <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center">
+                            <TrendingUp className="w-5 h-5 text-emerald-600 mr-2" />
+                            Key Benefits
+                          </h3>
+                          <div className="space-y-3">
+                            {userType.detailedDescription.benefits.map((benefit, index) => (
+                              <div key={index} className="flex items-start space-x-3 p-3 bg-emerald-50 rounded-lg">
+                                <div className="w-2 h-2 bg-emerald-500 rounded-full mt-2 flex-shrink-0"></div>
+                                <p className="text-slate-700 text-sm leading-relaxed">{benefit}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        
+                        {/* Call to Action */}
+                        <div className="bg-gradient-to-r from-amber-50 to-amber-100 rounded-lg p-6 text-center">
+                          <h4 className="text-lg font-semibold text-slate-900 mb-2">Ready to Get Started?</h4>
+                          <p className="text-slate-600 mb-4">Join as a {userType.title.toLowerCase().slice(0, -1)} and make a difference in your community.</p>
+                          <Button 
+                            className="bg-amber-500 hover:bg-amber-600 text-white"
+                            onClick={() => navigate('/auth')}
+                          >
+                            Sign Up Now
+                          </Button>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </CardContent>
+              </Card>
             );
           })}
         </div>
