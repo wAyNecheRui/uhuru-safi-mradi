@@ -31,7 +31,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
+        <label className="block text-sm font-medium text-slate-700 mb-1">Full Name *</label>
         <Input
           placeholder="Enter your full name"
           value={formData.name}
@@ -41,7 +41,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+        <label className="block text-sm font-medium text-slate-700 mb-1">Email *</label>
         <Input
           type="email"
           placeholder="Enter your email"
@@ -52,7 +52,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+        <label className="block text-sm font-medium text-slate-700 mb-1">Phone Number</label>
         <Input
           placeholder="e.g., +254 700 000 000"
           value={formData.phone}
@@ -62,7 +62,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Location/County</label>
+        <label className="block text-sm font-medium text-slate-700 mb-1">Location/County</label>
         <Input
           placeholder="e.g., Nairobi County"
           value={formData.location}
@@ -80,7 +80,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
       
       {formData.type === 'contractor' && (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Organization</label>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Organization</label>
           <Input
             placeholder="Company/Organization name"
             value={formData.organization}
@@ -93,7 +93,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
 
       {formData.type === 'citizen' && (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Skills (Optional)</label>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Skills (Optional)</label>
           <Input
             placeholder="Construction, plumbing, electrical, etc."
             value={formData.skills}
@@ -105,7 +105,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
       )}
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Password *</label>
+        <label className="block text-sm font-medium text-slate-700 mb-1">Password *</label>
         <Input
           type="password"
           placeholder="Create a password"
@@ -116,7 +116,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password *</label>
+        <label className="block text-sm font-medium text-slate-700 mb-1">Confirm Password *</label>
         <Input
           type="password"
           placeholder="Confirm your password"
@@ -128,7 +128,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
       </div>
       <Button 
         type="submit" 
-        className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white"
+        className="w-full bg-gradient-to-r from-slate-600 to-blue-600 hover:from-slate-700 hover:to-blue-700 text-white"
         disabled={isLoading}
       >
         {isLoading ? (

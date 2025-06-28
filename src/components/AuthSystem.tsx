@@ -104,29 +104,29 @@ const AuthSystem = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-green-700 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-800 via-slate-700 to-blue-800 flex items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-xl border-0 bg-white/95 backdrop-blur-md">
-        <CardHeader className="text-center bg-gradient-to-r from-blue-50 to-green-50 rounded-t-lg">
-          <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+        <CardHeader className="text-center bg-gradient-to-r from-slate-50 to-blue-50 rounded-t-lg">
+          <div className="w-16 h-16 bg-gradient-to-br from-slate-600 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
             <Shield className="w-8 h-8 text-white" />
           </div>
-          <CardTitle className="text-2xl font-bold text-gray-900">
+          <CardTitle className="text-2xl font-bold text-slate-900">
             Uhuru Safi Platform
           </CardTitle>
-          <p className="text-gray-600 mt-2">Transparent Government Project Delivery</p>
+          <p className="text-slate-600 mt-2">Transparent Government Project Delivery</p>
         </CardHeader>
         <CardContent className="p-6">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-2 bg-gradient-to-r from-blue-100 to-green-100">
+            <TabsList className="grid w-full grid-cols-2 bg-gradient-to-r from-slate-100 to-blue-100">
               <TabsTrigger 
                 value="login" 
-                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-green-600 data-[state=active]:text-white"
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-slate-600 data-[state=active]:to-blue-600 data-[state=active]:text-white"
               >
                 Login
               </TabsTrigger>
               <TabsTrigger 
                 value="register"
-                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-green-600 data-[state=active]:text-white"
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-slate-600 data-[state=active]:to-blue-600 data-[state=active]:text-white"
               >
                 Register
               </TabsTrigger>
@@ -156,7 +156,7 @@ const AuthSystem = () => {
               variant="ghost"
               onClick={() => navigate('/')}
               disabled={isLoading}
-              className="text-blue-600 hover:text-green-600 hover:bg-blue-50"
+              className="text-slate-600 hover:text-blue-600 hover:bg-slate-50"
             >
               ← Back to Home
             </Button>

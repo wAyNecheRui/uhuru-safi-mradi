@@ -20,13 +20,13 @@ const EnhancedProblemReporting = () => {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <Card className="shadow-xl border-t-4 border-t-green-600">
-        <CardHeader className="bg-gradient-to-r from-green-50 to-blue-50">
+      <Card className="shadow-xl border-t-4 border-t-slate-600">
+        <CardHeader className="bg-gradient-to-r from-slate-50 to-blue-50">
           <CardTitle className="flex items-center text-2xl">
-            <AlertTriangle className="h-6 w-6 mr-3 text-green-600" />
+            <AlertTriangle className="h-6 w-6 mr-3 text-slate-600" />
             Enhanced Problem Reporting System
           </CardTitle>
-          <p className="text-gray-600 mt-2">
+          <p className="text-slate-600 mt-2">
             Report infrastructure problems in your community with detailed documentation and GPS tracking.
           </p>
         </CardHeader>
@@ -56,7 +56,7 @@ const EnhancedProblemReporting = () => {
             <Button variant="outline" onClick={() => window.history.back()}>
               Cancel
             </Button>
-            <Button onClick={submitReport} className="bg-green-600 hover:bg-green-700">
+            <Button onClick={submitReport} className="bg-slate-600 hover:bg-slate-700">
               <FileText className="h-4 w-4 mr-2" />
               Submit Report
             </Button>

@@ -30,7 +30,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+        <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
         <Input
           type="email"
           placeholder="Enter your email"
@@ -41,7 +41,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+        <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
         <Input
           type="password"
           placeholder="Enter your password"
@@ -52,9 +52,9 @@ const LoginForm: React.FC<LoginFormProps> = ({
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">User Type</label>
+        <label className="block text-sm font-medium text-slate-700 mb-1">User Type</label>
         <select
-          className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           value={formData.type}
           onChange={(e) => onInputChange('type', e.target.value)}
           disabled={isLoading}
@@ -66,7 +66,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
       </div>
       <Button 
         type="submit" 
-        className="w-full bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white"
+        className="w-full bg-gradient-to-r from-slate-600 to-blue-600 hover:from-slate-700 hover:to-blue-700 text-white"
         disabled={isLoading}
       >
         {isLoading ? (

@@ -14,21 +14,21 @@ const userTypes = [
     label: 'Citizen/Verifier', 
     icon: User, 
     description: 'Report problems, verify projects',
-    gradient: 'from-green-500 to-blue-500'
+    gradient: 'from-slate-500 to-slate-600'
   },
   { 
     value: 'contractor' as const, 
     label: 'Contractor', 
     icon: UserCheck, 
     description: 'Bid on projects, deliver services',
-    gradient: 'from-blue-500 to-green-500'
+    gradient: 'from-blue-500 to-blue-600'
   },
   { 
     value: 'government' as const, 
     label: 'Government Official', 
     icon: Shield, 
     description: 'Approve projects, manage funds',
-    gradient: 'from-blue-600 to-green-600'
+    gradient: 'from-indigo-600 to-indigo-700'
   }
 ];
 
@@ -39,7 +39,7 @@ const UserTypeSelector: React.FC<UserTypeSelectorProps> = ({
 }) => {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">User Type *</label>
+      <label className="block text-sm font-medium text-slate-700 mb-1">User Type *</label>
       <div className="space-y-2">
         {userTypes.map(type => {
           const IconComponent = type.icon;
@@ -48,8 +48,8 @@ const UserTypeSelector: React.FC<UserTypeSelectorProps> = ({
               key={type.value}
               className={`p-3 border rounded-lg cursor-pointer transition-all duration-200 ${
                 selectedType === type.value
-                  ? 'border-blue-500 bg-gradient-to-r from-blue-50 to-green-50 shadow-md'
-                  : 'border-gray-200 hover:border-blue-300 hover:shadow-sm'
+                  ? 'border-blue-500 bg-gradient-to-r from-slate-50 to-blue-50 shadow-md'
+                  : 'border-slate-200 hover:border-blue-300 hover:shadow-sm'
               } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
               onClick={() => !disabled && onTypeChange(type.value)}
             >
@@ -58,8 +58,8 @@ const UserTypeSelector: React.FC<UserTypeSelectorProps> = ({
                   <IconComponent className="h-4 w-4 text-white" />
                 </div>
                 <div>
-                  <div className="font-medium text-gray-900">{type.label}</div>
-                  <div className="text-sm text-gray-600">{type.description}</div>
+                  <div className="font-medium text-slate-900">{type.label}</div>
+                  <div className="text-sm text-slate-600">{type.description}</div>
                 </div>
               </div>
             </div>
