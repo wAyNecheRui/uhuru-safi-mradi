@@ -14,16 +14,16 @@ interface HeaderProps {
 
 const Header = ({ currentLanguage, onLanguageChange, selectedCounty, onCountyChange, getText }: HeaderProps) => {
   return (
-    <header className="bg-white shadow-lg border-b-4 border-green-600">
+    <header className="bg-white shadow-lg border-b-4 border-gradient-to-r from-blue-600 to-green-600" style={{borderImage: 'linear-gradient(to right, #2563eb, #16a34a) 1'}}>
       <div className="container mx-auto px-4 py-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-green-600 to-blue-600 rounded-lg flex items-center justify-center">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-green-600 rounded-lg flex items-center justify-center">
               <Shield className="h-6 w-6 text-white" />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">
-                {getText('Uwazi Kenya', 'Uwazi Kenya')}
+                {getText('Uhuru Safi', 'Uhuru Safi')}
               </h1>
               <p className="text-sm text-gray-600">
                 {getText('Government Transparency Platform', 'Jukwaa la Uwazi wa Serikali')}
@@ -38,14 +38,14 @@ const Header = ({ currentLanguage, onLanguageChange, selectedCounty, onCountyCha
             <select 
               value={selectedCounty} 
               onChange={(e) => onCountyChange(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="Nairobi">{getText('Nairobi County', 'Kaunti ya Nairobi')}</option>
               <option value="Mombasa">{getText('Mombasa County', 'Kaunti ya Mombasa')}</option>
               <option value="Kisumu">{getText('Kisumu County', 'Kaunti ya Kisumu')}</option>
               <option value="Nakuru">{getText('Nakuru County', 'Kaunti ya Nakuru')}</option>
             </select>
-            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+            <Badge variant="outline" className="bg-gradient-to-r from-blue-50 to-green-50 text-blue-700 border-blue-200">
               {getText('Live Data', 'Data ya Moja kwa Moja')}
             </Badge>
           </div>

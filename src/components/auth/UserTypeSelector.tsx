@@ -13,19 +13,22 @@ const userTypes = [
     value: 'citizen' as const, 
     label: 'Citizen/Verifier', 
     icon: User, 
-    description: 'Report problems, verify projects' 
+    description: 'Report problems, verify projects',
+    gradient: 'from-green-500 to-blue-500'
   },
   { 
     value: 'contractor' as const, 
     label: 'Contractor', 
     icon: UserCheck, 
-    description: 'Bid on projects, deliver services' 
+    description: 'Bid on projects, deliver services',
+    gradient: 'from-blue-500 to-green-500'
   },
   { 
     value: 'government' as const, 
     label: 'Government Official', 
     icon: Shield, 
-    description: 'Approve projects, manage funds' 
+    description: 'Approve projects, manage funds',
+    gradient: 'from-blue-600 to-green-600'
   }
 ];
 
@@ -43,17 +46,19 @@ const UserTypeSelector: React.FC<UserTypeSelectorProps> = ({
           return (
             <div
               key={type.value}
-              className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+              className={`p-3 border rounded-lg cursor-pointer transition-all duration-200 ${
                 selectedType === type.value
-                  ? 'border-blue-500 bg-blue-50'
-                  : 'border-gray-200 hover:border-gray-300'
+                  ? 'border-blue-500 bg-gradient-to-r from-blue-50 to-green-50 shadow-md'
+                  : 'border-gray-200 hover:border-blue-300 hover:shadow-sm'
               } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
               onClick={() => !disabled && onTypeChange(type.value)}
             >
               <div className="flex items-center space-x-3">
-                <IconComponent className="h-5 w-5 text-blue-600" />
+                <div className={`w-8 h-8 bg-gradient-to-r ${type.gradient} rounded-lg flex items-center justify-center`}>
+                  <IconComponent className="h-4 w-4 text-white" />
+                </div>
                 <div>
-                  <div className="font-medium">{type.label}</div>
+                  <div className="font-medium text-gray-900">{type.label}</div>
                   <div className="text-sm text-gray-600">{type.description}</div>
                 </div>
               </div>

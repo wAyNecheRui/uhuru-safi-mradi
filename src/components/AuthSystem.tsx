@@ -104,19 +104,32 @@ const AuthSystem = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md shadow-xl">
-        <CardHeader className="text-center">
+    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-green-700 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md shadow-xl border-0 bg-white/95 backdrop-blur-md">
+        <CardHeader className="text-center bg-gradient-to-r from-blue-50 to-green-50 rounded-t-lg">
+          <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Shield className="w-8 h-8 text-white" />
+          </div>
           <CardTitle className="text-2xl font-bold text-gray-900">
             Uhuru Safi Platform
           </CardTitle>
           <p className="text-gray-600 mt-2">Transparent Government Project Delivery</p>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-6">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Login</TabsTrigger>
-              <TabsTrigger value="register">Register</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 bg-gradient-to-r from-blue-100 to-green-100">
+              <TabsTrigger 
+                value="login" 
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-green-600 data-[state=active]:text-white"
+              >
+                Login
+              </TabsTrigger>
+              <TabsTrigger 
+                value="register"
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-green-600 data-[state=active]:text-white"
+              >
+                Register
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="login" className="space-y-4 mt-6">
@@ -143,6 +156,7 @@ const AuthSystem = () => {
               variant="ghost"
               onClick={() => navigate('/')}
               disabled={isLoading}
+              className="text-blue-600 hover:text-green-600 hover:bg-blue-50"
             >
               ← Back to Home
             </Button>

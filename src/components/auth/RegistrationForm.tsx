@@ -37,6 +37,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
           value={formData.name}
           onChange={(e) => onInputChange('name', e.target.value)}
           disabled={isLoading}
+          className="focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         />
       </div>
       <div>
@@ -47,6 +48,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
           value={formData.email}
           onChange={(e) => onInputChange('email', e.target.value)}
           disabled={isLoading}
+          className="focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         />
       </div>
       <div>
@@ -56,6 +58,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
           value={formData.phone}
           onChange={(e) => onInputChange('phone', e.target.value)}
           disabled={isLoading}
+          className="focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         />
       </div>
       <div>
@@ -65,6 +68,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
           value={formData.location}
           onChange={(e) => onInputChange('location', e.target.value)}
           disabled={isLoading}
+          className="focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         />
       </div>
       
@@ -82,6 +86,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
             value={formData.organization}
             onChange={(e) => onInputChange('organization', e.target.value)}
             disabled={isLoading}
+            className="focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
       )}
@@ -94,6 +99,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
             value={formData.skills}
             onChange={(e) => onInputChange('skills', e.target.value)}
             disabled={isLoading}
+            className="focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
       )}
@@ -106,6 +112,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
           value={formData.password}
           onChange={(e) => onInputChange('password', e.target.value)}
           disabled={isLoading}
+          className="focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         />
       </div>
       <div>
@@ -116,11 +123,12 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
           value={formData.confirmPassword}
           onChange={(e) => onInputChange('confirmPassword', e.target.value)}
           disabled={isLoading}
+          className="focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         />
       </div>
       <Button 
         type="submit" 
-        className="w-full bg-green-600 hover:bg-green-700"
+        className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white"
         disabled={isLoading}
       >
         {isLoading ? (

@@ -37,6 +37,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
           value={formData.email}
           onChange={(e) => onInputChange('email', e.target.value)}
           disabled={isLoading}
+          className="focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         />
       </div>
       <div>
@@ -47,12 +48,13 @@ const LoginForm: React.FC<LoginFormProps> = ({
           value={formData.password}
           onChange={(e) => onInputChange('password', e.target.value)}
           disabled={isLoading}
+          className="focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         />
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">User Type</label>
         <select
-          className="w-full p-2 border border-gray-300 rounded-md"
+          className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           value={formData.type}
           onChange={(e) => onInputChange('type', e.target.value)}
           disabled={isLoading}
@@ -64,7 +66,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
       </div>
       <Button 
         type="submit" 
-        className="w-full bg-blue-600 hover:bg-blue-700"
+        className="w-full bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white"
         disabled={isLoading}
       >
         {isLoading ? (

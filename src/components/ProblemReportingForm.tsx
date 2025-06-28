@@ -133,6 +133,7 @@ const ProblemReportingForm = () => {
                   placeholder="Brief description of the problem"
                   value={formData.title}
                   onChange={(e) => handleInputChange('title', e.target.value)}
+                  className="focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
 
@@ -140,7 +141,7 @@ const ProblemReportingForm = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Category *</label>
                 <select
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   value={formData.category}
                   onChange={(e) => handleInputChange('category', e.target.value)}
                 >
@@ -157,10 +158,10 @@ const ProblemReportingForm = () => {
                   {priorities.map(priority => (
                     <div
                       key={priority.value}
-                      className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                      className={`p-3 border rounded-lg cursor-pointer transition-all duration-200 ${
                         formData.priority === priority.value
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-200 hover:border-gray-300'
+                          ? 'border-blue-500 bg-gradient-to-r from-blue-50 to-green-50 shadow-md'
+                          : 'border-gray-200 hover:border-blue-300 hover:shadow-sm'
                       }`}
                       onClick={() => handleInputChange('priority', priority.value)}
                     >
@@ -177,7 +178,7 @@ const ProblemReportingForm = () => {
                 <div className="flex space-x-3">
                   <Input
                     required
-                    className="flex-1"
+                    className="flex-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Detailed location description"
                     value={formData.location}
                     onChange={(e) => handleInputChange('location', e.target.value)}
@@ -186,6 +187,7 @@ const ProblemReportingForm = () => {
                     type="button"
                     variant="outline"
                     onClick={getCurrentLocation}
+                    className="border-blue-300 text-blue-600 hover:bg-blue-50"
                   >
                     <MapPin className="w-4 h-4 mr-2" />
                     GPS
@@ -201,6 +203,7 @@ const ProblemReportingForm = () => {
                   placeholder="Provide detailed information about the problem, its impact on the community, and any safety concerns"
                   value={formData.description}
                   onChange={(e) => handleInputChange('description', e.target.value)}
+                  className="focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
 
@@ -211,6 +214,7 @@ const ProblemReportingForm = () => {
                   placeholder="Optional rough estimate"
                   value={formData.estimatedCost}
                   onChange={(e) => handleInputChange('estimatedCost', e.target.value)}
+                  className="focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
 
@@ -225,7 +229,7 @@ const ProblemReportingForm = () => {
               </div>
             </div>
 
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="bg-gradient-to-r from-blue-50 to-green-50 border border-blue-200 rounded-lg p-4">
               <div className="flex items-start space-x-3">
                 <AlertCircle className="w-6 h-6 text-blue-600 mt-0.5" />
                 <div>
@@ -239,7 +243,10 @@ const ProblemReportingForm = () => {
             </div>
 
             <div className="flex space-x-4">
-              <Button type="submit" className="flex-1">
+              <Button 
+                type="submit" 
+                className="flex-1 bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white"
+              >
                 <FileText className="w-4 w-4 mr-2" />
                 Submit Problem Report
               </Button>
@@ -247,6 +254,7 @@ const ProblemReportingForm = () => {
                 type="button"
                 variant="outline"
                 onClick={() => navigate(-1)}
+                className="border-gray-300 hover:bg-gray-50"
               >
                 Cancel
               </Button>
