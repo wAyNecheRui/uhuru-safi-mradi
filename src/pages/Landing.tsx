@@ -1,13 +1,18 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Shield, Users, Building, Eye, DollarSign, CheckCircle, TrendingUp, ChevronRight } from 'lucide-react';
+import AboutModal from '@/components/landing/AboutModal';
+import HowItWorksModal from '@/components/landing/HowItWorksModal';
+import ContactModal from '@/components/landing/ContactModal';
 
 const Landing = () => {
   const navigate = useNavigate();
+  const [aboutModalOpen, setAboutModalOpen] = useState(false);
+  const [howItWorksModalOpen, setHowItWorksModalOpen] = useState(false);
+  const [contactModalOpen, setContactModalOpen] = useState(false);
 
   const userTypes = [
     {
@@ -92,9 +97,24 @@ const Landing = () => {
               <span className="text-white font-bold text-xl">Uhuru Safi</span>
             </div>
             <div className="hidden md:flex space-x-4">
-              <button className="text-white hover:text-slate-200 transition-colors">About</button>
-              <button className="text-white hover:text-slate-200 transition-colors">How it Works</button>
-              <button className="text-white hover:text-slate-200 transition-colors">Contact</button>
+              <button 
+                className="text-white hover:text-slate-200 transition-colors"
+                onClick={() => setAboutModalOpen(true)}
+              >
+                About
+              </button>
+              <button 
+                className="text-white hover:text-slate-200 transition-colors"
+                onClick={() => setHowItWorksModalOpen(true)}
+              >
+                How it Works
+              </button>
+              <button 
+                className="text-white hover:text-slate-200 transition-colors"
+                onClick={() => setContactModalOpen(true)}
+              >
+                Contact
+              </button>
               <Button 
                 variant="outline" 
                 className="bg-white/20 border-white/30 text-white hover:bg-white/30"
@@ -163,7 +183,7 @@ const Landing = () => {
                         variant="outline" 
                         className="bg-white/20 border-white/30 text-white hover:bg-white/30 hover:text-amber-400 transition-colors"
                       >
-                        Learn More
+                        Show More
                         <ChevronRight className="w-4 h-4 ml-2" />
                       </Button>
                     </DialogTrigger>
@@ -287,6 +307,11 @@ const Landing = () => {
           </p>
         </div>
       </footer>
+
+      {/* Modals */}
+      <AboutModal isOpen={aboutModalOpen} onClose={() => setAboutModalOpen(false)} />
+      <HowItWorksModal isOpen={howItWorksModalOpen} onClose={() => setHowItWorksModalOpen(false)} />
+      <ContactModal isOpen={contactModalOpen} onClose={() => setContactModalOpen(false)} />
     </div>
   );
 };
