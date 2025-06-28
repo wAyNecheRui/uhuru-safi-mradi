@@ -3,7 +3,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Shield, Users, Building, Gavel } from 'lucide-react';
+import { Shield, Users, Building, Eye, DollarSign, CheckCircle, TrendingUp, ChevronRight } from 'lucide-react';
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -11,8 +11,8 @@ const Landing = () => {
   const userTypes = [
     {
       id: 'citizen',
-      title: 'Citizen',
-      description: 'Report issues, track projects, participate in community decisions',
+      title: 'Citizens',
+      description: 'Report infrastructure problems, verify project progress, and register your skills for opportunities.',
       icon: Users,
       color: 'from-green-500 to-green-600',
       hoverColor: 'hover:from-green-600 hover:to-green-700',
@@ -20,8 +20,8 @@ const Landing = () => {
     },
     {
       id: 'contractor',
-      title: 'Contractor',
-      description: 'Bid on projects, manage contracts, track payments',
+      title: 'Contractors',
+      description: 'Bid on verified projects, track progress, and receive guaranteed payments through secure escrow.',
       icon: Building,
       color: 'from-blue-500 to-blue-600',
       hoverColor: 'hover:from-blue-600 hover:to-blue-700',
@@ -30,8 +30,8 @@ const Landing = () => {
     {
       id: 'government',
       title: 'Government',
-      description: 'Manage projects, review reports, allocate resources',
-      icon: Gavel,
+      description: 'Oversee projects, manage budgets, and ensure transparent allocation of public funds.',
+      icon: Shield,
       color: 'from-purple-500 to-purple-600',
       hoverColor: 'hover:from-purple-600 hover:to-purple-700',
       route: '/government'
@@ -43,64 +43,87 @@ const Landing = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-green-700">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b-2 border-green-600">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-center">
-            <div className="flex items-center space-x-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-green-600 to-blue-600 rounded-xl flex items-center justify-center">
-                <Shield className="h-8 w-8 text-white" />
-              </div>
-              <div className="text-center">
-                <h1 className="text-3xl font-bold text-gray-900">Uwazi Kenya</h1>
-                <p className="text-lg text-gray-600 mt-1">
-                  Government Transparency Platform
-                </p>
-              </div>
+      <nav className="bg-white/10 backdrop-blur-md border-b border-white/20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center space-x-3">
+              <Shield className="w-8 h-8 text-white" />
+              <span className="text-white font-bold text-xl">Uhuru Safi</span>
+            </div>
+            <div className="hidden md:flex space-x-4">
+              <button className="text-white hover:text-blue-200 transition-colors">About</button>
+              <button className="text-white hover:text-blue-200 transition-colors">How it Works</button>
+              <button className="text-white hover:text-blue-200 transition-colors">Contact</button>
+              <Button 
+                variant="outline" 
+                className="bg-white/20 border-white/30 text-white hover:bg-white/30"
+                onClick={() => navigate('/auth')}
+              >
+                Sign In
+              </Button>
             </div>
           </div>
         </div>
-      </header>
+      </nav>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-16">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-gray-900 mb-4">
-            Welcome
-          </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-            Choose your role to start using Kenya's government transparency system.
+          <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
+            Transparent Government
+            <span className="block text-yellow-400">Project Delivery</span>
+          </h1>
+          <p className="text-xl text-blue-100 mb-8 max-w-3xl mx-auto">
+            Empowering citizens to identify infrastructure needs, connecting verified contractors, 
+            and ensuring transparent project funding and delivery through innovative escrow mechanisms.
           </p>
+          
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button 
+              size="lg"
+              className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-semibold px-8"
+              onClick={() => navigate('/auth')}
+            >
+              Get Started Today
+            </Button>
+            <Button 
+              size="lg"
+              variant="outline"
+              className="bg-white/20 border-white/30 text-white hover:bg-white/30"
+              onClick={() => navigate('/contractor-database')}
+            >
+              Browse Contractors
+            </Button>
+          </div>
         </div>
 
         {/* Role Selection Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+        <div className="grid md:grid-cols-3 gap-8 mb-16">
           {userTypes.map((userType) => {
             const IconComponent = userType.icon;
             return (
               <Card 
                 key={userType.id} 
-                className="group cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl border-2 border-gray-200 hover:border-green-400"
+                className="group cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl bg-white/10 backdrop-blur-md border-white/20 hover:bg-white/20"
                 onClick={() => handleRoleSelect(userType.route)}
               >
                 <CardHeader className="text-center pb-4">
                   <div className={`w-20 h-20 bg-gradient-to-br ${userType.color} rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:shadow-lg transition-all duration-300`}>
                     <IconComponent className="h-10 w-10 text-white" />
                   </div>
-                  <CardTitle className="text-2xl font-bold text-gray-900 group-hover:text-green-700 transition-colors">
+                  <CardTitle className="text-2xl font-bold text-white group-hover:text-yellow-400 transition-colors">
                     {userType.title}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="text-center pb-8">
-                  <p className="text-gray-700 mb-6 font-medium">
+                  <p className="text-blue-100 mb-6 font-medium">
                     {userType.description}
                   </p>
-                  <Button 
-                    className={`w-full bg-gradient-to-r ${userType.color} ${userType.hoverColor} text-white font-semibold py-3 rounded-lg transition-all duration-300 group-hover:shadow-md`}
-                  >
-                    Start Here
-                  </Button>
+                  <div className="flex items-center justify-center text-yellow-400 font-semibold">
+                    Get Started <ChevronRight className="w-5 h-5 ml-2" />
+                  </div>
                 </CardContent>
               </Card>
             );
@@ -108,30 +131,51 @@ const Landing = () => {
         </div>
 
         {/* Features Section */}
-        <div className="mt-20 text-center">
-          <h3 className="text-2xl font-bold text-gray-900 mb-8">
-            Our Services
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-4xl mx-auto">
-            {[
-              'M-Pesa Integration',
-              'SMS/USSD Support',
-              'Offline Access',
-              'Real-time Updates'
-            ].map((feature, index) => (
-              <div key={index} className="bg-white rounded-lg p-6 shadow-md">
-                <h4 className="font-semibold text-gray-900">{feature}</h4>
-              </div>
-            ))}
+        <div className="text-center mb-16">
+          <h2 className="text-3xl font-bold text-white mb-8">Key Features</h2>
+          <div className="grid md:grid-cols-4 gap-6">
+            <div className="text-center">
+              <Eye className="w-12 h-12 text-yellow-400 mx-auto mb-4" />
+              <h4 className="text-lg font-semibold text-white mb-2">Full Transparency</h4>
+              <p className="text-blue-100 text-sm">Real-time project tracking and public fund visibility</p>
+            </div>
+            <div className="text-center">
+              <DollarSign className="w-12 h-12 text-green-400 mx-auto mb-4" />
+              <h4 className="text-lg font-semibold text-white mb-2">Secure Escrow</h4>
+              <p className="text-blue-100 text-sm">Guaranteed contractor payments upon milestone completion</p>
+            </div>
+            <div className="text-center">
+              <CheckCircle className="w-12 h-12 text-blue-400 mx-auto mb-4" />
+              <h4 className="text-lg font-semibold text-white mb-2">Citizen Verification</h4>
+              <p className="text-blue-100 text-sm">Community-validated project needs and progress</p>
+            </div>
+            <div className="text-center">
+              <TrendingUp className="w-12 h-12 text-purple-400 mx-auto mb-4" />
+              <h4 className="text-lg font-semibold text-white mb-2">Data Analytics</h4>
+              <p className="text-blue-100 text-sm">Comprehensive reporting and performance insights</p>
+            </div>
           </div>
+        </div>
+
+        {/* Call to Action */}
+        <div className="text-center bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20">
+          <h3 className="text-2xl font-bold text-white mb-4">Ready to Transform Your Community?</h3>
+          <p className="text-blue-100 mb-6">Join thousands of citizens, contractors, and officials building transparent infrastructure.</p>
+          <Button 
+            size="lg"
+            className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-semibold px-8"
+            onClick={() => navigate('/auth')}
+          >
+            Join Uhuru Safi Today
+          </Button>
         </div>
       </main>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-8 mt-16">
-        <div className="container mx-auto px-4 text-center">
-          <p className="text-gray-400">
-            Built for transparency in Kenyan governance
+      <footer className="border-t border-white/20 bg-white/5 backdrop-blur-md py-8 mt-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <p className="text-blue-200">
+            Built for transparency in Kenyan governance • Empowering communities through technology
           </p>
         </div>
       </footer>
