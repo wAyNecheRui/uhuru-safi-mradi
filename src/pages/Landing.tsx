@@ -3,7 +3,8 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Shield, Users, Building, Eye, DollarSign, CheckCircle, TrendingUp, ChevronRight } from 'lucide-react';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
+import { Shield, Users, Building, Eye, DollarSign, CheckCircle, TrendingUp, ChevronRight, Info } from 'lucide-react';
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -16,34 +17,72 @@ const Landing = () => {
       icon: Users,
       color: 'from-slate-600 to-slate-700',
       hoverColor: 'hover:from-slate-700 hover:to-slate-800',
-      route: '/citizen'
+      detailedDescription: {
+        overview: 'Citizens are the backbone of transparent governance, serving as both reporters and verifiers of community infrastructure needs.',
+        responsibilities: [
+          'Identify and report infrastructure problems in your community',
+          'Verify the progress and quality of ongoing projects',
+          'Participate in community voting for project priorities',
+          'Register skills and availability for local workforce opportunities'
+        ],
+        benefits: [
+          'Direct impact on community development',
+          'Transparency in how public funds are used',
+          'Opportunity to earn income through verification tasks',
+          'Voice in local infrastructure decisions'
+        ]
+      }
     },
     {
       id: 'contractor',
       title: 'Contractors',
       description: 'Bid on verified projects, track progress, and receive guaranteed payments through secure escrow.',
       icon: Building,
-      color: 'from-blue-600 to-blue-700',
-      hoverColor: 'hover:from-blue-700 hover:to-blue-800',
-      route: '/contractor'
+      color: 'from-slate-600 to-slate-700',
+      hoverColor: 'hover:from-slate-700 hover:to-slate-800',
+      detailedDescription: {
+        overview: 'Contractors are verified service providers who deliver infrastructure solutions with guaranteed payment security.',
+        responsibilities: [
+          'Complete verification process to establish credibility',
+          'Submit competitive bids on community-verified projects',
+          'Deliver high-quality work according to project specifications',
+          'Maintain transparent communication throughout project lifecycle'
+        ],
+        benefits: [
+          'Access to pre-verified, legitimate projects',
+          'Guaranteed payments through secure escrow system',
+          'Build reputation through transparent performance tracking',
+          'Reduced payment delays and disputes'
+        ]
+      }
     },
     {
       id: 'government',
       title: 'Government',
       description: 'Oversee projects, manage budgets, and ensure transparent allocation of public funds.',
       icon: Shield,
-      color: 'from-indigo-600 to-indigo-700',
-      hoverColor: 'hover:from-indigo-700 hover:to-indigo-800',
-      route: '/government'
+      color: 'from-slate-600 to-slate-700',
+      hoverColor: 'hover:from-slate-700 hover:to-slate-800',
+      detailedDescription: {
+        overview: 'Government officials ensure responsible stewardship of public resources through transparent project management.',
+        responsibilities: [
+          'Review and approve community-reported infrastructure needs',
+          'Allocate budgets based on verified community priorities',
+          'Monitor contractor performance and project progress',
+          'Ensure compliance with regulations and standards'
+        ],
+        benefits: [
+          'Enhanced transparency builds public trust',
+          'Data-driven decision making for resource allocation',
+          'Reduced corruption through open processes',
+          'Improved accountability and performance metrics'
+        ]
+      }
     }
   ];
 
-  const handleRoleSelect = (route: string) => {
-    navigate(route);
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-800 via-slate-700 to-blue-800">
+    <div className="min-h-screen bg-gradient-to-br from-slate-800 via-slate-700 to-slate-600">
       {/* Header */}
       <nav className="bg-white/10 backdrop-blur-md border-b border-white/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -99,33 +138,75 @@ const Landing = () => {
           </div>
         </div>
 
-        {/* Role Selection Cards */}
+        {/* Role Information Cards */}
         <div className="grid md:grid-cols-3 gap-8 mb-16">
           {userTypes.map((userType) => {
             const IconComponent = userType.icon;
             return (
-              <Card 
-                key={userType.id} 
-                className="group cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl bg-white/10 backdrop-blur-md border-white/20 hover:bg-white/20"
-                onClick={() => handleRoleSelect(userType.route)}
-              >
-                <CardHeader className="text-center pb-4">
-                  <div className={`w-20 h-20 bg-gradient-to-br ${userType.color} rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:shadow-lg transition-all duration-300`}>
-                    <IconComponent className="h-10 w-10 text-white" />
+              <HoverCard key={userType.id}>
+                <HoverCardTrigger asChild>
+                  <Card className="group cursor-help transform transition-all duration-300 hover:scale-105 hover:shadow-xl bg-white/10 backdrop-blur-md border-white/20 hover:bg-white/20">
+                    <CardHeader className="text-center pb-4">
+                      <div className={`w-20 h-20 bg-gradient-to-br ${userType.color} rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:shadow-lg transition-all duration-300`}>
+                        <IconComponent className="h-10 w-10 text-white" />
+                      </div>
+                      <CardTitle className="text-2xl font-bold text-white group-hover:text-amber-400 transition-colors">
+                        {userType.title}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="text-center pb-8">
+                      <p className="text-slate-200 mb-6 font-medium">
+                        {userType.description}
+                      </p>
+                      <div className="flex items-center justify-center text-amber-400 font-semibold">
+                        <Info className="w-4 h-4 mr-2" />
+                        Learn More
+                      </div>
+                    </CardContent>
+                  </Card>
+                </HoverCardTrigger>
+                <HoverCardContent className="w-96 p-6 bg-white border border-slate-200 shadow-xl">
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-3 mb-4">
+                      <div className={`w-12 h-12 bg-gradient-to-br ${userType.color} rounded-xl flex items-center justify-center`}>
+                        <IconComponent className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold text-slate-900">{userType.title}</h3>
+                        <p className="text-sm text-slate-600">Role Overview</p>
+                      </div>
+                    </div>
+                    
+                    <p className="text-sm text-slate-700 leading-relaxed">
+                      {userType.detailedDescription.overview}
+                    </p>
+                    
+                    <div>
+                      <h4 className="font-semibold text-slate-900 mb-2">Key Responsibilities:</h4>
+                      <ul className="space-y-1">
+                        {userType.detailedDescription.responsibilities.map((responsibility, index) => (
+                          <li key={index} className="text-sm text-slate-600 flex items-start">
+                            <span className="w-1.5 h-1.5 bg-amber-500 rounded-full mt-2 mr-2 flex-shrink-0"></span>
+                            {responsibility}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    
+                    <div>
+                      <h4 className="font-semibold text-slate-900 mb-2">Benefits:</h4>
+                      <ul className="space-y-1">
+                        {userType.detailedDescription.benefits.map((benefit, index) => (
+                          <li key={index} className="text-sm text-slate-600 flex items-start">
+                            <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full mt-2 mr-2 flex-shrink-0"></span>
+                            {benefit}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   </div>
-                  <CardTitle className="text-2xl font-bold text-white group-hover:text-amber-400 transition-colors">
-                    {userType.title}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="text-center pb-8">
-                  <p className="text-slate-200 mb-6 font-medium">
-                    {userType.description}
-                  </p>
-                  <div className="flex items-center justify-center text-amber-400 font-semibold">
-                    Get Started <ChevronRight className="w-5 h-5 ml-2" />
-                  </div>
-                </CardContent>
-              </Card>
+                </HoverCardContent>
+              </HoverCard>
             );
           })}
         </div>
