@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
-import { Shield, Users, Building, Eye, DollarSign, CheckCircle, TrendingUp, ChevronRight, Info } from 'lucide-react';
+import { Shield, Users, Building, Eye, DollarSign, CheckCircle, TrendingUp, ChevronRight, Info, Briefcase, Award, Target } from 'lucide-react';
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -160,49 +160,61 @@ const Landing = () => {
                       </p>
                       <div className="flex items-center justify-center text-amber-400 font-semibold">
                         <Info className="w-4 h-4 mr-2" />
-                        Learn More
+                        Show More
                       </div>
                     </CardContent>
                   </Card>
                 </HoverCardTrigger>
-                <HoverCardContent className="w-96 p-6 bg-white border border-slate-200 shadow-xl">
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-3 mb-4">
-                      <div className={`w-12 h-12 bg-gradient-to-br ${userType.color} rounded-xl flex items-center justify-center`}>
-                        <IconComponent className="h-6 w-6 text-white" />
+                <HoverCardContent className="w-[480px] p-0 bg-white border border-slate-200 shadow-2xl rounded-xl overflow-hidden">
+                  <div className="bg-gradient-to-r from-slate-50 to-slate-100 p-6 border-b border-slate-200">
+                    <div className="flex items-center space-x-4">
+                      <div className={`w-16 h-16 bg-gradient-to-br ${userType.color} rounded-2xl flex items-center justify-center shadow-lg`}>
+                        <IconComponent className="h-8 w-8 text-white" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-bold text-slate-900">{userType.title}</h3>
-                        <p className="text-sm text-slate-600">Role Overview</p>
+                        <h3 className="text-2xl font-bold text-slate-900">{userType.title}</h3>
+                        <p className="text-slate-600 font-medium">Professional Role Overview</p>
                       </div>
                     </div>
-                    
-                    <p className="text-sm text-slate-700 leading-relaxed">
-                      {userType.detailedDescription.overview}
-                    </p>
-                    
-                    <div>
-                      <h4 className="font-semibold text-slate-900 mb-2">Key Responsibilities:</h4>
-                      <ul className="space-y-1">
-                        {userType.detailedDescription.responsibilities.map((responsibility, index) => (
-                          <li key={index} className="text-sm text-slate-600 flex items-start">
-                            <span className="w-1.5 h-1.5 bg-amber-500 rounded-full mt-2 mr-2 flex-shrink-0"></span>
-                            {responsibility}
-                          </li>
-                        ))}
-                      </ul>
+                  </div>
+                  
+                  <div className="p-6 space-y-6">
+                    <div className="bg-slate-50 p-4 rounded-lg border-l-4 border-slate-600">
+                      <p className="text-slate-700 leading-relaxed font-medium">
+                        {userType.detailedDescription.overview}
+                      </p>
                     </div>
                     
-                    <div>
-                      <h4 className="font-semibold text-slate-900 mb-2">Benefits:</h4>
-                      <ul className="space-y-1">
-                        {userType.detailedDescription.benefits.map((benefit, index) => (
-                          <li key={index} className="text-sm text-slate-600 flex items-start">
-                            <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full mt-2 mr-2 flex-shrink-0"></span>
-                            {benefit}
-                          </li>
-                        ))}
-                      </ul>
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div className="space-y-3">
+                        <div className="flex items-center space-x-2 mb-3">
+                          <Briefcase className="w-5 h-5 text-slate-600" />
+                          <h4 className="font-bold text-slate-900 text-lg">Key Responsibilities</h4>
+                        </div>
+                        <div className="space-y-2">
+                          {userType.detailedDescription.responsibilities.map((responsibility, index) => (
+                            <div key={index} className="flex items-start space-x-3 p-2 bg-slate-50 rounded-md">
+                              <div className="w-2 h-2 bg-slate-600 rounded-full mt-2 flex-shrink-0"></div>
+                              <span className="text-sm text-slate-700 leading-relaxed">{responsibility}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <div className="flex items-center space-x-2 mb-3">
+                          <Award className="w-5 h-5 text-amber-600" />
+                          <h4 className="font-bold text-slate-900 text-lg">Key Benefits</h4>
+                        </div>
+                        <div className="space-y-2">
+                          {userType.detailedDescription.benefits.map((benefit, index) => (
+                            <div key={index} className="flex items-start space-x-3 p-2 bg-amber-50 rounded-md border border-amber-100">
+                              <div className="w-2 h-2 bg-amber-500 rounded-full mt-2 flex-shrink-0"></div>
+                              <span className="text-sm text-slate-700 leading-relaxed">{benefit}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </HoverCardContent>
