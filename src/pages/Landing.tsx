@@ -4,15 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Shield, Users, Building, Eye, DollarSign, CheckCircle, TrendingUp, ChevronRight } from 'lucide-react';
-import AboutModal from '@/components/landing/AboutModal';
-import HowItWorksModal from '@/components/landing/HowItWorksModal';
-import ContactModal from '@/components/landing/ContactModal';
 
 const Landing = () => {
   const navigate = useNavigate();
-  const [aboutModalOpen, setAboutModalOpen] = useState(false);
-  const [howItWorksModalOpen, setHowItWorksModalOpen] = useState(false);
-  const [contactModalOpen, setContactModalOpen] = useState(false);
 
   const userTypes = [
     {
@@ -99,19 +93,19 @@ const Landing = () => {
             <div className="hidden md:flex space-x-4">
               <button 
                 className="text-white hover:text-slate-200 transition-colors"
-                onClick={() => setAboutModalOpen(true)}
+                onClick={() => navigate('/about')}
               >
                 About
               </button>
               <button 
                 className="text-white hover:text-slate-200 transition-colors"
-                onClick={() => setHowItWorksModalOpen(true)}
+                onClick={() => navigate('/how-it-works')}
               >
                 How it Works
               </button>
               <button 
                 className="text-white hover:text-slate-200 transition-colors"
-                onClick={() => setContactModalOpen(true)}
+                onClick={() => navigate('/contact')}
               >
                 Contact
               </button>
@@ -307,11 +301,6 @@ const Landing = () => {
           </p>
         </div>
       </footer>
-
-      {/* Modals */}
-      <AboutModal isOpen={aboutModalOpen} onClose={() => setAboutModalOpen(false)} />
-      <HowItWorksModal isOpen={howItWorksModalOpen} onClose={() => setHowItWorksModalOpen(false)} />
-      <ContactModal isOpen={contactModalOpen} onClose={() => setContactModalOpen(false)} />
     </div>
   );
 };
