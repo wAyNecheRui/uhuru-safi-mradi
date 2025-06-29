@@ -51,13 +51,14 @@ export const ChartSkeleton = () => (
   <div className="h-64 bg-white rounded-lg border p-4">
     <Skeleton className="h-4 w-1/3 mb-4" />
     <div className="h-48 flex items-end space-x-2">
-      {Array.from({ length: 8 }).map((_, i) => (
-        <Skeleton
-          key={i}
-          className="flex-1"
-          style={{ height: `${Math.random() * 80 + 20}%` }}
-        />
-      ))}
+      <Skeleton className="flex-1 h-8" />
+      <Skeleton className="flex-1 h-12" />
+      <Skeleton className="flex-1 h-16" />
+      <Skeleton className="flex-1 h-10" />
+      <Skeleton className="flex-1 h-20" />
+      <Skeleton className="flex-1 h-14" />
+      <Skeleton className="flex-1 h-18" />
+      <Skeleton className="flex-1 h-6" />
     </div>
   </div>
 );
