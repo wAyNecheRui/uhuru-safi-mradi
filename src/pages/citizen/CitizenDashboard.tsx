@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -80,22 +79,14 @@ const CitizenDashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
       <Header 
-        currentLanguage="en"
-        onLanguageChange={() => {}}
         selectedCounty="Nairobi"
         onCountyChange={() => {}}
-        getText={(en: string) => en}
       />
       
       <main>
         <ResponsiveContainer className="py-6 sm:py-8">
           <BreadcrumbNav />
           
-          <div className="mb-6 sm:mb-8">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Citizen Dashboard</h1>
-            <p className="text-sm sm:text-base text-gray-600">Welcome! Report issues, track progress, and participate in your community.</p>
-          </div>
-
           {/* Quick Actions */}
           <div className={`grid gap-4 sm:gap-6 mb-6 sm:mb-8 ${
             isMobile ? 'grid-cols-1' : isTablet ? 'grid-cols-2' : 'grid-cols-3'

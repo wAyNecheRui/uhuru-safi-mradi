@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -63,11 +62,8 @@ const ContractorDashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
       <Header 
-        currentLanguage="en"
-        onLanguageChange={() => {}}
         selectedCounty="Nairobi"
         onCountyChange={() => {}}
-        getText={(en: string) => en}
       />
       
       <main>

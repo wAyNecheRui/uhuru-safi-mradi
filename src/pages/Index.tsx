@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
@@ -68,11 +69,8 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
       <Header 
-        currentLanguage="en"
-        onLanguageChange={() => {}}
         selectedCounty={selectedCounty}
         onCountyChange={setSelectedCounty}
-        getText={getText}
       />
 
       <main>
