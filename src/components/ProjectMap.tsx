@@ -12,7 +12,7 @@ const ProjectMap = ({ selectedCounty }: ProjectMapProps) => {
   const projects = [
     {
       id: 1,
-      name: 'Mombasa Road Repair',
+      name: `${selectedCounty} Road Repair`,
       status: 'In Progress',
       lat: -1.3167,
       lng: 36.8833,
@@ -22,7 +22,7 @@ const ProjectMap = ({ selectedCounty }: ProjectMapProps) => {
     },
     {
       id: 2,
-      name: 'Kasarani Street Lights',
+      name: `${selectedCounty} Street Lights`,
       status: 'Planning',
       lat: -1.2167,
       lng: 36.9000,
@@ -32,7 +32,7 @@ const ProjectMap = ({ selectedCounty }: ProjectMapProps) => {
     },
     {
       id: 3,
-      name: 'Kibera Water Pipeline',
+      name: `${selectedCounty} Water Pipeline`,
       status: 'Completed',
       lat: -1.3167,
       lng: 36.7833,
@@ -42,7 +42,7 @@ const ProjectMap = ({ selectedCounty }: ProjectMapProps) => {
     },
     {
       id: 4,
-      name: 'CBD Drainage System',
+      name: `${selectedCounty} Drainage System`,
       status: 'Under Review',
       lat: -1.2921,
       lng: 36.8219,

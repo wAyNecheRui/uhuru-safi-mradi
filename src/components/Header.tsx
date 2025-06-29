@@ -3,11 +3,8 @@ import React from 'react';
 import { Shield } from 'lucide-react';
 
 interface HeaderProps {
-  currentLanguage: string;
-  onLanguageChange: (language: string) => void;
   selectedCounty: string;
   onCountyChange: (county: string) => void;
-  getText: (en: string, sw: string) => string;
 }
 
 const counties = [
@@ -21,6 +18,10 @@ const counties = [
 ];
 
 const Header = ({ selectedCounty, onCountyChange }: HeaderProps) => {
+  const handleCountyChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    onCountyChange(event.target.value);
+  };
+
   return (
     <header className="bg-white shadow-lg border-b-4 border-gradient-to-r from-slate-600 to-blue-600" style={{borderImage: 'linear-gradient(to right, #475569, #2563eb) 1'}}>
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
@@ -42,7 +43,7 @@ const Header = ({ selectedCounty, onCountyChange }: HeaderProps) => {
           <div className="flex-shrink-0">
             <select 
               value={selectedCounty} 
-              onChange={(e) => onCountyChange(e.target.value)}
+              onChange={handleCountyChange}
               className="px-2 sm:px-3 py-1.5 sm:py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white min-w-0 max-w-[140px] sm:max-w-none"
             >
               {counties.map((county) => (
