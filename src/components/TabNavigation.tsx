@@ -8,36 +8,34 @@ interface TabNavigationProps {
 }
 
 const TabNavigation = ({ getText }: TabNavigationProps) => {
+  const tabs = [
+    { value: 'overview', icon: TrendingUp, en: 'Overview', sw: 'Muhtasari' },
+    { value: 'simple-report', icon: MapPin, en: 'Quick Report', sw: 'Ripoti Haraka' },
+    { value: 'sms', icon: Phone, en: 'SMS/USSD', sw: 'SMS/USSD' },
+    { value: 'offline', icon: Wifi, en: 'Offline', sw: 'Bila Mtandao' },
+    { value: 'voting', icon: Users, en: 'Community', sw: 'Jamii' },
+    { value: 'bidding', icon: Briefcase, en: 'Contractors', sw: 'Wakandarasi' },
+    { value: 'government', icon: Shield, en: 'Government', sw: 'Serikali' }
+  ];
+
   return (
-    <TabsList className="grid w-full grid-cols-2 lg:grid-cols-7 h-auto p-1 bg-white shadow-lg rounded-lg">
-      <TabsTrigger value="overview" className="flex items-center space-x-2 data-[state=active]:bg-green-600 data-[state=active]:text-white">
-        <TrendingUp className="h-4 w-4" />
-        <span className="hidden sm:inline">{getText('Overview', 'Muhtasari')}</span>
-      </TabsTrigger>
-      <TabsTrigger value="simple-report" className="flex items-center space-x-2 data-[state=active]:bg-green-600 data-[state=active]:text-white">
-        <MapPin className="h-4 w-4" />
-        <span className="hidden sm:inline">{getText('Quick Report', 'Ripoti Haraka')}</span>
-      </TabsTrigger>
-      <TabsTrigger value="sms" className="flex items-center space-x-2 data-[state=active]:bg-green-600 data-[state=active]:text-white">
-        <Phone className="h-4 w-4" />
-        <span className="hidden sm:inline">{getText('SMS/USSD', 'SMS/USSD')}</span>
-      </TabsTrigger>
-      <TabsTrigger value="offline" className="flex items-center space-x-2 data-[state=active]:bg-green-600 data-[state=active]:text-white">
-        <Wifi className="h-4 w-4" />
-        <span className="hidden sm:inline">{getText('Offline', 'Bila Mtandao')}</span>
-      </TabsTrigger>
-      <TabsTrigger value="voting" className="flex items-center space-x-2 data-[state=active]:bg-green-600 data-[state=active]:text-white">
-        <Users className="h-4 w-4" />
-        <span className="hidden sm:inline">{getText('Community', 'Jamii')}</span>
-      </TabsTrigger>
-      <TabsTrigger value="bidding" className="flex items-center space-x-2 data-[state=active]:bg-green-600 data-[state=active]:text-white">
-        <Briefcase className="h-4 w-4" />
-        <span className="hidden sm:inline">{getText('Contractors', 'Wakandarasi')}</span>
-      </TabsTrigger>
-      <TabsTrigger value="government" className="flex items-center space-x-2 data-[state=active]:bg-green-600 data-[state=active]:text-white">
-        <Shield className="h-4 w-4" />
-        <span className="hidden sm:inline">{getText('Government', 'Serikali')}</span>
-      </TabsTrigger>
+    <TabsList 
+      className="grid w-full grid-cols-2 lg:grid-cols-7 h-auto p-1 bg-white shadow-lg rounded-lg"
+      role="tablist"
+      aria-label={getText('Main navigation tabs', 'Vikundi vya urambazaji mkuu')}
+    >
+      {tabs.map(({ value, icon: Icon, en, sw }) => (
+        <TabsTrigger 
+          key={value}
+          value={value} 
+          className="flex items-center space-x-2 data-[state=active]:bg-green-600 data-[state=active]:text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+          role="tab"
+          aria-label={getText(en, sw)}
+        >
+          <Icon className="h-4 w-4" aria-hidden="true" />
+          <span className="hidden sm:inline">{getText(en, sw)}</span>
+        </TabsTrigger>
+      ))}
     </TabsList>
   );
 };

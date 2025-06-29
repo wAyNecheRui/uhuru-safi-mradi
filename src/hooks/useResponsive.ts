@@ -37,3 +37,38 @@ export const useResponsive = (): BreakpointState => {
 
   return state;
 };
+
+// Enhanced responsive hook with accessibility considerations
+export const useAccessibleResponsive = () => {
+  const responsive = useResponsive();
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [prefersHighContrast, setPrefersHighContrast] = useState(false);
+
+  useEffect(() => {
+    const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const contrastQuery = window.matchMedia('(prefers-contrast: high)');
+
+    setPrefersReducedMotion(motionQuery.matches);
+    setPrefersHighContrast(contrastQuery.matches);
+
+    const handleMotionChange = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
+    const handleContrastChange = (e: MediaQueryListEvent) => setPrefersHighContrast(e.matches);
+
+    motionQuery.addEventListener('change', handleMotionChange);
+    contrastQuery.addEventListener('change', handleContrastChange);
+
+    return () => {
+      motionQuery.removeEventListener('change', handleMotionChange);
+      contrastQuery.removeEventListener('change', handleContrastChange);
+    };
+  }, []);
+
+  return {
+    ...responsive,
+    prefersReducedMotion,
+    prefersHighContrast,
+    // Accessibility-informed breakpoints
+    shouldUseSimpleAnimations: prefersReducedMotion || responsive.isMobile,
+    shouldUseHighContrast: prefersHighContrast,
+  };
+};
