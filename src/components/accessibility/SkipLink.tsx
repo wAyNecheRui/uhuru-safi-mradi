@@ -16,7 +16,7 @@ export const SkipLink = ({ href, children }: SkipLinkProps) => {
     >
       <a href={href} onClick={(e) => {
         e.preventDefault();
-        const target = document.querySelector(href);
+        const target = document.querySelector(href) as HTMLElement;
         if (target) {
           target.focus();
           target.scrollIntoView({ behavior: 'smooth' });
