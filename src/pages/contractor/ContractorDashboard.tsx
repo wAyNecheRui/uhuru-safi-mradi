@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,12 @@ import { useResponsive } from '@/hooks/useResponsive';
 
 const ContractorDashboard = () => {
   const { isMobile, isTablet } = useResponsive();
+  const [selectedCounty, setSelectedCounty] = useState('Nairobi');
+
+  const handleCountyChange = (county: string) => {
+    console.log('Contractor Dashboard - County changed to:', county);
+    setSelectedCounty(county);
+  };
 
   const quickActions = [
     {
@@ -62,8 +68,8 @@ const ContractorDashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
       <Header 
-        selectedCounty="Nairobi"
-        onCountyChange={() => {}}
+        selectedCounty={selectedCounty}
+        onCountyChange={handleCountyChange}
       />
       
       <main>
