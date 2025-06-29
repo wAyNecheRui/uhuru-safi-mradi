@@ -1,11 +1,18 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
 import ContractorVerificationSystem from '@/components/ContractorVerificationSystem';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
 
 const ContractorVerification = () => {
+  const [selectedCounty, setSelectedCounty] = useState('Nairobi');
+
+  const handleCountyChange = (county: string) => {
+    console.log('Contractor Verification - County changed to:', county);
+    setSelectedCounty(county);
+  };
+
   const breadcrumbItems = [
     { label: 'Home', href: '/' },
     { label: 'Contractor', href: '/contractor' },
@@ -15,8 +22,8 @@ const ContractorVerification = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <Header 
-        selectedCounty="Nairobi"
-        onCountyChange={() => {}}
+        selectedCounty={selectedCounty}
+        onCountyChange={handleCountyChange}
       />
       
       <main>

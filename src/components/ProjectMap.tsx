@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { MapPin, Wrench, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -8,7 +7,9 @@ interface ProjectMapProps {
 }
 
 const ProjectMap = ({ selectedCounty }: ProjectMapProps) => {
-  // Mock project data for map visualization
+  console.log('ProjectMap rendering for county:', selectedCounty);
+  
+  // Mock project data for map visualization - now using the selected county
   const projects = [
     {
       id: 1,
@@ -92,7 +93,7 @@ const ProjectMap = ({ selectedCounty }: ProjectMapProps) => {
       <div className="absolute inset-0 p-4">
         {projects.map((project, index) => (
           <div
-            key={project.id}
+            key={`${selectedCounty}-${project.id}`}
             className="absolute transform -translate-x-1/2 -translate-y-1/2 group cursor-pointer"
             style={{
               left: `${20 + (index * 15)}%`,

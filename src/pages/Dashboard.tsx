@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
@@ -25,6 +24,11 @@ const Dashboard = () => {
   const { isMobile } = useResponsive();
 
   const getText = (en: string) => en;
+
+  const handleCountyChange = (county: string) => {
+    console.log('County changed to:', county);
+    setSelectedCounty(county);
+  };
 
   // Mock data for demonstration
   const projectStats = {
@@ -70,7 +74,7 @@ const Dashboard = () => {
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
       <Header 
         selectedCounty={selectedCounty}
-        onCountyChange={setSelectedCounty}
+        onCountyChange={handleCountyChange}
       />
 
       <main>
