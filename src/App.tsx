@@ -15,12 +15,18 @@ import CitizenReportIssue from "./pages/citizen/CitizenReportIssue";
 import CitizenTrackReports from "./pages/citizen/CitizenTrackReports";
 import CitizenCommunityVoting from "./pages/citizen/CitizenCommunityVoting";
 import CitizenWorkforce from "./pages/citizen/CitizenWorkforce";
+import CitizenUSSD from "./pages/citizen/CitizenUSSD";
 import ContractorBidding from "./pages/contractor/ContractorBidding";
 import ContractorProjects from "./pages/contractor/ContractorProjects";
 import ContractorVerification from "./pages/contractor/ContractorVerification";
 import GovernmentProjects from "./pages/government/GovernmentProjects";
 import GovernmentReports from "./pages/government/GovernmentReports";
 import GovernmentEscrow from "./pages/government/GovernmentEscrow";
+import GovernmentVerification from "./pages/government/GovernmentVerification";
+import GovernmentPaymentTransparency from "./pages/government/GovernmentPaymentTransparency";
+import GovernmentBlockchain from "./pages/government/GovernmentBlockchain";
+import GovernmentEACC from "./pages/government/GovernmentEACC";
+import GovernmentBenchmarks from "./pages/government/GovernmentBenchmarks";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import ContractorDatabasePage from "./pages/ContractorDatabase";
@@ -47,6 +53,7 @@ const App = () => (
           <Route path="/citizen/track" element={<CitizenTrackReports />} />
           <Route path="/citizen/voting" element={<CitizenCommunityVoting />} />
           <Route path="/citizen/workforce" element={<CitizenWorkforce />} />
+          <Route path="/citizen/ussd" element={<CitizenUSSD />} />
           
           {/* Contractor Routes */}
           <Route path="/contractor" element={<ContractorDashboard />} />
@@ -59,6 +66,11 @@ const App = () => (
           <Route path="/government/projects" element={<GovernmentProjects />} />
           <Route path="/government/reports" element={<GovernmentReports />} />
           <Route path="/government/escrow" element={<GovernmentEscrow />} />
+          <Route path="/government/verification" element={<GovernmentVerification />} />
+          <Route path="/government/payments" element={<GovernmentPaymentTransparency />} />
+          <Route path="/government/blockchain" element={<GovernmentBlockchain />} />
+          <Route path="/government/eacc" element={<GovernmentEACC />} />
+          <Route path="/government/benchmarks" element={<GovernmentBenchmarks />} />
           
           {/* Catch-all route */}
           <Route path="*" element={<NotFound />} />
