@@ -29,11 +29,7 @@ const MobileNavigation = ({ onNavigate }: MobileNavigationProps) => {
 
   const menuItems = [
     { label: 'Home', path: '/' },
-    { label: 'Dashboard', path: '/dashboard' },
-    { label: 'Report Issue', path: '/report' },
-    { label: 'Track Reports', path: '/track' },
     { label: 'Contractors', path: '/contractor-database' },
-    { label: 'Community Voting', path: '/voting' },
     { label: 'About', path: '/about' },
     { label: 'Contact', path: '/contact' },
     { label: 'Sign In', path: '/auth' },
