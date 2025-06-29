@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
-import { Database, TrendingUp, MapPin, DollarSign, Users, Calendar, BarChart3, PieChart as PieChartIcon } from 'lucide-react';
+import { Database, TrendingUp, MapPin, DollarSign, Users, Calendar, BarChart3, PieChart as PieChartIcon, Shield } from 'lucide-react';
 
 const KenyaOpenDataIntegration = () => {
   const [selectedCounty, setSelectedCounty] = useState('Nairobi');
@@ -245,7 +245,7 @@ const KenyaOpenDataIntegration = () => {
                   <YAxis />
                   <Tooltip 
                     formatter={(value, name) => [
-                      name === 'budgetUtilization' ? `${value}%` : value,
+                      typeof name === 'string' && name.includes('Utilization') ? `${value}%` : value,
                       name === 'budgetUtilization' ? 'Budget Utilization' : 
                       name === 'citizenSatisfaction' ? 'Citizen Satisfaction' :
                       name === 'projectsCompleted' ? 'Projects Completed' : name
@@ -322,7 +322,7 @@ const KenyaOpenDataIntegration = () => {
                   <YAxis />
                   <Tooltip 
                     formatter={(value, name) => [
-                      name.includes('budget') ? `KES ${value}B` : value,
+                      typeof name === 'string' && name.includes('budget') ? `KES ${value}B` : value,
                       name === 'projectsCompleted' ? 'Projects Completed' :
                       name === 'budgetAllocated' ? 'Budget Allocated' :
                       'Budget Utilized'
@@ -420,7 +420,7 @@ const KenyaOpenDataIntegration = () => {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} />
                   <YAxis />
-                  <Tooltip formatter={(value) => [formatAmount(value), 'Budget Allocation']} />
+                  <Tooltip formatter={(value) => [formatAmount(Number(value)), 'Budget Allocation']} />
                   <Bar dataKey="amount" fill="#8884d8" />
                 </BarChart>
               </ResponsiveContainer>
