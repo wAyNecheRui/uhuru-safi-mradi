@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
@@ -22,12 +21,9 @@ import { useResponsive } from '@/hooks/useResponsive';
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedCounty, setSelectedCounty] = useState('Nairobi');
-  const [currentLanguage, setCurrentLanguage] = useState('en');
   const { isMobile } = useResponsive();
 
-  const getText = (en: string, sw: string = '') => {
-    return currentLanguage === 'sw' ? sw : en;
-  };
+  const getText = (en: string) => en;
 
   // Mock data for demonstration
   const projectStats = {
@@ -72,8 +68,8 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
       <Header 
-        currentLanguage={currentLanguage}
-        onLanguageChange={setCurrentLanguage}
+        currentLanguage="en"
+        onLanguageChange={() => {}}
         selectedCounty={selectedCounty}
         onCountyChange={setSelectedCounty}
         getText={getText}
@@ -94,7 +90,7 @@ const Dashboard = () => {
                   <CardHeader>
                     <CardTitle className="flex items-center text-lg sm:text-xl">
                       <MapPin className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-green-600" />
-                      {getText(`Project Map - ${selectedCounty}`, `Ramani ya Miradi - ${selectedCounty}`)}
+                      Project Map - {selectedCounty}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-0">

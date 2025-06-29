@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, FileText, Users, MapPin, Clock, CheckCircle } from 'lucide-react';
+import { AlertTriangle, FileText, Users, MapPin, Clock } from 'lucide-react';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
 import Header from '@/components/Header';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
