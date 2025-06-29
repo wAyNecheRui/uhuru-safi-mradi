@@ -302,7 +302,7 @@ const USSDIntegration = () => {
                   </div>
                   <div className="flex items-center justify-between">
                     <span>Response Time</span>
-                    <Badge className="bg-orange-100 text-orange-800">< 3 seconds</Badge>
+                    <Badge className="bg-orange-100 text-orange-800">&lt; 3 seconds</Badge>
                   </div>
                 </div>
               </div>
