@@ -22,7 +22,7 @@ const config: CapacitorConfig = {
       spinnerColor: "#999999"
     },
     StatusBar: {
-      style: "DARK"
+      style: "dark"
     },
     PushNotifications: {
       presentationOptions: ["badge", "sound", "alert"]

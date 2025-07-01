@@ -6,7 +6,7 @@ import './index.css';
 import { AuthProvider } from './contexts/AuthContext.tsx';
 import { Capacitor } from '@capacitor/core';
 import { SplashScreen } from '@capacitor/splash-screen';
-import { StatusBar } from '@capacitor/status-bar';
+import { StatusBar, Style } from '@capacitor/status-bar';
 
 // Initialize Capacitor plugins
 const initializeApp = async () => {
@@ -15,7 +15,7 @@ const initializeApp = async () => {
     await SplashScreen.hide();
     
     // Configure status bar
-    await StatusBar.setStyle({ style: 'DARK' });
+    await StatusBar.setStyle({ style: Style.Dark });
     
     console.log('Native platform initialized');
   } else {
