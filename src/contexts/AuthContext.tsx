@@ -18,6 +18,7 @@ const supabase = createClient(
 interface User {
   id: string;
   email: string;
+  name: string;
   user_type: 'citizen' | 'contractor' | 'government';
   profile?: {
     full_name?: string;
@@ -29,10 +30,13 @@ interface User {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  isAuthenticated: boolean;
   supabase: typeof supabase;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, userType: User['user_type']) => Promise<void>;
   signOut: () => Promise<void>;
+  login: (email: string, password: string, userType: User['user_type']) => Promise<void>;
+  register: (userData: any) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -56,6 +60,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser({
             id: session.user.id,
             email: session.user.email || '',
+            name: session.user.user_metadata?.name || session.user.email || '',
             user_type: 'citizen', // Default fallback
           });
         }
@@ -76,6 +81,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser({
           id: session.user.id,
           email: session.user.email || '',
+          name: session.user.user_metadata?.name || session.user.email || '',
           user_type: 'citizen', // Default fallback
         });
       } else {
@@ -114,13 +120,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Alias methods for compatibility
+  const login = async (email: string, password: string, userType: User['user_type']) => {
+    return signIn(email, password);
+  };
+
+  const register = async (userData: any) => {
+    return signUp(userData.email, userData.password, userData.type);
+  };
+
   const value = {
     user,
     loading,
+    isAuthenticated: !!user,
     supabase,
     signIn,
     signUp,
     signOut,
+    login,
+    register,
   };
 
   console.log('AuthProvider rendering with user:', user ? 'Present' : 'None', 'loading:', loading);

@@ -68,7 +68,7 @@ const ProblemReportingForm = () => {
         location: formData.location,
         priority: formData.priority as 'Low' | 'Medium' | 'High' | 'Critical',
         budget: formData.estimatedCost ? `KSh ${formData.estimatedCost}` : 'TBD',
-        reportedBy: user.name,
+        reportedBy: user.name || user.email,
         dateReported: new Date().toISOString().split('T')[0],
         category: formData.category,
         estimatedCost: formData.estimatedCost
