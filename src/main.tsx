@@ -8,10 +8,13 @@ import { Capacitor } from '@capacitor/core';
 import { SplashScreen } from '@capacitor/splash-screen';
 import { StatusBar, Style } from '@capacitor/status-bar';
 
+console.log('Main.tsx starting...');
+
 // Initialize Capacitor plugins with error handling
 const initializeApp = async () => {
   try {
     if (Capacitor.isNativePlatform()) {
+      console.log('Initializing native platform...');
       // Hide splash screen after app is ready
       await SplashScreen.hide();
       
@@ -33,13 +36,21 @@ initializeApp().catch(console.error);
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
+  console.error('Root element not found!');
   throw new Error('Root element not found');
 }
 
-createRoot(rootElement).render(
-  <StrictMode>
-    <AuthProvider>
-      <App />
-    </AuthProvider>
-  </StrictMode>,
-);
+console.log('Root element found, starting React app...');
+
+try {
+  createRoot(rootElement).render(
+    <StrictMode>
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    </StrictMode>,
+  );
+  console.log('React app rendered successfully');
+} catch (error) {
+  console.error('Error rendering React app:', error);
+}
