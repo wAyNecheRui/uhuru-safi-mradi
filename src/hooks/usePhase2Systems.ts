@@ -1,244 +1,129 @@
 
-import { useState, useEffect } from 'react';
-import { EscrowService, EscrowAccount, ProjectMilestone, PaymentTransaction } from '@/services/EscrowService';
-import { BlockchainService, BlockchainTransaction, SmartContract } from '@/services/BlockchainService';
-import { VerificationService, VerificationRecord } from '@/services/VerificationService';
+import { useState, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
+
+// Simple types to avoid import issues
+interface EscrowAccount {
+  id: string;
+  project_id: string;
+  total_amount: number;
+  held_amount: number;
+  status: string;
+}
+
+interface VerificationResult {
+  id: string;
+  user_id: string;
+  verification_type: string;
+  status: string;
+  verified_at?: string;
+}
 
 export const usePhase2Systems = () => {
-  const [escrowAccounts, setEscrowAccounts] = useState<EscrowAccount[]>([]);
-  const [verificationRecords, setVerificationRecords] = useState<VerificationRecord[]>([]);
-  const [blockchainTransactions, setBlockchainTransactions] = useState<BlockchainTransaction[]>([]);
+  const { user, supabase } = useAuth();
+  const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  
-  const { user, isAuthenticated } = useAuth();
-  const { toast } = useToast();
 
-  // Escrow System Functions
-  const createEscrowAccount = async (projectData: {
-    project_id: string;
-    total_amount: number;
-    milestones: Omit<ProjectMilestone, 'id' | 'escrow_account_id'>[];
-  }) => {
-    if (!isAuthenticated) {
-      toast({
-        title: "Authentication Required",
-        description: "Please log in to create an escrow account.",
-        variant: "destructive"
-      });
-      return null;
-    }
-
-    setLoading(true);
-    try {
-      const escrowAccount = await EscrowService.createEscrowAccount(projectData);
-      toast({
-        title: "Success",
-        description: "Escrow account created successfully!",
-      });
-      return escrowAccount;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to create escrow account';
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive"
-      });
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const initiatePayment = async (paymentData: {
-    escrow_account_id: string;
-    amount: number;
-    phone_number: string;
-    payment_method: 'mpesa' | 'bank_transfer';
-  }) => {
-    if (!isAuthenticated) {
-      toast({
-        title: "Authentication Required",
-        description: "Please log in to initiate payment.",
-        variant: "destructive"
-      });
-      return null;
-    }
-
-    try {
-      const transaction = await EscrowService.initiatePayment(paymentData);
-      toast({
-        title: "Payment Initiated",
-        description: `Payment of KES ${paymentData.amount.toLocaleString()} initiated successfully!`,
-      });
-      return transaction;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to initiate payment';
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive"
-      });
-      return null;
-    }
-  };
-
-  // Blockchain System Functions
-  const createBlockchainRecord = async (projectData: {
-    project_id: string;
-    record_type: string;
-    data: any;
-  }) => {
-    if (!isAuthenticated) {
-      toast({
-        title: "Authentication Required",
-        description: "Please log in to create blockchain records.",
-        variant: "destructive"
-      });
-      return null;
-    }
-
-    try {
-      const transaction = await BlockchainService.createProjectRecord(projectData);
-      toast({
-        title: "Blockchain Record Created",
-        description: "Project record successfully stored on blockchain!",
-      });
-      return transaction;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to create blockchain record';
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive"
-      });
-      return null;
-    }
-  };
-
-  // Verification System Functions
-  const verifyKRAPin = async (pinData: {
-    pin_number: string;
-    taxpayer_name: string;
-  }) => {
-    if (!isAuthenticated) {
-      toast({
-        title: "Authentication Required",
-        description: "Please log in to verify KRA PIN.",
-        variant: "destructive"
-      });
-      return null;
-    }
-
-    setLoading(true);
-    try {
-      const verification = await VerificationService.verifyKRAPin(pinData);
-      toast({
-        title: "KRA PIN Verification",
-        description: verification.status === 'verified' 
-          ? "KRA PIN verified successfully!"
-          : "KRA PIN verification failed.",
-        variant: verification.status === 'verified' ? "default" : "destructive"
+  // Escrow Operations
+  const createEscrowAccount = useMutation({
+    mutationFn: async (projectData: {
+      project_id: string;
+      total_amount: number;
+      milestones: any[];
+    }) => {
+      const { data, error } = await supabase.functions.invoke('create-escrow-account', {
+        body: projectData
       });
       
-      if (user) {
-        await fetchUserVerifications(user.id);
-      }
-      
-      return verification;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to verify KRA PIN';
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive"
-      });
-      return null;
-    } finally {
-      setLoading(false);
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      toast.success('Escrow account created successfully');
+      queryClient.invalidateQueries({ queryKey: ['escrowAccounts'] });
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to create escrow account: ${error.message}`);
     }
-  };
+  });
 
-  const verifyEACCClearance = async (clearanceData: {
-    clearance_number: string;
-    id_number: string;
-    verification_code: string;
-  }) => {
-    if (!isAuthenticated) {
-      toast({
-        title: "Authentication Required",
-        description: "Please log in to verify EACC clearance.",
-        variant: "destructive"
-      });
-      return null;
-    }
-
-    setLoading(true);
-    try {
-      const verification = await VerificationService.verifyEACCClearance(clearanceData);
-      toast({
-        title: "EACC Clearance Verification",
-        description: verification.status === 'verified' 
-          ? "EACC clearance verified successfully!"
-          : "EACC clearance verification failed.",
-        variant: verification.status === 'verified' ? "default" : "destructive"
+  // Payment Operations
+  const initiatePayment = useMutation({
+    mutationFn: async (paymentData: {
+      escrow_account_id: string;
+      amount: number;
+      phone_number: string;
+      payment_method: string;
+    }) => {
+      const { data, error } = await supabase.functions.invoke('initiate-payment', {
+        body: paymentData
       });
       
-      if (user) {
-        await fetchUserVerifications(user.id);
-      }
-      
-      return verification;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to verify EACC clearance';
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive"
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      toast.success('Payment initiated successfully');
+      queryClient.invalidateQueries({ queryKey: ['payments'] });
+    },
+    onError: (error: any) => {
+      toast.error(`Payment failed: ${error.message}`);
+    }
+  });
+
+  // Verification Operations
+  const verifyKRAPin = useMutation({
+    mutationFn: async (pinData: { pin: string; user_id: string }) => {
+      const { data, error } = await supabase.functions.invoke('verify-kra-pin', {
+        body: pinData
       });
-      return null;
-    } finally {
-      setLoading(false);
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      toast.success('KRA PIN verified successfully');
+      queryClient.invalidateQueries({ queryKey: ['verifications'] });
+    },
+    onError: (error: any) => {
+      toast.error(`KRA verification failed: ${error.message}`);
     }
-  };
+  });
 
-  // Fetch user verifications
-  const fetchUserVerifications = async (userId: string) => {
-    try {
-      const verifications = await VerificationService.getUserVerifications(userId);
-      setVerificationRecords(verifications);
-    } catch (err) {
-      console.error('Error fetching verifications:', err);
-    }
-  };
-
-  // Initialize data on component mount
-  useEffect(() => {
-    if (user) {
-      fetchUserVerifications(user.id);
-    }
-  }, [user]);
+  // Get user verifications
+  const { data: verifications = [] } = useQuery({
+    queryKey: ['verifications', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      
+      const { data, error } = await supabase
+        .from('user_verifications')
+        .select('*')
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id
+  });
 
   return {
-    // State
-    escrowAccounts,
-    verificationRecords,
-    blockchainTransactions,
-    loading,
-    error,
+    // Escrow
+    createEscrowAccount: createEscrowAccount.mutate,
+    isCreatingEscrow: createEscrowAccount.isPending,
     
-    // Escrow functions
-    createEscrowAccount,
-    initiatePayment,
+    // Payments
+    initiatePayment: initiatePayment.mutate,
+    isInitiatingPayment: initiatePayment.isPending,
     
-    // Blockchain functions
-    createBlockchainRecord,
+    // Verification
+    verifyKRAPin: verifyKRAPin.mutate,
+    isVerifyingKRA: verifyKRAPin.isPending,
+    verifications,
     
-    // Verification functions
-    verifyKRAPin,
-    verifyEACCClearance,
-    fetchUserVerifications
+    // General
+    loading
   };
 };
