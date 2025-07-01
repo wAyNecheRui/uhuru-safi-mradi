@@ -1,5 +1,11 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY
+);
 
 export interface User {
   id: string;
@@ -19,6 +25,7 @@ interface AuthContextType {
   register: (userData: Partial<User> & { password: string; confirmPassword: string }) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
+  supabase: typeof supabase;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -39,36 +46,67 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    // Check for existing auth on app load
-    const savedAuth = localStorage.getItem('userAuth');
-    if (savedAuth) {
-      try {
-        const userData = JSON.parse(savedAuth);
-        if (userData.isAuthenticated) {
-          setUser(userData);
-        }
-      } catch (error) {
-        console.error('Failed to parse stored auth data:', error);
-        localStorage.removeItem('userAuth');
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        fetchUserProfile(session.user.id);
       }
-    }
+    });
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        await fetchUserProfile(session.user.id);
+      } else {
+        setUser(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const login = async (email: string, password: string, userType: string) => {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const userData: User = {
-      id: Date.now().toString(),
-      name: email.split('@')[0], // Simple name derivation
-      email,
-      type: userType as 'citizen' | 'contractor' | 'government',
-      isVerified: false,
-      registrationDate: new Date().toISOString()
-    };
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
 
-    setUser(userData);
-    localStorage.setItem('userAuth', JSON.stringify({ ...userData, isAuthenticated: true }));
+      if (error) {
+        console.error('Error fetching user profile:', error);
+        return;
+      }
+
+      if (data) {
+        setUser({
+          id: data.id,
+          name: data.name,
+          email: data.email,
+          type: data.user_type,
+          phone: data.phone,
+          organization: data.organization,
+          skills: data.skills,
+          isVerified: data.is_verified,
+          registrationDate: data.registration_date
+        });
+      }
+    } catch (error) {
+      console.error('Error in fetchUserProfile:', error);
+    }
+  };
+
+  const login = async (email: string, password: string, userType: string) => {
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      throw new Error(error.message);
+    }
   };
 
   const register = async (userData: Partial<User> & { password: string; confirmPassword: string }) => {
@@ -76,30 +114,40 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       throw new Error('Passwords do not match');
     }
 
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    // Create auth user
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email: userData.email!,
+      password: userData.password,
+    });
 
-    const newUser: User = {
-      id: Date.now().toString(),
-      name: userData.name || '',
-      email: userData.email || '',
-      type: userData.type || 'citizen',
-      phone: userData.phone,
-      organization: userData.organization,
-      skills: userData.skills,
-      isVerified: false,
-      registrationDate: new Date().toISOString()
-    };
+    if (authError) {
+      throw new Error(authError.message);
+    }
 
-    setUser(newUser);
-    localStorage.setItem('userAuth', JSON.stringify({ ...newUser, isAuthenticated: true }));
-    localStorage.setItem('userProfile', JSON.stringify(newUser));
+    if (authData.user) {
+      // Create user profile
+      const { error: profileError } = await supabase
+        .from('user_profiles')
+        .insert({
+          id: authData.user.id,
+          name: userData.name!,
+          email: userData.email!,
+          phone: userData.phone,
+          location: userData.location,
+          user_type: userData.type!,
+          organization: userData.organization,
+          skills: userData.skills,
+        });
+
+      if (profileError) {
+        throw new Error(profileError.message);
+      }
+    }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    await supabase.auth.signOut();
     setUser(null);
-    localStorage.removeItem('userAuth');
-    localStorage.removeItem('userProfile');
   };
 
   const value = {
@@ -107,7 +155,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     login,
     register,
     logout,
-    isAuthenticated: !!user
+    isAuthenticated: !!user,
+    supabase
   };
 
   return (
