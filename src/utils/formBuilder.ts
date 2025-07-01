@@ -19,8 +19,8 @@ export interface FormFieldConfig {
   validation?: {
     minLength?: number;
     maxLength?: number;
-    pattern?: string;
-    custom?: string; // Function name for custom validation
+    pattern?: RegExp;
+    custom?: (value: any) => string | null;
   };
 }
 
@@ -53,18 +53,11 @@ export class FormBuilder {
       if (fieldConfig.validation || fieldConfig.required) {
         field.validation = {
           required: fieldConfig.required,
-          ...fieldConfig.validation
+          minLength: fieldConfig.validation?.minLength,
+          maxLength: fieldConfig.validation?.maxLength,
+          pattern: fieldConfig.validation?.pattern,
+          custom: fieldConfig.validation?.custom
         };
-
-        // Convert pattern string to RegExp
-        if (fieldConfig.validation?.pattern) {
-          field.validation.pattern = new RegExp(fieldConfig.validation.pattern);
-        }
-
-        // Add custom validator if specified
-        if (fieldConfig.validation?.custom && this.customValidators[fieldConfig.validation.custom]) {
-          field.validation.custom = this.customValidators[fieldConfig.validation.custom];
-        }
       }
 
       return field;
