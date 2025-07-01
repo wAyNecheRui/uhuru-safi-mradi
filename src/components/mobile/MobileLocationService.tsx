@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { MapPin, Loader2, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useNativeFeatures } from '@/hooks/useNativeFeatures';
 
 interface LocationData {
   latitude: number;
@@ -25,31 +26,23 @@ export const MobileLocationService = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { getCurrentLocation, isNative } = useNativeFeatures();
 
   const requestLocation = async () => {
-    if (!navigator.geolocation) {
-      setError('Geolocation is not supported by this browser');
-      return;
-    }
-
     setLoading(true);
     setError(null);
 
-    const options = {
-      enableHighAccuracy: true,
-      timeout: 10000,
-      maximumAge: 300000 // 5 minutes
-    };
-
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
+    try {
+      const position = await getCurrentLocation();
+      
+      if (position) {
         const locationData: LocationData = {
           latitude: position.coords.latitude,
           longitude: position.coords.longitude,
           accuracy: position.coords.accuracy
         };
 
-        // Try to get address from coordinates
+        // Try to get address from coordinates (reverse geocoding)
         try {
           const response = await fetch(
             `https://api.openstreetmap.org/reverse?format=json&lat=${locationData.latitude}&lon=${locationData.longitude}`
@@ -62,38 +55,25 @@ export const MobileLocationService = ({
 
         setLocation(locationData);
         onLocationUpdate(locationData);
-        setLoading(false);
         
         toast({
           title: "Location Updated",
-          description: "Your current location has been captured."
+          description: `${isNative ? 'Native GPS' : 'Web GPS'} location captured successfully.`
         });
-      },
-      (error) => {
-        setLoading(false);
-        let errorMessage = 'Unknown location error';
-        
-        switch (error.code) {
-          case error.PERMISSION_DENIED:
-            errorMessage = 'Location access denied by user';
-            break;
-          case error.POSITION_UNAVAILABLE:
-            errorMessage = 'Location information unavailable';
-            break;
-          case error.TIMEOUT:
-            errorMessage = 'Location request timed out';
-            break;
-        }
-        
-        setError(errorMessage);
-        toast({
-          title: "Location Error",
-          description: errorMessage,
-          variant: "destructive"
-        });
-      },
-      options
-    );
+      } else {
+        throw new Error('Unable to get location');
+      }
+    } catch (error: any) {
+      const errorMessage = error.message || 'Unknown location error';
+      setError(errorMessage);
+      toast({
+        title: "Location Error",
+        description: errorMessage,
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -115,7 +95,7 @@ export const MobileLocationService = ({
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold flex items-center">
             <MapPin className="h-4 w-4 mr-2" />
-            Current Location
+            {isNative ? 'Native GPS Location' : 'Current Location'}
           </h3>
           <Button
             onClick={requestLocation}
@@ -172,18 +152,15 @@ export const MobileLocationService = ({
 };
 
 export const useLocationService = () => {
+  const { getCurrentLocation } = useNativeFeatures();
   const [location, setLocation] = useState<LocationData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const getCurrentLocation = (): Promise<LocationData> => {
-    return new Promise((resolve, reject) => {
-      if (!navigator.geolocation) {
-        reject(new Error('Geolocation not supported'));
-        return;
-      }
-
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
+  const getCurrentLocationData = async (): Promise<LocationData> => {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const position = await getCurrentLocation();
+        if (position) {
           const locationData: LocationData = {
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
@@ -191,23 +168,19 @@ export const useLocationService = () => {
           };
           setLocation(locationData);
           resolve(locationData);
-        },
-        (error) => {
-          setError(error.message);
-          reject(error);
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 300000
+        } else {
+          throw new Error('Unable to get location');
         }
-      );
+      } catch (error: any) {
+        setError(error.message);
+        reject(error);
+      }
     });
   };
 
   return {
     location,
     error,
-    getCurrentLocation
+    getCurrentLocation: getCurrentLocationData
   };
 };
