@@ -13,6 +13,7 @@ export interface User {
   email: string;
   type: 'citizen' | 'contractor' | 'government';
   phone?: string;
+  location?: string;
   organization?: string;
   skills?: string;
   isVerified: boolean;
@@ -87,6 +88,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           email: data.email,
           type: data.user_type,
           phone: data.phone,
+          location: data.location,
           organization: data.organization,
           skills: data.skills,
           isVerified: data.is_verified,
