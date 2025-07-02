@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,7 +20,6 @@ interface ProblemReport {
   id: string;
   title: string;
   description: string;
-  category: string;
   priority: string;
   location: string;
   photo_urls?: string[];
@@ -47,31 +45,26 @@ const CommunityValidation = () => {
     try {
       const { data, error } = await supabase
         .from('problem_reports')
-        .select(`
-          *,
-          user_profiles!reported_by (
-            full_name
-          )
-        `)
+        .select('*')
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
       // For each report, get vote counts and user's vote
-      const reportsWithVotes = await Promise.all(
-        (data || []).map(async (report) => {
-          // Simulate vote counts since we don't have community_votes table yet
-          const voteCount = Math.floor(Math.random() * 20) + 1;
-          
-          return {
-            ...report,
-            vote_count: voteCount,
-            user_vote: null,
-            reporter_name: report.user_profiles?.full_name || 'Anonymous'
-          };
-        })
-      );
+      const reportsWithVotes = (data || []).map((report) => {
+        // Simulate vote counts since we don't have community_votes table yet
+        const voteCount = Math.floor(Math.random() * 20) + 1;
+        
+        return {
+          ...report,
+          vote_count: voteCount,
+          user_vote: null,
+          reporter_name: 'Anonymous', // Since we don't have user profiles joined
+          priority: report.priority || 'medium',
+          location: report.location || 'Location not specified'
+        };
+      });
 
       setReports(reportsWithVotes);
     } catch (error: any) {
@@ -211,7 +204,6 @@ const CommunityValidation = () => {
                           <Badge className={getPriorityColor(report.priority)}>
                             {report.priority.toUpperCase()}
                           </Badge>
-                          <Badge variant="outline">{report.category}</Badge>
                           <Badge variant="outline" className="text-xs">
                             ID: {report.id.substring(0, 8)}
                           </Badge>

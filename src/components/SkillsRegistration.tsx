@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,13 +19,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
-interface SkillCategory {
-  id: string;
-  name: string;
-  skills: string[];
-}
-
-const skillCategories: SkillCategory[] = [
+const skillCategories = [
   {
     id: 'construction',
     name: 'Construction & Masonry',
@@ -163,7 +156,6 @@ const SkillsRegistration = () => {
         full_name: formData.fullName,
         phone_number: formData.phoneNumber,
         location: formData.location,
-        organization: formData.organization,
         user_type: 'skilled_worker',
         years_experience: parseInt(formData.yearsExperience) || 0,
         certifications: formData.certifications,
