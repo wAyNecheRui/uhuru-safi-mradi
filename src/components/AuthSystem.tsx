@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, Loader2 } from 'lucide-react';
+import { Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import LoginForm from './auth/LoginForm';
@@ -57,10 +57,11 @@ const AuthSystem = () => {
       setTimeout(() => {
         navigate(`/${formData.type}`);
       }, 1000);
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Login error:', error);
       toast({
         title: "Login Failed",
-        description: "Invalid credentials. Please try again.",
+        description: error.message || "Invalid credentials. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -80,22 +81,41 @@ const AuthSystem = () => {
       return;
     }
 
+    if (formData.password !== formData.confirmPassword) {
+      toast({
+        title: "Password Mismatch",
+        description: "Passwords do not match. Please try again.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      toast({
+        title: "Password Too Short",
+        description: "Password must be at least 6 characters long.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
       await register(formData);
       
       toast({
         title: "Registration Successful",
-        description: `Welcome ${formData.name}! Your ${formData.type} account has been created.`,
+        description: `Welcome ${formData.name}! Your ${formData.type} account has been created. Please check your email to verify your account.`,
       });
 
-      setTimeout(() => {
-        navigate(`/${formData.type}`);
-      }, 1000);
-    } catch (error) {
+      // Switch to login tab after successful registration
+      setActiveTab('login');
+      setFormData(prev => ({ ...prev, password: '', confirmPassword: '' }));
+    } catch (error: any) {
+      console.error('Registration error:', error);
       toast({
         title: "Registration Failed",
-        description: error instanceof Error ? error.message : "Please try again.",
+        description: error.message || "Please try again.",
         variant: "destructive"
       });
     } finally {

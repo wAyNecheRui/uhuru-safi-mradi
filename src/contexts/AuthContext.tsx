@@ -1,21 +1,11 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
+import type { User, Session } from '@supabase/supabase-js';
 
 console.log('AuthContext loading...');
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-console.log('Supabase URL:', supabaseUrl ? 'Present' : 'Missing');
-console.log('Supabase Anon Key:', supabaseAnonKey ? 'Present' : 'Missing');
-
-const supabase = createClient(
-  supabaseUrl || 'https://placeholder.supabase.co',
-  supabaseAnonKey || 'placeholder-key'
-);
-
-interface User {
+interface AuthUser {
   id: string;
   email: string;
   name: string;
@@ -28,21 +18,22 @@ interface User {
 }
 
 interface AuthContextType {
-  user: User | null;
+  user: AuthUser | null;
   loading: boolean;
   isAuthenticated: boolean;
   supabase: typeof supabase;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, userType: User['user_type']) => Promise<void>;
+  signUp: (email: string, password: string, userType: AuthUser['user_type']) => Promise<void>;
   signOut: () => Promise<void>;
-  login: (email: string, password: string, userType: User['user_type']) => Promise<void>;
+  login: (email: string, password: string, userType: AuthUser['user_type']) => Promise<void>;
   register: (userData: any) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
   console.log('AuthProvider initializing...');
@@ -50,18 +41,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     console.log('AuthProvider useEffect running...');
     
-    // Check active sessions and sets the user
-    const getSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        console.log('Session check:', session ? 'Found' : 'None');
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        console.log('Auth state changed:', event, session ? 'User present' : 'No user');
         
+        setSession(session);
         if (session?.user) {
           setUser({
             id: session.user.id,
             email: session.user.email || '',
             name: session.user.user_metadata?.name || session.user.email || '',
-            user_type: 'citizen', // Default fallback
+            user_type: session.user.user_metadata?.user_type || 'citizen',
+          });
+        } else {
+          setUser(null);
+        }
+        setLoading(false);
+      }
+    );
+
+    // THEN check for existing session
+    const getSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        console.log('Session check:', session ? 'Found' : 'None');
+        
+        setSession(session);
+        if (session?.user) {
+          setUser({
+            id: session.user.id,
+            email: session.user.email || '',
+            name: session.user.user_metadata?.name || session.user.email || '',
+            user_type: session.user.user_metadata?.user_type || 'citizen',
           });
         }
       } catch (error) {
@@ -72,23 +84,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     getSession();
-
-    // Listen for changes on auth state
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      console.log('Auth state changed:', _event, session ? 'User present' : 'No user');
-      
-      if (session?.user) {
-        setUser({
-          id: session.user.id,
-          email: session.user.email || '',
-          name: session.user.user_metadata?.name || session.user.email || '',
-          user_type: 'citizen', // Default fallback
-        });
-      } else {
-        setUser(null);
-      }
-      setLoading(false);
-    });
 
     return () => subscription.unsubscribe();
   }, []);
@@ -102,9 +97,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signUp = async (email: string, password: string, userType: User['user_type']) => {
+  const signUp = async (email: string, password: string, userType: AuthUser['user_type']) => {
     console.log('Sign up attempt for:', email, 'as', userType);
-    const { error } = await supabase.auth.signUp({ email, password });
+    
+    const redirectUrl = `${window.location.origin}/`;
+    
+    const { error } = await supabase.auth.signUp({ 
+      email, 
+      password,
+      options: {
+        emailRedirectTo: redirectUrl,
+        data: {
+          user_type: userType
+        }
+      }
+    });
+    
     if (error) {
       console.error('Sign up error:', error);
       throw error;
@@ -121,7 +129,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   // Alias methods for compatibility
-  const login = async (email: string, password: string, userType: User['user_type']) => {
+  const login = async (email: string, password: string, userType: AuthUser['user_type']) => {
     return signIn(email, password);
   };
 
