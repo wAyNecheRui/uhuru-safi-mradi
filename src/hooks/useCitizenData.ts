@@ -7,15 +7,12 @@ export interface CitizenReport {
   id: string;
   title: string;
   description: string;
-  category: string;
   priority: string;
   location: string;
   status: string;
   created_at: string;
   updated_at: string;
-  coordinates?: string;
-  estimated_cost?: number;
-  affected_population?: number;
+  reported_by: string;
 }
 
 export interface CitizenStats {
@@ -81,13 +78,7 @@ export const useCitizenData = () => {
           .select('status')
           .eq('reported_by', user.id);
         
-        // Get community votes count
-        const { data: votes } = await supabase
-          .from('community_votes')
-          .select('id')
-          .eq('user_id', user.id);
-        
-        // Get verification status
+        // Get verification status from user_verifications table
         const { data: verifications } = await supabase
           .from('user_verifications')
           .select('status')
@@ -96,10 +87,12 @@ export const useCitizenData = () => {
         
         const totalReports = reports?.length || 0;
         const activeReports = reports?.filter(r => 
-          ['pending', 'under_review', 'in_progress'].includes(r.status)
+          ['pending', 'under_review', 'in_progress'].includes(r.status || '')
         ).length || 0;
         const completedReports = reports?.filter(r => r.status === 'completed').length || 0;
-        const communityVotes = votes?.length || 0;
+        
+        // For now, set community votes to 0 since we don't have this table yet
+        const communityVotes = 0;
         
         const verificationStatus = verifications?.some(v => v.status === 'verified') 
           ? 'verified' 
@@ -124,22 +117,18 @@ export const useCitizenData = () => {
     staleTime: 10 * 60 * 1000, // 10 minutes
   });
 
-  // Submit a vote on a report
+  // Submit a vote on a report (placeholder functionality)
   const submitVote = useMutation({
     mutationFn: async ({ reportId, voteType }: { reportId: string; voteType: 'upvote' | 'downvote' }) => {
       if (!user?.id) throw new Error('User not authenticated');
       
-      const { data, error } = await supabase.functions.invoke('vote-report', {
-        body: { reportId, voteType }
-      });
-      
-      if (error) throw error;
-      return data;
+      // For now, just simulate the vote since we don't have community_votes table
+      console.log('Vote submitted:', { reportId, voteType, userId: user.id });
+      return { success: true };
     },
     onSuccess: () => {
       toast.success('Vote submitted successfully');
       queryClient.invalidateQueries({ queryKey: ['citizenStats', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['communityVotes'] });
     },
     onError: (error: any) => {
       toast.error(`Failed to submit vote: ${error.message}`);

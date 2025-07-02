@@ -288,14 +288,11 @@ const CitizenDashboard = () => {
                         </Badge>
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        <Badge className={`text-xs ${getStatusColor(report.status)}`}>
-                          {report.status.replace('_', ' ').toUpperCase()}
+                        <Badge className={`text-xs ${getStatusColor(report.status || 'pending')}`}>
+                          {(report.status || 'pending').replace('_', ' ').toUpperCase()}
                         </Badge>
-                        <Badge className={`text-xs ${getPriorityColor(report.priority)}`}>
-                          {report.priority.toUpperCase()} Priority
-                        </Badge>
-                        <Badge variant="outline" className="text-xs">
-                          {report.category}
+                        <Badge className={`text-xs ${getPriorityColor(report.priority || 'medium')}`}>
+                          {(report.priority || 'medium').toUpperCase()} Priority
                         </Badge>
                       </div>
                     </div>
