@@ -1,106 +1,161 @@
 
-import { useState } from 'react';
-import { useToast } from '@/hooks/use-toast';
+import { useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 import { ReportData } from '@/types/problemReporting';
 
 export const useProblemReporting = () => {
+  const navigate = useNavigate();
+  const { user, supabase } = useAuth();
+  
   const [reportData, setReportData] = useState<ReportData>({
     title: '',
-    category: 'roads',
+    category: '',
     description: '',
     location: '',
     coordinates: '',
-    priority: 'medium',
+    priority: '',
     photos: [],
     estimatedCost: '',
     affectedPopulation: ''
   });
-  const { toast } = useToast();
 
-  const handleInputChange = (field: keyof ReportData, value: string | File[]) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleInputChange = useCallback((field: keyof ReportData, value: string) => {
     setReportData(prev => ({ ...prev, [field]: value }));
-  };
+  }, []);
 
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const newFiles = Array.from(e.target.files);
-      setReportData(prev => ({ ...prev, photos: [...prev.photos, ...newFiles] }));
+  const handlePhotoUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length + reportData.photos.length > 10) {
+      toast.error('Maximum 10 photos/videos allowed');
+      return;
     }
-  };
+    
+    setReportData(prev => ({ ...prev, photos: [...prev.photos, ...files] }));
+    toast.success(`${files.length} file(s) added successfully`);
+  }, [reportData.photos.length]);
 
-  const getCurrentLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const coords = `${position.coords.latitude}, ${position.coords.longitude}`;
-          setReportData(prev => ({ ...prev, coordinates: coords }));
-          toast({
-            title: "Location captured",
-            description: "GPS coordinates have been recorded.",
-          });
-        },
-        (error) => {
-          toast({
-            title: "Location Error",
-            description: "Unable to get your location. Please enter manually.",
-            variant: "destructive"
-          });
-        }
-      );
-    }
-  };
-
-  const submitReport = () => {
-    if (!reportData.title || !reportData.description || !reportData.location) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields.",
-        variant: "destructive"
-      });
+  const getCurrentLocation = useCallback(() => {
+    if (!navigator.geolocation) {
+      toast.error('GPS not supported on this device');
       return;
     }
 
-    // Generate report ID
-    const reportId = `RPT-${Date.now().toString().slice(-6)}`;
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        const coordinates = `${latitude}, ${longitude}`;
+        setReportData(prev => ({ ...prev, coordinates }));
+        toast.success('GPS location captured successfully');
+      },
+      (error) => {
+        console.error('GPS Error:', error);
+        toast.error('Unable to get GPS location. Please enter manually.');
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }, []);
+
+  const submitReport = useCallback(async () => {
+    if (!user) {
+      toast.error('Please log in to submit a report');
+      navigate('/auth');
+      return;
+    }
+
+    // Validation
+    const requiredFields = ['title', 'category', 'description', 'location'];
+    const missingFields = requiredFields.filter(field => !reportData[field as keyof ReportData]);
     
-    // Create report object
-    const report = {
-      ...reportData,
-      id: reportId,
-      submissionDate: new Date().toISOString(),
-      status: 'pending',
-      reporterInfo: JSON.parse(localStorage.getItem('userAuth') || '{}')
-    };
+    if (missingFields.length > 0) {
+      toast.error(`Please fill in: ${missingFields.join(', ')}`);
+      return;
+    }
 
-    // Save to localStorage (in real app, this would go to database)
-    const existingReports = JSON.parse(localStorage.getItem('userReports') || '[]');
-    existingReports.push(report);
-    localStorage.setItem('userReports', JSON.stringify(existingReports));
+    setIsSubmitting(true);
 
-    toast({
-      title: "Report Submitted",
-      description: `Your report ${reportId} has been submitted successfully. You can track its progress in your dashboard.`,
-    });
+    try {
+      // Upload photos first if any
+      const photoUrls: string[] = [];
+      
+      if (reportData.photos.length > 0) {
+        for (const photo of reportData.photos) {
+          const fileExt = photo.name.split('.').pop();
+          const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+          const filePath = `problem-reports/${fileName}`;
 
-    // Reset form
-    setReportData({
-      title: '',
-      category: 'roads',
-      description: '',
-      location: '',
-      coordinates: '',
-      priority: 'medium',
-      photos: [],
-      estimatedCost: '',
-      affectedPopulation: ''
-    });
-  };
+          const { error: uploadError } = await supabase.storage
+            .from('report-files')
+            .upload(filePath, photo);
+
+          if (uploadError) {
+            console.error('Photo upload error:', uploadError);
+            toast.error(`Failed to upload ${photo.name}`);
+          } else {
+            const { data: { publicUrl } } = supabase.storage
+              .from('report-files')
+              .getPublicUrl(filePath);
+            photoUrls.push(publicUrl);
+          }
+        }
+      }
+
+      // Submit the report
+      const { data, error } = await supabase
+        .from('problem_reports')
+        .insert({
+          title: reportData.title,
+          description: reportData.description,
+          category: reportData.category,
+          priority: reportData.priority || 'medium',
+          location: reportData.location,
+          coordinates: reportData.coordinates,
+          estimated_cost: reportData.estimatedCost ? parseFloat(reportData.estimatedCost) : null,
+          affected_population: reportData.affectedPopulation ? parseInt(reportData.affectedPopulation) : null,
+          photo_urls: photoUrls,
+          reported_by: user.id,
+          status: 'pending'
+        })
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      toast.success('Problem report submitted successfully!');
+      
+      // Reset form
+      setReportData({
+        title: '',
+        category: '',
+        description: '',
+        location: '',
+        coordinates: '',
+        priority: '',
+        photos: [],
+        estimatedCost: '',
+        affectedPopulation: ''
+      });
+
+      navigate('/citizen/track');
+    } catch (error: any) {
+      console.error('Submit error:', error);
+      toast.error(`Failed to submit report: ${error.message}`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [reportData, user, supabase, navigate]);
 
   return {
     reportData,
     handleInputChange,
     handlePhotoUpload,
     getCurrentLocation,
-    submitReport
+    submitReport,
+    isSubmitting
   };
 };
