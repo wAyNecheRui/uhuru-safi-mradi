@@ -9,7 +9,158 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      problem_reports: {
+        Row: {
+          created_at: string | null
+          description: string
+          id: string
+          location: string | null
+          priority: string | null
+          reported_by: string
+          status: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description: string
+          id?: string
+          location?: string | null
+          priority?: string | null
+          reported_by: string
+          status?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string
+          id?: string
+          location?: string | null
+          priority?: string | null
+          reported_by?: string
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      projects: {
+        Row: {
+          budget: number | null
+          contractor_id: string | null
+          created_at: string | null
+          description: string
+          id: string
+          report_id: string | null
+          status: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          budget?: number | null
+          contractor_id?: string | null
+          created_at?: string | null
+          description: string
+          id?: string
+          report_id?: string | null
+          status?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          budget?: number | null
+          contractor_id?: string | null
+          created_at?: string | null
+          description?: string
+          id?: string
+          report_id?: string | null
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "problem_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_profiles: {
+        Row: {
+          created_at: string | null
+          full_name: string | null
+          id: string
+          location: string | null
+          phone_number: string | null
+          updated_at: string | null
+          user_id: string
+          user_type: string
+        }
+        Insert: {
+          created_at?: string | null
+          full_name?: string | null
+          id?: string
+          location?: string | null
+          phone_number?: string | null
+          updated_at?: string | null
+          user_id: string
+          user_type: string
+        }
+        Update: {
+          created_at?: string | null
+          full_name?: string | null
+          id?: string
+          location?: string | null
+          phone_number?: string | null
+          updated_at?: string | null
+          user_id?: string
+          user_type?: string
+        }
+        Relationships: []
+      }
+      user_verifications: {
+        Row: {
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          reference_number: string
+          status: string | null
+          updated_at: string | null
+          user_id: string
+          verification_data: Json | null
+          verification_type: string
+          verified_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          reference_number: string
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+          verification_data?: Json | null
+          verification_type: string
+          verified_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          reference_number?: string
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
+          verification_data?: Json | null
+          verification_type?: string
+          verified_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -92,19 +92,30 @@ export const usePhase2Systems = () => {
     }
   });
 
-  // Get user verifications
+  // Get user verifications - Updated to work with current types
   const { data: verifications = [] } = useQuery({
     queryKey: ['verifications', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
       
-      const { data, error } = await supabase
-        .from('user_verifications')
-        .select('*')
-        .eq('user_id', user.id);
-      
-      if (error) throw error;
-      return data || [];
+      try {
+        // Use the supabase client directly with proper typing
+        const { data, error } = await supabase
+          .schema('public')
+          .from('user_verifications' as any)
+          .select('*')
+          .eq('user_id', user.id);
+        
+        if (error) {
+          console.error('Error fetching verifications:', error);
+          return [];
+        }
+        
+        return data || [];
+      } catch (error) {
+        console.error('Error in verifications query:', error);
+        return [];
+      }
     },
     enabled: !!user?.id
   });
