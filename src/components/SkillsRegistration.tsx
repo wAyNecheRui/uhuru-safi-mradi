@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -91,13 +92,14 @@ const SkillsRegistration = () => {
           phoneNumber: data.phone_number || '',
           email: user?.email || '',
           location: data.location || '',
-          organization: '', // Will be stored in extended profile later
-          yearsExperience: '', // Will be stored in extended profile later
-          certifications: '', // Will be stored in extended profile later
-          portfolio: '', // Will be stored in extended profile later
-          availableForWork: true, // Will be stored in extended profile later
-          selectedSkills: [], // Will be stored in extended profile later
-          customSkills: [], // Will be stored in extended profile later
+          // These fields don't exist in current schema, so we set defaults
+          organization: '',
+          yearsExperience: '',
+          certifications: '',
+          portfolio: '',
+          availableForWork: true,
+          selectedSkills: [],
+          customSkills: [],
           newCustomSkill: ''
         });
         setExistingRegistration(data);
