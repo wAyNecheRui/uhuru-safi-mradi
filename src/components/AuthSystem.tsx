@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,7 +12,7 @@ import RegistrationForm from './auth/RegistrationForm';
 
 const AuthSystem = () => {
   const navigate = useNavigate();
-  const { login, register, user, loading: authLoading } = useAuth();
+  const { signIn, signUp, user, loading: authLoading } = useAuth();
   
   const [activeTab, setActiveTab] = useState('login');
   const [isLoading, setIsLoading] = useState(false);
@@ -27,11 +28,10 @@ const AuthSystem = () => {
     skills: ''
   });
 
-  // Redirect authenticated users to their dashboard
+  // Redirect authenticated users
   useEffect(() => {
     if (user && !authLoading) {
-      const redirectPath = `/${user.user_type}`;
-      navigate(redirectPath, { replace: true });
+      navigate(`/${user.user_type}`, { replace: true });
     }
   }, [user, authLoading, navigate]);
 
@@ -42,12 +42,6 @@ const AuthSystem = () => {
   const validateForm = (isLogin: boolean) => {
     if (!formData.email || !formData.password) {
       toast.error("Please enter both email and password.");
-      return false;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      toast.error("Please enter a valid email address.");
       return false;
     }
 
@@ -78,22 +72,17 @@ const AuthSystem = () => {
 
     setIsLoading(true);
     try {
-      const { user: loggedInUser, error } = await login(formData.email, formData.password);
+      const { user: loggedInUser, error } = await signIn(formData.email, formData.password);
       
       if (error) {
-        console.error('Login error:', error);
         toast.error(error.message || "Invalid credentials. Please try again.");
         return;
       }
 
       if (loggedInUser) {
         toast.success(`Welcome back, ${loggedInUser.name}!`);
-        // Navigation will be handled by useEffect above
-      } else {
-        toast.error("Login failed. Please check your credentials.");
       }
     } catch (error: any) {
-      console.error('Login error:', error);
       toast.error("An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);
@@ -107,11 +96,9 @@ const AuthSystem = () => {
 
     setIsLoading(true);
     try {
-      const { error } = await register(formData);
+      const { error } = await signUp(formData.email, formData.password, formData);
       
       if (error) {
-        console.error('Registration error:', error);
-        
         if (error.message?.includes('already registered')) {
           toast.error("An account with this email already exists. Please try logging in instead.");
         } else {
@@ -121,21 +108,18 @@ const AuthSystem = () => {
       }
       
       toast.success(
-        "Registration successful! Please check your email to verify your account before logging in.",
+        "Registration successful! Please check your email to verify your account.",
         { duration: 6000 }
       );
 
-      // Switch to login tab and clear sensitive data
       setActiveTab('login');
       setFormData(prev => ({ 
         ...prev, 
         password: '', 
         confirmPassword: '',
-        // Keep email for convenience
       }));
     } catch (error: any) {
-      console.error('Registration error:', error);
-      toast.error("An unexpected error occurred during registration. Please try again.");
+      toast.error("An unexpected error occurred during registration.");
     } finally {
       setIsLoading(false);
     }
@@ -189,7 +173,7 @@ const AuthSystem = () => {
                   <CheckCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
                   <div className="text-sm text-blue-800">
                     <p className="font-medium mb-1">Welcome back!</p>
-                    <p>Sign in with your registered email and password. You'll be redirected to your role-specific dashboard.</p>
+                    <p>Sign in with your registered email and password.</p>
                   </div>
                 </div>
               </div>
@@ -207,7 +191,7 @@ const AuthSystem = () => {
                   <AlertCircle className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
                   <div className="text-sm text-green-800">
                     <p className="font-medium mb-1">Create Your Account</p>
-                    <p>Choose your role carefully - it determines your access level and dashboard features.</p>
+                    <p>Choose your role carefully - it determines your access level.</p>
                   </div>
                 </div>
               </div>
