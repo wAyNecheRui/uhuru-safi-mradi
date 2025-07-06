@@ -22,11 +22,11 @@ interface AuthContextType {
   loading: boolean;
   isAuthenticated: boolean;
   supabase: typeof supabase;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, userType: AuthUser['user_type']) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<{ user: AuthUser | null; error: any }>;
+  signUp: (email: string, password: string, userData: any) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
-  login: (email: string, password: string, userType: AuthUser['user_type']) => Promise<void>;
-  register: (userData: any) => Promise<void>;
+  login: (email: string, password: string) => Promise<{ user: AuthUser | null; error: any }>;
+  register: (userData: any) => Promise<{ error: any }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -38,22 +38,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   console.log('AuthProvider initializing...');
 
+  const loadUserProfile = async (userId: string, email: string) => {
+    try {
+      const { data: profile, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      if (profile && !error) {
+        return {
+          id: userId,
+          email: email,
+          name: profile.full_name || email,
+          user_type: profile.user_type as 'citizen' | 'contractor' | 'government',
+          profile: {
+            full_name: profile.full_name,
+            phone_number: profile.phone_number,
+            location: profile.location
+          }
+        };
+      }
+    } catch (error) {
+      console.error('Error loading user profile:', error);
+    }
+    return null;
+  };
+
   useEffect(() => {
     console.log('AuthProvider useEffect running...');
     
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         console.log('Auth state changed:', event, session ? 'User present' : 'No user');
         
         setSession(session);
         if (session?.user) {
-          setUser({
-            id: session.user.id,
-            email: session.user.email || '',
-            name: session.user.user_metadata?.name || session.user.email || '',
-            user_type: session.user.user_metadata?.user_type || 'citizen',
-          });
+          const userProfile = await loadUserProfile(session.user.id, session.user.email || '');
+          setUser(userProfile);
         } else {
           setUser(null);
         }
@@ -69,12 +92,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         setSession(session);
         if (session?.user) {
-          setUser({
-            id: session.user.id,
-            email: session.user.email || '',
-            name: session.user.user_metadata?.name || session.user.email || '',
-            user_type: session.user.user_metadata?.user_type || 'citizen',
-          });
+          const userProfile = await loadUserProfile(session.user.id, session.user.email || '');
+          setUser(userProfile);
         }
       } catch (error) {
         console.error('Session check error:', error);
@@ -90,33 +109,65 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signIn = async (email: string, password: string) => {
     console.log('Sign in attempt for:', email);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    
     if (error) {
       console.error('Sign in error:', error);
-      throw error;
+      return { user: null, error };
     }
+
+    if (data.user) {
+      const userProfile = await loadUserProfile(data.user.id, data.user.email || '');
+      return { user: userProfile, error: null };
+    }
+
+    return { user: null, error: new Error('Login failed') };
   };
 
-  const signUp = async (email: string, password: string, userType: AuthUser['user_type']) => {
-    console.log('Sign up attempt for:', email, 'as', userType);
+  const signUp = async (email: string, password: string, userData: any) => {
+    console.log('Sign up attempt for:', email, 'as', userData.type);
     
     const redirectUrl = `${window.location.origin}/`;
     
-    const { error } = await supabase.auth.signUp({ 
+    const { data, error } = await supabase.auth.signUp({ 
       email, 
       password,
       options: {
         emailRedirectTo: redirectUrl,
         data: {
-          user_type: userType
+          user_type: userData.type,
+          full_name: userData.name
         }
       }
     });
     
     if (error) {
       console.error('Sign up error:', error);
-      throw error;
+      return { error };
     }
+
+    // Create user profile after successful signup
+    if (data.user) {
+      try {
+        const { error: profileError } = await supabase
+          .from('user_profiles')
+          .insert({
+            user_id: data.user.id,
+            full_name: userData.name,
+            phone_number: userData.phone || null,
+            location: userData.location || null,
+            user_type: userData.type
+          });
+
+        if (profileError) {
+          console.error('Profile creation error:', profileError);
+        }
+      } catch (profileError) {
+        console.error('Profile creation failed:', profileError);
+      }
+    }
+    
+    return { error: null };
   };
 
   const signOut = async () => {
@@ -126,15 +177,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error('Sign out error:', error);
       throw error;
     }
+    setUser(null);
+    setSession(null);
   };
 
   // Alias methods for compatibility
-  const login = async (email: string, password: string, userType: AuthUser['user_type']) => {
+  const login = async (email: string, password: string) => {
     return signIn(email, password);
   };
 
   const register = async (userData: any) => {
-    return signUp(userData.email, userData.password, userData.type);
+    return signUp(userData.email, userData.password, userData);
   };
 
   const value = {
@@ -149,7 +202,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     register,
   };
 
-  console.log('AuthProvider rendering with user:', user ? 'Present' : 'None', 'loading:', loading);
+  console.log('AuthProvider rendering with user:', user ? `${user.name} (${user.user_type})` : 'None', 'loading:', loading);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
