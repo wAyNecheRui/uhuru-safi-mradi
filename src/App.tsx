@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -31,6 +30,7 @@ import GovernmentBenchmarks from "./pages/government/GovernmentBenchmarks";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import ContractorDatabasePage from "./pages/ContractorDatabase";
+import { AuthProvider } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -47,48 +47,50 @@ const App = () => {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Landing />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/how-it-works" element={<HowItWorks />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/contractor-database" element={<ContractorDatabasePage />} />
-              
-              {/* Citizen Routes */}
-              <Route path="/citizen" element={<CitizenDashboard />} />
-              <Route path="/citizen/report" element={<CitizenReportIssue />} />
-              <Route path="/citizen/track" element={<CitizenTrackReports />} />
-              <Route path="/citizen/voting" element={<CitizenCommunityVoting />} />
-              <Route path="/citizen/workforce" element={<CitizenWorkforce />} />
-              <Route path="/citizen/ussd" element={<CitizenUSSD />} />
-              
-              {/* Contractor Routes */}
-              <Route path="/contractor" element={<ContractorDashboard />} />
-              <Route path="/contractor/bidding" element={<ContractorBidding />} />
-              <Route path="/contractor/projects" element={<ContractorProjects />} />
-              <Route path="/contractor/verification" element={<ContractorVerification />} />
-              
-              {/* Government Routes */}
-              <Route path="/government" element={<GovernmentDashboard />} />
-              <Route path="/government/projects" element={<GovernmentProjects />} />
-              <Route path="/government/reports" element={<GovernmentReports />} />
-              <Route path="/government/escrow" element={<GovernmentEscrow />} />
-              <Route path="/government/verification" element={<GovernmentVerification />} />
-              <Route path="/government/payments" element={<GovernmentPaymentTransparency />} />
-              <Route path="/government/blockchain" element={<GovernmentBlockchain />} />
-              <Route path="/government/eacc" element={<GovernmentEACC />} />
-              <Route path="/government/benchmarks" element={<GovernmentBenchmarks />} />
-              
-              {/* Catch-all route */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
+        <AuthProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<Landing />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/how-it-works" element={<HowItWorks />} />
+                <Route path="/contact" element={<Contact />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/contractor-database" element={<ContractorDatabasePage />} />
+                
+                {/* Citizen Routes */}
+                <Route path="/citizen" element={<CitizenDashboard />} />
+                <Route path="/citizen/report" element={<CitizenReportIssue />} />
+                <Route path="/citizen/track" element={<CitizenTrackReports />} />
+                <Route path="/citizen/voting" element={<CitizenCommunityVoting />} />
+                <Route path="/citizen/workforce" element={<CitizenWorkforce />} />
+                <Route path="/citizen/ussd" element={<CitizenUSSD />} />
+                
+                {/* Contractor Routes */}
+                <Route path="/contractor" element={<ContractorDashboard />} />
+                <Route path="/contractor/bidding" element={<ContractorBidding />} />
+                <Route path="/contractor/projects" element={<ContractorProjects />} />
+                <Route path="/contractor/verification" element={<ContractorVerification />} />
+                
+                {/* Government Routes */}
+                <Route path="/government" element={<GovernmentDashboard />} />
+                <Route path="/government/projects" element={<GovernmentProjects />} />
+                <Route path="/government/reports" element={<GovernmentReports />} />
+                <Route path="/government/escrow" element={<GovernmentEscrow />} />
+                <Route path="/government/verification" element={<GovernmentVerification />} />
+                <Route path="/government/payments" element={<GovernmentPaymentTransparency />} />
+                <Route path="/government/blockchain" element={<GovernmentBlockchain />} />
+                <Route path="/government/eacc" element={<GovernmentEACC />} />
+                <Route path="/government/benchmarks" element={<GovernmentBenchmarks />} />
+                
+                {/* Catch-all route */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </TooltipProvider>
+        </AuthProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   );

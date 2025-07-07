@@ -28,36 +28,69 @@ const AuthSystem = () => {
     skills: ''
   });
 
-  // Redirect authenticated users
+  // Only redirect authenticated users after successful auth
   useEffect(() => {
-    if (user && !authLoading) {
+    if (user && !authLoading && !isLoading) {
       console.log('Redirecting authenticated user:', user.email, 'to:', `/${user.user_type}`);
+      toast.success(`Welcome ${user.name}!`);
       navigate(`/${user.user_type}`, { replace: true });
     }
-  }, [user, authLoading, navigate]);
+  }, [user, authLoading, isLoading, navigate]);
 
   const handleInputChange = useCallback((field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   }, []);
 
+  const validateForm = (isLogin: boolean = false) => {
+    if (!formData.email.trim()) {
+      toast.error("Please enter your email address.");
+      return false;
+    }
+
+    if (!formData.email.includes('@')) {
+      toast.error("Please enter a valid email address.");
+      return false;
+    }
+
+    if (!formData.password) {
+      toast.error("Please enter your password.");
+      return false;
+    }
+
+    if (!isLogin) {
+      if (!formData.name.trim()) {
+        toast.error("Please enter your full name.");
+        return false;
+      }
+
+      if (formData.password !== formData.confirmPassword) {
+        toast.error("Passwords do not match.");
+        return false;
+      }
+
+      if (formData.password.length < 6) {
+        toast.error("Password must be at least 6 characters long.");
+        return false;
+      }
+    }
+
+    return true;
+  };
+
   const handleLogin = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.email || !formData.password) {
-      toast.error("Please enter both email and password.");
-      return;
-    }
+    if (!validateForm(true)) return;
 
     console.log('Login attempt for:', formData.email);
     setIsLoading(true);
     
     try {
-      const { error } = await signIn(formData.email, formData.password);
+      const { user, error } = await signIn(formData.email, formData.password);
       
       if (error) {
         console.error('Login failed:', error);
         
-        // Provide more specific error messages
         if (error.message?.includes('Invalid login credentials')) {
           toast.error("Invalid email or password. Please check your credentials and try again.");
         } else if (error.message?.includes('Email not confirmed')) {
@@ -68,8 +101,12 @@ const AuthSystem = () => {
         return;
       }
 
-      console.log('Login successful, waiting for redirect...');
-      toast.success("Login successful!");
+      if (user) {
+        console.log('Login successful for:', user.email);
+        // Success message and redirect handled by useEffect
+      } else {
+        toast.error("Login failed. Please try again.");
+      }
       
     } catch (error: any) {
       console.error('Login exception:', error);
@@ -82,20 +119,7 @@ const AuthSystem = () => {
   const handleRegister = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.email || !formData.password || !formData.name.trim()) {
-      toast.error("Please fill in all required fields.");
-      return;
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      toast.error("Passwords do not match.");
-      return;
-    }
-
-    if (formData.password.length < 6) {
-      toast.error("Password must be at least 6 characters long.");
-      return;
-    }
+    if (!validateForm()) return;
 
     console.log('Registration attempt for:', formData.email);
     setIsLoading(true);
@@ -121,12 +145,13 @@ const AuthSystem = () => {
         { duration: 6000 }
       );
 
-      setActiveTab('login');
+      // Clear form and switch to login
       setFormData(prev => ({ 
         ...prev, 
         password: '', 
         confirmPassword: '',
       }));
+      setActiveTab('login');
       
     } catch (error: any) {
       console.error('Registration exception:', error);
@@ -142,7 +167,7 @@ const AuthSystem = () => {
         <Card className="w-full max-w-md shadow-xl border-0 bg-white/95 backdrop-blur-md">
           <CardContent className="p-8 text-center">
             <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-            <p className="text-slate-600">Loading...</p>
+            <p className="text-slate-600">Verifying authentication...</p>
           </CardContent>
         </Card>
       </div>
