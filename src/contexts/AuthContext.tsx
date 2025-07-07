@@ -42,7 +42,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) {
         console.error('Error loading profile:', error);
-        return null;
+        // Return basic user info if profile doesn't exist yet
+        return {
+          id: userId,
+          email: email,
+          name: email,
+          user_type: 'citizen' // default type
+        };
       }
 
       if (profile) {
@@ -58,10 +64,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         };
       }
+
+      // Return basic user info if no profile found
+      return {
+        id: userId,
+        email: email,
+        name: email,
+        user_type: 'citizen'
+      };
     } catch (error) {
       console.error('Error loading profile:', error);
+      // Return basic user info on error
+      return {
+        id: userId,
+        email: email,
+        name: email,
+        user_type: 'citizen'
+      };
     }
-    return null;
   };
 
   useEffect(() => {
@@ -69,21 +89,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event);
+        console.log('Auth state changed:', event, session?.user?.email);
         
         if (!mounted) return;
         
         if (session?.user) {
-          const userProfile = await loadUserProfile(session.user.id, session.user.email || '');
-          if (mounted) {
-            setUser(userProfile);
-            setLoading(false);
-          }
+          // Load profile in background, don't block auth state
+          setTimeout(async () => {
+            if (mounted) {
+              const userProfile = await loadUserProfile(session.user.id, session.user.email || '');
+              if (mounted) {
+                setUser(userProfile);
+              }
+            }
+          }, 0);
         } else {
-          if (mounted) {
-            setUser(null);
-            setLoading(false);
-          }
+          setUser(null);
+        }
+        
+        if (mounted) {
+          setLoading(false);
         }
       }
     );
@@ -93,16 +118,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!mounted) return;
       
       if (session?.user) {
-        loadUserProfile(session.user.id, session.user.email || '').then(userProfile => {
+        // Load profile in background
+        setTimeout(async () => {
           if (mounted) {
-            setUser(userProfile);
-            setLoading(false);
+            const userProfile = await loadUserProfile(session.user.id, session.user.email || '');
+            if (mounted) {
+              setUser(userProfile);
+            }
           }
-        });
-      } else {
-        if (mounted) {
-          setLoading(false);
-        }
+        }, 0);
+      }
+      
+      if (mounted) {
+        setLoading(false);
       }
     });
 
@@ -114,29 +142,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      console.log('Attempting sign in for:', email);
+      
+      const { data, error } = await supabase.auth.signInWithPassword({ 
+        email: email.trim().toLowerCase(), 
+        password 
+      });
       
       if (error) {
+        console.error('Sign in error:', error);
         return { user: null, error };
       }
 
       if (data.user) {
-        const userProfile = await loadUserProfile(data.user.id, data.user.email || '');
-        return { user: userProfile, error: null };
+        console.log('Sign in successful for:', data.user.email);
+        // Don't load profile here, let the auth state change handler do it
+        return { user: null, error: null };
       }
 
       return { user: null, error: new Error('Login failed') };
     } catch (error) {
+      console.error('Sign in exception:', error);
       return { user: null, error };
     }
   };
 
   const signUp = async (email: string, password: string, userData: any) => {
     try {
+      console.log('Attempting sign up for:', email);
+      
       const redirectUrl = `${window.location.origin}/`;
       
       const { data, error } = await supabase.auth.signUp({ 
-        email, 
+        email: email.trim().toLowerCase(), 
         password,
         options: {
           emailRedirectTo: redirectUrl,
@@ -148,27 +186,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       
       if (error) {
+        console.error('Sign up error:', error);
         return { error };
       }
 
       if (data.user) {
-        try {
-          await supabase
-            .from('user_profiles')
-            .insert({
-              user_id: data.user.id,
-              full_name: userData.name,
-              phone_number: userData.phone || null,
-              location: userData.location || null,
-              user_type: userData.type
-            });
-        } catch (profileError) {
-          console.error('Profile creation failed:', profileError);
-        }
+        console.log('Sign up successful for:', data.user.email);
+        
+        // Create profile in background
+        setTimeout(async () => {
+          try {
+            await supabase
+              .from('user_profiles')
+              .insert({
+                user_id: data.user.id,
+                full_name: userData.name,
+                phone_number: userData.phone || null,
+                location: userData.location || null,
+                user_type: userData.type
+              });
+          } catch (profileError) {
+            console.error('Profile creation failed:', profileError);
+          }
+        }, 0);
       }
       
       return { error: null };
     } catch (error) {
+      console.error('Sign up exception:', error);
       return { error };
     }
   };

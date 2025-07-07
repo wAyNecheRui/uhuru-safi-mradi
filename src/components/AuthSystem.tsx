@@ -31,6 +31,7 @@ const AuthSystem = () => {
   // Redirect authenticated users
   useEffect(() => {
     if (user && !authLoading) {
+      console.log('Redirecting authenticated user:', user.email, 'to:', `/${user.user_type}`);
       navigate(`/${user.user_type}`, { replace: true });
     }
   }, [user, authLoading, navigate]);
@@ -47,19 +48,31 @@ const AuthSystem = () => {
       return;
     }
 
+    console.log('Login attempt for:', formData.email);
     setIsLoading(true);
+    
     try {
-      const { user: loggedInUser, error } = await signIn(formData.email, formData.password);
+      const { error } = await signIn(formData.email, formData.password);
       
       if (error) {
-        toast.error(error.message || "Invalid credentials. Please try again.");
+        console.error('Login failed:', error);
+        
+        // Provide more specific error messages
+        if (error.message?.includes('Invalid login credentials')) {
+          toast.error("Invalid email or password. Please check your credentials and try again.");
+        } else if (error.message?.includes('Email not confirmed')) {
+          toast.error("Please check your email and click the confirmation link before logging in.");
+        } else {
+          toast.error(error.message || "Login failed. Please try again.");
+        }
         return;
       }
 
-      if (loggedInUser) {
-        toast.success(`Welcome back, ${loggedInUser.name}!`);
-      }
+      console.log('Login successful, waiting for redirect...');
+      toast.success("Login successful!");
+      
     } catch (error: any) {
+      console.error('Login exception:', error);
       toast.error("An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);
@@ -84,21 +97,27 @@ const AuthSystem = () => {
       return;
     }
 
+    console.log('Registration attempt for:', formData.email);
     setIsLoading(true);
+    
     try {
       const { error } = await signUp(formData.email, formData.password, formData);
       
       if (error) {
-        if (error.message?.includes('already registered')) {
+        console.error('Registration failed:', error);
+        
+        if (error.message?.includes('already registered') || error.message?.includes('already been registered')) {
           toast.error("An account with this email already exists. Please try logging in instead.");
+          setActiveTab('login');
         } else {
           toast.error(error.message || "Registration failed. Please try again.");
         }
         return;
       }
       
+      console.log('Registration successful');
       toast.success(
-        "Registration successful! Please check your email to verify your account.",
+        "Registration successful! Please check your email to verify your account before logging in.",
         { duration: 6000 }
       );
 
@@ -108,7 +127,9 @@ const AuthSystem = () => {
         password: '', 
         confirmPassword: '',
       }));
+      
     } catch (error: any) {
+      console.error('Registration exception:', error);
       toast.error("An unexpected error occurred during registration.");
     } finally {
       setIsLoading(false);
