@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,14 +27,14 @@ const AuthSystem = () => {
     skills: ''
   });
 
-  // Only redirect authenticated users after successful auth
+  // Redirect authenticated users
   useEffect(() => {
-    if (user && !authLoading && !isLoading) {
+    if (user && !authLoading) {
       console.log('Redirecting authenticated user:', user.email, 'to:', `/${user.user_type}`);
-      toast.success(`Welcome ${user.name}!`);
+      toast.success(`Welcome back, ${user.name}!`);
       navigate(`/${user.user_type}`, { replace: true });
     }
-  }, [user, authLoading, isLoading, navigate]);
+  }, [user, authLoading, navigate]);
 
   const handleInputChange = useCallback((field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -103,7 +102,7 @@ const AuthSystem = () => {
 
       if (user) {
         console.log('Login successful for:', user.email);
-        // Success message and redirect handled by useEffect
+        // Redirect will be handled by useEffect
       } else {
         toast.error("Login failed. Please try again.");
       }
@@ -161,13 +160,15 @@ const AuthSystem = () => {
     }
   }, [formData, signUp]);
 
+  // Show loading state only for a reasonable time
   if (authLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-800 via-slate-700 to-blue-800 flex items-center justify-center p-4">
         <Card className="w-full max-w-md shadow-xl border-0 bg-white/95 backdrop-blur-md">
           <CardContent className="p-8 text-center">
             <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-            <p className="text-slate-600">Verifying authentication...</p>
+            <p className="text-slate-600">Loading authentication...</p>
+            <p className="text-xs text-slate-500 mt-2">This should only take a moment</p>
           </CardContent>
         </Card>
       </div>

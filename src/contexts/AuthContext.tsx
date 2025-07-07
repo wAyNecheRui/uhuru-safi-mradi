@@ -34,22 +34,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const loadUserProfile = async (userId: string, email: string): Promise<AuthUser | null> => {
     try {
-      const { data: profile, error } = await supabase
+      console.log('Loading profile for user:', userId);
+      
+      // Set a timeout for profile loading
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Profile loading timeout')), 10000);
+      });
+
+      const profilePromise = supabase
         .from('user_profiles')
         .select('*')
         .eq('user_id', userId)
         .maybeSingle();
 
+      const { data: profile, error } = await Promise.race([profilePromise, timeoutPromise]);
+
       if (error) {
         console.error('Error loading profile:', error);
-        return null;
-      }
-
-      if (profile) {
+        // Create a minimal user object if profile loading fails
         return {
           id: userId,
           email: email,
-          name: profile.full_name || email,
+          name: email.split('@')[0],
+          user_type: 'citizen' // Default type
+        };
+      }
+
+      if (profile) {
+        console.log('Profile loaded successfully:', profile);
+        return {
+          id: userId,
+          email: email,
+          name: profile.full_name || email.split('@')[0],
           user_type: profile.user_type as 'citizen' | 'contractor' | 'government',
           profile: {
             full_name: profile.full_name,
@@ -59,15 +75,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
       }
 
-      return null;
+      // If no profile found, create a minimal user object
+      console.warn('No profile found for user, creating minimal user object');
+      return {
+        id: userId,
+        email: email,
+        name: email.split('@')[0],
+        user_type: 'citizen'
+      };
+
     } catch (error) {
-      console.error('Error loading profile:', error);
-      return null;
+      console.error('Profile loading failed:', error);
+      // Return minimal user object on any error
+      return {
+        id: userId,
+        email: email,
+        name: email.split('@')[0],
+        user_type: 'citizen'
+      };
     }
   };
 
   useEffect(() => {
     let mounted = true;
+    let loadingTimeout: NodeJS.Timeout;
+
+    // Set a maximum loading time
+    loadingTimeout = setTimeout(() => {
+      if (mounted) {
+        console.warn('Auth loading timeout reached, clearing loading state');
+        setLoading(false);
+      }
+    }, 15000);
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
@@ -75,16 +114,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (!mounted) return;
         
+        // Clear timeout since we got an auth event
+        if (loadingTimeout) {
+          clearTimeout(loadingTimeout);
+        }
+
         if (event === 'SIGNED_OUT' || !session?.user) {
+          console.log('User signed out or no session');
           setUser(null);
           setLoading(false);
           return;
         }
 
-        if (event === 'SIGNED_IN' && session?.user) {
-          const userProfile = await loadUserProfile(session.user.id, session.user.email || '');
-          if (mounted) {
-            setUser(userProfile);
+        if (session?.user) {
+          console.log('Loading user profile for authenticated user');
+          try {
+            const userProfile = await loadUserProfile(session.user.id, session.user.email || '');
+            if (mounted) {
+              setUser(userProfile);
+            }
+          } catch (error) {
+            console.error('Failed to load user profile:', error);
+            // Create minimal user on profile load failure
+            if (mounted) {
+              setUser({
+                id: session.user.id,
+                email: session.user.email || '',
+                name: session.user.email?.split('@')[0] || 'User',
+                user_type: 'citizen'
+              });
+            }
           }
         }
         
@@ -94,18 +153,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
 
-    // Check initial session - but don't auto-authenticate
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    // Check initial session
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
       if (!mounted) return;
       
+      if (error) {
+        console.error('Error getting session:', error);
+        setLoading(false);
+        return;
+      }
+      
       if (session?.user) {
+        console.log('Initial session found, loading profile');
         loadUserProfile(session.user.id, session.user.email || '').then((userProfile) => {
           if (mounted) {
             setUser(userProfile);
+            setLoading(false);
+          }
+        }).catch((error) => {
+          console.error('Initial profile load failed:', error);
+          if (mounted) {
+            setUser({
+              id: session.user.id,
+              email: session.user.email || '',
+              name: session.user.email?.split('@')[0] || 'User',
+              user_type: 'citizen'
+            });
+            setLoading(false);
           }
         });
+      } else {
+        console.log('No initial session found');
+        setLoading(false);
       }
-      
+    }).catch((error) => {
+      console.error('Session check failed:', error);
       if (mounted) {
         setLoading(false);
       }
@@ -113,6 +195,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     return () => {
       mounted = false;
+      if (loadingTimeout) {
+        clearTimeout(loadingTimeout);
+      }
       subscription.unsubscribe();
     };
   }, []);
