@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -35,40 +35,17 @@ const AuthSystem = () => {
     }
   }, [user, authLoading, navigate]);
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = useCallback((field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-  };
+  }, []);
 
-  const validateForm = (isLogin: boolean) => {
-    if (!formData.email || !formData.password) {
-      toast.error("Please enter both email and password.");
-      return false;
-    }
-
-    if (!isLogin) {
-      if (!formData.name.trim()) {
-        toast.error("Please enter your full name.");
-        return false;
-      }
-
-      if (formData.password !== formData.confirmPassword) {
-        toast.error("Passwords do not match.");
-        return false;
-      }
-
-      if (formData.password.length < 6) {
-        toast.error("Password must be at least 6 characters long.");
-        return false;
-      }
-    }
-
-    return true;
-  };
-
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm(true)) return;
+    if (!formData.email || !formData.password) {
+      toast.error("Please enter both email and password.");
+      return;
+    }
 
     setIsLoading(true);
     try {
@@ -87,12 +64,25 @@ const AuthSystem = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [formData.email, formData.password, signIn]);
 
-  const handleRegister = async (e: React.FormEvent) => {
+  const handleRegister = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm(false)) return;
+    if (!formData.email || !formData.password || !formData.name.trim()) {
+      toast.error("Please fill in all required fields.");
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      toast.error("Passwords do not match.");
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      toast.error("Password must be at least 6 characters long.");
+      return;
+    }
 
     setIsLoading(true);
     try {
@@ -123,7 +113,7 @@ const AuthSystem = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [formData, signUp]);
 
   if (authLoading) {
     return (

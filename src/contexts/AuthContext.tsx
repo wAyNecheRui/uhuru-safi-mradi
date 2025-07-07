@@ -34,11 +34,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const loadUserProfile = async (userId: string, email: string): Promise<AuthUser | null> => {
     try {
-      const { data: profile } = await supabase
+      const { data: profile, error } = await supabase
         .from('user_profiles')
         .select('*')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error loading profile:', error);
+        return null;
+      }
 
       if (profile) {
         return {
@@ -73,19 +78,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const userProfile = await loadUserProfile(session.user.id, session.user.email || '');
           if (mounted) {
             setUser(userProfile);
-            setLoading(false);
           }
         } else {
           if (mounted) {
             setUser(null);
-            setLoading(false);
           }
+        }
+        
+        if (mounted) {
+          setLoading(false);
         }
       }
     );
 
-    // Check for existing session
-    const checkSession = async () => {
+    // Check for existing session only once
+    const checkInitialSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         
@@ -104,7 +111,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
 
-    checkSession();
+    checkInitialSession();
 
     return () => {
       mounted = false;
@@ -113,63 +120,76 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    
-    if (error) {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      
+      if (error) {
+        return { user: null, error };
+      }
+
+      if (data.user) {
+        const userProfile = await loadUserProfile(data.user.id, data.user.email || '');
+        return { user: userProfile, error: null };
+      }
+
+      return { user: null, error: new Error('Login failed') };
+    } catch (error) {
       return { user: null, error };
     }
-
-    if (data.user) {
-      const userProfile = await loadUserProfile(data.user.id, data.user.email || '');
-      return { user: userProfile, error: null };
-    }
-
-    return { user: null, error: new Error('Login failed') };
   };
 
   const signUp = async (email: string, password: string, userData: any) => {
-    const redirectUrl = `${window.location.origin}/`;
-    
-    const { data, error } = await supabase.auth.signUp({ 
-      email, 
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-        data: {
-          user_type: userData.type,
-          full_name: userData.name
+    try {
+      const redirectUrl = `${window.location.origin}/`;
+      
+      const { data, error } = await supabase.auth.signUp({ 
+        email, 
+        password,
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: {
+            user_type: userData.type,
+            full_name: userData.name
+          }
+        }
+      });
+      
+      if (error) {
+        return { error };
+      }
+
+      // Create user profile
+      if (data.user) {
+        try {
+          await supabase
+            .from('user_profiles')
+            .insert({
+              user_id: data.user.id,
+              full_name: userData.name,
+              phone_number: userData.phone || null,
+              location: userData.location || null,
+              user_type: userData.type
+            });
+        } catch (profileError) {
+          console.error('Profile creation failed:', profileError);
         }
       }
-    });
-    
-    if (error) {
+      
+      return { error: null };
+    } catch (error) {
       return { error };
     }
-
-    // Create user profile
-    if (data.user) {
-      try {
-        await supabase
-          .from('user_profiles')
-          .insert({
-            user_id: data.user.id,
-            full_name: userData.name,
-            phone_number: userData.phone || null,
-            location: userData.location || null,
-            user_type: userData.type
-          });
-      } catch (profileError) {
-        console.error('Profile creation failed:', profileError);
-      }
-    }
-    
-    return { error: null };
   };
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
-    setUser(null);
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      setUser(null);
+    } catch (error) {
+      console.error('Sign out error:', error);
+      throw error;
+    }
   };
 
   const value = {
