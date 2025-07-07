@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+
+import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,15 +27,6 @@ const AuthSystem = () => {
     organization: '',
     skills: ''
   });
-
-  // Redirect authenticated users
-  useEffect(() => {
-    if (user && !authLoading) {
-      console.log('Redirecting authenticated user:', user.email, 'to:', `/${user.user_type}`);
-      toast.success(`Welcome back, ${user.name}!`);
-      navigate(`/${user.user_type}`, { replace: true });
-    }
-  }, [user, authLoading, navigate]);
 
   const handleInputChange = useCallback((field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -102,7 +94,8 @@ const AuthSystem = () => {
 
       if (user) {
         console.log('Login successful for:', user.email);
-        // Redirect will be handled by useEffect
+        toast.success(`Welcome back, ${user.name}!`);
+        navigate(`/${user.user_type}`, { replace: true });
       } else {
         toast.error("Login failed. Please try again.");
       }
@@ -113,7 +106,7 @@ const AuthSystem = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [formData.email, formData.password, signIn]);
+  }, [formData.email, formData.password, signIn, navigate]);
 
   const handleRegister = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -160,19 +153,27 @@ const AuthSystem = () => {
     }
   }, [formData, signUp]);
 
-  // Show loading state only for a reasonable time
-  if (authLoading) {
+  // Show loading state only during auth operations
+  if (authLoading || isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-800 via-slate-700 to-blue-800 flex items-center justify-center p-4">
         <Card className="w-full max-w-md shadow-xl border-0 bg-white/95 backdrop-blur-md">
           <CardContent className="p-8 text-center">
             <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-            <p className="text-slate-600">Loading authentication...</p>
-            <p className="text-xs text-slate-500 mt-2">This should only take a moment</p>
+            <p className="text-slate-600">
+              {isLoading ? 'Processing...' : 'Loading...'}
+            </p>
           </CardContent>
         </Card>
       </div>
     );
+  }
+
+  // If user is authenticated, redirect them to their dashboard
+  if (user) {
+    console.log('User authenticated, redirecting to dashboard:', user.user_type);
+    navigate(`/${user.user_type}`, { replace: true });
+    return null;
   }
 
   return (

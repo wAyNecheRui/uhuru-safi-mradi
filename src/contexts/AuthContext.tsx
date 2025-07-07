@@ -30,33 +30,25 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Start as false - no auto-loading
 
   const loadUserProfile = async (userId: string, email: string): Promise<AuthUser | null> => {
     try {
       console.log('Loading profile for user:', userId);
       
-      // Set a timeout for profile loading
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Profile loading timeout')), 10000);
-      });
-
-      const profilePromise = supabase
+      const { data: profile, error } = await supabase
         .from('user_profiles')
         .select('*')
         .eq('user_id', userId)
         .maybeSingle();
 
-      const { data: profile, error } = await Promise.race([profilePromise, timeoutPromise]);
-
       if (error) {
         console.error('Error loading profile:', error);
-        // Create a minimal user object if profile loading fails
         return {
           id: userId,
           email: email,
           name: email.split('@')[0],
-          user_type: 'citizen' // Default type
+          user_type: 'citizen'
         };
       }
 
@@ -75,8 +67,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
       }
 
-      // If no profile found, create a minimal user object
-      console.warn('No profile found for user, creating minimal user object');
       return {
         id: userId,
         email: email,
@@ -86,7 +76,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     } catch (error) {
       console.error('Profile loading failed:', error);
-      // Return minimal user object on any error
       return {
         id: userId,
         email: email,
@@ -98,36 +87,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     let mounted = true;
-    let loadingTimeout: NodeJS.Timeout;
 
-    // Set a maximum loading time
-    loadingTimeout = setTimeout(() => {
-      if (mounted) {
-        console.warn('Auth loading timeout reached, clearing loading state');
-        setLoading(false);
-      }
-    }, 15000);
-
+    // Only listen for auth changes, don't automatically load existing sessions
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state changed:', event, session?.user?.email);
         
         if (!mounted) return;
-        
-        // Clear timeout since we got an auth event
-        if (loadingTimeout) {
-          clearTimeout(loadingTimeout);
-        }
 
-        if (event === 'SIGNED_OUT' || !session?.user) {
-          console.log('User signed out or no session');
-          setUser(null);
-          setLoading(false);
-          return;
-        }
-
-        if (session?.user) {
-          console.log('Loading user profile for authenticated user');
+        // Only process SIGNED_IN events, ignore initial session checks
+        if (event === 'SIGNED_IN' && session?.user) {
+          console.log('User signed in, loading profile');
+          setLoading(true);
           try {
             const userProfile = await loadUserProfile(session.user.id, session.user.email || '');
             if (mounted) {
@@ -135,7 +106,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
           } catch (error) {
             console.error('Failed to load user profile:', error);
-            // Create minimal user on profile load failure
             if (mounted) {
               setUser({
                 id: session.user.id,
@@ -144,60 +114,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 user_type: 'citizen'
               });
             }
+          } finally {
+            if (mounted) {
+              setLoading(false);
+            }
           }
-        }
-        
-        if (mounted) {
+        } else if (event === 'SIGNED_OUT' || !session?.user) {
+          console.log('User signed out');
+          setUser(null);
           setLoading(false);
         }
       }
     );
 
-    // Check initial session
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      if (!mounted) return;
-      
-      if (error) {
-        console.error('Error getting session:', error);
-        setLoading(false);
-        return;
-      }
-      
-      if (session?.user) {
-        console.log('Initial session found, loading profile');
-        loadUserProfile(session.user.id, session.user.email || '').then((userProfile) => {
-          if (mounted) {
-            setUser(userProfile);
-            setLoading(false);
-          }
-        }).catch((error) => {
-          console.error('Initial profile load failed:', error);
-          if (mounted) {
-            setUser({
-              id: session.user.id,
-              email: session.user.email || '',
-              name: session.user.email?.split('@')[0] || 'User',
-              user_type: 'citizen'
-            });
-            setLoading(false);
-          }
-        });
-      } else {
-        console.log('No initial session found');
-        setLoading(false);
-      }
-    }).catch((error) => {
-      console.error('Session check failed:', error);
-      if (mounted) {
-        setLoading(false);
-      }
-    });
+    // Do NOT check for existing session on mount - require explicit login
+    console.log('Auth context initialized - waiting for explicit login');
 
     return () => {
       mounted = false;
-      if (loadingTimeout) {
-        clearTimeout(loadingTimeout);
-      }
       subscription.unsubscribe();
     };
   }, []);
@@ -205,6 +139,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signIn = async (email: string, password: string) => {
     try {
       console.log('Attempting sign in for:', email);
+      setLoading(true);
       
       const { data, error } = await supabase.auth.signInWithPassword({ 
         email: email.trim().toLowerCase(), 
@@ -213,18 +148,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (error) {
         console.error('Sign in error:', error);
+        setLoading(false);
         return { user: null, error };
       }
 
-      if (data.user) {
+      if (data.user && data.session) {
         console.log('Sign in successful for:', data.user.email);
         const userProfile = await loadUserProfile(data.user.id, data.user.email || '');
+        setLoading(false);
         return { user: userProfile, error: null };
       }
 
+      setLoading(false);
       return { user: null, error: new Error('Login failed') };
     } catch (error) {
       console.error('Sign in exception:', error);
+      setLoading(false);
       return { user: null, error };
     }
   };
@@ -255,7 +194,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (data.user) {
         console.log('Sign up successful for:', data.user.email);
         
-        // Create profile
         try {
           await supabase
             .from('user_profiles')
@@ -281,12 +219,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = async () => {
     try {
       console.log('Signing out user');
+      setLoading(true);
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       setUser(null);
+      setLoading(false);
       console.log('Sign out successful');
     } catch (error) {
       console.error('Sign out error:', error);
+      setLoading(false);
       throw error;
     }
   };
