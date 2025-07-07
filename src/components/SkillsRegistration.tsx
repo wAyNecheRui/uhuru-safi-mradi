@@ -18,6 +18,7 @@ import {
   Award
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 const skillCategories = [
@@ -54,7 +55,7 @@ const skillCategories = [
 ];
 
 const SkillsRegistration = () => {
-  const { user, supabase } = useAuth();
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     fullName: '',
     phoneNumber: '',

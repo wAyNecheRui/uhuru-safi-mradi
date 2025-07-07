@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,6 +15,7 @@ import {
   Eye
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface ProblemReport {
@@ -32,7 +34,7 @@ interface ProblemReport {
 }
 
 const CommunityValidation = () => {
-  const { user, supabase } = useAuth();
+  const { user } = useAuth();
   const [reports, setReports] = useState<ProblemReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [votingState, setVotingState] = useState<{ [key: string]: boolean }>({});

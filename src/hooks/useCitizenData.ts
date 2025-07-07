@@ -1,6 +1,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 export interface CitizenReport {
@@ -24,7 +25,7 @@ export interface CitizenStats {
 }
 
 export const useCitizenData = () => {
-  const { user, supabase } = useAuth();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
 
   // Fetch citizen's reports
