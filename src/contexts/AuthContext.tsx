@@ -67,51 +67,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     let mounted = true;
 
-    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (!mounted) return;
-        
         console.log('Auth state changed:', event);
+        
+        if (!mounted) return;
         
         if (session?.user) {
           const userProfile = await loadUserProfile(session.user.id, session.user.email || '');
           if (mounted) {
             setUser(userProfile);
+            setLoading(false);
           }
         } else {
           if (mounted) {
             setUser(null);
+            setLoading(false);
           }
-        }
-        
-        if (mounted) {
-          setLoading(false);
         }
       }
     );
 
-    // Check for existing session only once
-    const checkInitialSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (session?.user && mounted) {
-          const userProfile = await loadUserProfile(session.user.id, session.user.email || '');
+    // Check initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return;
+      
+      if (session?.user) {
+        loadUserProfile(session.user.id, session.user.email || '').then(userProfile => {
           if (mounted) {
             setUser(userProfile);
+            setLoading(false);
           }
-        }
-      } catch (error) {
-        console.error('Session check error:', error);
-      } finally {
+        });
+      } else {
         if (mounted) {
           setLoading(false);
         }
       }
-    };
-
-    checkInitialSession();
+    });
 
     return () => {
       mounted = false;
@@ -158,7 +151,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { error };
       }
 
-      // Create user profile
       if (data.user) {
         try {
           await supabase
