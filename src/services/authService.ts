@@ -86,13 +86,10 @@ export const signUpUser = async (email: string, password: string, userData: Sign
   try {
     console.log('Attempting sign up for:', email);
     
-    const redirectUrl = `${window.location.origin}/auth`;
-    
     const { data, error } = await supabase.auth.signUp({ 
       email: email.trim().toLowerCase(), 
       password,
       options: {
-        emailRedirectTo: redirectUrl,
         data: {
           user_type: userData.type,
           full_name: userData.name

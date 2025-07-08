@@ -17,29 +17,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let mounted = true;
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         console.log('Auth state changed:', event, session?.user?.email);
         
         if (!mounted) return;
 
         if (event === 'SIGNED_IN' && session?.user) {
           console.log('User signed in, loading profile');
-          try {
-            const userProfile = await loadUserProfile(session.user.id, session.user.email || '');
-            if (mounted) {
-              setUser(userProfile);
+          // Use setTimeout to avoid blocking the auth state change
+          setTimeout(async () => {
+            try {
+              const userProfile = await loadUserProfile(session.user.id, session.user.email || '');
+              if (mounted) {
+                setUser(userProfile);
+              }
+            } catch (error) {
+              console.error('Failed to load user profile:', error);
+              if (mounted) {
+                setUser({
+                  id: session.user.id,
+                  email: session.user.email || '',
+                  name: session.user.email?.split('@')[0] || 'User',
+                  user_type: 'citizen'
+                });
+              }
             }
-          } catch (error) {
-            console.error('Failed to load user profile:', error);
-            if (mounted) {
-              setUser({
-                id: session.user.id,
-                email: session.user.email || '',
-                name: session.user.email?.split('@')[0] || 'User',
-                user_type: 'citizen'
-              });
-            }
-          }
+          }, 0);
         } else if (event === 'SIGNED_OUT' || !session?.user) {
           console.log('User signed out');
           setUser(null);
