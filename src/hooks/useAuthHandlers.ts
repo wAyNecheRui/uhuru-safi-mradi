@@ -43,10 +43,7 @@ export const useAuthHandlers = (
       if (user) {
         console.log('Login successful for:', user.email);
         toast.success(`Welcome back, ${user.name}!`);
-        // Use setTimeout to ensure navigation happens after state update
-        setTimeout(() => {
-          navigate(`/${user.user_type}`, { replace: true });
-        }, 100);
+        navigate(`/${user.user_type}`, { replace: true });
       } else {
         toast.error("Login failed. Please try again.");
       }

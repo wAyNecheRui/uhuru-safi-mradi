@@ -90,6 +90,7 @@ export const signUpUser = async (email: string, password: string, userData: Sign
       email: email.trim().toLowerCase(), 
       password,
       options: {
+        emailRedirectTo: `${window.location.origin}/auth`,
         data: {
           user_type: userData.type,
           full_name: userData.name

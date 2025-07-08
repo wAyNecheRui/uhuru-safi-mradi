@@ -11,7 +11,21 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
-  const { signIn, signUp, signOut, loading } = useAuthOperations();
+  
+  // Create enhanced auth operations that can update user state
+  const authOps = useAuthOperations();
+  const enhancedSignIn = async (email: string, password: string) => {
+    const result = await authOps.signIn(email, password);
+    if (result.user) {
+      setUser(result.user);
+    }
+    return result;
+  };
+  
+  const enhancedSignOut = async () => {
+    await authOps.signOut();
+    setUser(null);
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -22,35 +36,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (!mounted) return;
 
-        if (event === 'SIGNED_IN' && session?.user) {
-          console.log('User signed in, loading profile');
-          // Use setTimeout to avoid blocking the auth state change
-          setTimeout(async () => {
-            try {
-              const userProfile = await loadUserProfile(session.user.id, session.user.email || '');
-              if (mounted) {
-                setUser(userProfile);
-              }
-            } catch (error) {
-              console.error('Failed to load user profile:', error);
-              if (mounted) {
-                setUser({
-                  id: session.user.id,
-                  email: session.user.email || '',
-                  name: session.user.email?.split('@')[0] || 'User',
-                  user_type: 'citizen'
-                });
-              }
-            }
-          }, 0);
-        } else if (event === 'SIGNED_OUT' || !session?.user) {
+        // Only handle explicit sign out - no automatic login
+        if (event === 'SIGNED_OUT' || !session?.user) {
           console.log('User signed out');
           setUser(null);
         }
       }
     );
 
-    console.log('Auth context initialized - waiting for explicit login');
+    console.log('Auth context initialized - no automatic login');
 
     return () => {
       mounted = false;
@@ -60,11 +54,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const value = {
     user,
-    loading,
+    loading: authOps.loading,
     isAuthenticated: !!user,
-    signIn,
-    signUp,
-    signOut,
+    signIn: enhancedSignIn,
+    signUp: authOps.signUp,
+    signOut: enhancedSignOut,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
