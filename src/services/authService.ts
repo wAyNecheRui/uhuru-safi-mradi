@@ -105,20 +105,8 @@ export const signUpUser = async (email: string, password: string, userData: Sign
 
     if (data.user) {
       console.log('Sign up successful for:', data.user.email);
-      
-      try {
-        await supabase
-          .from('user_profiles')
-          .insert({
-            user_id: data.user.id,
-            full_name: userData.name,
-            phone_number: userData.phone || null,
-            location: userData.location || null,
-            user_type: userData.type
-          });
-      } catch (profileError) {
-        console.error('Profile creation failed:', profileError);
-      }
+      // Profile is automatically created by database trigger
+      // Additional profile data can be updated later if needed
     }
     
     return { error: null };
