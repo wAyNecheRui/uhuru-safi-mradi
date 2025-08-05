@@ -14,41 +14,490 @@ export type Database = {
   }
   public: {
     Tables: {
+      community_votes: {
+        Row: {
+          comment: string | null
+          created_at: string
+          id: string
+          report_id: string
+          user_id: string
+          vote_type: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          report_id: string
+          user_id: string
+          vote_type: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          report_id?: string
+          user_id?: string
+          vote_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_votes_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "problem_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contractor_bids: {
+        Row: {
+          bid_amount: number
+          contractor_id: string
+          created_at: string
+          estimated_duration: number
+          id: string
+          proposal: string
+          report_id: string
+          selected_at: string | null
+          status: string
+          submitted_at: string
+          technical_approach: string | null
+        }
+        Insert: {
+          bid_amount: number
+          contractor_id: string
+          created_at?: string
+          estimated_duration: number
+          id?: string
+          proposal: string
+          report_id: string
+          selected_at?: string | null
+          status?: string
+          submitted_at?: string
+          technical_approach?: string | null
+        }
+        Update: {
+          bid_amount?: number
+          contractor_id?: string
+          created_at?: string
+          estimated_duration?: number
+          id?: string
+          proposal?: string
+          report_id?: string
+          selected_at?: string | null
+          status?: string
+          submitted_at?: string
+          technical_approach?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contractor_bids_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "problem_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contractor_credentials: {
+        Row: {
+          contractor_id: string
+          created_at: string
+          credential_name: string
+          credential_number: string | null
+          credential_type: string
+          document_url: string | null
+          expiry_date: string | null
+          id: string
+          issue_date: string | null
+          issuing_authority: string
+          verification_status: string
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          contractor_id: string
+          created_at?: string
+          credential_name: string
+          credential_number?: string | null
+          credential_type: string
+          document_url?: string | null
+          expiry_date?: string | null
+          id?: string
+          issue_date?: string | null
+          issuing_authority: string
+          verification_status?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          contractor_id?: string
+          created_at?: string
+          credential_name?: string
+          credential_number?: string | null
+          credential_type?: string
+          document_url?: string | null
+          expiry_date?: string | null
+          id?: string
+          issue_date?: string | null
+          issuing_authority?: string
+          verification_status?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: []
+      }
+      escrow_accounts: {
+        Row: {
+          created_at: string
+          held_amount: number
+          id: string
+          project_id: string
+          released_amount: number
+          status: string
+          stripe_account_id: string | null
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          held_amount?: number
+          id?: string
+          project_id: string
+          released_amount?: number
+          status?: string
+          stripe_account_id?: string | null
+          total_amount: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          held_amount?: number
+          id?: string
+          project_id?: string
+          released_amount?: number
+          status?: string
+          stripe_account_id?: string | null
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "escrow_accounts_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      file_uploads: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string
+          id: string
+          milestone_id: string | null
+          project_id: string | null
+          report_id: string | null
+          uploaded_by: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string
+          id?: string
+          milestone_id?: string | null
+          project_id?: string | null
+          report_id?: string | null
+          uploaded_by: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          file_type?: string
+          id?: string
+          milestone_id?: string | null
+          project_id?: string | null
+          report_id?: string | null
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "file_uploads_milestone_id_fkey"
+            columns: ["milestone_id"]
+            isOneToOne: false
+            referencedRelation: "project_milestones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "file_uploads_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "file_uploads_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "problem_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      milestone_verifications: {
+        Row: {
+          id: string
+          milestone_id: string
+          verification_notes: string | null
+          verification_photos: string[] | null
+          verification_status: string
+          verified_at: string
+          verifier_id: string
+        }
+        Insert: {
+          id?: string
+          milestone_id: string
+          verification_notes?: string | null
+          verification_photos?: string[] | null
+          verification_status: string
+          verified_at?: string
+          verifier_id: string
+        }
+        Update: {
+          id?: string
+          milestone_id?: string
+          verification_notes?: string | null
+          verification_photos?: string[] | null
+          verification_status?: string
+          verified_at?: string
+          verifier_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "milestone_verifications_milestone_id_fkey"
+            columns: ["milestone_id"]
+            isOneToOne: false
+            referencedRelation: "project_milestones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          action_url: string | null
+          category: string
+          created_at: string
+          id: string
+          message: string
+          read: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          action_url?: string | null
+          category: string
+          created_at?: string
+          id?: string
+          message: string
+          read?: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          action_url?: string | null
+          category?: string
+          created_at?: string
+          id?: string
+          message?: string
+          read?: boolean
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      payment_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          escrow_account_id: string
+          id: string
+          milestone_id: string | null
+          payment_method: string | null
+          status: string
+          stripe_transaction_id: string | null
+          transaction_type: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          escrow_account_id: string
+          id?: string
+          milestone_id?: string | null
+          payment_method?: string | null
+          status?: string
+          stripe_transaction_id?: string | null
+          transaction_type: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          escrow_account_id?: string
+          id?: string
+          milestone_id?: string | null
+          payment_method?: string | null
+          status?: string
+          stripe_transaction_id?: string | null
+          transaction_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_transactions_escrow_account_id_fkey"
+            columns: ["escrow_account_id"]
+            isOneToOne: false
+            referencedRelation: "escrow_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_transactions_milestone_id_fkey"
+            columns: ["milestone_id"]
+            isOneToOne: false
+            referencedRelation: "project_milestones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       problem_reports: {
         Row: {
+          affected_population: number | null
+          approved_at: string | null
+          approved_by: string | null
+          budget_allocated: number | null
+          category: string | null
+          coordinates: string | null
           created_at: string | null
           description: string
+          estimated_cost: number | null
           id: string
           location: string | null
+          photo_urls: string[] | null
           priority: string | null
+          priority_score: number | null
           reported_by: string
           status: string | null
           title: string
           updated_at: string | null
         }
         Insert: {
+          affected_population?: number | null
+          approved_at?: string | null
+          approved_by?: string | null
+          budget_allocated?: number | null
+          category?: string | null
+          coordinates?: string | null
           created_at?: string | null
           description: string
+          estimated_cost?: number | null
           id?: string
           location?: string | null
+          photo_urls?: string[] | null
           priority?: string | null
+          priority_score?: number | null
           reported_by: string
           status?: string | null
           title: string
           updated_at?: string | null
         }
         Update: {
+          affected_population?: number | null
+          approved_at?: string | null
+          approved_by?: string | null
+          budget_allocated?: number | null
+          category?: string | null
+          coordinates?: string | null
           created_at?: string | null
           description?: string
+          estimated_cost?: number | null
           id?: string
           location?: string | null
+          photo_urls?: string[] | null
           priority?: string | null
+          priority_score?: number | null
           reported_by?: string
           status?: string | null
           title?: string
           updated_at?: string | null
         }
         Relationships: []
+      }
+      project_milestones: {
+        Row: {
+          completion_criteria: string | null
+          created_at: string
+          description: string
+          evidence_urls: string[] | null
+          id: string
+          milestone_number: number
+          payment_percentage: number
+          project_id: string
+          status: string
+          submitted_at: string | null
+          target_completion_date: string | null
+          title: string
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          completion_criteria?: string | null
+          created_at?: string
+          description: string
+          evidence_urls?: string[] | null
+          id?: string
+          milestone_number: number
+          payment_percentage: number
+          project_id: string
+          status?: string
+          submitted_at?: string | null
+          target_completion_date?: string | null
+          title: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          completion_criteria?: string | null
+          created_at?: string
+          description?: string
+          evidence_urls?: string[] | null
+          id?: string
+          milestone_number?: number
+          payment_percentage?: number
+          project_id?: string
+          status?: string
+          submitted_at?: string | null
+          target_completion_date?: string | null
+          title?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_milestones_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       projects: {
         Row: {
@@ -93,6 +542,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      skills_profiles: {
+        Row: {
+          available_for_work: boolean | null
+          certifications: string | null
+          created_at: string
+          custom_skills: string[] | null
+          full_name: string
+          id: string
+          location: string | null
+          organization: string | null
+          phone_number: string | null
+          portfolio: string | null
+          skills: string[]
+          updated_at: string
+          user_id: string
+          years_experience: number | null
+        }
+        Insert: {
+          available_for_work?: boolean | null
+          certifications?: string | null
+          created_at?: string
+          custom_skills?: string[] | null
+          full_name: string
+          id?: string
+          location?: string | null
+          organization?: string | null
+          phone_number?: string | null
+          portfolio?: string | null
+          skills: string[]
+          updated_at?: string
+          user_id: string
+          years_experience?: number | null
+        }
+        Update: {
+          available_for_work?: boolean | null
+          certifications?: string | null
+          created_at?: string
+          custom_skills?: string[] | null
+          full_name?: string
+          id?: string
+          location?: string | null
+          organization?: string | null
+          phone_number?: string | null
+          portfolio?: string | null
+          skills?: string[]
+          updated_at?: string
+          user_id?: string
+          years_experience?: number | null
+        }
+        Relationships: []
       }
       user_profiles: {
         Row: {
