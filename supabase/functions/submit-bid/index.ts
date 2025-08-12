@@ -43,7 +43,7 @@ serve(async (req) => {
     const { data: profile, error: profileError } = await supabaseClient
       .from('user_profiles')
       .select('user_type')
-      .eq('id', user.id)
+      .eq('user_id', user.id)
       .single()
 
     if (profileError || profile.user_type !== 'contractor') {

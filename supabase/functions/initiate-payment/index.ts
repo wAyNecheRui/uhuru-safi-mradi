@@ -41,6 +41,34 @@ serve(async (req) => {
 
     const { escrow_account_id, amount, phone_number, payment_method } = await req.json()
 
+    // Verify user has permission to initiate payments (government users only)
+    const { data: profile, error: profileError } = await supabaseClient
+      .from('user_profiles')
+      .select('user_type')
+      .eq('user_id', user.id)
+      .single()
+
+    if (profileError || !profile || profile.user_type !== 'government') {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized - Only government users can initiate payments' }),
+        { 
+          status: 403, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    // Validate input data
+    if (!escrow_account_id || !amount || amount <= 0) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid payment data' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
     // Create payment transaction record
     const { data: transaction, error: transactionError } = await supabaseClient
       .from('payment_transactions')

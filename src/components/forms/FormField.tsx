@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { AlertCircle } from 'lucide-react';
+import { sanitizeInput } from '@/utils/security';
 
 export interface FormFieldProps {
   name: string;
@@ -52,7 +53,7 @@ export const FormField = ({
             id={fieldId}
             name={name}
             value={value || ''}
-            onChange={(e) => onChange(e.target.value)}
+            onChange={(e) => onChange(sanitizeInput(e.target.value))}
             onBlur={onBlur}
             placeholder={placeholder}
             disabled={disabled}
@@ -111,7 +112,7 @@ export const FormField = ({
             name={name}
             type={type}
             value={value || ''}
-            onChange={(e) => onChange(e.target.value)}
+            onChange={(e) => onChange(type === 'text' || type === 'email' || type === 'tel' || type === 'url' ? sanitizeInput(e.target.value) : e.target.value)}
             onBlur={onBlur}
             placeholder={placeholder}
             disabled={disabled}
