@@ -30,6 +30,8 @@ import GovernmentBenchmarks from "./pages/government/GovernmentBenchmarks";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import ContractorDatabasePage from "./pages/ContractorDatabase";
+import WorkforcePage from "./pages/WorkforcePage";
+import AnalyticsPage from "./pages/AnalyticsPage";
 import { AuthProvider } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient({
@@ -59,6 +61,8 @@ const App = () => {
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/contractor-database" element={<ContractorDatabasePage />} />
+                <Route path="/workforce" element={<WorkforcePage />} />
+                <Route path="/analytics" element={<AnalyticsPage />} />
                 
                 {/* Citizen Routes */}
                 <Route path="/citizen" element={<CitizenDashboard />} />

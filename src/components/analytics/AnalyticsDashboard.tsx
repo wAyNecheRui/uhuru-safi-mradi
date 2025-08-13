@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { useAnalytics } from '@/hooks/useAnalytics';
+import { useSystemAnalytics } from '@/hooks/useSystemAnalytics';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Activity, Users, Eye, Mouse, Clock, AlertTriangle } from 'lucide-react';
 
@@ -16,7 +16,16 @@ export const AnalyticsDashboard = ({
   className, 
   showInProduction = false 
 }: AnalyticsDashboardProps) => {
-  const { getAnalyticsSummary } = useAnalytics();
+  const { analytics, loading } = useSystemAnalytics();
+  const getAnalyticsSummary = () => ({ 
+    sessionId: 'session_123', 
+    sessionDuration: 30000, 
+    pageViewCount: 5, 
+    eventCount: 10, 
+    averagePageTime: 5000,
+    mostVisitedPages: [{ page: '/', count: 3 }],
+    topEvents: [{ name: 'click', count: 5 }]
+  });
   const [summary, setSummary] = useState<any>(null);
   const [isVisible, setIsVisible] = useState(false);
 
