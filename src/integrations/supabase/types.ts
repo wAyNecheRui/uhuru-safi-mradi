@@ -252,6 +252,47 @@ export type Database = {
           },
         ]
       }
+      job_applications: {
+        Row: {
+          applicant_id: string
+          application_message: string | null
+          applied_at: string | null
+          id: string
+          job_id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string | null
+        }
+        Insert: {
+          applicant_id: string
+          application_message?: string | null
+          applied_at?: string | null
+          id?: string
+          job_id: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string | null
+        }
+        Update: {
+          applicant_id?: string
+          application_message?: string | null
+          applied_at?: string | null
+          id?: string
+          job_id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_applications_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "workforce_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       milestone_verifications: {
         Row: {
           id: string
@@ -543,6 +584,44 @@ export type Database = {
           },
         ]
       }
+      realtime_project_updates: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          id: string
+          message: string
+          metadata: Json | null
+          project_id: string
+          update_type: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          id?: string
+          message: string
+          metadata?: Json | null
+          project_id: string
+          update_type: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          id?: string
+          message?: string
+          metadata?: Json | null
+          project_id?: string
+          update_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "realtime_project_updates_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       skills_profiles: {
         Row: {
           available_for_work: boolean | null
@@ -591,6 +670,36 @@ export type Database = {
           updated_at?: string
           user_id?: string
           years_experience?: number | null
+        }
+        Relationships: []
+      }
+      system_analytics: {
+        Row: {
+          category: string
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          metric_date: string
+          metric_name: string
+          metric_value: number
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          metric_date: string
+          metric_name: string
+          metric_value: number
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          metric_date?: string
+          metric_name?: string
+          metric_value?: number
         }
         Relationships: []
       }
@@ -666,12 +775,91 @@ export type Database = {
         }
         Relationships: []
       }
+      workforce_jobs: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          description: string
+          duration_days: number | null
+          id: string
+          location: string
+          positions_available: number | null
+          project_id: string | null
+          required_skills: string[]
+          status: string | null
+          title: string
+          updated_at: string | null
+          wage_max: number | null
+          wage_min: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          description: string
+          duration_days?: number | null
+          id?: string
+          location: string
+          positions_available?: number | null
+          project_id?: string | null
+          required_skills?: string[]
+          status?: string | null
+          title: string
+          updated_at?: string | null
+          wage_max?: number | null
+          wage_min?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          description?: string
+          duration_days?: number | null
+          id?: string
+          location?: string
+          positions_available?: number | null
+          project_id?: string | null
+          required_skills?: string[]
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+          wage_max?: number | null
+          wage_min?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workforce_jobs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_public_contractor_profiles: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          user_id: string
+          years_experience: number
+          available_for_work: boolean
+          location: string
+          organization: string
+          skills: string[]
+          custom_skills: string[]
+          certifications: string
+          portfolio: string
+          created_at: string
+          updated_at: string
+        }[]
+      }
+      update_system_analytics: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
