@@ -14,6 +14,7 @@ import GovernmentDashboard from "./pages/government/GovernmentDashboard";
 import CitizenReportIssue from "./pages/citizen/CitizenReportIssue";
 import CitizenTrackReports from "./pages/citizen/CitizenTrackReports";
 import CitizenCommunityVoting from "./pages/citizen/CitizenCommunityVoting";
+import CitizenSkillsRegistration from "./pages/citizen/CitizenSkillsRegistration";
 import CitizenWorkforce from "./pages/citizen/CitizenWorkforce";
 import CitizenUSSD from "./pages/citizen/CitizenUSSD";
 import ContractorBidding from "./pages/contractor/ContractorBidding";
@@ -69,6 +70,7 @@ const App = () => {
                 <Route path="/citizen/report" element={<CitizenReportIssue />} />
                 <Route path="/citizen/track" element={<CitizenTrackReports />} />
                 <Route path="/citizen/voting" element={<CitizenCommunityVoting />} />
+                <Route path="/citizen/skills" element={<CitizenSkillsRegistration />} />
                 <Route path="/citizen/workforce" element={<CitizenWorkforce />} />
                 <Route path="/citizen/ussd" element={<CitizenUSSD />} />
                 

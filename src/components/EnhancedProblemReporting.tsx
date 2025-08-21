@@ -7,6 +7,7 @@ import { useProblemReporting } from '@/hooks/useProblemReporting';
 import BasicInfoSection from '@/components/reporting/BasicInfoSection';
 import LocationSection from '@/components/reporting/LocationSection';
 import PriorityImpactSection from '@/components/reporting/PriorityImpactSection';
+import ImpactAssessmentSection from '@/components/reporting/ImpactAssessmentSection';
 import PhotoUploadSection from '@/components/reporting/PhotoUploadSection';
 
 const EnhancedProblemReporting = () => {
@@ -43,6 +44,11 @@ const EnhancedProblemReporting = () => {
           />
 
           <PriorityImpactSection
+            reportData={reportData}
+            onInputChange={handleInputChange}
+          />
+
+          <ImpactAssessmentSection
             reportData={reportData}
             onInputChange={handleInputChange}
           />

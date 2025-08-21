@@ -12,7 +12,8 @@ import {
   Users, 
   AlertTriangle,
   CheckCircle,
-  Eye
+  Eye,
+  TrendingUp
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -28,9 +29,16 @@ interface ProblemReport {
   created_at: string;
   reported_by: string;
   status: string;
-  vote_count: number;
+  priority_score: number;
   user_vote?: 'upvote' | 'downvote' | null;
   reporter_name?: string;
+  upvotes: number;
+  downvotes: number;
+}
+
+interface VoteCount {
+  upvotes: number;
+  downvotes: number;
 }
 
 const CommunityValidation = () => {
@@ -41,6 +49,28 @@ const CommunityValidation = () => {
 
   useEffect(() => {
     fetchReports();
+
+    // Set up real-time subscription for community votes
+    const channel = supabase
+      .channel('community-votes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'community_votes'
+        },
+        (payload) => {
+          console.log('Vote change detected:', payload);
+          // Refresh reports when votes change
+          fetchReports();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const fetchReports = async () => {
@@ -49,24 +79,50 @@ const CommunityValidation = () => {
         .from('problem_reports')
         .select('*')
         .eq('status', 'pending')
+        .order('priority_score', { ascending: false })
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      // For each report, get vote counts and user's vote
-      const reportsWithVotes = (data || []).map((report) => {
-        // Simulate vote counts since we don't have community_votes table yet
-        const voteCount = Math.floor(Math.random() * 20) + 1;
+      // For each report, get vote counts and user's current vote
+      const reportsWithVotes = await Promise.all((data || []).map(async (report) => {
+        // Get vote counts
+        const { data: voteCounts, error: voteError } = await supabase
+          .from('community_votes')
+          .select('vote_type')
+          .eq('report_id', report.id);
+
+        if (voteError) {
+          console.error('Error fetching vote counts:', voteError);
+        }
+
+        const upvotes = voteCounts?.filter(v => v.vote_type === 'upvote').length || 0;
+        const downvotes = voteCounts?.filter(v => v.vote_type === 'downvote').length || 0;
+
+        // Get user's current vote if logged in
+        let userVote = null;
+        if (user) {
+          const { data: userVoteData } = await supabase
+            .from('community_votes')
+            .select('vote_type')
+            .eq('report_id', report.id)
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+          userVote = userVoteData?.vote_type || null;
+        }
         
         return {
           ...report,
-          vote_count: voteCount,
-          user_vote: null,
-          reporter_name: 'Anonymous', // Since we don't have user profiles joined
+          priority_score: report.priority_score || 0,
+          user_vote: userVote,
+          reporter_name: 'Anonymous', // Could join with profiles table later
           priority: report.priority || 'medium',
-          location: report.location || 'Location not specified'
+          location: report.location || 'Location not specified',
+          upvotes,
+          downvotes
         };
-      });
+      }));
 
       setReports(reportsWithVotes);
     } catch (error: any) {
@@ -86,21 +142,48 @@ const CommunityValidation = () => {
     setVotingState(prev => ({ ...prev, [reportId]: true }));
 
     try {
-      // Simulate voting since we don't have community_votes table
-      console.log(`Vote submitted: ${voteType} for report ${reportId}`);
-      
-      // Update local state
-      setReports(prev => prev.map(report => 
-        report.id === reportId 
-          ? { 
-              ...report, 
-              user_vote: voteType,
-              vote_count: report.vote_count + (voteType === 'upvote' ? 1 : -1)
-            }
-          : report
-      ));
+      // Insert or update vote in community_votes table
+      const { error } = await supabase
+        .from('community_votes')
+        .upsert({
+          report_id: reportId,
+          user_id: user.id,
+          vote_type: voteType
+        }, {
+          onConflict: 'report_id,user_id'
+        });
 
-      toast.success(`Vote ${voteType === 'upvote' ? 'up' : 'down'} submitted successfully`);
+      if (error) throw error;
+
+      // Update local state immediately for better UX
+      setReports(prev => prev.map(report => {
+        if (report.id === reportId) {
+          const wasUpvote = report.user_vote === 'upvote';
+          const wasDownvote = report.user_vote === 'downvote';
+          
+          let newUpvotes = report.upvotes;
+          let newDownvotes = report.downvotes;
+          
+          // Remove previous vote
+          if (wasUpvote) newUpvotes--;
+          if (wasDownvote) newDownvotes--;
+          
+          // Add new vote
+          if (voteType === 'upvote') newUpvotes++;
+          if (voteType === 'downvote') newDownvotes++;
+          
+          return { 
+            ...report, 
+            user_vote: voteType,
+            upvotes: newUpvotes,
+            downvotes: newDownvotes,
+            priority_score: newUpvotes - newDownvotes
+          };
+        }
+        return report;
+      }));
+
+      toast.success(`Vote submitted successfully`);
     } catch (error: any) {
       console.error('Voting error:', error);
       toast.error('Failed to submit vote');
@@ -256,13 +339,26 @@ const CommunityValidation = () => {
                   </div>
 
                   {/* Voting Section */}
-                  <div className="lg:w-64 border-t lg:border-t-0 lg:border-l border-gray-200 pt-4 lg:pt-0 lg:pl-6">
-                    <div className="text-center mb-4">
-                      <div className="text-2xl font-bold text-gray-900">
-                        {report.vote_count}
-                      </div>
-                      <div className="text-sm text-gray-600">Community Votes</div>
-                    </div>
+          <div className="lg:w-64 border-t lg:border-t-0 lg:border-l border-gray-200 pt-4 lg:pt-0 lg:pl-6">
+            <div className="text-center mb-4">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <TrendingUp className="h-4 w-4 text-blue-600" />
+                <div className="text-lg font-bold text-gray-900">
+                  {report.priority_score}
+                </div>
+              </div>
+              <div className="text-xs text-gray-600">Priority Score</div>
+              <div className="flex justify-center gap-4 mt-2 text-xs">
+                <div className="text-green-600 flex items-center">
+                  <ThumbsUp className="h-3 w-3 mr-1" />
+                  {report.upvotes}
+                </div>
+                <div className="text-red-600 flex items-center">
+                  <ThumbsDown className="h-3 w-3 mr-1" />
+                  {report.downvotes}
+                </div>
+              </div>
+            </div>
 
                     <div className="space-y-3">
                       <div className="flex gap-2">

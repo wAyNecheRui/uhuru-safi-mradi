@@ -1,9 +1,9 @@
 
 import React from 'react';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { CATEGORIES } from '@/constants/problemReporting';
 import { ReportData } from '@/types/problemReporting';
+import DescriptionTemplateSection from './DescriptionTemplateSection';
 
 interface BasicInfoSectionProps {
   reportData: ReportData;
@@ -38,15 +38,10 @@ const BasicInfoSection = ({ reportData, onInputChange }: BasicInfoSectionProps) 
         </div>
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Problem Description *</label>
-        <Textarea
-          placeholder="Provide detailed description of the problem, its impact, and any relevant background information..."
-          rows={4}
-          value={reportData.description}
-          onChange={(e) => onInputChange('description', e.target.value)}
-        />
-      </div>
+      <DescriptionTemplateSection
+        reportData={reportData}
+        onInputChange={onInputChange}
+      />
     </>
   );
 };
