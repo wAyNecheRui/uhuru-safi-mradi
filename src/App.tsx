@@ -20,6 +20,8 @@ import CitizenUSSD from "./pages/citizen/CitizenUSSD";
 import ContractorBidding from "./pages/contractor/ContractorBidding";
 import ContractorProjects from "./pages/contractor/ContractorProjects";
 import ContractorVerification from "./pages/contractor/ContractorVerification";
+import ContractorTemplates from "./pages/contractor/ContractorTemplates";
+import ContractorBidTracking from "./pages/contractor/ContractorBidTracking";
 import GovernmentProjects from "./pages/government/GovernmentProjects";
 import GovernmentReports from "./pages/government/GovernmentReports";
 import GovernmentEscrow from "./pages/government/GovernmentEscrow";
@@ -79,6 +81,8 @@ const App = () => {
                 <Route path="/contractor/bidding" element={<ContractorBidding />} />
                 <Route path="/contractor/projects" element={<ContractorProjects />} />
                 <Route path="/contractor/verification" element={<ContractorVerification />} />
+                <Route path="/contractor/templates" element={<ContractorTemplates />} />
+                <Route path="/contractor/tracking" element={<ContractorBidTracking />} />
                 
                 {/* Government Routes */}
                 <Route path="/government" element={<GovernmentDashboard />} />

@@ -34,6 +34,22 @@ const ContractorDashboard = () => {
       href: '/contractor/projects',
       color: 'bg-green-500 hover:bg-green-600',
       iconColor: 'text-green-600'
+    },
+    {
+      title: 'Verification System',
+      description: 'Manage credentials and verification status',
+      icon: Award,
+      href: '/contractor/verification',
+      color: 'bg-purple-500 hover:bg-purple-600',
+      iconColor: 'text-purple-600'
+    },
+    {
+      title: 'Bid Templates',
+      description: 'Access standardized bid templates',
+      icon: FileText,
+      href: '/contractor/templates',
+      color: 'bg-orange-500 hover:bg-orange-600',
+      iconColor: 'text-orange-600'
     }
   ];
 
@@ -105,7 +121,7 @@ const ContractorDashboard = () => {
 
           {/* Quick Actions */}
           <div className={`grid gap-4 sm:gap-6 mb-6 sm:mb-8 ${
-            isMobile ? 'grid-cols-1' : 'grid-cols-2'
+            isMobile ? 'grid-cols-1' : isTablet ? 'grid-cols-2' : 'grid-cols-2 lg:grid-cols-4'
           }`}>
             {quickActions.map((action) => {
               const IconComponent = action.icon;
