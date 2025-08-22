@@ -3,64 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { FileText, Download, Eye } from 'lucide-react';
-
-interface BidTemplate {
-  id: string;
-  name: string;
-  category: string;
-  description: string;
-  sections: string[];
-  lastUpdated: string;
-  downloads: number;
-}
+import { BID_TEMPLATES, TEMPLATE_CATEGORIES, type BidTemplate } from '@/constants/bidTemplates';
 
 const BidTemplates = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
 
-  const templates: BidTemplate[] = [
-    {
-      id: '1',
-      name: 'Road Construction Bid Template',
-      category: 'Infrastructure',
-      description: 'Standardized template for road construction and rehabilitation projects',
-      sections: ['Technical Approach', 'Materials Specification', 'Timeline', 'Safety Plan', 'Quality Assurance'],
-      lastUpdated: '2024-01-15',
-      downloads: 245
-    },
-    {
-      id: '2',
-      name: 'Water Infrastructure Template',
-      category: 'Water',
-      description: 'Template for water pipeline installation and water system projects',
-      sections: ['System Design', 'Environmental Impact', 'Community Engagement', 'Testing Protocols'],
-      lastUpdated: '2024-01-12',
-      downloads: 189
-    },
-    {
-      id: '3',
-      name: 'Building Construction Template',
-      category: 'Construction',
-      description: 'Comprehensive template for building and structural projects',
-      sections: ['Architectural Plans', 'Structural Analysis', 'Materials', 'Project Management'],
-      lastUpdated: '2024-01-10',
-      downloads: 167
-    },
-    {
-      id: '4',
-      name: 'Electrical Infrastructure Template',
-      category: 'Electrical',
-      description: 'Template for electrical installations and street lighting projects',
-      sections: ['Electrical Design', 'Safety Compliance', 'Maintenance Plan', 'Warranty Terms'],
-      lastUpdated: '2024-01-08',
-      downloads: 134
-    }
-  ];
-
-  const categories = ['all', 'Infrastructure', 'Water', 'Construction', 'Electrical'];
-
   const filteredTemplates = selectedCategory === 'all' 
-    ? templates 
-    : templates.filter(template => template.category === selectedCategory);
+    ? BID_TEMPLATES 
+    : BID_TEMPLATES.filter(template => template.category === selectedCategory);
 
   const getCategoryColor = (category: string) => {
     switch (category) {
@@ -88,7 +38,7 @@ const BidTemplates = () => {
 
       {/* Category Filter */}
       <div className="flex flex-wrap gap-2">
-        {categories.map((category) => (
+        {TEMPLATE_CATEGORIES.map((category) => (
           <Button
             key={category}
             variant={selectedCategory === category ? "default" : "outline"}

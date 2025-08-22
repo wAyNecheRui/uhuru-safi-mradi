@@ -17,11 +17,15 @@ import AppFooter from '@/components/AppFooter';
 import TabNavigation from '@/components/TabNavigation';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
 import { useResponsive } from '@/hooks/useResponsive';
+import { useProjectStats } from '@/hooks/useProjectStats';
+import { useRecentIssues } from '@/hooks/useRecentIssues';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedCounty, setSelectedCounty] = useState('Nairobi');
   const { isMobile } = useResponsive();
+  const { stats: projectStats, loading: statsLoading } = useProjectStats();
+  const { issues: recentIssues, loading: issuesLoading } = useRecentIssues(3);
 
   const getText = (en: string) => en;
 
@@ -29,46 +33,6 @@ const Index = () => {
     console.log('County changed to:', county);
     setSelectedCounty(county);
   };
-
-  // Mock data for demonstration
-  const projectStats = {
-    totalProjects: 1247,
-    activeProjects: 89,
-    completedProjects: 892,
-    totalFunds: 'KES 2.4B',
-    citizenReports: 3456,
-    verifiedContractors: 234
-  };
-
-  const recentIssues = [
-    {
-      id: 1,
-      title: 'Pothole on Mombasa Road',
-      location: 'Nairobi County',
-      votes: 156,
-      status: 'Under Review',
-      urgency: 'High',
-      reportedAt: '2 hours ago'
-    },
-    {
-      id: 2,
-      title: 'Broken Street Light - Kasarani',
-      location: 'Nairobi County',
-      votes: 89,
-      status: 'Contractor Assigned',
-      urgency: 'Medium',
-      reportedAt: '5 hours ago'
-    },
-    {
-      id: 3,
-      title: 'Water Pipeline Leak',
-      location: 'Kiambu County',
-      votes: 234,
-      status: 'In Progress',
-      urgency: 'Critical',
-      reportedAt: '1 day ago'
-    }
-  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
@@ -84,7 +48,18 @@ const Index = () => {
 
             {/* Overview Tab */}
             <TabsContent value="overview" className="space-y-4 sm:space-y-6">
-              <StatsCards projectStats={projectStats} getText={getText} />
+              {statsLoading ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                  {[...Array(6)].map((_, i) => (
+                    <div key={i} className="bg-white p-4 rounded-lg shadow animate-pulse">
+                      <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                      <div className="h-6 bg-gray-200 rounded"></div>
+                    </div>
+                  ))}
+                </div>
+              ) : projectStats ? (
+                <StatsCards projectStats={projectStats} getText={getText} />
+              ) : null}
 
               {/* Map and Recent Issues */}
               <div className={`grid gap-4 sm:gap-6 ${isMobile ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2'}`}>
@@ -100,7 +75,19 @@ const Index = () => {
                   </CardContent>
                 </Card>
 
-                <RecentIssues issues={recentIssues} getText={getText} />
+                {issuesLoading ? (
+                  <div className="bg-white p-6 rounded-lg shadow animate-pulse">
+                    <div className="h-6 bg-gray-200 rounded mb-4"></div>
+                    {[...Array(3)].map((_, i) => (
+                      <div key={i} className="border-b pb-3 mb-3 last:border-b-0">
+                        <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                        <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <RecentIssues issues={recentIssues} getText={getText} />
+                )}
               </div>
             </TabsContent>
 

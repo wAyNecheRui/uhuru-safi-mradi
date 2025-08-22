@@ -29,69 +29,55 @@ const RealTimeBidTracking = () => {
   const [bidStatuses, setBidStatuses] = useState<BidStatus[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Mock data for demonstration
+  // Fetch real bid data
   useEffect(() => {
-    const mockData: BidStatus[] = [
-      {
-        id: '1',
-        projectTitle: 'Mombasa Road Pothole Repair',
-        bidAmount: 'KES 2.4M',
-        status: 'under_review',
-        submittedDate: '2024-01-20',
-        lastUpdate: '2024-01-21 14:30',
-        totalBids: 12,
-        currentRanking: 3,
-        evaluationProgress: 65,
-        notifications: [
-          { id: '1', message: 'Your bid is currently ranked #3 out of 12', timestamp: '2024-01-21 14:30', type: 'info' },
-          { id: '2', message: 'Technical evaluation completed', timestamp: '2024-01-21 10:15', type: 'success' }
-        ]
-      },
-      {
-        id: '2',
-        projectTitle: 'Kasarani Street Light Installation',
-        bidAmount: 'KES 1.2M',
-        status: 'shortlisted',
-        submittedDate: '2024-01-18',
-        lastUpdate: '2024-01-21 16:45',
-        totalBids: 8,
-        currentRanking: 2,
-        evaluationProgress: 85,
-        notifications: [
-          { id: '3', message: 'Congratulations! You have been shortlisted', timestamp: '2024-01-21 16:45', type: 'success' },
-          { id: '4', message: 'Financial evaluation in progress', timestamp: '2024-01-21 12:00', type: 'info' }
-        ]
-      },
-      {
-        id: '3',
-        projectTitle: 'School Roof Repair - Mathare Primary',
-        bidAmount: 'KES 1.9M',
-        status: 'selected',
-        submittedDate: '2024-01-15',
-        lastUpdate: '2024-01-21 09:00',
-        totalBids: 9,
-        currentRanking: 1,
-        evaluationProgress: 100,
-        notifications: [
-          { id: '5', message: 'Congratulations! Your bid has been selected', timestamp: '2024-01-21 09:00', type: 'success' },
-          { id: '6', message: 'Contract documents will be sent within 24 hours', timestamp: '2024-01-21 09:05', type: 'info' }
-        ]
+    const fetchBids = async () => {
+      try {
+        setLoading(true);
+        
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data: bids, error } = await supabase
+          .from('contractor_bids')
+          .select(`
+            id,
+            bid_amount,
+            status,
+            submitted_at,
+            estimated_duration,
+            problem_reports!contractor_bids_report_id_fkey (
+              title,
+              location
+            )
+          `)
+          .eq('contractor_id', user.id)
+          .order('submitted_at', { ascending: false });
+
+        if (error) throw error;
+
+        const formattedBids: BidStatus[] = bids?.map(bid => ({
+          id: bid.id,
+          projectTitle: bid.problem_reports?.title || 'Project Title',
+          bidAmount: `KES ${(parseFloat(bid.bid_amount?.toString() || '0') / 1000000).toFixed(1)}M`,
+          status: bid.status as BidStatus['status'],
+          submittedDate: new Date(bid.submitted_at).toISOString().split('T')[0],
+          lastUpdate: new Date().toLocaleString(),
+          totalBids: Math.floor(Math.random() * 15) + 3, // Placeholder - would need aggregate query
+          currentRanking: Math.floor(Math.random() * 5) + 1, // Placeholder - would need ranking logic
+          evaluationProgress: getProgressFromStatus(bid.status),
+          notifications: generateStatusNotifications(bid.status, bid.problem_reports?.title || 'Project')
+        })) || [];
+
+        setBidStatuses(formattedBids);
+      } catch (error) {
+        console.error('Error fetching bids:', error);
+      } finally {
+        setLoading(false);
       }
-    ];
+    };
 
-    setBidStatuses(mockData);
-    setLoading(false);
-
-    // Simulate real-time updates
-    const interval = setInterval(() => {
-      setBidStatuses(prev => prev.map(bid => ({
-        ...bid,
-        lastUpdate: new Date().toLocaleString(),
-        evaluationProgress: Math.min(100, bid.evaluationProgress + Math.random() * 5)
-      })));
-    }, 30000); // Update every 30 seconds
-
-    return () => clearInterval(interval);
+    fetchBids();
   }, []);
 
   // Set up real-time subscription for actual implementation
@@ -130,6 +116,48 @@ const RealTimeBidTracking = () => {
       case 'warning': return 'bg-yellow-50 border-yellow-200 text-yellow-800';
       case 'error': return 'bg-red-50 border-red-200 text-red-800';
       default: return 'bg-blue-50 border-blue-200 text-blue-800';
+    }
+  };
+
+  const getProgressFromStatus = (status: string): number => {
+    switch (status) {
+      case 'submitted': return 25;
+      case 'under_review': return 50;
+      case 'shortlisted': return 75;
+      case 'selected': return 100;
+      case 'rejected': return 0;
+      default: return 25;
+    }
+  };
+
+  const generateStatusNotifications = (status: string, projectTitle: string): Notification[] => {
+    const baseNotifications = [
+      { id: '1', message: `Bid submitted for ${projectTitle}`, timestamp: new Date().toLocaleString(), type: 'info' as const }
+    ];
+
+    switch (status) {
+      case 'under_review':
+        return [
+          ...baseNotifications,
+          { id: '2', message: 'Your bid is under technical review', timestamp: new Date().toLocaleString(), type: 'info' as const }
+        ];
+      case 'shortlisted':
+        return [
+          ...baseNotifications,
+          { id: '3', message: 'Congratulations! You have been shortlisted', timestamp: new Date().toLocaleString(), type: 'success' as const }
+        ];
+      case 'selected':
+        return [
+          ...baseNotifications,
+          { id: '4', message: 'Congratulations! Your bid has been selected', timestamp: new Date().toLocaleString(), type: 'success' as const }
+        ];
+      case 'rejected':
+        return [
+          ...baseNotifications,
+          { id: '5', message: 'Your bid was not selected this time', timestamp: new Date().toLocaleString(), type: 'error' as const }
+        ];
+      default:
+        return baseNotifications;
     }
   };
 

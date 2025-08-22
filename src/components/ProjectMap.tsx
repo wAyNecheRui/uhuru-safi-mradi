@@ -1,57 +1,36 @@
 import React from 'react';
 import { MapPin, Wrench, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { useMapProjects } from '@/hooks/useMapProjects';
 
 interface ProjectMapProps {
   selectedCounty: string;
 }
 
 const ProjectMap = ({ selectedCounty }: ProjectMapProps) => {
-  console.log('ProjectMap rendering for county:', selectedCounty);
-  
-  // Mock project data for map visualization - now using the selected county
-  const projects = [
-    {
-      id: 1,
-      name: `${selectedCounty} Road Repair`,
-      status: 'In Progress',
-      lat: -1.3167,
-      lng: 36.8833,
-      progress: 65,
-      budget: 'KES 2.5M',
-      contractor: 'ABC Construction Ltd'
-    },
-    {
-      id: 2,
-      name: `${selectedCounty} Street Lights`,
-      status: 'Planning',
-      lat: -1.2167,
-      lng: 36.9000,
-      progress: 15,
-      budget: 'KES 800K',
-      contractor: 'Pending'
-    },
-    {
-      id: 3,
-      name: `${selectedCounty} Water Pipeline`,
-      status: 'Completed',
-      lat: -1.3167,
-      lng: 36.7833,
-      progress: 100,
-      budget: 'KES 3.2M',
-      contractor: 'Kenya Water Works'
-    },
-    {
-      id: 4,
-      name: `${selectedCounty} Drainage System`,
-      status: 'Under Review',
-      lat: -1.2921,
-      lng: 36.8219,
-      progress: 0,
-      budget: 'KES 1.8M',
-      contractor: 'Pending Approval'
-    }
-  ];
+  const { projects, loading, error } = useMapProjects(selectedCounty);
+
+  if (loading) {
+    return (
+      <div className="h-80 bg-gradient-to-br from-green-100 to-blue-100 rounded-lg relative overflow-hidden flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-2"></div>
+          <p className="text-gray-600">Loading projects...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="h-80 bg-gradient-to-br from-red-100 to-orange-100 rounded-lg relative overflow-hidden flex items-center justify-center">
+        <div className="text-center">
+          <AlertTriangle className="h-8 w-8 text-red-600 mx-auto mb-2" />
+          <p className="text-red-600">Failed to load projects</p>
+        </div>
+      </div>
+    );
+  }
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -93,7 +72,7 @@ const ProjectMap = ({ selectedCounty }: ProjectMapProps) => {
       <div className="absolute inset-0 p-4">
         {projects.map((project, index) => (
           <div
-            key={`${selectedCounty}-${project.id}`}
+            key={project.id}
             className="absolute transform -translate-x-1/2 -translate-y-1/2 group cursor-pointer"
             style={{
               left: `${20 + (index * 15)}%`,
