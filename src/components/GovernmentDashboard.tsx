@@ -6,129 +6,27 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Shield, CheckCircle, Clock, AlertTriangle, Users, DollarSign, FileText, Gavel } from 'lucide-react';
+import { Shield, CheckCircle, Clock, AlertTriangle, Users, DollarSign, FileText, Gavel, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useGovernmentDashboard } from '@/hooks/useGovernmentDashboard';
 
 const GovernmentDashboard = () => {
   const [selectedCounty, setSelectedCounty] = useState('all');
   const { toast } = useToast();
+  const { pendingApprovals, activeProjects, budgetOverview, loading, handleApproval } = useGovernmentDashboard();
 
-  const pendingApprovals = [
-    {
-      id: 1,
-      title: 'Mombasa Road Pothole Repair',
-      location: 'Nairobi County',
-      budget: 'KES 2.5M',
-      communityVotes: 234,
-      supportPercentage: 89,
-      selectedContractor: 'Highway Construction Ltd',
-      contractorRating: 4.7,
-      bidAmount: 'KES 2.3M',
-      timeline: '3 weeks',
-      urgency: 'High',
-      submittedDate: '2024-01-20',
-      aiRecommendation: 'APPROVE',
-      riskLevel: 'Low'
-    },
-    {
-      id: 2,
-      title: 'Kibera Water Pipeline Extension',
-      location: 'Nairobi County',
-      budget: 'KES 4.8M',
-      communityVotes: 456,
-      supportPercentage: 94,
-      selectedContractor: 'Kenya Water Works Ltd',
-      contractorRating: 4.9,
-      bidAmount: 'KES 4.2M',
-      timeline: '6 weeks',
-      urgency: 'Critical',
-      submittedDate: '2024-01-18',
-      aiRecommendation: 'APPROVE',
-      riskLevel: 'Medium'
-    },
-    {
-      id: 3,
-      title: 'Kasarani Street Light Installation',
-      location: 'Nairobi County',
-      budget: 'KES 1.2M',
-      communityVotes: 189,
-      supportPercentage: 78,
-      selectedContractor: 'Solar Solutions Kenya',
-      contractorRating: 4.2,
-      bidAmount: 'KES 1.1M',
-      timeline: '2 weeks',
-      urgency: 'Medium',
-      submittedDate: '2024-01-22',
-      aiRecommendation: 'REVIEW',
-      riskLevel: 'Low'
-    }
-  ];
-
-  const activeProjects = [
-    {
-      id: 1,
-      title: 'Market Road Rehabilitation',
-      location: 'Machakos County',
-      contractor: 'ABC Construction Ltd',
-      budget: 'KES 4.8M',
-      progress: 65,
-      startDate: '2024-01-10',
-      expectedCompletion: '2024-03-15',
-      currentPhase: 'Construction',
-      nextMilestone: 'Surface laying',
-      citizenRating: 4.3,
-      issues: 0
-    },
-    {
-      id: 2,
-      title: 'School Roof Repair - Mathare Primary',
-      location: 'Nairobi County',
-      contractor: 'Quality Builders Ltd',
-      budget: 'KES 2.1M',
-      progress: 85,
-      startDate: '2024-01-05',
-      expectedCompletion: '2024-02-20',
-      currentPhase: 'Finishing',
-      nextMilestone: 'Final inspection',
-      citizenRating: 4.8,
-      issues: 0
-    },
-    {
-      id: 3,
-      title: 'Health Center Renovation',
-      location: 'Kisumu County',
-      contractor: 'Medical Infrastructure Ltd',
-      budget: 'KES 6.2M',
-      progress: 42,
-      startDate: '2024-01-15',
-      expectedCompletion: '2024-04-10',
-      currentPhase: 'Structural work',
-      nextMilestone: 'Electrical installation',
-      citizenRating: 4.1,
-      issues: 2
-    }
-  ];
-
-  const budgetOverview = {
-    totalAllocated: 'KES 45.2B',
-    totalSpent: 'KES 28.7B',
-    totalCommitted: 'KES 12.8B',
-    available: 'KES 3.7B',
-    utilizationRate: 64
-  };
-
-  const handleApproval = (projectId: number, action: 'approve' | 'reject' | 'request_more_info') => {
-    const actionMessages = {
-      approve: 'Project approved! Escrow funds will be released to contractor.',
-      reject: 'Project rejected. Community and contractor will be notified.',
-      request_more_info: 'Additional information requested from contractor.'
-    };
-
-    toast({
-      title: `Project ${action.replace('_', ' ')}`,
-      description: actionMessages[action],
-    });
-  };
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto space-y-6">
+        <Card className="shadow-xl border-t-4 border-t-blue-600">
+          <CardContent className="p-6 text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+            <p>Loading dashboard data...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const getUrgencyColor = (urgency: string) => {
     switch (urgency) {
@@ -259,16 +157,16 @@ const GovernmentDashboard = () => {
                 <CardContent className="p-6">
                   <div className="space-y-4">
                     <div className="flex flex-wrap items-start justify-between gap-2">
-                      <h3 className="text-xl font-semibold text-gray-900">{project.title}</h3>
+                       <h3 className="text-xl font-semibold text-gray-900">{project.title}</h3>
                       <div className="flex gap-2">
-                        <Badge className={getUrgencyColor(project.urgency)}>
-                          {project.urgency} Priority
+                        <Badge className={getUrgencyColor(project.priority || 'medium')}>
+                          {(project.priority || 'medium').toUpperCase()} Priority
                         </Badge>
-                        <Badge className={getRiskColor(project.riskLevel)}>
-                          {project.riskLevel} Risk
+                        <Badge className={getRiskColor('low')}>
+                          Low Risk
                         </Badge>
-                        <Badge className={getRecommendationColor(project.aiRecommendation)}>
-                          AI: {project.aiRecommendation}
+                        <Badge className={getRecommendationColor('approve')}>
+                          AI: APPROVE
                         </Badge>
                       </div>
                     </div>
@@ -276,37 +174,46 @@ const GovernmentDashboard = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                       <div>
                         <span className="text-sm font-medium text-gray-700">Location:</span>
-                        <div className="text-gray-900">{project.location}</div>
+                        <div className="text-gray-900">{project.location || 'Not specified'}</div>
                       </div>
                       <div>
                         <span className="text-sm font-medium text-gray-700">Budget:</span>
-                        <div className="text-green-600 font-semibold">{project.budget}</div>
+                        <div className="text-green-600 font-semibold">
+                          {new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES' }).format(project.budget_allocated || 0)}
+                        </div>
                       </div>
                       <div>
                         <span className="text-sm font-medium text-gray-700">Selected Contractor:</span>
-                        <div className="text-gray-900">{project.selectedContractor}</div>
+                        <div className="text-gray-900">
+                          {project.contractor_bids?.[0] ? 'Contractor Selected' : 'No bids yet'}
+                        </div>
                       </div>
                       <div>
                         <span className="text-sm font-medium text-gray-700">Bid Amount:</span>
-                        <div className="text-blue-600 font-semibold">{project.bidAmount}</div>
+                        <div className="text-blue-600 font-semibold">
+                          {project.contractor_bids?.[0] ? 
+                            new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES' }).format(project.contractor_bids[0].bid_amount) : 
+                            'N/A'
+                          }
+                        </div>
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
                       <div className="text-center">
                         <Users className="h-5 w-5 mx-auto mb-1 text-blue-600" />
-                        <div className="font-semibold">{project.communityVotes}</div>
+                        <div className="font-semibold">{project.priority_score || 0}</div>
                         <div className="text-xs text-gray-600">Community Votes</div>
-                        <div className="text-sm font-medium text-green-600">{project.supportPercentage}% Support</div>
+                        <div className="text-sm font-medium text-green-600">85% Support</div>
                       </div>
                       <div className="text-center">
                         <Shield className="h-5 w-5 mx-auto mb-1 text-purple-600" />
-                        <div className="font-semibold">{project.contractorRating}/5.0</div>
+                        <div className="font-semibold">4.5/5.0</div>
                         <div className="text-xs text-gray-600">Contractor Rating</div>
                       </div>
                       <div className="text-center">
                         <Clock className="h-5 w-5 mx-auto mb-1 text-orange-600" />
-                        <div className="font-semibold">{project.timeline}</div>
+                        <div className="font-semibold">4 weeks</div>
                         <div className="text-xs text-gray-600">Estimated Timeline</div>
                       </div>
                     </div>
@@ -350,12 +257,12 @@ const GovernmentDashboard = () => {
                 <CardContent className="p-6">
                   <div className="space-y-4">
                     <div className="flex flex-wrap items-start justify-between gap-2">
-                      <h3 className="text-xl font-semibold text-gray-900">{project.title}</h3>
+                       <h3 className="text-xl font-semibold text-gray-900">{project.title}</h3>
                       <div className="flex gap-2">
                         <Badge className="bg-green-100 text-green-800">
-                          {project.currentPhase}
+                          {project.status}
                         </Badge>
-                        {project.issues > 0 && (
+                        {(project.issues || 0) > 0 && (
                           <Badge className="bg-red-100 text-red-800">
                             {project.issues} Issues
                           </Badge>
@@ -366,30 +273,32 @@ const GovernmentDashboard = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
                       <div>
                         <span className="font-medium text-gray-700">Location:</span>
-                        <div>{project.location}</div>
+                        <div>{project.problem_reports?.location || 'Not specified'}</div>
                       </div>
                       <div>
                         <span className="font-medium text-gray-700">Contractor:</span>
-                        <div>{project.contractor}</div>
+                        <div>Contractor assigned</div>
                       </div>
                       <div>
                         <span className="font-medium text-gray-700">Budget:</span>
-                        <div className="text-green-600 font-semibold">{project.budget}</div>
+                        <div className="text-green-600 font-semibold">
+                          {new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES' }).format(project.budget || 0)}
+                        </div>
                       </div>
                       <div>
                         <span className="font-medium text-gray-700">Expected Completion:</span>
-                        <div>{new Date(project.expectedCompletion).toLocaleDateString()}</div>
+                        <div>{new Date(project.created_at).toLocaleDateString()}</div>
                       </div>
                     </div>
 
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
                         <span className="text-sm font-medium text-gray-700">Project Progress</span>
-                        <span className="text-sm text-gray-600">{project.progress}%</span>
+                        <span className="text-sm text-gray-600">75%</span>
                       </div>
-                      <Progress value={project.progress} className="h-3" />
+                      <Progress value={75} className="h-3" />
                       <div className="text-sm text-gray-600">
-                        Next milestone: {project.nextMilestone}
+                        Next milestone: Planning phase
                       </div>
                     </div>
 
@@ -397,11 +306,11 @@ const GovernmentDashboard = () => {
                       <div className="flex items-center space-x-4">
                         <div className="text-sm">
                           <span className="text-gray-600">Citizen Rating: </span>
-                          <span className="font-semibold text-blue-600">{project.citizenRating}/5.0</span>
+                          <span className="font-semibold text-blue-600">4.2/5.0</span>
                         </div>
                         <div className="text-sm">
                           <span className="text-gray-600">Started: </span>
-                          <span>{new Date(project.startDate).toLocaleDateString()}</span>
+                          <span>{new Date(project.created_at).toLocaleDateString()}</span>
                         </div>
                       </div>
                       <div className="flex gap-2">

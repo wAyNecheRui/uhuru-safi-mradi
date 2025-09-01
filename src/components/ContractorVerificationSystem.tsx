@@ -2,9 +2,9 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield } from 'lucide-react';
+import { Shield, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { VerificationData } from '@/types/contractorVerification';
+import { useContractorVerification } from '@/hooks/useContractorVerification';
 import CompanyProfileTab from '@/components/verification/CompanyProfileTab';
 import CertificationsTab from '@/components/verification/CertificationsTab';
 import ProjectsTab from '@/components/verification/ProjectsTab';
@@ -13,52 +13,32 @@ import PerformanceTab from '@/components/verification/PerformanceTab';
 const ContractorVerificationSystem = () => {
   const [activeTab, setActiveTab] = useState('profile');
   const { toast } = useToast();
+  const { verificationData, loading, handleDocumentUpload } = useContractorVerification();
 
-  const verificationData: VerificationData = {
-    companyName: 'Quality Builders Ltd',
-    kraPin: 'P051234567X',
-    registrationNumber: 'CPL/2018/123456',
-    physicalAddress: 'Mombasa Road, Industrial Area, Nairobi',
-    yearsInBusiness: 8,
-    verificationStatus: 'verified',
-    overallRating: 4.6,
-    totalProjects: 47,
-    completedProjects: 44,
-    activeProjects: 3,
-    specializations: ['Road Construction', 'Water Infrastructure', 'Building Construction'],
-    certifications: [
-      { name: 'NCA Contractor Registration', status: 'verified', expiryDate: '2025-12-31' },
-      { name: 'OSHA Safety Certification', status: 'verified', expiryDate: '2025-06-30' },
-      { name: 'Environmental Impact Assessment', status: 'pending', expiryDate: '2024-12-31' }
-    ],
-    recentProjects: [
-      {
-        id: 1,
-        title: 'Machakos Market Road Rehabilitation',
-        value: 4800000,
-        status: 'completed',
-        rating: 4.8,
-        completionDate: '2024-02-15',
-        clientFeedback: 'Excellent work quality and timely completion.'
-      },
-      {
-        id: 2,
-        title: 'Kibera Water Pipeline Extension',
-        value: 4200000,
-        status: 'in_progress',
-        progress: 65,
-        startDate: '2024-01-18',
-        expectedCompletion: '2024-04-25'
-      }
-    ]
-  };
+  if (loading) {
+    return (
+      <div className="max-w-6xl mx-auto space-y-6">
+        <Card className="shadow-xl border-t-4 border-t-blue-600">
+          <CardContent className="p-6 text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+            <p>Loading verification data...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
-  const handleDocumentUpload = (docType: string) => {
-    toast({
-      title: "Document uploaded successfully",
-      description: `${docType} has been submitted for verification.`,
-    });
-  };
+  if (!verificationData) {
+    return (
+      <div className="max-w-6xl mx-auto space-y-6">
+        <Card className="shadow-xl border-t-4 border-t-blue-600">
+          <CardContent className="p-6 text-center">
+            <p>No verification data available. Please complete your profile first.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
