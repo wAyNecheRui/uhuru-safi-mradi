@@ -9,8 +9,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { WorkflowService } from '@/services/WorkflowService';
 import { WorkflowState } from '@/types/workflow';
-import { useAuth } from '@/contexts/AuthContext';
 import { MapPin, DollarSign, Users, Clock } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 const WorkflowDashboard = () => {
   const { reportId } = useParams<{ reportId: string }>();
@@ -31,8 +32,16 @@ const WorkflowDashboard = () => {
       // Load report details and workflow state
       const workflowData = await WorkflowService.getWorkflowState(reportId!);
       setWorkflowState(workflowData);
-      // TODO: Load full report details
-      setReport({ id: reportId, title: 'Sample Infrastructure Problem' });
+      
+      // Load actual report details from database
+      const { data: reportData, error } = await supabase
+        .from('problem_reports')
+        .select('*')
+        .eq('id', reportId!)
+        .single();
+        
+      if (error) throw error;
+      setReport(reportData);
     } catch (error) {
       console.error('Error loading workflow data:', error);
     } finally {
@@ -67,18 +76,24 @@ const WorkflowDashboard = () => {
                 <div>
                   <CardTitle className="text-2xl">{report?.title}</CardTitle>
                   <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
-                    <div className="flex items-center gap-1">
-                      <MapPin className="h-4 w-4" />
-                      <span>Nairobi, Kenya</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <DollarSign className="h-4 w-4" />
-                      <span>KSh 2,500,000</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Clock className="h-4 w-4" />
-                      <span>Reported 3 days ago</span>
-                    </div>
+                    {report?.location && (
+                      <div className="flex items-center gap-1">
+                        <MapPin className="h-4 w-4" />
+                        <span>{report.location}</span>
+                      </div>
+                    )}
+                    {report?.budget && (
+                      <div className="flex items-center gap-1">
+                        <DollarSign className="h-4 w-4" />
+                        <span>KSh {report.budget.toLocaleString()}</span>
+                      </div>
+                    )}
+                    {report?.created_at && (
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-4 w-4" />
+                        <span>Reported {new Date(report.created_at).toLocaleDateString()}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
                 <Badge variant="secondary" className="text-base px-4 py-2">
@@ -111,8 +126,8 @@ const WorkflowDashboard = () => {
                 workflowState?.completedSteps.includes('contractor_bidding')) && (
                 <ContractorBidding 
                   reportId={reportId!}
-                  projectBudget={2500000}
-                  canSelectBids={true} // TODO: Check user permissions
+                  projectBudget={report?.budget || 0}
+                  canSelectBids={user?.id === report?.reported_by || user?.user_type === 'government'}
                 />
               )}
 

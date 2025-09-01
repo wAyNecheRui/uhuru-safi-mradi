@@ -25,73 +25,7 @@ const RoleBasedWelcome = ({ userType, userId }: RoleBasedWelcomeProps) => {
     if (onboarding && !onboarding.isCompleted) {
       setShowOnboarding(true);
     }
-
-    // Add sample notifications for demonstration
-    if (notifications.length === 0) {
-      const sampleNotifications = getSampleNotifications(userType);
-      sampleNotifications.forEach(notification => addNotification(notification));
-    }
   }, [onboarding, userType]);
-
-  const getSampleNotifications = (type: string) => {
-    const notifications = {
-      citizen: [
-        {
-          type: 'info' as const,
-          category: 'report' as const,
-          title: 'Report Status Update',
-          message: 'Your road repair request has been assigned to a contractor.',
-          actionUrl: '/citizen/track',
-          actionText: 'View Details'
-        },
-        {
-          type: 'success' as const,
-          category: 'general' as const,
-          title: 'Welcome to the Platform',
-          message: 'Start by reporting infrastructure issues in your community.',
-          actionUrl: '/citizen/report',
-          actionText: 'Report an Issue'
-        }
-      ],
-      contractor: [
-        {
-          type: 'info' as const,
-          category: 'project' as const,
-          title: 'New Bidding Opportunity',
-          message: 'A new road repair project is available for bidding in your area.',
-          actionUrl: '/contractor/bidding',
-          actionText: 'View Project'
-        },
-        {
-          type: 'warning' as const,
-          category: 'general' as const,
-          title: 'Verification Required',
-          message: 'Please complete your contractor verification to access all features.',
-          actionUrl: '/contractor/verification',
-          actionText: 'Complete Verification'
-        }
-      ],
-      government: [
-        {
-          type: 'info' as const,
-          category: 'project' as const,
-          title: 'Project Approval Needed',
-          message: '3 new project proposals require your review and approval.',
-          actionUrl: '/government/projects',
-          actionText: 'Review Projects'
-        },
-        {
-          type: 'success' as const,
-          category: 'general' as const,
-          title: 'Dashboard Ready',
-          message: 'Your government dashboard is set up and ready to use.',
-          actionUrl: '/government',
-          actionText: 'Go to Dashboard'
-        }
-      ]
-    };
-    return notifications[type] || [];
-  };
 
   const getRoleInfo = (type: string) => {
     const info = {
