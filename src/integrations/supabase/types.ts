@@ -14,6 +14,174 @@ export type Database = {
   }
   public: {
     Tables: {
+      blockchain_transactions: {
+        Row: {
+          amount: number
+          block_hash: string
+          block_number: number
+          created_at: string | null
+          gas_used: number | null
+          id: string
+          network_status: string | null
+          payment_transaction_id: string | null
+          project_id: string | null
+          signatures: Json | null
+          transaction_hash: string
+          verification_data: Json | null
+        }
+        Insert: {
+          amount: number
+          block_hash: string
+          block_number: number
+          created_at?: string | null
+          gas_used?: number | null
+          id?: string
+          network_status?: string | null
+          payment_transaction_id?: string | null
+          project_id?: string | null
+          signatures?: Json | null
+          transaction_hash: string
+          verification_data?: Json | null
+        }
+        Update: {
+          amount?: number
+          block_hash?: string
+          block_number?: number
+          created_at?: string | null
+          gas_used?: number | null
+          id?: string
+          network_status?: string | null
+          payment_transaction_id?: string | null
+          project_id?: string | null
+          signatures?: Json | null
+          transaction_hash?: string
+          verification_data?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blockchain_transactions_payment_transaction_id_fkey"
+            columns: ["payment_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "payment_transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blockchain_transactions_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      citizen_workers: {
+        Row: {
+          alternate_phone: string | null
+          availability_status: string | null
+          background_check_status: string | null
+          bank_account: string | null
+          bank_name: string | null
+          certifications: string[] | null
+          county: string
+          created_at: string | null
+          cv_document_url: string | null
+          daily_rate: number | null
+          education_level: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          experience_years: number | null
+          hourly_rate: number | null
+          id: string
+          kra_pin: string | null
+          languages: string[] | null
+          max_travel_distance: number | null
+          national_id: string | null
+          phone_number: string
+          physical_address: string | null
+          profile_photo_url: string | null
+          rating: number | null
+          skills: string[]
+          sub_county: string | null
+          total_jobs_completed: number | null
+          transport_means: string[] | null
+          updated_at: string | null
+          user_id: string
+          verification_status: string | null
+          ward: string | null
+          willing_to_travel: boolean | null
+        }
+        Insert: {
+          alternate_phone?: string | null
+          availability_status?: string | null
+          background_check_status?: string | null
+          bank_account?: string | null
+          bank_name?: string | null
+          certifications?: string[] | null
+          county: string
+          created_at?: string | null
+          cv_document_url?: string | null
+          daily_rate?: number | null
+          education_level?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          experience_years?: number | null
+          hourly_rate?: number | null
+          id?: string
+          kra_pin?: string | null
+          languages?: string[] | null
+          max_travel_distance?: number | null
+          national_id?: string | null
+          phone_number: string
+          physical_address?: string | null
+          profile_photo_url?: string | null
+          rating?: number | null
+          skills?: string[]
+          sub_county?: string | null
+          total_jobs_completed?: number | null
+          transport_means?: string[] | null
+          updated_at?: string | null
+          user_id: string
+          verification_status?: string | null
+          ward?: string | null
+          willing_to_travel?: boolean | null
+        }
+        Update: {
+          alternate_phone?: string | null
+          availability_status?: string | null
+          background_check_status?: string | null
+          bank_account?: string | null
+          bank_name?: string | null
+          certifications?: string[] | null
+          county?: string
+          created_at?: string | null
+          cv_document_url?: string | null
+          daily_rate?: number | null
+          education_level?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          experience_years?: number | null
+          hourly_rate?: number | null
+          id?: string
+          kra_pin?: string | null
+          languages?: string[] | null
+          max_travel_distance?: number | null
+          national_id?: string | null
+          phone_number?: string
+          physical_address?: string | null
+          profile_photo_url?: string | null
+          rating?: number | null
+          skills?: string[]
+          sub_county?: string | null
+          total_jobs_completed?: number | null
+          transport_means?: string[] | null
+          updated_at?: string | null
+          user_id?: string
+          verification_status?: string | null
+          ward?: string | null
+          willing_to_travel?: boolean | null
+        }
+        Relationships: []
+      }
       community_votes: {
         Row: {
           comment: string | null
@@ -146,6 +314,53 @@ export type Database = {
           verified_by?: string | null
         }
         Relationships: []
+      }
+      contractor_ratings: {
+        Row: {
+          communication: number | null
+          completion_timeliness: number | null
+          contractor_id: string
+          created_at: string | null
+          id: string
+          project_id: string | null
+          rated_by: string
+          rating: number | null
+          review: string | null
+          work_quality: number | null
+        }
+        Insert: {
+          communication?: number | null
+          completion_timeliness?: number | null
+          contractor_id: string
+          created_at?: string | null
+          id?: string
+          project_id?: string | null
+          rated_by: string
+          rating?: number | null
+          review?: string | null
+          work_quality?: number | null
+        }
+        Update: {
+          communication?: number | null
+          completion_timeliness?: number | null
+          contractor_id?: string
+          created_at?: string | null
+          id?: string
+          project_id?: string | null
+          rated_by?: string
+          rating?: number | null
+          review?: string | null
+          work_quality?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contractor_ratings_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       escrow_accounts: {
         Row: {
@@ -293,6 +508,59 @@ export type Database = {
           },
         ]
       }
+      local_purchase_orders: {
+        Row: {
+          contractor_id: string
+          created_at: string | null
+          description: string
+          id: string
+          issued_at: string | null
+          issued_by: string
+          lpo_number: string
+          project_id: string
+          status: string | null
+          terms_conditions: string | null
+          total_amount: number
+          valid_until: string | null
+        }
+        Insert: {
+          contractor_id: string
+          created_at?: string | null
+          description: string
+          id?: string
+          issued_at?: string | null
+          issued_by: string
+          lpo_number: string
+          project_id: string
+          status?: string | null
+          terms_conditions?: string | null
+          total_amount: number
+          valid_until?: string | null
+        }
+        Update: {
+          contractor_id?: string
+          created_at?: string | null
+          description?: string
+          id?: string
+          issued_at?: string | null
+          issued_by?: string
+          lpo_number?: string
+          project_id?: string
+          status?: string | null
+          terms_conditions?: string | null
+          total_amount?: number
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "local_purchase_orders_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       milestone_verifications: {
         Row: {
           id: string
@@ -429,6 +697,7 @@ export type Database = {
           created_at: string | null
           description: string
           estimated_cost: number | null
+          gps_coordinates: unknown | null
           id: string
           location: string | null
           photo_urls: string[] | null
@@ -438,6 +707,8 @@ export type Database = {
           status: string | null
           title: string
           updated_at: string | null
+          verification_deadline: string | null
+          video_urls: string[] | null
         }
         Insert: {
           affected_population?: number | null
@@ -449,6 +720,7 @@ export type Database = {
           created_at?: string | null
           description: string
           estimated_cost?: number | null
+          gps_coordinates?: unknown | null
           id?: string
           location?: string | null
           photo_urls?: string[] | null
@@ -458,6 +730,8 @@ export type Database = {
           status?: string | null
           title: string
           updated_at?: string | null
+          verification_deadline?: string | null
+          video_urls?: string[] | null
         }
         Update: {
           affected_population?: number | null
@@ -469,6 +743,7 @@ export type Database = {
           created_at?: string | null
           description?: string
           estimated_cost?: number | null
+          gps_coordinates?: unknown | null
           id?: string
           location?: string | null
           photo_urls?: string[] | null
@@ -478,6 +753,8 @@ export type Database = {
           status?: string | null
           title?: string
           updated_at?: string | null
+          verification_deadline?: string | null
+          video_urls?: string[] | null
         }
         Relationships: []
       }
@@ -540,6 +817,78 @@ export type Database = {
           },
         ]
       }
+      project_progress: {
+        Row: {
+          challenges_faced: string | null
+          citizen_verified: boolean | null
+          created_at: string | null
+          equipment_used: string[] | null
+          gps_coordinates: unknown | null
+          id: string
+          milestone_id: string | null
+          photo_urls: string[] | null
+          progress_percentage: number | null
+          project_id: string
+          supervisor_approved: boolean | null
+          update_description: string
+          updated_by: string
+          video_urls: string[] | null
+          weather_conditions: string | null
+          workers_present: number | null
+        }
+        Insert: {
+          challenges_faced?: string | null
+          citizen_verified?: boolean | null
+          created_at?: string | null
+          equipment_used?: string[] | null
+          gps_coordinates?: unknown | null
+          id?: string
+          milestone_id?: string | null
+          photo_urls?: string[] | null
+          progress_percentage?: number | null
+          project_id: string
+          supervisor_approved?: boolean | null
+          update_description: string
+          updated_by: string
+          video_urls?: string[] | null
+          weather_conditions?: string | null
+          workers_present?: number | null
+        }
+        Update: {
+          challenges_faced?: string | null
+          citizen_verified?: boolean | null
+          created_at?: string | null
+          equipment_used?: string[] | null
+          gps_coordinates?: unknown | null
+          id?: string
+          milestone_id?: string | null
+          photo_urls?: string[] | null
+          progress_percentage?: number | null
+          project_id?: string
+          supervisor_approved?: boolean | null
+          update_description?: string
+          updated_by?: string
+          video_urls?: string[] | null
+          weather_conditions?: string | null
+          workers_present?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_progress_milestone_id_fkey"
+            columns: ["milestone_id"]
+            isOneToOne: false
+            referencedRelation: "project_milestones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_progress_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       projects: {
         Row: {
           budget: number | null
@@ -580,6 +929,81 @@ export type Database = {
             columns: ["report_id"]
             isOneToOne: false
             referencedRelation: "problem_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quality_checkpoints: {
+        Row: {
+          checkpoint_name: string
+          corrective_actions: string | null
+          created_at: string | null
+          findings: string | null
+          follow_up_deadline: string | null
+          follow_up_required: boolean | null
+          id: string
+          inspection_criteria: string
+          inspection_date: string | null
+          inspector_id: string
+          inspector_type: string
+          milestone_id: string | null
+          passed: boolean | null
+          photo_evidence: string[] | null
+          project_id: string
+          recommendations: string | null
+          score: number | null
+        }
+        Insert: {
+          checkpoint_name: string
+          corrective_actions?: string | null
+          created_at?: string | null
+          findings?: string | null
+          follow_up_deadline?: string | null
+          follow_up_required?: boolean | null
+          id?: string
+          inspection_criteria: string
+          inspection_date?: string | null
+          inspector_id: string
+          inspector_type: string
+          milestone_id?: string | null
+          passed?: boolean | null
+          photo_evidence?: string[] | null
+          project_id: string
+          recommendations?: string | null
+          score?: number | null
+        }
+        Update: {
+          checkpoint_name?: string
+          corrective_actions?: string | null
+          created_at?: string | null
+          findings?: string | null
+          follow_up_deadline?: string | null
+          follow_up_required?: boolean | null
+          id?: string
+          inspection_criteria?: string
+          inspection_date?: string | null
+          inspector_id?: string
+          inspector_type?: string
+          milestone_id?: string | null
+          passed?: boolean | null
+          photo_evidence?: string[] | null
+          project_id?: string
+          recommendations?: string | null
+          score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quality_checkpoints_milestone_id_fkey"
+            columns: ["milestone_id"]
+            isOneToOne: false
+            referencedRelation: "project_milestones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quality_checkpoints_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
@@ -774,6 +1198,66 @@ export type Database = {
           verified_at?: string | null
         }
         Relationships: []
+      }
+      workforce_applications: {
+        Row: {
+          application_letter: string | null
+          applied_at: string | null
+          availability_end: string | null
+          availability_start: string | null
+          id: string
+          job_id: string
+          proposed_rate: number | null
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string | null
+          worker_id: string
+        }
+        Insert: {
+          application_letter?: string | null
+          applied_at?: string | null
+          availability_end?: string | null
+          availability_start?: string | null
+          id?: string
+          job_id: string
+          proposed_rate?: number | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string | null
+          worker_id: string
+        }
+        Update: {
+          application_letter?: string | null
+          applied_at?: string | null
+          availability_end?: string | null
+          availability_start?: string | null
+          id?: string
+          job_id?: string
+          proposed_rate?: number | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string | null
+          worker_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workforce_applications_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "workforce_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workforce_applications_worker_id_fkey"
+            columns: ["worker_id"]
+            isOneToOne: false
+            referencedRelation: "citizen_workers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       workforce_jobs: {
         Row: {
