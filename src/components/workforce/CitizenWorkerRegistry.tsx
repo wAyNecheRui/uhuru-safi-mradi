@@ -182,7 +182,7 @@ const CitizenWorkerRegistry = () => {
 
         if (userProfile?.user_type === 'contractor') {
           // Use secure function for contractors
-          const { data, error } = await supabase.rpc('get_available_workers_for_contractors');
+          const { data, error } = await supabase.rpc('get_available_workers');
           allWorkersData = data;
           allWorkersError = error;
         } else {
