@@ -1323,6 +1323,32 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_available_workers_for_contractors: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          availability_status: string
+          background_check_status: string
+          certifications: string[]
+          county: string
+          created_at: string
+          daily_rate: number
+          education_level: string
+          experience_years: number
+          hourly_rate: number
+          id: string
+          languages: string[]
+          max_travel_distance: number
+          profile_photo_url: string
+          rating: number
+          skills: string[]
+          total_jobs_completed: number
+          transport_means: string[]
+          updated_at: string
+          user_id: string
+          verification_status: string
+          willing_to_travel: boolean
+        }[]
+      }
       get_public_contractor_profiles: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -1338,6 +1364,13 @@ export type Database = {
           updated_at: string
           user_id: string
           years_experience: number
+        }[]
+      }
+      get_worker_contact_info: {
+        Args: { worker_id: string }
+        Returns: {
+          alternate_phone: string
+          phone_number: string
         }[]
       }
       update_system_analytics: {

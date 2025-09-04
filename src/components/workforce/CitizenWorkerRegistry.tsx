@@ -123,59 +123,84 @@ const CitizenWorkerRegistry = () => {
       setLoading(true);
 
       if (user) {
-        // Fetch current user's worker profile
-        const { data: workerData, error: workerError } = await supabase
-          .from('citizen_workers')
-          .select('*')
+        // First, get user profile to check user type
+        const { data: userProfile, error: profileError } = await supabase
+          .from('user_profiles')
+          .select('user_type')
           .eq('user_id', user.id)
-          .maybeSingle();
+          .single();
 
-        if (workerError && workerError.code !== 'PGRST116') {
-          throw workerError;
+        if (profileError) {
+          console.error('Error fetching user profile:', profileError);
         }
 
-        setWorkerProfile(workerData);
-        
-        if (workerData) {
-          setFormData({
-            phone_number: workerData.phone_number || '',
-            alternate_phone: workerData.alternate_phone || '',
-            physical_address: workerData.physical_address || '',
-            county: workerData.county || '',
-            sub_county: workerData.sub_county || '',
-            ward: workerData.ward || '',
-            emergency_contact_name: workerData.emergency_contact_name || '',
-            emergency_contact_phone: workerData.emergency_contact_phone || '',
-            bank_name: workerData.bank_name || '',
-            bank_account: workerData.bank_account || '',
-            skills: workerData.skills || [],
-            experience_years: workerData.experience_years || 0,
-            education_level: workerData.education_level || '',
-            certifications: workerData.certifications || [],
-            languages: workerData.languages || ['English', 'Swahili'],
-            hourly_rate: workerData.hourly_rate || 0,
-            daily_rate: workerData.daily_rate || 0,
-            transport_means: workerData.transport_means || [],
-            willing_to_travel: workerData.willing_to_travel || false,
-            max_travel_distance: workerData.max_travel_distance || 0,
-            national_id: workerData.national_id || '',
-            kra_pin: workerData.kra_pin || ''
-          });
+        // Fetch current user's worker profile (only for workers)
+        if (userProfile?.user_type === 'citizen') {
+          const { data: workerData, error: workerError } = await supabase
+            .from('citizen_workers')
+            .select('*')
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+          if (workerError && workerError.code !== 'PGRST116') {
+            throw workerError;
+          }
+
+          setWorkerProfile(workerData);
+          
+          if (workerData) {
+            setFormData({
+              phone_number: workerData.phone_number || '',
+              alternate_phone: workerData.alternate_phone || '',
+              physical_address: workerData.physical_address || '',
+              county: workerData.county || '',
+              sub_county: workerData.sub_county || '',
+              ward: workerData.ward || '',
+              emergency_contact_name: workerData.emergency_contact_name || '',
+              emergency_contact_phone: workerData.emergency_contact_phone || '',
+              bank_name: workerData.bank_name || '',
+              bank_account: workerData.bank_account || '',
+              skills: workerData.skills || [],
+              experience_years: workerData.experience_years || 0,
+              education_level: workerData.education_level || '',
+              certifications: workerData.certifications || [],
+              languages: workerData.languages || ['English', 'Swahili'],
+              hourly_rate: workerData.hourly_rate || 0,
+              daily_rate: workerData.daily_rate || 0,
+              transport_means: workerData.transport_means || [],
+              willing_to_travel: workerData.willing_to_travel || false,
+              max_travel_distance: workerData.max_travel_distance || 0,
+              national_id: workerData.national_id || '',
+              kra_pin: workerData.kra_pin || ''
+            });
+          }
         }
+
+        // Fetch all workers for directory based on user type
+        let allWorkersData;
+        let allWorkersError;
+
+        if (userProfile?.user_type === 'contractor') {
+          // Use secure function for contractors
+          const { data, error } = await supabase.rpc('get_available_workers_for_contractors');
+          allWorkersData = data;
+          allWorkersError = error;
+        } else {
+          // Direct query for government users and citizens
+          const { data, error } = await supabase
+            .from('citizen_workers')
+            .select('*')
+            .eq('availability_status', 'available')
+            .eq('verification_status', 'verified')
+            .order('rating', { ascending: false })
+            .limit(50);
+          allWorkersData = data;
+          allWorkersError = error;
+        }
+
+        if (allWorkersError) throw allWorkersError;
+        setAllWorkers(allWorkersData || []);
       }
-
-      // Fetch all workers for directory
-      const { data: allWorkersData, error: allWorkersError } = await supabase
-        .from('citizen_workers')
-        .select('*')
-        .eq('availability_status', 'available')
-        .eq('verification_status', 'verified')
-        .order('rating', { ascending: false })
-        .limit(50);
-
-      if (allWorkersError) throw allWorkersError;
-
-      setAllWorkers(allWorkersData || []);
 
     } catch (error: any) {
       console.error('Error fetching worker data:', error);
@@ -639,10 +664,6 @@ const CitizenWorkerRegistry = () => {
                       <div className="flex items-center text-sm text-gray-600">
                         <MapPin className="h-4 w-4 mr-1" />
                         {worker.county}, Kenya
-                      </div>
-                      <div className="flex items-center text-sm text-gray-600">
-                        <Phone className="h-4 w-4 mr-1" />
-                        {worker.phone_number}
                       </div>
                       <div className="flex items-center text-sm text-gray-600">
                         <Briefcase className="h-4 w-4 mr-1" />
