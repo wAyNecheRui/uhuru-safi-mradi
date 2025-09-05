@@ -1399,6 +1399,10 @@ export type Database = {
           phone_number: string
         }[]
       }
+      is_verified_government_user: {
+        Args: { user_uuid?: string }
+        Returns: boolean
+      }
       update_system_analytics: {
         Args: Record<PropertyKey, never>
         Returns: undefined
