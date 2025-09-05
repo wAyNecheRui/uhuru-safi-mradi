@@ -11,45 +11,51 @@ interface PriorityImpactSectionProps {
 }
 
 const PriorityImpactSection = ({ reportData, onInputChange }: PriorityImpactSectionProps) => {
+  const getImpactDescription = (priority: string) => {
+    switch (priority) {
+      case 'routine':
+        return 'Regular maintenance required. Affects daily operations but not critical.';
+      case 'standard':
+        return 'Standard infrastructure issue requiring scheduled attention.';
+      case 'elevated':
+        return 'Elevated concern that may affect community services if not addressed.';
+      case 'critical':
+        return 'Critical infrastructure issue requiring immediate government attention.';
+      default:
+        return 'Select a priority level to see impact assessment.';
+    }
+  };
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="space-y-6">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Priority Level</label>
-        <div className="space-y-2">
+        <label className="block text-sm font-medium text-gray-700 mb-3">Priority & Impact Level</label>
+        <div className="space-y-3">
           {PRIORITIES.map(priority => (
             <div
               key={priority.value}
-              className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+              className={`p-4 border rounded-lg cursor-pointer transition-all duration-200 ${
                 reportData.priority === priority.value
-                  ? 'border-blue-500 bg-blue-50'
-                  : 'border-gray-200 hover:border-gray-300'
+                  ? 'border-blue-500 bg-blue-50 shadow-md'
+                  : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
               }`}
               onClick={() => onInputChange('priority', priority.value)}
             >
-              <Badge className={priority.color}>
-                {priority.label}
-              </Badge>
+              <div className="flex items-center justify-between">
+                <Badge className={priority.color}>
+                  {priority.label}
+                </Badge>
+                {reportData.priority === priority.value && (
+                  <div className="w-4 h-4 bg-blue-500 rounded-full"></div>
+                )}
+              </div>
+              {reportData.priority === priority.value && (
+                <p className="text-sm text-gray-600 mt-2">
+                  {getImpactDescription(priority.value)}
+                </p>
+              )}
             </div>
           ))}
-        </div>
-      </div>
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Estimated Cost (KES)</label>
-          <Input
-            placeholder="e.g., 500000"
-            type="number"
-            value={reportData.estimatedCost}
-            onChange={(e) => onInputChange('estimatedCost', e.target.value)}
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Affected Population</label>
-          <Input
-            placeholder="e.g., 1000 residents"
-            value={reportData.affectedPopulation}
-            onChange={(e) => onInputChange('affectedPopulation', e.target.value)}
-          />
         </div>
       </div>
     </div>

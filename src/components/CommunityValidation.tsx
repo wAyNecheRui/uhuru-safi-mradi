@@ -220,9 +220,9 @@ const CommunityValidation = () => {
   const getPriorityColor = (priority: string) => {
     switch (priority.toLowerCase()) {
       case 'critical': return 'bg-red-100 text-red-800';
-      case 'high': return 'bg-orange-100 text-orange-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'low': return 'bg-green-100 text-green-800';
+      case 'elevated': return 'bg-orange-100 text-orange-800';
+      case 'standard': return 'bg-blue-100 text-blue-800';
+      case 'routine': return 'bg-green-100 text-green-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -384,31 +384,6 @@ const CommunityValidation = () => {
                         </Button>
                       </div>
 
-                      <div className="border-t pt-3">
-                        <div className="text-sm font-medium text-gray-700 mb-2">
-                          Verification Actions
-                        </div>
-                        <div className="space-y-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="w-full text-green-700 border-green-300 hover:bg-green-50"
-                            onClick={() => handleVerify(report.id, 'verify')}
-                          >
-                            <CheckCircle className="h-4 w-4 mr-1" />
-                            Verify as Valid
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="w-full text-red-700 border-red-300 hover:bg-red-50"
-                            onClick={() => handleVerify(report.id, 'flag')}
-                          >
-                            <AlertTriangle className="h-4 w-4 mr-1" />
-                            Flag as Invalid
-                          </Button>
-                        </div>
-                      </div>
                     </div>
                   </div>
                 </div>

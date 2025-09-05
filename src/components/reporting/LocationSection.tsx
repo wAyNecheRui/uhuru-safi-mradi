@@ -12,8 +12,13 @@ interface LocationSectionProps {
 }
 
 const LocationSection = ({ reportData, onInputChange, onGetCurrentLocation }: LocationSectionProps) => {
+  React.useEffect(() => {
+    // Auto-capture GPS coordinates when component mounts
+    onGetCurrentLocation();
+  }, [onGetCurrentLocation]);
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">Location *</label>
         <Input
@@ -26,14 +31,20 @@ const LocationSection = ({ reportData, onInputChange, onGetCurrentLocation }: Lo
         <label className="block text-sm font-medium text-gray-700 mb-2">GPS Coordinates</label>
         <div className="flex space-x-2">
           <Input
-            placeholder="Will be auto-filled"
+            placeholder="Auto-capturing location..."
             value={reportData.coordinates}
             onChange={(e) => onInputChange('coordinates', e.target.value)}
+            readOnly
           />
-          <Button onClick={onGetCurrentLocation} variant="outline">
+          <Button onClick={onGetCurrentLocation} variant="outline" size="sm">
             <MapPin className="h-4 w-4" />
           </Button>
         </div>
+        {reportData.coordinates && (
+          <p className="text-xs text-green-600 mt-1">
+            ✓ GPS location captured successfully
+          </p>
+        )}
       </div>
     </div>
   );

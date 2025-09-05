@@ -48,11 +48,6 @@ const EnhancedProblemReporting = () => {
             onInputChange={handleInputChange}
           />
 
-          <ImpactAssessmentSection
-            reportData={reportData}
-            onInputChange={handleInputChange}
-          />
-
           <PhotoUploadSection
             photoCount={reportData.photos.length}
             onPhotoUpload={handlePhotoUpload}

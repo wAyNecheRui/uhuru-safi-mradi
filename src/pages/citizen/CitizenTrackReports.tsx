@@ -6,48 +6,16 @@ import { Input } from '@/components/ui/input';
 import { Search, MapPin, Clock, FileText, Eye } from 'lucide-react';
 import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
+import { useCitizenData } from '@/hooks/useCitizenData';
 
 const CitizenTrackReports = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const { reports, isLoading } = useCitizenData();
   
   const breadcrumbItems = [
     { label: 'Home', href: '/' },
     { label: 'Citizen', href: '/citizen' },
     { label: 'Track Reports' }
-  ];
-
-  const reports = [
-    {
-      id: 'UWZ-RPT-001',
-      title: 'Pothole on Mombasa Road near Junction Mall',
-      status: 'In Progress',
-      priority: 'High',
-      date: '2024-01-15',
-      location: 'Nairobi County, Embakasi',
-      contractor: 'Kenya Roads Construction Ltd',
-      estimatedCompletion: '2024-01-25',
-      updates: 3
-    },
-    {
-      id: 'UWZ-RPT-002',
-      title: 'Broken Street Light on Kimathi Street',
-      status: 'Completed',
-      priority: 'Medium',
-      date: '2024-01-10',
-      location: 'Nairobi County, CBD',
-      contractor: 'City Lighting Solutions',
-      completedDate: '2024-01-18',
-      updates: 5
-    },
-    {
-      id: 'UWZ-RPT-003',
-      title: 'Water Pipeline Leak near Kasarani Stadium',
-      status: 'Pending Assignment',
-      priority: 'Critical',
-      date: '2024-01-20',
-      location: 'Nairobi County, Kasarani',
-      updates: 1
-    }
   ];
 
   const filteredReports = reports.filter(report =>
@@ -67,9 +35,9 @@ const CitizenTrackReports = () => {
   const getPriorityColor = (priority: string) => {
     switch (priority.toLowerCase()) {
       case 'critical': return 'bg-red-100 text-red-800 border-red-200';
-      case 'high': return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'medium': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'low': return 'bg-green-100 text-green-800 border-green-200';
+      case 'elevated': return 'bg-orange-100 text-orange-800 border-orange-200';
+      case 'standard': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'routine': return 'bg-green-100 text-green-800 border-green-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
@@ -107,7 +75,13 @@ const CitizenTrackReports = () => {
 
         {/* Reports List */}
         <div className="space-y-6">
-          {filteredReports.length === 0 ? (
+          {isLoading ? (
+            <Card>
+              <CardContent className="text-center py-12">
+                <div className="animate-pulse">Loading your reports...</div>
+              </CardContent>
+            </Card>
+          ) : filteredReports.length === 0 ? (
             <Card>
               <CardContent className="text-center py-12">
                 <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -134,7 +108,7 @@ const CitizenTrackReports = () => {
                         </div>
                         <div className="flex items-center">
                           <Clock className="h-4 w-4 mr-1" />
-                          Reported: {new Date(report.date).toLocaleDateString()}
+                          Reported: {new Date(report.created_at).toLocaleDateString()}
                         </div>
                       </div>
                     </div>
@@ -150,36 +124,18 @@ const CitizenTrackReports = () => {
                       {report.status}
                     </Badge>
                     <Badge className={getPriorityColor(report.priority)}>
-                      {report.priority} Priority
+                      {report.priority}
                     </Badge>
                     <Badge variant="outline" className="text-blue-600">
-                      {report.updates} Update{report.updates !== 1 ? 's' : ''}
+                      Status: {report.status}
                     </Badge>
                   </div>
 
-                  {report.contractor && (
-                    <div className="mb-3">
-                      <p className="text-sm font-medium text-gray-700">
-                        Assigned Contractor: <span className="text-gray-900">{report.contractor}</span>
-                      </p>
-                    </div>
-                  )}
-
-                  {report.estimatedCompletion && report.status === 'In Progress' && (
-                    <div className="mb-3">
-                      <p className="text-sm font-medium text-gray-700">
-                        Estimated Completion: <span className="text-green-600">{new Date(report.estimatedCompletion).toLocaleDateString()}</span>
-                      </p>
-                    </div>
-                  )}
-
-                  {report.completedDate && report.status === 'Completed' && (
-                    <div className="mb-3">
-                      <p className="text-sm font-medium text-gray-700">
-                        Completed: <span className="text-green-600">{new Date(report.completedDate).toLocaleDateString()}</span>
-                      </p>
-                    </div>
-                  )}
+                  <div className="mb-3">
+                    <p className="text-sm text-gray-600 line-clamp-3">
+                      {report.description}
+                    </p>
+                  </div>
 
                   <div className="flex justify-between items-center pt-4 border-t">
                     <p className="text-sm text-gray-500">
