@@ -146,33 +146,68 @@ const CitizenWorkerRegistry = () => {
             throw workerError;
           }
 
-          setWorkerProfile(workerData);
-          
           if (workerData) {
-            setFormData({
-              phone_number: workerData.phone_number || '',
-              alternate_phone: workerData.alternate_phone || '',
-              physical_address: workerData.physical_address || '',
-              county: workerData.county || '',
-              sub_county: workerData.sub_county || '',
-              ward: workerData.ward || '',
-              emergency_contact_name: workerData.emergency_contact_name || '',
-              emergency_contact_phone: workerData.emergency_contact_phone || '',
-              bank_name: workerData.bank_name || '',
-              bank_account: workerData.bank_account || '',
-              skills: workerData.skills || [],
-              experience_years: workerData.experience_years || 0,
-              education_level: workerData.education_level || '',
-              certifications: workerData.certifications || [],
-              languages: workerData.languages || ['English', 'Swahili'],
-              hourly_rate: workerData.hourly_rate || 0,
-              daily_rate: workerData.daily_rate || 0,
-              transport_means: workerData.transport_means || [],
-              willing_to_travel: workerData.willing_to_travel || false,
-              max_travel_distance: workerData.max_travel_distance || 0,
-              national_id: workerData.national_id || '',
-              kra_pin: workerData.kra_pin || ''
-            });
+            // Get decrypted version for the user's own profile
+            const { data: decryptedData, error: decryptError } = await supabase
+              .rpc('get_citizen_worker_decrypted', { worker_id: workerData.id });
+            
+            if (!decryptError && decryptedData && decryptedData.length > 0) {
+              setWorkerProfile(decryptedData[0]);
+              
+              // Use decrypted data for form initialization
+              const decryptedWorker = decryptedData[0];
+              setFormData({
+                phone_number: decryptedWorker.phone_number || '',
+                alternate_phone: decryptedWorker.alternate_phone || '',
+                physical_address: decryptedWorker.physical_address || '',
+                county: decryptedWorker.county || '',
+                sub_county: decryptedWorker.sub_county || '',
+                ward: decryptedWorker.ward || '',
+                emergency_contact_name: decryptedWorker.emergency_contact_name || '',
+                emergency_contact_phone: decryptedWorker.emergency_contact_phone || '',
+                bank_name: decryptedWorker.bank_name || '',
+                bank_account: decryptedWorker.bank_account || '',
+                skills: decryptedWorker.skills || [],
+                experience_years: decryptedWorker.experience_years || 0,
+                education_level: decryptedWorker.education_level || '',
+                certifications: decryptedWorker.certifications || [],
+                languages: decryptedWorker.languages || ['English', 'Swahili'],
+                hourly_rate: decryptedWorker.hourly_rate || 0,
+                daily_rate: decryptedWorker.daily_rate || 0,
+                transport_means: decryptedWorker.transport_means || [],
+                willing_to_travel: decryptedWorker.willing_to_travel || false,
+                max_travel_distance: decryptedWorker.max_travel_distance || 0,
+                national_id: decryptedWorker.national_id || '',
+                kra_pin: decryptedWorker.kra_pin || ''
+              });
+            } else {
+              // Fallback to original data if decryption fails
+              setWorkerProfile(workerData);
+              setFormData({
+                phone_number: workerData.phone_number || '',
+                alternate_phone: workerData.alternate_phone || '',
+                physical_address: workerData.physical_address || '',
+                county: workerData.county || '',
+                sub_county: workerData.sub_county || '',
+                ward: workerData.ward || '',
+                emergency_contact_name: workerData.emergency_contact_name || '',
+                emergency_contact_phone: workerData.emergency_contact_phone || '',
+                bank_name: workerData.bank_name || '',
+                bank_account: workerData.bank_account || '',
+                skills: workerData.skills || [],
+                experience_years: workerData.experience_years || 0,
+                education_level: workerData.education_level || '',
+                certifications: workerData.certifications || [],
+                languages: workerData.languages || ['English', 'Swahili'],
+                hourly_rate: workerData.hourly_rate || 0,
+                daily_rate: workerData.daily_rate || 0,
+                transport_means: workerData.transport_means || [],
+                willing_to_travel: workerData.willing_to_travel || false,
+                max_travel_distance: workerData.max_travel_distance || 0,
+                national_id: '', // Don't show encrypted data
+                kra_pin: '' // Don't show encrypted data
+              });
+            }
           }
         }
 
