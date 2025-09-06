@@ -1293,6 +1293,13 @@ export type Database = {
             referencedRelation: "citizen_workers"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "workforce_applications_worker_id_fkey"
+            columns: ["worker_id"]
+            isOneToOne: false
+            referencedRelation: "citizen_workers_decrypted"
+            referencedColumns: ["id"]
+          },
         ]
       }
       workforce_jobs: {
@@ -1356,9 +1363,124 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      citizen_workers_decrypted: {
+        Row: {
+          alternate_phone: string | null
+          availability_status: string | null
+          background_check_status: string | null
+          bank_account: string | null
+          bank_name: string | null
+          certifications: string[] | null
+          county: string | null
+          created_at: string | null
+          cv_document_url: string | null
+          daily_rate: number | null
+          education_level: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          experience_years: number | null
+          hourly_rate: number | null
+          id: string | null
+          kra_pin: string | null
+          languages: string[] | null
+          max_travel_distance: number | null
+          national_id: string | null
+          phone_number: string | null
+          physical_address: string | null
+          profile_photo_url: string | null
+          rating: number | null
+          skills: string[] | null
+          sub_county: string | null
+          total_jobs_completed: number | null
+          transport_means: string[] | null
+          updated_at: string | null
+          user_id: string | null
+          verification_status: string | null
+          ward: string | null
+          willing_to_travel: boolean | null
+        }
+        Insert: {
+          alternate_phone?: never
+          availability_status?: string | null
+          background_check_status?: string | null
+          bank_account?: never
+          bank_name?: string | null
+          certifications?: string[] | null
+          county?: string | null
+          created_at?: string | null
+          cv_document_url?: string | null
+          daily_rate?: number | null
+          education_level?: string | null
+          emergency_contact_name?: never
+          emergency_contact_phone?: never
+          experience_years?: number | null
+          hourly_rate?: number | null
+          id?: string | null
+          kra_pin?: never
+          languages?: string[] | null
+          max_travel_distance?: number | null
+          national_id?: never
+          phone_number?: never
+          physical_address?: string | null
+          profile_photo_url?: string | null
+          rating?: number | null
+          skills?: string[] | null
+          sub_county?: string | null
+          total_jobs_completed?: number | null
+          transport_means?: string[] | null
+          updated_at?: string | null
+          user_id?: string | null
+          verification_status?: string | null
+          ward?: string | null
+          willing_to_travel?: boolean | null
+        }
+        Update: {
+          alternate_phone?: never
+          availability_status?: string | null
+          background_check_status?: string | null
+          bank_account?: never
+          bank_name?: string | null
+          certifications?: string[] | null
+          county?: string | null
+          created_at?: string | null
+          cv_document_url?: string | null
+          daily_rate?: number | null
+          education_level?: string | null
+          emergency_contact_name?: never
+          emergency_contact_phone?: never
+          experience_years?: number | null
+          hourly_rate?: number | null
+          id?: string | null
+          kra_pin?: never
+          languages?: string[] | null
+          max_travel_distance?: number | null
+          national_id?: never
+          phone_number?: never
+          physical_address?: string | null
+          profile_photo_url?: string | null
+          rating?: number | null
+          skills?: string[] | null
+          sub_county?: string | null
+          total_jobs_completed?: number | null
+          transport_means?: string[] | null
+          updated_at?: string | null
+          user_id?: string | null
+          verification_status?: string | null
+          ward?: string | null
+          willing_to_travel?: boolean | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      decrypt_sensitive_data: {
+        Args: { encrypted_data: string; key?: string }
+        Returns: string
+      }
+      encrypt_sensitive_data: {
+        Args: { data: string; key?: string }
+        Returns: string
+      }
       get_available_workers: {
         Args: Record<PropertyKey, never>
         Returns: {
