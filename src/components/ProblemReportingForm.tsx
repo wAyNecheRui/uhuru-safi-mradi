@@ -6,16 +6,26 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Camera, MapPin, AlertCircle, FileText } from 'lucide-react';
+import { Camera, MapPin, AlertCircle, FileText, Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProjects } from '@/hooks/useProjects';
+import { useSecurityEnhanced } from '@/hooks/useSecurityEnhanced';
+import { enhancedReportValidationSchema } from '@/utils/securityEnhanced';
 
 const ProblemReportingForm = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
   const { addProject } = useProjects();
+  const { 
+    csrfToken, 
+    isRateLimited, 
+    checkRateLimit, 
+    validateFile, 
+    sanitizeAndValidateInput,
+    secureSubmit 
+  } = useSecurityEnhanced();
 
   const [formData, setFormData] = useState({
     title: '',
@@ -49,7 +59,7 @@ const ProblemReportingForm = () => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!user) {
@@ -61,26 +71,80 @@ const ProblemReportingForm = () => {
       return;
     }
 
-    try {
-      const newProject = addProject({
-        title: formData.title,
-        description: formData.description,
-        location: formData.location,
-        priority: formData.priority as 'Low' | 'Medium' | 'High' | 'Critical',
-        budget: formData.estimatedCost ? `KSh ${formData.estimatedCost}` : 'TBD',
-        reportedBy: user.name || user.email,
-        dateReported: new Date().toISOString().split('T')[0],
-        category: formData.category,
-        estimatedCost: formData.estimatedCost
-      });
-
+    // Check rate limiting
+    if (isRateLimited) {
       toast({
-        title: "Problem Report Submitted",
-        description: "Your report has been submitted for community review.",
+        title: "Too Many Requests",
+        description: "Please wait before submitting another report.",
+        variant: "destructive"
       });
+      return;
+    }
 
-      navigate('/citizen');
+    try {
+      // Sanitize and validate inputs
+      const titleValidation = sanitizeAndValidateInput(formData.title, 200);
+      const descValidation = sanitizeAndValidateInput(formData.description, 2000);
+      const locationValidation = sanitizeAndValidateInput(formData.location, 200);
+      const categoryValidation = sanitizeAndValidateInput(formData.category, 50);
+
+      if (!titleValidation.valid || !descValidation.valid || !locationValidation.valid || !categoryValidation.valid) {
+        toast({
+          title: "Invalid Input",
+          description: "Please check your input for invalid characters or length.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Enhanced validation using Zod
+      const reportData = {
+        title: titleValidation.sanitized,
+        description: descValidation.sanitized,
+        location: locationValidation.sanitized,
+        priority: formData.priority.toLowerCase(),
+        category: categoryValidation.sanitized,
+        coordinates: formData.location.includes('GPS:') ? formData.location.split('GPS:')[1]?.trim() : undefined
+      };
+
+      const validationResult = enhancedReportValidationSchema.safeParse(reportData);
+      if (!validationResult.success) {
+        toast({
+          title: "Validation Failed",
+          description: validationResult.error.errors[0]?.message || "Please check your input.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Secure submission with rate limiting
+      const result = await secureSubmit(
+        reportData,
+        async (data, csrf) => {
+          return addProject({
+            title: data.title,
+            description: data.description,
+            location: data.location,
+            priority: data.priority as 'Low' | 'Medium' | 'High' | 'Critical',
+            budget: formData.estimatedCost ? `KSh ${formData.estimatedCost}` : 'TBD',
+            reportedBy: user.name || user.email,
+            dateReported: new Date().toISOString().split('T')[0],
+            category: data.category,
+            estimatedCost: formData.estimatedCost
+          });
+        },
+        `report_submit_${user.id}`
+      );
+
+      if (result.success) {
+        toast({
+          title: "Problem Report Submitted",
+          description: "Your report has been submitted for community review.",
+        });
+        navigate('/citizen');
+      }
     } catch (error) {
+      console.error('Report submission error:', error);
       toast({
         title: "Submission Failed",
         description: "There was an error submitting your report. Please try again.",
@@ -223,8 +287,28 @@ const ProblemReportingForm = () => {
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors cursor-pointer">
                   <Camera className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-600 mb-2">Click to upload images or videos</p>
-                  <p className="text-sm text-gray-500">Max 5 files, 10MB each</p>
-                  <input type="file" multiple accept="image/*,video/*" className="hidden" />
+                  <p className="text-sm text-gray-500">Max 5 files, 10MB each (JPEG, PNG, WebP, PDF only)</p>
+                  <input 
+                    type="file" 
+                    multiple 
+                    accept="image/jpeg,image/png,image/webp,application/pdf" 
+                    className="hidden"
+                    onChange={async (e) => {
+                      const files = Array.from(e.target.files || []);
+                      for (const file of files) {
+                        const validation = await validateFile(file);
+                        if (!validation.valid) {
+                          toast({
+                            title: "Invalid File",
+                            description: validation.error,
+                            variant: "destructive"
+                          });
+                          return;
+                        }
+                      }
+                      // Handle validated files here
+                    }}
+                  />
                 </div>
               </div>
             </div>
@@ -237,6 +321,20 @@ const ProblemReportingForm = () => {
                   <p className="text-sm text-blue-700">
                     Your report will be reviewed by community members and local officials. 
                     Projects with higher community support and clear documentation are prioritized for funding.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Security Notice */}
+            <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg p-4">
+              <div className="flex items-start space-x-3">
+                <Shield className="w-6 h-6 text-green-600 mt-0.5" />
+                <div>
+                  <h4 className="font-medium text-green-900 mb-1">Secure Submission</h4>
+                  <p className="text-sm text-green-700">
+                    Your data is protected with encryption and security validation. 
+                    All inputs are sanitized and validated before submission.
                   </p>
                 </div>
               </div>

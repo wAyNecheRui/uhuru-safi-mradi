@@ -1199,6 +1199,48 @@ export type Database = {
         }
         Relationships: []
       }
+      worker_access_audit: {
+        Row: {
+          access_timestamp: string
+          access_type: string
+          accessed_fields: string[] | null
+          created_at: string | null
+          government_user_id: string
+          id: string
+          ip_address: unknown | null
+          justification: string | null
+          session_id: string | null
+          user_agent: string | null
+          worker_id: string
+        }
+        Insert: {
+          access_timestamp?: string
+          access_type: string
+          accessed_fields?: string[] | null
+          created_at?: string | null
+          government_user_id: string
+          id?: string
+          ip_address?: unknown | null
+          justification?: string | null
+          session_id?: string | null
+          user_agent?: string | null
+          worker_id: string
+        }
+        Update: {
+          access_timestamp?: string
+          access_type?: string
+          accessed_fields?: string[] | null
+          created_at?: string | null
+          government_user_id?: string
+          id?: string
+          ip_address?: unknown | null
+          justification?: string | null
+          session_id?: string | null
+          user_agent?: string | null
+          worker_id?: string
+        }
+        Relationships: []
+      }
       worker_data_access_logs: {
         Row: {
           access_timestamp: string

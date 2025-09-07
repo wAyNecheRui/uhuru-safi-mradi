@@ -6,9 +6,10 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Shield, CheckCircle, Clock, AlertTriangle, Users, DollarSign, FileText, Gavel, Loader2 } from 'lucide-react';
+import { Shield, CheckCircle, Clock, AlertTriangle, Users, DollarSign, FileText, Gavel, Loader2, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useGovernmentDashboard } from '@/hooks/useGovernmentDashboard';
+import { SecurityMonitor } from '@/components/security/SecurityMonitor';
 
 const GovernmentDashboard = () => {
   const [selectedCounty, setSelectedCounty] = useState('all');
@@ -129,7 +130,7 @@ const GovernmentDashboard = () => {
       </Card>
 
       <Tabs defaultValue="approvals" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3 bg-white shadow-lg">
+        <TabsList className="grid w-full grid-cols-4 bg-white shadow-lg">
           <TabsTrigger 
             value="approvals" 
             className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
@@ -141,6 +142,13 @@ const GovernmentDashboard = () => {
             className="data-[state=active]:bg-green-600 data-[state=active]:text-white"
           >
             Active Projects ({activeProjects.length})
+          </TabsTrigger>
+          <TabsTrigger 
+            value="security" 
+            className="data-[state=active]:bg-red-600 data-[state=active]:text-white"
+          >
+            <Eye className="h-4 w-4 mr-1" />
+            Security Monitor
           </TabsTrigger>
           <TabsTrigger 
             value="analytics" 
@@ -327,6 +335,10 @@ const GovernmentDashboard = () => {
               </Card>
             ))}
           </div>
+        </TabsContent>
+
+        <TabsContent value="security" className="space-y-6">
+          <SecurityMonitor />
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-6">
