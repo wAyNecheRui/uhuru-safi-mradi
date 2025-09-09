@@ -37,6 +37,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
       <Header 
+        showCountySelector={true}
         selectedCounty={selectedCounty}
         onCountyChange={handleCountyChange}
       />

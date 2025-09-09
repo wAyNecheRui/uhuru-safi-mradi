@@ -160,10 +160,7 @@ const CitizenDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
-      <Header 
-        selectedCounty={selectedCounty}
-        onCountyChange={handleCountyChange}
-      />
+      <Header />
       
       <main>
         <ResponsiveContainer className="py-6 sm:py-8">

@@ -75,12 +75,31 @@ const CommunityValidation = () => {
 
   const fetchReports = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('problem_reports')
         .select('*')
         .eq('status', 'pending')
         .order('priority_score', { ascending: false })
         .order('created_at', { ascending: false });
+
+      // Filter by user's location if user is logged in and has location info
+      if (user) {
+        const { data: userProfile } = await supabase
+          .from('user_profiles')
+          .select('location')
+          .eq('user_id', user.id)
+          .single();
+
+        if (userProfile?.location) {
+          // Extract county from location (assuming format includes county)
+          const userCounty = userProfile.location.split(',').pop()?.trim();
+          if (userCounty) {
+            query = query.ilike('location', `%${userCounty}%`);
+          }
+        }
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
 
@@ -111,12 +130,18 @@ const CommunityValidation = () => {
 
           userVote = userVoteData?.vote_type || null;
         }
+        // Get reporter name from user_profiles
+        const { data: reporterData } = await supabase
+          .from('user_profiles')
+          .select('full_name')
+          .eq('user_id', report.reported_by)
+          .single();
         
         return {
           ...report,
           priority_score: report.priority_score || 0,
           user_vote: userVote,
-          reporter_name: 'Anonymous', // Could join with profiles table later
+          reporter_name: reporterData?.full_name || 'Anonymous User',
           priority: report.priority || 'medium',
           location: report.location || 'Location not specified',
           upvotes,
@@ -259,7 +284,12 @@ const CommunityValidation = () => {
             Community Validation & Voting
           </CardTitle>
           <p className="text-gray-600">
-            Help validate and prioritize community-reported problems. Your votes help determine which issues get addressed first.
+            Help validate and prioritize community-reported problems in your area. Your votes help determine which issues get addressed first.
+            {user && (
+              <span className="block text-sm text-blue-600 mt-1">
+                Showing reports from your area and nearby locations.
+              </span>
+            )}
           </p>
         </CardHeader>
       </Card>

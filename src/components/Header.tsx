@@ -1,10 +1,13 @@
 
 import React from 'react';
 import { Shield } from 'lucide-react';
+import ProfileButton from '@/components/ProfileButton';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface HeaderProps {
-  selectedCounty: string;
-  onCountyChange: (county: string) => void;
+  showCountySelector?: boolean;
+  selectedCounty?: string;
+  onCountyChange?: (county: string) => void;
 }
 
 const counties = [
@@ -17,9 +20,11 @@ const counties = [
   'Trans Nzoia', 'Turkana', 'Uasin Gishu', 'Vihiga', 'Wajir', 'West Pokot'
 ];
 
-const Header = ({ selectedCounty, onCountyChange }: HeaderProps) => {
+const Header = ({ showCountySelector = false, selectedCounty = 'Nairobi', onCountyChange }: HeaderProps) => {
+  const { isAuthenticated } = useAuth();
+  
   const handleCountyChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    onCountyChange(event.target.value);
+    onCountyChange?.(event.target.value);
   };
 
   return (
@@ -40,18 +45,24 @@ const Header = ({ selectedCounty, onCountyChange }: HeaderProps) => {
             </div>
           </div>
           
-          <div className="flex-shrink-0">
-            <select 
-              value={selectedCounty} 
-              onChange={handleCountyChange}
-              className="px-2 sm:px-3 py-1.5 sm:py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white min-w-0 max-w-[140px] sm:max-w-none"
-            >
-              {counties.map((county) => (
-                <option key={county} value={county}>
-                  {county} County
-                </option>
-              ))}
-            </select>
+          <div className="flex items-center space-x-3">
+            {isAuthenticated && <ProfileButton />}
+            
+            {showCountySelector && (
+              <div className="flex-shrink-0">
+                <select 
+                  value={selectedCounty} 
+                  onChange={handleCountyChange}
+                  className="px-2 sm:px-3 py-1.5 sm:py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white min-w-0 max-w-[140px] sm:max-w-none"
+                >
+                  {counties.map((county) => (
+                    <option key={county} value={county}>
+                      {county} County
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
         </div>
       </div>

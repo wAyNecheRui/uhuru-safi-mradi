@@ -6,10 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Search, MapPin, Clock, FileText, Eye } from 'lucide-react';
 import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
+import ReportDetailsModal from '@/components/ReportDetailsModal';
 import { useCitizenData } from '@/hooks/useCitizenData';
 
 const CitizenTrackReports = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedReport, setSelectedReport] = useState<any>(null);
   const { reports, isLoading } = useCitizenData();
   
   const breadcrumbItems = [
@@ -44,10 +46,7 @@ const CitizenTrackReports = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
-      <Header 
-        selectedCounty="Nairobi"
-        onCountyChange={() => {}}
-      />
+      <Header />
       
       <main className="container mx-auto px-4 py-8">
         <BreadcrumbNav items={breadcrumbItems} />
@@ -141,7 +140,7 @@ const CitizenTrackReports = () => {
                     <p className="text-sm text-gray-500">
                       Track progress and receive SMS updates
                     </p>
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" onClick={() => setSelectedReport(report)}>
                       <Eye className="h-4 w-4 mr-2" />
                       View Details
                     </Button>
@@ -152,6 +151,14 @@ const CitizenTrackReports = () => {
           )}
         </div>
       </main>
+
+      {selectedReport && (
+        <ReportDetailsModal
+          report={selectedReport}
+          isOpen={!!selectedReport}
+          onClose={() => setSelectedReport(null)}
+        />
+      )}
     </div>
   );
 };
