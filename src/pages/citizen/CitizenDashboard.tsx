@@ -347,27 +347,6 @@ const CitizenDashboard = () => {
             </Card>
           </div>
 
-          {/* Call to Action for Key Features */}
-          <div className="bg-gradient-to-r from-green-600 to-blue-600 rounded-lg p-6 text-white">
-            <div className="text-center">
-              <h2 className="text-xl sm:text-2xl font-bold mb-2">Be the Change Your Community Needs</h2>
-              <p className="text-green-100 mb-6">
-                Every problem you report, every verification you make, and every skill you contribute 
-                helps build a better Kenya for everyone.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button asChild className="bg-white text-green-600 hover:bg-gray-100">
-                  <Link to="/citizen/report">Report a Problem</Link>
-                </Button>
-                <Button asChild variant="outline" className="border-white text-white hover:bg-white hover:text-green-600">
-                  <Link to="/citizen/voting">Validate Reports</Link>
-                </Button>
-                <Button asChild variant="outline" className="border-white text-white hover:bg-white hover:text-blue-600">
-                  <Link to="/citizen/skills">Register Skills</Link>
-                </Button>
-              </div>
-            </div>
-          </div>
         </ResponsiveContainer>
       </main>
     </div>
