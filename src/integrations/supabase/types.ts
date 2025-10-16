@@ -315,6 +315,66 @@ export type Database = {
         }
         Relationships: []
       }
+      contractor_profiles: {
+        Row: {
+          average_rating: number | null
+          business_permit_url: string | null
+          company_name: string
+          company_registration_number: string | null
+          created_at: string | null
+          id: string
+          kra_pin: string | null
+          number_of_employees: number | null
+          previous_projects_count: number | null
+          specialization: string[] | null
+          tax_compliance_certificate_url: string | null
+          total_contract_value: number | null
+          updated_at: string | null
+          user_id: string
+          verification_date: string | null
+          verified: boolean | null
+          years_in_business: number | null
+        }
+        Insert: {
+          average_rating?: number | null
+          business_permit_url?: string | null
+          company_name: string
+          company_registration_number?: string | null
+          created_at?: string | null
+          id?: string
+          kra_pin?: string | null
+          number_of_employees?: number | null
+          previous_projects_count?: number | null
+          specialization?: string[] | null
+          tax_compliance_certificate_url?: string | null
+          total_contract_value?: number | null
+          updated_at?: string | null
+          user_id: string
+          verification_date?: string | null
+          verified?: boolean | null
+          years_in_business?: number | null
+        }
+        Update: {
+          average_rating?: number | null
+          business_permit_url?: string | null
+          company_name?: string
+          company_registration_number?: string | null
+          created_at?: string | null
+          id?: string
+          kra_pin?: string | null
+          number_of_employees?: number | null
+          previous_projects_count?: number | null
+          specialization?: string[] | null
+          tax_compliance_certificate_url?: string | null
+          total_contract_value?: number | null
+          updated_at?: string | null
+          user_id?: string
+          verification_date?: string | null
+          verified?: boolean | null
+          years_in_business?: number | null
+        }
+        Relationships: []
+      }
       contractor_ratings: {
         Row: {
           communication: number | null
@@ -466,6 +526,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      government_profiles: {
+        Row: {
+          clearance_level: string | null
+          created_at: string | null
+          department: string
+          employee_number: string | null
+          id: string
+          office_location: string | null
+          office_phone: string | null
+          position: string
+          supervisor_contact: string | null
+          supervisor_name: string | null
+          updated_at: string | null
+          user_id: string
+          verification_date: string | null
+          verified: boolean | null
+        }
+        Insert: {
+          clearance_level?: string | null
+          created_at?: string | null
+          department: string
+          employee_number?: string | null
+          id?: string
+          office_location?: string | null
+          office_phone?: string | null
+          position: string
+          supervisor_contact?: string | null
+          supervisor_name?: string | null
+          updated_at?: string | null
+          user_id: string
+          verification_date?: string | null
+          verified?: boolean | null
+        }
+        Update: {
+          clearance_level?: string | null
+          created_at?: string | null
+          department?: string
+          employee_number?: string | null
+          id?: string
+          office_location?: string | null
+          office_phone?: string | null
+          position?: string
+          supervisor_contact?: string | null
+          supervisor_name?: string | null
+          updated_at?: string | null
+          user_id?: string
+          verification_date?: string | null
+          verified?: boolean | null
+        }
+        Relationships: []
       }
       job_applications: {
         Row: {
@@ -1129,73 +1240,190 @@ export type Database = {
       }
       user_profiles: {
         Row: {
+          avatar_url: string | null
+          county: string | null
           created_at: string | null
+          date_of_birth: string | null
+          email_verified: boolean | null
           full_name: string | null
+          gender: string | null
           id: string
+          id_type: string | null
           location: string | null
+          national_id: string | null
           phone_number: string | null
+          phone_verified: boolean | null
+          postal_address: string | null
+          profile_completed: boolean | null
+          sub_county: string | null
           updated_at: string | null
           user_id: string
           user_type: string
+          ward: string | null
         }
         Insert: {
+          avatar_url?: string | null
+          county?: string | null
           created_at?: string | null
+          date_of_birth?: string | null
+          email_verified?: boolean | null
           full_name?: string | null
+          gender?: string | null
           id?: string
+          id_type?: string | null
           location?: string | null
+          national_id?: string | null
           phone_number?: string | null
+          phone_verified?: boolean | null
+          postal_address?: string | null
+          profile_completed?: boolean | null
+          sub_county?: string | null
           updated_at?: string | null
           user_id: string
           user_type: string
+          ward?: string | null
         }
         Update: {
+          avatar_url?: string | null
+          county?: string | null
           created_at?: string | null
+          date_of_birth?: string | null
+          email_verified?: boolean | null
           full_name?: string | null
+          gender?: string | null
           id?: string
+          id_type?: string | null
           location?: string | null
+          national_id?: string | null
           phone_number?: string | null
+          phone_verified?: boolean | null
+          postal_address?: string | null
+          profile_completed?: boolean | null
+          sub_county?: string | null
           updated_at?: string | null
           user_id?: string
           user_type?: string
+          ward?: string | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          assigned_at: string | null
+          assigned_by: string | null
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          created_at?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
         }
         Relationships: []
       }
       user_verifications: {
         Row: {
           created_at: string | null
+          document_urls: string[] | null
           expires_at: string | null
           id: string
           reference_number: string
+          rejection_reason: string | null
           status: string | null
           updated_at: string | null
           user_id: string
           verification_data: Json | null
+          verification_notes: string | null
           verification_type: string
           verified_at: string | null
+          verified_by: string | null
         }
         Insert: {
           created_at?: string | null
+          document_urls?: string[] | null
           expires_at?: string | null
           id?: string
           reference_number: string
+          rejection_reason?: string | null
           status?: string | null
           updated_at?: string | null
           user_id: string
           verification_data?: Json | null
+          verification_notes?: string | null
           verification_type: string
           verified_at?: string | null
+          verified_by?: string | null
         }
         Update: {
           created_at?: string | null
+          document_urls?: string[] | null
           expires_at?: string | null
           id?: string
           reference_number?: string
+          rejection_reason?: string | null
           status?: string | null
           updated_at?: string | null
           user_id?: string
           verification_data?: Json | null
+          verification_notes?: string | null
           verification_type?: string
           verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: []
+      }
+      verification_requests: {
+        Row: {
+          created_at: string | null
+          id: string
+          justification: string | null
+          requested_role: Database["public"]["Enums"]["app_role"]
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string | null
+          supporting_documents: string[] | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          justification?: string | null
+          requested_role: Database["public"]["Enums"]["app_role"]
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string | null
+          supporting_documents?: string[] | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          justification?: string | null
+          requested_role?: Database["public"]["Enums"]["app_role"]
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string | null
+          supporting_documents?: string[] | null
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -1516,12 +1744,25 @@ export type Database = {
           years_experience: number
         }[]
       }
+      get_user_roles: {
+        Args: { _user_id: string }
+        Returns: {
+          role: Database["public"]["Enums"]["app_role"]
+        }[]
+      }
       get_worker_contact_info: {
         Args: { worker_id: string }
         Returns: {
           alternate_phone: string
           phone_number: string
         }[]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
       }
       is_verified_government_user: {
         Args: { user_uuid?: string }
@@ -1533,7 +1774,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "citizen" | "contractor" | "government" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1660,6 +1901,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["citizen", "contractor", "government", "admin"],
+    },
   },
 } as const
