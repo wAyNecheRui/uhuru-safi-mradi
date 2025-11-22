@@ -4,6 +4,7 @@ import { loadUserProfile } from '@/services/authService';
 import { useAuthOperations } from '@/hooks/useAuthOperations';
 import type { AuthUser, AuthContextType } from '@/types/auth';
 import { RoleService, type AppRole } from '@/services/RoleService';
+import { DEV_MODE, TEST_USER } from '@/config/devMode';
 
 console.log('AuthContext loading...');
 
@@ -70,7 +71,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
 
-    console.log('Auth context initialized - no automatic login');
+    // Dev mode: Auto-login with test user
+    if (DEV_MODE) {
+      console.log('🔧 DEV MODE: Auto-logging in with test user');
+      supabase.auth.signInWithPassword({
+        email: TEST_USER.email,
+        password: TEST_USER.password
+      }).then(async ({ data, error }) => {
+        if (error) {
+          console.error('Dev mode auto-login failed:', error.message);
+        } else if (data.user && mounted) {
+          const profile = await loadUserProfile(data.user.id, data.user.email || '');
+          if (profile) {
+            setUser(profile);
+            await fetchRoles(profile.id);
+          }
+        }
+      });
+    }
 
     return () => {
       mounted = false;
