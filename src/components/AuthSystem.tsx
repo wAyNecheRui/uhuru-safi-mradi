@@ -24,16 +24,22 @@ const AuthSystem = () => {
     setActiveTab
   );
 
+  // Redirect authenticated users to their dashboard
+  React.useEffect(() => {
+    if (user && !authLoading && !isLoading) {
+      console.log('User authenticated, redirecting to dashboard:', user.user_type);
+      navigate(`/${user.user_type}`, { replace: true });
+    }
+  }, [user, authLoading, isLoading, navigate]);
+
   // Show loading state during auth operations
   if (authLoading || isLoading) {
     return <AuthLoading isLoading={true} />;
   }
 
-  // If user is authenticated, redirect them to their dashboard
+  // Don't render auth form if user is authenticated (while redirecting)
   if (user) {
-    console.log('User authenticated, redirecting to dashboard:', user.user_type);
-    navigate(`/${user.user_type}`, { replace: true });
-    return null;
+    return <AuthLoading isLoading={true} />;
   }
 
   return (
