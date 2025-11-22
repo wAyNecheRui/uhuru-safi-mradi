@@ -1,12 +1,9 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { loadUserProfile } from '@/services/authService';
-import { useAuthOperations } from '@/hooks/useAuthOperations';
+import React, { createContext, useContext, useState } from 'react';
 import type { AuthUser, AuthContextType } from '@/types/auth';
-import { RoleService, type AppRole } from '@/services/RoleService';
-import { DEV_MODE, TEST_USER } from '@/config/devMode';
+import type { AppRole } from '@/services/RoleService';
+import { MOCK_USER } from '@/config/devMode';
 
-console.log('AuthContext loading...');
+console.log('AuthContext loading with mock authentication - app is public');
 
 interface EnhancedAuthContextType extends AuthContextType {
   roles: AppRole[];
@@ -17,92 +14,38 @@ interface EnhancedAuthContextType extends AuthContextType {
 const AuthContext = createContext<EnhancedAuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [roles, setRoles] = useState<AppRole[]>([]);
-  
-  // Fetch user roles
-  const fetchRoles = async (userId: string) => {
-    const userRoles = await RoleService.getUserRoles(userId);
-    setRoles(userRoles);
-  };
-
-  const refreshRoles = async () => {
-    if (user?.id) {
-      await fetchRoles(user.id);
-    }
-  };
+  // Mock user - authentication is disabled
+  const [user] = useState<AuthUser | null>(MOCK_USER);
+  const [roles] = useState<AppRole[]>([]);
 
   const hasRole = (role: AppRole): boolean => {
     return roles.includes(role);
   };
 
-  // Create enhanced auth operations that can update user state
-  const authOps = useAuthOperations();
-  const enhancedSignIn = async (email: string, password: string) => {
-    const result = await authOps.signIn(email, password);
-    if (result.user) {
-      setUser(result.user);
-      await fetchRoles(result.user.id);
-    }
-    return result;
+  const refreshRoles = async () => {
+    // No-op in public mode
+  };
+
+  // Mock auth operations - all are no-ops
+  const mockSignIn = async (email: string, password: string) => {
+    return { user: MOCK_USER, error: null };
+  };
+
+  const mockSignUp = async (email: string, password: string, userData: any) => {
+    return { error: null };
   };
   
-  const enhancedSignOut = async () => {
-    await authOps.signOut();
-    setUser(null);
-    setRoles([]);
+  const mockSignOut = async () => {
+    // No-op in public mode
   };
-
-  useEffect(() => {
-    let mounted = true;
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.email);
-        
-        if (!mounted) return;
-
-        // Only handle explicit sign out - no automatic login
-        if (event === 'SIGNED_OUT' || !session?.user) {
-          console.log('User signed out');
-          setUser(null);
-          setRoles([]);
-        }
-      }
-    );
-
-    // Dev mode: Auto-login with test user
-    if (DEV_MODE) {
-      console.log('🔧 DEV MODE: Auto-logging in with test user');
-      supabase.auth.signInWithPassword({
-        email: TEST_USER.email,
-        password: TEST_USER.password
-      }).then(async ({ data, error }) => {
-        if (error) {
-          console.error('Dev mode auto-login failed:', error.message);
-        } else if (data.user && mounted) {
-          const profile = await loadUserProfile(data.user.id, data.user.email || '');
-          if (profile) {
-            setUser(profile);
-            await fetchRoles(profile.id);
-          }
-        }
-      });
-    }
-
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
-  }, []);
 
   const value: EnhancedAuthContextType = {
     user,
-    loading: authOps.loading,
-    isAuthenticated: !!user,
-    signIn: enhancedSignIn,
-    signUp: authOps.signUp,
-    signOut: enhancedSignOut,
+    loading: false,
+    isAuthenticated: true, // Always authenticated in public mode
+    signIn: mockSignIn,
+    signUp: mockSignUp,
+    signOut: mockSignOut,
     roles,
     hasRole,
     refreshRoles,

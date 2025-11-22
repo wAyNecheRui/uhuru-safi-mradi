@@ -1,8 +1,8 @@
-// Development mode configuration
-// Set to true to bypass authentication with a test user
-export const DEV_MODE = true;
-
-export const TEST_USER = {
-  email: 'test@example.com',
-  password: 'test123456'
+// Mock authentication - app is fully public
+// Authentication has been disabled, using a mock user for all sessions
+export const MOCK_USER = {
+  id: 'mock-user-id',
+  email: 'public@user.com',
+  name: 'Public User',
+  user_type: 'citizen' as const
 };
