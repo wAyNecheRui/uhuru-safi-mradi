@@ -18,6 +18,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user] = useState<AuthUser | null>(MOCK_USER);
   const [roles] = useState<AppRole[]>([]);
 
+  // Clear any existing Supabase auth session on mount
+  React.useEffect(() => {
+    const clearAuth = async () => {
+      try {
+        localStorage.removeItem('supabase.auth.token');
+        // Don't call signOut as it will trigger API calls
+      } catch (error) {
+        // Ignore errors
+      }
+    };
+    clearAuth();
+  }, []);
+
   const hasRole = (role: AppRole): boolean => {
     return roles.includes(role);
   };
