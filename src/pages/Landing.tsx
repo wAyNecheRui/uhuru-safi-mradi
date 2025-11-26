@@ -183,17 +183,25 @@ const Landing = () => {
                       {userType.description}
                     </p>
                     
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button 
-                          variant="outline" 
-                          size={isMobile ? "sm" : "default"}
-                          className="bg-white/20 border-white/30 text-white hover:bg-white/30 hover:text-amber-400 transition-colors w-full sm:w-auto"
-                        >
-                          Learn More
-                          <ChevronRight className="w-4 h-4 ml-2" />
-                        </Button>
-                      </DialogTrigger>
+                    <div className="flex flex-col gap-2">
+                      <Button 
+                        size={isMobile ? "sm" : "default"}
+                        className="bg-amber-500 hover:bg-amber-600 text-slate-900 font-semibold w-full"
+                        onClick={() => navigate(`/${userType.id}`)}
+                      >
+                        View {userType.title} Dashboard
+                      </Button>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button 
+                            variant="outline" 
+                            size={isMobile ? "sm" : "default"}
+                            className="bg-white/20 border-white/30 text-white hover:bg-white/30 hover:text-amber-400 transition-colors w-full"
+                          >
+                            Learn More
+                            <ChevronRight className="w-4 h-4 ml-2" />
+                          </Button>
+                        </DialogTrigger>
                       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto mx-4 sm:mx-0">
                         <DialogHeader>
                           <DialogTitle className="flex items-center space-x-3 text-xl sm:text-2xl">
@@ -259,6 +267,7 @@ const Landing = () => {
                         </div>
                       </DialogContent>
                     </Dialog>
+                    </div>
                   </CardContent>
                 </Card>
               );
