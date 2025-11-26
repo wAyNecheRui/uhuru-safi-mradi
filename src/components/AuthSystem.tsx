@@ -29,6 +29,13 @@ const AuthSystem = () => {
     return <AuthLoading isLoading={true} />;
   }
 
+  // If user is authenticated, redirect them to their dashboard
+  if (user) {
+    console.log('User authenticated, redirecting to dashboard:', user.user_type);
+    navigate(`/${user.user_type}`, { replace: true });
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-800 via-slate-700 to-blue-800 flex items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-xl border-0 bg-white/95 backdrop-blur-md">

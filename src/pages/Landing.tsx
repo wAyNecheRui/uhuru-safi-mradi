@@ -145,31 +145,14 @@ const Landing = () => {
               and ensuring transparent project funding and delivery through innovative escrow mechanisms.
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-4 justify-center px-4 mb-8">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center px-4">
               <Button 
                 size={isMobile ? "default" : "lg"}
                 className="bg-amber-500 hover:bg-amber-600 text-slate-900 font-semibold px-6 sm:px-8 w-full sm:w-auto"
-                onClick={() => navigate('/citizen')}
+                onClick={() => navigate('/auth')}
               >
-                Citizen Dashboard
+                Get Started Today
               </Button>
-              <Button 
-                size={isMobile ? "default" : "lg"}
-                className="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-6 sm:px-8 w-full sm:w-auto"
-                onClick={() => navigate('/contractor')}
-              >
-                Contractor Dashboard
-              </Button>
-              <Button 
-                size={isMobile ? "default" : "lg"}
-                className="bg-purple-500 hover:bg-purple-600 text-white font-semibold px-6 sm:px-8 w-full sm:w-auto"
-                onClick={() => navigate('/government')}
-              >
-                Government Dashboard
-              </Button>
-            </div>
-            
-            <div className="flex flex-col sm:flex-row gap-4 justify-center px-4">
               <Button 
                 size={isMobile ? "default" : "lg"}
                 variant="outline"

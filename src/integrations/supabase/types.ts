@@ -808,7 +808,7 @@ export type Database = {
           created_at: string | null
           description: string
           estimated_cost: number | null
-          gps_coordinates: unknown
+          gps_coordinates: unknown | null
           id: string
           location: string | null
           photo_urls: string[] | null
@@ -831,7 +831,7 @@ export type Database = {
           created_at?: string | null
           description: string
           estimated_cost?: number | null
-          gps_coordinates?: unknown
+          gps_coordinates?: unknown | null
           id?: string
           location?: string | null
           photo_urls?: string[] | null
@@ -854,7 +854,7 @@ export type Database = {
           created_at?: string | null
           description?: string
           estimated_cost?: number | null
-          gps_coordinates?: unknown
+          gps_coordinates?: unknown | null
           id?: string
           location?: string | null
           photo_urls?: string[] | null
@@ -934,7 +934,7 @@ export type Database = {
           citizen_verified: boolean | null
           created_at: string | null
           equipment_used: string[] | null
-          gps_coordinates: unknown
+          gps_coordinates: unknown | null
           id: string
           milestone_id: string | null
           photo_urls: string[] | null
@@ -952,7 +952,7 @@ export type Database = {
           citizen_verified?: boolean | null
           created_at?: string | null
           equipment_used?: string[] | null
-          gps_coordinates?: unknown
+          gps_coordinates?: unknown | null
           id?: string
           milestone_id?: string | null
           photo_urls?: string[] | null
@@ -970,7 +970,7 @@ export type Database = {
           citizen_verified?: boolean | null
           created_at?: string | null
           equipment_used?: string[] | null
-          gps_coordinates?: unknown
+          gps_coordinates?: unknown | null
           id?: string
           milestone_id?: string | null
           photo_urls?: string[] | null
@@ -1435,7 +1435,7 @@ export type Database = {
           created_at: string | null
           government_user_id: string
           id: string
-          ip_address: unknown
+          ip_address: unknown | null
           justification: string | null
           session_id: string | null
           user_agent: string | null
@@ -1448,7 +1448,7 @@ export type Database = {
           created_at?: string | null
           government_user_id: string
           id?: string
-          ip_address?: unknown
+          ip_address?: unknown | null
           justification?: string | null
           session_id?: string | null
           user_agent?: string | null
@@ -1461,7 +1461,7 @@ export type Database = {
           created_at?: string | null
           government_user_id?: string
           id?: string
-          ip_address?: unknown
+          ip_address?: unknown | null
           justification?: string | null
           session_id?: string | null
           user_agent?: string | null
@@ -1476,7 +1476,7 @@ export type Database = {
           accessed_fields: string[] | null
           government_user_id: string
           id: string
-          ip_address: unknown
+          ip_address: unknown | null
           session_id: string | null
           updated_at: string | null
           worker_id: string
@@ -1487,7 +1487,7 @@ export type Database = {
           accessed_fields?: string[] | null
           government_user_id: string
           id?: string
-          ip_address?: unknown
+          ip_address?: unknown | null
           session_id?: string | null
           updated_at?: string | null
           worker_id: string
@@ -1498,7 +1498,7 @@ export type Database = {
           accessed_fields?: string[] | null
           government_user_id?: string
           id?: string
-          ip_address?: unknown
+          ip_address?: unknown | null
           session_id?: string | null
           updated_at?: string | null
           worker_id?: string
@@ -1638,7 +1638,7 @@ export type Database = {
         Returns: string
       }
       get_available_workers: {
-        Args: never
+        Args: Record<PropertyKey, never>
         Returns: {
           availability_status: string
           background_check_status: string
@@ -1664,7 +1664,7 @@ export type Database = {
         }[]
       }
       get_available_workers_for_contractors: {
-        Args: never
+        Args: Record<PropertyKey, never>
         Returns: {
           availability_status: string
           background_check_status: string
@@ -1728,7 +1728,7 @@ export type Database = {
         }[]
       }
       get_public_contractor_profiles: {
-        Args: never
+        Args: Record<PropertyKey, never>
         Returns: {
           available_for_work: boolean
           certifications: string
@@ -1768,7 +1768,10 @@ export type Database = {
         Args: { user_uuid?: string }
         Returns: boolean
       }
-      update_system_analytics: { Args: never; Returns: undefined }
+      update_system_analytics: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "citizen" | "contractor" | "government" | "admin"

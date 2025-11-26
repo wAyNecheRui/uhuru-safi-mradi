@@ -1,9 +1,11 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { loadUserProfile } from '@/services/authService';
+import { useAuthOperations } from '@/hooks/useAuthOperations';
 import type { AuthUser, AuthContextType } from '@/types/auth';
-import type { AppRole } from '@/services/RoleService';
-import { MOCK_USER } from '@/config/devMode';
+import { RoleService, type AppRole } from '@/services/RoleService';
 
-console.log('AuthContext loading with mock authentication - app is public');
+console.log('AuthContext loading...');
 
 interface EnhancedAuthContextType extends AuthContextType {
   roles: AppRole[];
@@ -14,51 +16,75 @@ interface EnhancedAuthContextType extends AuthContextType {
 const AuthContext = createContext<EnhancedAuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Mock user - authentication is disabled
-  const [user] = useState<AuthUser | null>(MOCK_USER);
-  const [roles] = useState<AppRole[]>([]);
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [roles, setRoles] = useState<AppRole[]>([]);
+  
+  // Fetch user roles
+  const fetchRoles = async (userId: string) => {
+    const userRoles = await RoleService.getUserRoles(userId);
+    setRoles(userRoles);
+  };
 
-  // Clear any existing Supabase auth session on mount
-  React.useEffect(() => {
-    const clearAuth = async () => {
-      try {
-        localStorage.removeItem('supabase.auth.token');
-        // Don't call signOut as it will trigger API calls
-      } catch (error) {
-        // Ignore errors
-      }
-    };
-    clearAuth();
-  }, []);
+  const refreshRoles = async () => {
+    if (user?.id) {
+      await fetchRoles(user.id);
+    }
+  };
 
   const hasRole = (role: AppRole): boolean => {
     return roles.includes(role);
   };
 
-  const refreshRoles = async () => {
-    // No-op in public mode
-  };
-
-  // Mock auth operations - all are no-ops
-  const mockSignIn = async (email: string, password: string) => {
-    return { user: MOCK_USER, error: null };
-  };
-
-  const mockSignUp = async (email: string, password: string, userData: any) => {
-    return { error: null };
+  // Create enhanced auth operations that can update user state
+  const authOps = useAuthOperations();
+  const enhancedSignIn = async (email: string, password: string) => {
+    const result = await authOps.signIn(email, password);
+    if (result.user) {
+      setUser(result.user);
+      await fetchRoles(result.user.id);
+    }
+    return result;
   };
   
-  const mockSignOut = async () => {
-    // No-op in public mode
+  const enhancedSignOut = async () => {
+    await authOps.signOut();
+    setUser(null);
+    setRoles([]);
   };
+
+  useEffect(() => {
+    let mounted = true;
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.email);
+        
+        if (!mounted) return;
+
+        // Only handle explicit sign out - no automatic login
+        if (event === 'SIGNED_OUT' || !session?.user) {
+          console.log('User signed out');
+          setUser(null);
+          setRoles([]);
+        }
+      }
+    );
+
+    console.log('Auth context initialized - no automatic login');
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const value: EnhancedAuthContextType = {
     user,
-    loading: false,
-    isAuthenticated: true, // Always authenticated in public mode
-    signIn: mockSignIn,
-    signUp: mockSignUp,
-    signOut: mockSignOut,
+    loading: authOps.loading,
+    isAuthenticated: !!user,
+    signIn: enhancedSignIn,
+    signUp: authOps.signUp,
+    signOut: enhancedSignOut,
     roles,
     hasRole,
     refreshRoles,

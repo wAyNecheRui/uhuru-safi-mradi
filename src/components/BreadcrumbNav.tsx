@@ -47,27 +47,29 @@ const BreadcrumbNav = ({ items = [] }: BreadcrumbNavProps) => {
   return (
     <Breadcrumb className="mb-6">
       <BreadcrumbList>
-        {breadcrumbs.map((breadcrumb, index) => [
-          <BreadcrumbItem key={`item-${index}`}>
-            {breadcrumb.href ? (
-              <BreadcrumbLink asChild>
-                <Link to={breadcrumb.href} className="flex items-center hover:text-green-600">
-                  {index === 0 && <Home className="h-4 w-4 mr-1" />}
+        {breadcrumbs.map((breadcrumb, index) => (
+          <React.Fragment key={index}>
+            <BreadcrumbItem>
+              {breadcrumb.href ? (
+                <BreadcrumbLink asChild>
+                  <Link to={breadcrumb.href} className="flex items-center hover:text-green-600">
+                    {index === 0 && <Home className="h-4 w-4 mr-1" />}
+                    {breadcrumb.label}
+                  </Link>
+                </BreadcrumbLink>
+              ) : (
+                <BreadcrumbPage className="text-green-600 font-medium">
                   {breadcrumb.label}
-                </Link>
-              </BreadcrumbLink>
-            ) : (
-              <BreadcrumbPage className="text-green-600 font-medium">
-                {breadcrumb.label}
-              </BreadcrumbPage>
+                </BreadcrumbPage>
+              )}
+            </BreadcrumbItem>
+            {index < breadcrumbs.length - 1 && (
+              <BreadcrumbSeparator>
+                <ChevronRight className="h-4 w-4" />
+              </BreadcrumbSeparator>
             )}
-          </BreadcrumbItem>,
-          index < breadcrumbs.length - 1 && (
-            <BreadcrumbSeparator key={`sep-${index}`}>
-              <ChevronRight className="h-4 w-4" />
-            </BreadcrumbSeparator>
-          )
-        ])}
+          </React.Fragment>
+        ))}
       </BreadcrumbList>
     </Breadcrumb>
   );
