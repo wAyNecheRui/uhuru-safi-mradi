@@ -278,7 +278,7 @@ const PaymentTransparency = () => {
                 </div>
               </CardContent>
             </Card>
-          ))}
+          )))}
         </TabsContent>
 
         <TabsContent value="upcoming" className="space-y-6">
