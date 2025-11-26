@@ -1,14 +1,33 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DollarSign, Shield, Clock, CheckCircle, AlertTriangle, Smartphone, Building2, Eye } from 'lucide-react';
+import { DollarSign, Shield, Clock, CheckCircle, AlertTriangle, Smartphone, Building2, Eye, Loader2 } from 'lucide-react';
+import { usePaymentTransparency } from '@/hooks/usePaymentTransparency';
 
 const PaymentTransparency = () => {
-  const paymentTrails = [
+  const { paymentTrails, upcomingMilestones, loading } = usePaymentTransparency();
+
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto">
+        <Card className="shadow-xl">
+          <CardContent className="p-8 text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
+            <p className="text-gray-600">Loading payment data...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show demo data message if no real data
+  const hasRealData = paymentTrails.length > 0 || upcomingMilestones.length > 0;
+  
+  const demoPaymentTrails = hasRealData ? [] : [
     {
       id: 'TX-2024-001',
       projectTitle: 'Machakos Market Road Rehabilitation',
@@ -45,7 +64,7 @@ const PaymentTransparency = () => {
     }
   ];
 
-  const upcomingMilestones = [
+  const demoUpcomingMilestones = hasRealData ? [] : [
     {
       projectTitle: 'Machakos Market Road Rehabilitation',
       milestone: 'Surface Laying',
@@ -67,6 +86,10 @@ const PaymentTransparency = () => {
       currentVerifications: 8
     }
   ];
+
+  // Use real data if available, otherwise demo data
+  const displayPaymentTrails = hasRealData ? paymentTrails : demoPaymentTrails;
+  const displayUpcomingMilestones = hasRealData ? upcomingMilestones : demoUpcomingMilestones;
 
   const formatAmount = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
@@ -91,6 +114,20 @@ const PaymentTransparency = () => {
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
+      {!hasRealData && (
+        <Card className="border-blue-200 bg-blue-50">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-blue-600 mt-0.5" />
+              <div>
+                <p className="font-medium text-blue-900">Demo Mode</p>
+                <p className="text-sm text-blue-700">Showing sample data. Real payment data will appear here once projects have escrow accounts and transactions.</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      
       <Card className="shadow-xl border-t-4 border-t-blue-600">
         <CardHeader className="bg-gradient-to-r from-blue-50 to-green-50">
           <CardTitle className="flex items-center text-2xl">
@@ -120,7 +157,15 @@ const PaymentTransparency = () => {
         </TabsList>
 
         <TabsContent value="recent" className="space-y-6">
-          {paymentTrails.map((payment) => (
+          {displayPaymentTrails.length === 0 ? (
+            <Card>
+              <CardContent className="p-8 text-center text-gray-500">
+                <DollarSign className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No payment transactions yet</p>
+              </CardContent>
+            </Card>
+          ) : (
+            displayPaymentTrails.map((payment) => (
             <Card key={payment.id} className="shadow-lg border-l-4 border-l-blue-500">
               <CardContent className="p-6">
                 <div className="space-y-6">

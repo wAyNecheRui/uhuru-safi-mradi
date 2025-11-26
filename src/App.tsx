@@ -30,6 +30,7 @@ import GovernmentPaymentTransparency from "./pages/government/GovernmentPaymentT
 import GovernmentBlockchain from "./pages/government/GovernmentBlockchain";
 import GovernmentEACC from "./pages/government/GovernmentEACC";
 import GovernmentBenchmarks from "./pages/government/GovernmentBenchmarks";
+import GovernmentVerificationRequests from "./pages/government/GovernmentVerificationRequests";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import ContractorDatabasePage from "./pages/ContractorDatabase";
@@ -94,6 +95,7 @@ const App = () => {
                 <Route path="/government/blockchain" element={<GovernmentBlockchain />} />
                 <Route path="/government/eacc" element={<GovernmentEACC />} />
                 <Route path="/government/benchmarks" element={<GovernmentBenchmarks />} />
+                <Route path="/government/verification-requests" element={<GovernmentVerificationRequests />} />
                 
                 {/* Catch-all route */}
                 <Route path="*" element={<NotFound />} />
