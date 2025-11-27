@@ -56,16 +56,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let mounted = true;
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         console.log('Auth state changed:', event, session?.user?.email);
         
         if (!mounted) return;
 
-        // Only handle explicit sign out - no automatic login
         if (event === 'SIGNED_OUT' || !session?.user) {
           console.log('User signed out');
           setUser(null);
           setRoles([]);
+        } else if (event === 'SIGNED_IN' && session?.user) {
+          // Load user profile when signed in
+          const profile = await loadUserProfile(session.user.id, session.user.email || '');
+          if (mounted && profile) {
+            setUser(profile);
+            await fetchRoles(profile.id);
+          }
         }
       }
     );
