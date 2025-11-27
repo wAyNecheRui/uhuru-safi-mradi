@@ -19,12 +19,12 @@ const CitizenDashboard = () => {
   const { reports, stats, isLoading, hasError } = useCitizenData();
   const [selectedCounty, setSelectedCounty] = useState('Nairobi');
 
-  // Redirect if not authenticated
-  useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/auth');
-    }
-  }, [isAuthenticated, navigate]);
+  // Auth check disabled for presentation mode
+  // useEffect(() => {
+  //   if (!isAuthenticated) {
+  //     navigate('/auth');
+  //   }
+  // }, [isAuthenticated, navigate]);
 
   const handleCountyChange = (county: string) => {
     console.log('Citizen Dashboard - County changed to:', county);
