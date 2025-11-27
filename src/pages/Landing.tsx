@@ -116,14 +116,6 @@ const Landing = () => {
               >
                 Contact
               </button>
-              <Button 
-                variant="outline" 
-                size={isMobile ? "sm" : "default"}
-                className="bg-white/20 border-white/30 text-white hover:bg-white/30 text-sm lg:text-base"
-                onClick={() => navigate('/auth')}
-              >
-                Sign In
-              </Button>
             </div>
 
             {/* Mobile Navigation */}
@@ -146,13 +138,6 @@ const Landing = () => {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center px-4">
-              <Button 
-                size={isMobile ? "default" : "lg"}
-                className="bg-amber-500 hover:bg-amber-600 text-slate-900 font-semibold px-6 sm:px-8 w-full sm:w-auto"
-                onClick={() => navigate('/auth')}
-              >
-                Get Started Today
-              </Button>
               <Button 
                 size={isMobile ? "default" : "lg"}
                 variant="outline"
@@ -255,13 +240,13 @@ const Landing = () => {
                           
                           {/* Call to Action */}
                           <div className="bg-gradient-to-r from-amber-50 to-amber-100 rounded-lg p-4 sm:p-6 text-center">
-                            <h4 className="text-base sm:text-lg font-semibold text-slate-900 mb-2">Ready to Get Started?</h4>
-                            <p className="text-slate-600 mb-4 text-sm sm:text-base">Join as a {userType.title.toLowerCase().slice(0, -1)} and make a difference in your community.</p>
+                            <h4 className="text-base sm:text-lg font-semibold text-slate-900 mb-2">Ready to Explore?</h4>
+                            <p className="text-slate-600 mb-4 text-sm sm:text-base">View the {userType.title.toLowerCase()} dashboard to see all features.</p>
                             <Button 
                               className="bg-amber-500 hover:bg-amber-600 text-white w-full sm:w-auto"
-                              onClick={() => navigate('/auth')}
+                              onClick={() => navigate(`/${userType.id}`)}
                             >
-                              Sign Up Now
+                              View Dashboard
                             </Button>
                           </div>
                         </div>
@@ -303,15 +288,8 @@ const Landing = () => {
 
           {/* Call to Action */}
           <div className="text-center bg-white/10 backdrop-blur-md rounded-2xl p-6 sm:p-8 border border-white/20 mx-4">
-            <h3 className="text-xl sm:text-2xl font-bold text-white mb-4">Ready to Transform Your Community?</h3>
-            <p className="text-slate-200 mb-6 text-sm sm:text-base leading-relaxed">Join thousands of citizens, contractors, and officials building transparent infrastructure.</p>
-            <Button 
-              size={isMobile ? "default" : "lg"}
-              className="bg-amber-500 hover:bg-amber-600 text-slate-900 font-semibold px-6 sm:px-8 w-full sm:w-auto"
-              onClick={() => navigate('/auth')}
-            >
-              Join Uhuru Safi Today
-            </Button>
+            <h3 className="text-xl sm:text-2xl font-bold text-white mb-4">Explore Platform Features</h3>
+            <p className="text-slate-200 mb-6 text-sm sm:text-base leading-relaxed">Browse through citizen, contractor, and government dashboards to see all features.</p>
           </div>
         </ResponsiveContainer>
       </main>
