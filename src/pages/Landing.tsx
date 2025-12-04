@@ -169,13 +169,6 @@ const Landing = () => {
                     </p>
                     
                     <div className="flex flex-col gap-2">
-                      <Button 
-                        size={isMobile ? "sm" : "default"}
-                        className="bg-amber-500 hover:bg-amber-600 text-slate-900 font-semibold w-full"
-                        onClick={() => navigate(`/${userType.id}`)}
-                      >
-                        View {userType.title} Dashboard
-                      </Button>
                       <Dialog>
                         <DialogTrigger asChild>
                           <Button 
@@ -240,13 +233,13 @@ const Landing = () => {
                           
                           {/* Call to Action */}
                           <div className="bg-gradient-to-r from-amber-50 to-amber-100 rounded-lg p-4 sm:p-6 text-center">
-                            <h4 className="text-base sm:text-lg font-semibold text-slate-900 mb-2">Ready to Explore?</h4>
-                            <p className="text-slate-600 mb-4 text-sm sm:text-base">View the {userType.title.toLowerCase()} dashboard to see all features.</p>
+                            <h4 className="text-base sm:text-lg font-semibold text-slate-900 mb-2">Ready to Get Started?</h4>
+                            <p className="text-slate-600 mb-4 text-sm sm:text-base">Sign up to access {userType.title.toLowerCase()} features and make a difference.</p>
                             <Button 
                               className="bg-amber-500 hover:bg-amber-600 text-white w-full sm:w-auto"
-                              onClick={() => navigate(`/${userType.id}`)}
+                              onClick={() => navigate('/auth')}
                             >
-                              View Dashboard
+                              Sign Up Now
                             </Button>
                           </div>
                         </div>
