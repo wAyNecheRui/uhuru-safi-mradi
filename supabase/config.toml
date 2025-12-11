@@ -1,1 +1,31 @@
 project_id = "vncyydrizdexkojfnonu"
+
+[functions.fund-escrow-c2b]
+verify_jwt = true
+
+[functions.pay-contractor-b2c]
+verify_jwt = true
+
+[functions.initiate-payment]
+verify_jwt = true
+
+[functions.release-milestone-payment]
+verify_jwt = true
+
+[functions.submit-report]
+verify_jwt = true
+
+[functions.secure-submit-report]
+verify_jwt = true
+
+[functions.submit-bid]
+verify_jwt = true
+
+[functions.vote-report]
+verify_jwt = true
+
+[functions.verify-kra-pin]
+verify_jwt = true
+
+[functions.create-escrow-account]
+verify_jwt = true
