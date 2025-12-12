@@ -140,11 +140,10 @@ const Landing = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center px-4">
               <Button 
                 size={isMobile ? "default" : "lg"}
-                variant="outline"
-                className="bg-white/20 border-white/30 text-white hover:bg-white/30 w-full sm:w-auto"
-                onClick={() => navigate('/contractor-database')}
+                className="bg-amber-500 hover:bg-amber-600 text-white w-full sm:w-auto"
+                onClick={() => navigate('/auth')}
               >
-                Browse Contractors
+                Get Started
               </Button>
             </div>
           </div>
