@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 interface ProjectStats {
@@ -10,69 +10,52 @@ interface ProjectStats {
   verifiedContractors: number;
 }
 
+const fetchProjectStats = async (): Promise<ProjectStats> => {
+  // Batch all queries in parallel for better performance
+  const [projectsResult, reportsResult, contractorsResult] = await Promise.all([
+    supabase.from('projects').select('status, budget'),
+    supabase.from('problem_reports').select('*', { count: 'exact', head: true }),
+    supabase.from('skills_profiles').select('*', { count: 'exact', head: true }).eq('available_for_work', true)
+  ]);
+
+  if (projectsResult.error) throw projectsResult.error;
+  if (reportsResult.error) throw reportsResult.error;
+  if (contractorsResult.error) throw contractorsResult.error;
+
+  const projects = projectsResult.data || [];
+  const totalProjects = projects.length;
+  const activeProjects = projects.filter(p => p.status === 'in_progress').length;
+  const completedProjects = projects.filter(p => p.status === 'completed').length;
+  
+  const totalBudget = projects.reduce((sum, project) => {
+    return sum + (parseFloat(project.budget?.toString() || '0') || 0);
+  }, 0);
+  
+  const totalFunds = totalBudget > 1000000 
+    ? `KES ${(totalBudget / 1000000).toFixed(1)}M`
+    : `KES ${(totalBudget / 1000).toFixed(0)}K`;
+
+  return {
+    totalProjects,
+    activeProjects,
+    completedProjects,
+    totalFunds,
+    citizenReports: reportsResult.count || 0,
+    verifiedContractors: contractorsResult.count || 0
+  };
+};
+
 export const useProjectStats = () => {
-  const [stats, setStats] = useState<ProjectStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: stats, isLoading: loading, error } = useQuery({
+    queryKey: ['project-stats'],
+    queryFn: fetchProjectStats,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+  });
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        setLoading(true);
-        
-        // Get projects stats
-        const { data: projects, error: projectsError } = await supabase
-          .from('projects')
-          .select('status, budget');
-        
-        if (projectsError) throw projectsError;
-
-        // Get reports count
-        const { count: reportsCount, error: reportsError } = await supabase
-          .from('problem_reports')
-          .select('*', { count: 'exact', head: true });
-        
-        if (reportsError) throw reportsError;
-
-        // Get verified contractors count
-        const { count: contractorsCount, error: contractorsError } = await supabase
-          .from('skills_profiles')
-          .select('*', { count: 'exact', head: true })
-          .eq('available_for_work', true);
-        
-        if (contractorsError) throw contractorsError;
-
-        // Calculate stats
-        const totalProjects = projects?.length || 0;
-        const activeProjects = projects?.filter(p => p.status === 'in_progress').length || 0;
-        const completedProjects = projects?.filter(p => p.status === 'completed').length || 0;
-        
-        // Calculate total funds
-        const totalBudget = projects?.reduce((sum, project) => {
-          return sum + (parseFloat(project.budget?.toString() || '0') || 0);
-        }, 0) || 0;
-        
-        const totalFunds = totalBudget > 1000000 
-          ? `KES ${(totalBudget / 1000000).toFixed(1)}M`
-          : `KES ${(totalBudget / 1000).toFixed(0)}K`;
-
-        setStats({
-          totalProjects,
-          activeProjects,
-          completedProjects,
-          totalFunds,
-          citizenReports: reportsCount || 0,
-          verifiedContractors: contractorsCount || 0
-        });
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch stats');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchStats();
-  }, []);
-
-  return { stats, loading, error };
+  return { 
+    stats: stats || null, 
+    loading, 
+    error: error instanceof Error ? error.message : null 
+  };
 };
