@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface RecentIssue {
@@ -12,73 +13,6 @@ interface RecentIssue {
   priority_score: number | null;
 }
 
-export const useRecentIssues = (limit: number = 10) => {
-  const [issues, setIssues] = useState<RecentIssue[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchRecentIssues = async () => {
-      try {
-        setLoading(true);
-        
-        const { data, error: issuesError } = await supabase
-          .from('problem_reports')
-          .select(`
-            id,
-            title,
-            location,
-            status,
-            priority,
-            priority_score,
-            created_at
-          `)
-          .order('created_at', { ascending: false })
-          .limit(limit);
-        
-        if (issuesError) throw issuesError;
-
-        const formattedIssues = data?.map((issue, index) => ({
-          id: index + 1,
-          title: issue.title,
-          location: issue.location,
-          votes: issue.priority_score || 0,
-          status: issue.status,
-          urgency: issue.priority,
-          reportedAt: formatTimeAgo(issue.created_at),
-          priority_score: issue.priority_score
-        })) || [];
-
-        setIssues(formattedIssues);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch recent issues');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchRecentIssues();
-
-    // Set up real-time subscription
-    const channel = supabase
-      .channel('problem_reports_changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'problem_reports'
-      }, () => {
-        fetchRecentIssues();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [limit]);
-
-  return { issues, loading, error };
-};
-
 const formatTimeAgo = (dateString: string): string => {
   const date = new Date(dateString);
   const now = new Date();
@@ -91,4 +25,61 @@ const formatTimeAgo = (dateString: string): string => {
   if (diffInDays < 7) return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
   
   return date.toLocaleDateString();
+};
+
+const fetchRecentIssues = async (limit: number): Promise<RecentIssue[]> => {
+  const { data, error } = await supabase
+    .from('problem_reports')
+    .select('id, title, location, status, priority, priority_score, created_at')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  
+  if (error) throw error;
+
+  return data?.map((issue, index) => ({
+    id: index + 1,
+    title: issue.title,
+    location: issue.location,
+    votes: issue.priority_score || 0,
+    status: issue.status,
+    urgency: issue.priority,
+    reportedAt: formatTimeAgo(issue.created_at || ''),
+    priority_score: issue.priority_score
+  })) || [];
+};
+
+export const useRecentIssues = (limit: number = 10) => {
+  const queryClient = useQueryClient();
+
+  const { data: issues, isLoading: loading, error } = useQuery({
+    queryKey: ['recent-issues', limit],
+    queryFn: () => fetchRecentIssues(limit),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    gcTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Set up real-time subscription
+  useEffect(() => {
+    const channel = supabase
+      .channel('problem_reports_changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'problem_reports'
+      }, () => {
+        // Invalidate cache to refetch
+        queryClient.invalidateQueries({ queryKey: ['recent-issues'] });
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
+  return { 
+    issues: issues || [], 
+    loading, 
+    error: error instanceof Error ? error.message : null 
+  };
 };
