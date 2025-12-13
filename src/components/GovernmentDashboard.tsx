@@ -6,7 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Shield, CheckCircle, Clock, AlertTriangle, Users, DollarSign, FileText, Gavel, Loader2, Eye } from 'lucide-react';
+import { Shield, CheckCircle, Clock, AlertTriangle, Users, DollarSign, FileText, Gavel, Loader2, Eye, CreditCard, Wallet } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useGovernmentDashboard } from '@/hooks/useGovernmentDashboard';
 import { SecurityMonitor } from '@/components/security/SecurityMonitor';
@@ -14,6 +15,7 @@ import { SecurityMonitor } from '@/components/security/SecurityMonitor';
 const GovernmentDashboard = () => {
   const [selectedCounty, setSelectedCounty] = useState('all');
   const { toast } = useToast();
+  const navigate = useNavigate();
   const { pendingApprovals, activeProjects, budgetOverview, loading, handleApproval } = useGovernmentDashboard();
 
   if (loading) {
@@ -90,6 +92,39 @@ const GovernmentDashboard = () => {
             </div>
           </div>
         </CardHeader>
+      </Card>
+
+      {/* Quick Actions - M-Pesa Payment Management */}
+      <Card className="shadow-lg border-l-4 border-l-green-600">
+        <CardContent className="p-4">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <Wallet className="h-6 w-6 text-green-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">M-Pesa Payment Management</h3>
+                <p className="text-sm text-gray-600">Fund escrow accounts and release contractor payments</p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                onClick={() => navigate('/government/escrow')}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <CreditCard className="h-4 w-4 mr-2" />
+                Manage Escrow & Payments
+              </Button>
+              <Button 
+                onClick={() => navigate('/government/payments')}
+                variant="outline"
+              >
+                <DollarSign className="h-4 w-4 mr-2" />
+                Payment Transparency
+              </Button>
+            </div>
+          </div>
+        </CardContent>
       </Card>
 
       {/* Budget Overview */}
