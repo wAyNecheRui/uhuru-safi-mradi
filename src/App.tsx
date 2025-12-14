@@ -48,10 +48,10 @@ const GovernmentEACC = lazy(() => import("./pages/government/GovernmentEACC"));
 const GovernmentBenchmarks = lazy(() => import("./pages/government/GovernmentBenchmarks"));
 const GovernmentVerificationRequests = lazy(() => import("./pages/government/GovernmentVerificationRequests"));
 
-// Loading component for suspense
+// Minimal loader for lazy routes
 const PageLoader = () => (
-  <div className="min-h-screen flex items-center justify-center bg-background">
-    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+  <div className="min-h-screen flex items-center justify-center">
+    <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent"></div>
   </div>
 );
 

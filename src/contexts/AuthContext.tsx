@@ -11,38 +11,28 @@ interface EnhancedAuthContextType extends AuthContextType {
 
 const AuthContext = createContext<EnhancedAuthContextType | undefined>(undefined);
 
-// Cache for user data to prevent refetching
+// Simple in-memory cache
 const userCache = new Map<string, { user: AuthUser; roles: AppRole[]; timestamp: number }>();
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
-  const [initializing, setInitializing] = useState(true);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const mountedRef = useRef(true);
-  const initCompletedRef = useRef(false);
+  const initDoneRef = useRef(false);
 
-  // Fast parallel data loading
+  // Fast user data loader with cache
   const loadUserData = useCallback(async (userId: string, email: string): Promise<{ user: AuthUser; roles: AppRole[] } | null> => {
-    // Check cache first
     const cached = userCache.get(userId);
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
       return { user: cached.user, roles: cached.roles };
     }
 
     try {
-      // Load profile and roles in parallel
       const [profileResult, rolesResult] = await Promise.all([
-        supabase
-          .from('user_profiles')
-          .select('full_name, user_type, phone_number, location')
-          .eq('user_id', userId)
-          .maybeSingle(),
-        supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', userId)
+        supabase.from('user_profiles').select('full_name, user_type, phone_number, location').eq('user_id', userId).maybeSingle(),
+        supabase.from('user_roles').select('role').eq('user_id', userId)
       ]);
 
       const profile = profileResult.data;
@@ -53,59 +43,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         email: email,
         name: profile?.full_name || email.split('@')[0],
         user_type: (profile?.user_type as 'citizen' | 'contractor' | 'government') || 'citizen',
-        profile: profile ? {
-          full_name: profile.full_name,
-          phone_number: profile.phone_number,
-          location: profile.location
-        } : undefined
+        profile: profile ? { full_name: profile.full_name, phone_number: profile.phone_number, location: profile.location } : undefined
       };
 
-      // Update cache
       userCache.set(userId, { user: authUser, roles: userRoles, timestamp: Date.now() });
-
       return { user: authUser, roles: userRoles };
-    } catch (error) {
-      console.error('Error loading user data:', error);
+    } catch {
       return null;
     }
   }, []);
 
   const refreshRoles = useCallback(async () => {
     if (!user?.id) return;
-    
-    const { data } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id);
-    
+    const { data } = await supabase.from('user_roles').select('role').eq('user_id', user.id);
     if (mountedRef.current && data) {
       const newRoles = data.map(r => r.role as AppRole);
       setRoles(newRoles);
-      
-      // Update cache
       const cached = userCache.get(user.id);
-      if (cached) {
-        userCache.set(user.id, { ...cached, roles: newRoles, timestamp: Date.now() });
-      }
+      if (cached) userCache.set(user.id, { ...cached, roles: newRoles, timestamp: Date.now() });
     }
   }, [user?.id]);
 
-  const hasRole = useCallback((role: AppRole): boolean => {
-    return roles.includes(role);
-  }, [roles]);
+  const hasRole = useCallback((role: AppRole): boolean => roles.includes(role), [roles]);
 
   const signIn = useCallback(async (email: string, password: string) => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ 
-        email: email.trim().toLowerCase(), 
-        password 
-      });
-      
-      if (error) {
-        return { user: null, error };
-      }
-
+      const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
+      if (error) return { user: null, error };
       if (data.user && data.session) {
         const userData = await loadUserData(data.user.id, data.user.email || '');
         if (mountedRef.current && userData) {
@@ -114,7 +79,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         return { user: userData?.user || null, error: null };
       }
-
       return { user: null, error: new Error('Login failed') };
     } finally {
       if (mountedRef.current) setLoading(false);
@@ -124,89 +88,72 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signUp = useCallback(async (email: string, password: string, userData: { name: string; type: 'citizen' | 'contractor' | 'government' }) => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.auth.signUp({ 
-        email: email.trim().toLowerCase(), 
+      const { error } = await supabase.auth.signUp({
+        email: email.trim().toLowerCase(),
         password,
         options: {
           emailRedirectTo: `${window.location.origin}/auth`,
-          data: {
-            user_type: userData.type,
-            full_name: userData.name
-          }
+          data: { user_type: userData.type, full_name: userData.name }
         }
       });
-      
-      if (error) {
-        return { error };
-      }
-      
-      return { error: null };
+      return { error: error || null };
     } finally {
       if (mountedRef.current) setLoading(false);
     }
   }, []);
 
   const signOut = useCallback(async () => {
-    try {
-      // Clear cache for current user
-      if (user?.id) {
-        userCache.delete(user.id);
-      }
-      await supabase.auth.signOut();
-      if (mountedRef.current) {
-        setUser(null);
-        setRoles([]);
-      }
-    } catch (error) {
-      console.error('Sign out error:', error);
+    if (user?.id) userCache.delete(user.id);
+    await supabase.auth.signOut();
+    if (mountedRef.current) {
+      setUser(null);
+      setRoles([]);
     }
   }, [user?.id]);
 
   useEffect(() => {
     mountedRef.current = true;
 
-    const initSession = async () => {
-      if (initCompletedRef.current) return;
+    // Quick init - get session synchronously if possible
+    const init = async () => {
+      if (initDoneRef.current) return;
+      initDoneRef.current = true;
+
+      const { data: { session } } = await supabase.auth.getSession();
       
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (session?.user && mountedRef.current) {
-          const userData = await loadUserData(session.user.id, session.user.email || '');
-          if (mountedRef.current && userData) {
-            setUser(userData.user);
-            setRoles(userData.roles);
-          }
-        }
-      } finally {
-        if (mountedRef.current) {
-          setInitializing(false);
-          initCompletedRef.current = true;
+      if (session?.user && mountedRef.current) {
+        const userData = await loadUserData(session.user.id, session.user.email || '');
+        if (mountedRef.current && userData) {
+          setUser(userData.user);
+          setRoles(userData.roles);
         }
       }
+      
+      if (mountedRef.current) setLoading(false);
     };
 
-    initSession();
+    init();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (!mountedRef.current) return;
+    // Listen for auth changes (sign in/out)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!mountedRef.current || event === 'INITIAL_SESSION') return;
 
-        // Skip if still initializing (we handle initial session above)
-        if (!initCompletedRef.current && event === 'INITIAL_SESSION') return;
-
-        if (event === 'SIGNED_OUT' || !session?.user) {
-          setUser(null);
-          setRoles([]);
-        } else if (event === 'SIGNED_IN' && session?.user) {
+      if (event === 'SIGNED_OUT' || !session?.user) {
+        setUser(null);
+        setRoles([]);
+        setLoading(false);
+      } else if (event === 'SIGNED_IN' && session?.user) {
+        // Defer to avoid deadlock
+        setTimeout(async () => {
           const userData = await loadUserData(session.user.id, session.user.email || '');
           if (mountedRef.current && userData) {
             setUser(userData.user);
             setRoles(userData.roles);
           }
-        }
+          if (mountedRef.current) setLoading(false);
+        }, 0);
       }
-    );
+    });
 
     return () => {
       mountedRef.current = false;
@@ -216,7 +163,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const value = useMemo<EnhancedAuthContextType>(() => ({
     user,
-    loading: loading || initializing,
+    loading,
     isAuthenticated: !!user,
     signIn,
     signUp,
@@ -224,15 +171,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     roles,
     hasRole,
     refreshRoles,
-  }), [user, loading, initializing, signIn, signUp, signOut, roles, hasRole, refreshRoles]);
+  }), [user, loading, signIn, signUp, signOut, roles, hasRole, refreshRoles]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (!context) throw new Error('useAuth must be used within AuthProvider');
   return context;
 };
