@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  allowedRoles?: ('citizen' | 'contractor' | 'government')[];
+  allowedRoles?: ('citizen' | 'contractor' | 'government' | 'admin')[];
   redirectTo?: string;
 }
 
