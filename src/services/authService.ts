@@ -73,12 +73,37 @@ export const signUpUser = async (email: string, password: string, userData: Sign
       return { error };
     }
 
-    // If contractor, create contractor profile after signup
-    if (data?.user && userData.type === 'contractor' && userData.organization) {
-      await supabase.from('contractor_profiles').upsert({
-        user_id: data.user.id,
-        company_name: userData.organization
-      });
+    // Create role-specific profiles after signup
+    if (data?.user) {
+      // Contractor profile
+      if (userData.type === 'contractor' && userData.organization) {
+        await supabase.from('contractor_profiles').upsert({
+          user_id: data.user.id,
+          company_name: userData.organization
+        });
+      }
+      
+      // Citizen skills profile (if skills provided)
+      if (userData.type === 'citizen' && userData.skills) {
+        const skillsArray = userData.skills.split(',').map(s => s.trim()).filter(Boolean);
+        if (skillsArray.length > 0) {
+          await supabase.from('skills_profiles').upsert({
+            user_id: data.user.id,
+            full_name: userData.name,
+            skills: skillsArray,
+            location: userData.location || null
+          });
+        }
+      }
+      
+      // Government profile
+      if (userData.type === 'government') {
+        await supabase.from('government_profiles').upsert({
+          user_id: data.user.id,
+          department: 'Pending Assignment',
+          position: 'Pending Assignment'
+        });
+      }
     }
     
     return { error: null };
