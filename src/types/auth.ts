@@ -25,4 +25,6 @@ export interface SignUpData {
   phone?: string;
   location?: string;
   type: 'citizen' | 'contractor' | 'government';
+  organization?: string;
+  skills?: string;
 }
