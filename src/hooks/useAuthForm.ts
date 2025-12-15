@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 
 export interface AuthFormData {
@@ -11,6 +10,11 @@ export interface AuthFormData {
   type: 'citizen' | 'contractor' | 'government';
   organization: string;
   skills: string;
+  kra_pin: string;
+  specialization: string;
+  years_in_business: string;
+  department: string;
+  position: string;
 }
 
 export const useAuthForm = () => {
@@ -23,7 +27,12 @@ export const useAuthForm = () => {
     location: '',
     type: 'citizen',
     organization: '',
-    skills: ''
+    skills: '',
+    kra_pin: '',
+    specialization: '',
+    years_in_business: '',
+    department: '',
+    position: ''
   });
 
   const handleInputChange = useCallback((field: string, value: string) => {
