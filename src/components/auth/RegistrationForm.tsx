@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, User, Mail, Phone, MapPin, Building, Wrench } from 'lucide-react';
+import { Loader2, User, Mail, Phone, MapPin, Building, Wrench, Briefcase, FileText } from 'lucide-react';
 import UserTypeSelector from './UserTypeSelector';
 
 interface RegistrationFormProps {
@@ -16,6 +15,11 @@ interface RegistrationFormProps {
     type: 'citizen' | 'contractor' | 'government';
     organization: string;
     skills: string;
+    kra_pin?: string;
+    specialization?: string;
+    years_in_business?: string;
+    department?: string;
+    position?: string;
   };
   isLoading: boolean;
   onInputChange: (field: string, value: string) => void;
@@ -62,7 +66,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
       </div>
 
       <div className="space-y-2">
-        <label className="block text-sm font-medium text-slate-700">Phone Number</label>
+        <label className="block text-sm font-medium text-slate-700">Phone Number *</label>
         <div className="relative">
           <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
           <Input
@@ -71,12 +75,13 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
             onChange={(e) => onInputChange('phone', e.target.value)}
             disabled={isLoading}
             className="pl-10 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            required
           />
         </div>
       </div>
 
       <div className="space-y-2">
-        <label className="block text-sm font-medium text-slate-700">Location/County</label>
+        <label className="block text-sm font-medium text-slate-700">Location/County *</label>
         <div className="relative">
           <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
           <Input
@@ -85,6 +90,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
             onChange={(e) => onInputChange('location', e.target.value)}
             disabled={isLoading}
             className="pl-10 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            required
           />
         </div>
       </div>
@@ -95,18 +101,118 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
         disabled={isLoading}
       />
       
+      {/* Contractor-specific fields */}
       {formData.type === 'contractor' && (
-        <div className="space-y-2">
-          <label className="block text-sm font-medium text-slate-700">Organization/Company</label>
-          <div className="relative">
-            <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+        <div className="space-y-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+          <h4 className="font-medium text-blue-900">Contractor Information</h4>
+          
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-slate-700">Company/Organization Name *</label>
+            <div className="relative">
+              <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Input
+                placeholder="Company or organization name"
+                value={formData.organization}
+                onChange={(e) => onInputChange('organization', e.target.value)}
+                disabled={isLoading}
+                className="pl-10"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-slate-700">KRA PIN</label>
+            <div className="relative">
+              <FileText className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Input
+                placeholder="e.g., P000000000X"
+                value={formData.kra_pin || ''}
+                onChange={(e) => onInputChange('kra_pin', e.target.value)}
+                disabled={isLoading}
+                className="pl-10"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-slate-700">Specialization</label>
+            <div className="relative">
+              <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Input
+                placeholder="e.g., Road construction, Building, Plumbing"
+                value={formData.specialization || ''}
+                onChange={(e) => onInputChange('specialization', e.target.value)}
+                disabled={isLoading}
+                className="pl-10"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-slate-700">Years in Business</label>
             <Input
-              placeholder="Company or organization name"
-              value={formData.organization}
-              onChange={(e) => onInputChange('organization', e.target.value)}
+              type="number"
+              placeholder="e.g., 5"
+              value={formData.years_in_business || ''}
+              onChange={(e) => onInputChange('years_in_business', e.target.value)}
               disabled={isLoading}
-              className="pl-10 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              min="0"
             />
+          </div>
+        </div>
+      )}
+
+      {/* Citizen-specific fields */}
+      {formData.type === 'citizen' && (
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-slate-700">Skills (Optional)</label>
+          <div className="relative">
+            <Wrench className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Input
+              placeholder="e.g., Construction, plumbing, electrical"
+              value={formData.skills}
+              onChange={(e) => onInputChange('skills', e.target.value)}
+              disabled={isLoading}
+              className="pl-10"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Government-specific fields */}
+      {formData.type === 'government' && (
+        <div className="space-y-4 p-4 bg-green-50 rounded-lg border border-green-200">
+          <h4 className="font-medium text-green-900">Government Information</h4>
+          
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-slate-700">Department *</label>
+            <div className="relative">
+              <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Input
+                placeholder="e.g., Ministry of Transport"
+                value={formData.department || ''}
+                onChange={(e) => onInputChange('department', e.target.value)}
+                disabled={isLoading}
+                className="pl-10"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-slate-700">Position *</label>
+            <div className="relative">
+              <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Input
+                placeholder="e.g., Project Manager"
+                value={formData.position || ''}
+                onChange={(e) => onInputChange('position', e.target.value)}
+                disabled={isLoading}
+                className="pl-10"
+                required
+              />
+            </div>
           </div>
         </div>
       )}

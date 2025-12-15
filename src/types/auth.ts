@@ -27,4 +27,9 @@ export interface SignUpData {
   type: 'citizen' | 'contractor' | 'government';
   organization?: string;
   skills?: string;
+  kra_pin?: string;
+  specialization?: string;
+  years_in_business?: string;
+  department?: string;
+  position?: string;
 }

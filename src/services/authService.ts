@@ -75,11 +75,18 @@ export const signUpUser = async (email: string, password: string, userData: Sign
 
     // Create role-specific profiles after signup
     if (data?.user) {
-      // Contractor profile
+      // Contractor profile with all fields
       if (userData.type === 'contractor' && userData.organization) {
+        const specializations = userData.specialization 
+          ? userData.specialization.split(',').map(s => s.trim()).filter(Boolean)
+          : [];
+        
         await supabase.from('contractor_profiles').upsert({
           user_id: data.user.id,
-          company_name: userData.organization
+          company_name: userData.organization,
+          kra_pin: userData.kra_pin || null,
+          specialization: specializations.length > 0 ? specializations : null,
+          years_in_business: userData.years_in_business ? parseInt(userData.years_in_business) : null
         });
       }
       
@@ -96,12 +103,12 @@ export const signUpUser = async (email: string, password: string, userData: Sign
         }
       }
       
-      // Government profile
+      // Government profile with department and position
       if (userData.type === 'government') {
         await supabase.from('government_profiles').upsert({
           user_id: data.user.id,
-          department: 'Pending Assignment',
-          position: 'Pending Assignment'
+          department: userData.department || 'Pending Assignment',
+          position: userData.position || 'Pending Assignment'
         });
       }
     }

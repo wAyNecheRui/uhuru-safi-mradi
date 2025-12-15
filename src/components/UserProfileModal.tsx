@@ -2,18 +2,16 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { User, Shield, Award, FileText } from 'lucide-react';
+import { User, Shield, Award, FileText, Building, Briefcase } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
 import { RoleRequestModal } from '@/components/RoleRequestModal';
 import { VerificationStatusBadge } from '@/components/VerificationStatusBadge';
 import { RoleService } from '@/services/RoleService';
-import { toast } from 'sonner';
 
 interface UserProfileModalProps {
   isOpen: boolean;
@@ -32,7 +30,7 @@ const counties = [
 
 const UserProfileModal = ({ isOpen, onClose }: UserProfileModalProps) => {
   const { user, roles } = useAuth();
-  const { userProfile, loading: profileLoading, updateProfile } = useProfile();
+  const { userProfile, contractorProfile, governmentProfile, loading: profileLoading, updateProfile, updateContractorProfile, updateGovernmentProfile } = useProfile();
   const [isRoleRequestOpen, setIsRoleRequestOpen] = useState(false);
   const [verificationRequests, setVerificationRequests] = useState<any[]>([]);
   const [formData, setFormData] = useState({
@@ -45,6 +43,22 @@ const UserProfileModal = ({ isOpen, onClose }: UserProfileModalProps) => {
     national_id: '',
     date_of_birth: '',
     gender: ''
+  });
+
+  const [contractorFormData, setContractorFormData] = useState({
+    company_name: '',
+    kra_pin: '',
+    specialization: '',
+    years_in_business: '',
+    number_of_employees: ''
+  });
+
+  const [governmentFormData, setGovernmentFormData] = useState({
+    department: '',
+    position: '',
+    employee_number: '',
+    office_location: '',
+    office_phone: ''
   });
 
   React.useEffect(() => {
@@ -62,6 +76,30 @@ const UserProfileModal = ({ isOpen, onClose }: UserProfileModalProps) => {
       });
     }
   }, [userProfile]);
+
+  React.useEffect(() => {
+    if (contractorProfile) {
+      setContractorFormData({
+        company_name: contractorProfile.company_name || '',
+        kra_pin: contractorProfile.kra_pin || '',
+        specialization: contractorProfile.specialization?.join(', ') || '',
+        years_in_business: contractorProfile.years_in_business?.toString() || '',
+        number_of_employees: contractorProfile.number_of_employees?.toString() || ''
+      });
+    }
+  }, [contractorProfile]);
+
+  React.useEffect(() => {
+    if (governmentProfile) {
+      setGovernmentFormData({
+        department: governmentProfile.department || '',
+        position: governmentProfile.position || '',
+        employee_number: governmentProfile.employee_number || '',
+        office_location: governmentProfile.office_location || '',
+        office_phone: governmentProfile.office_phone || ''
+      });
+    }
+  }, [governmentProfile]);
 
   React.useEffect(() => {
     if (isOpen) {
@@ -82,9 +120,45 @@ const UserProfileModal = ({ isOpen, onClose }: UserProfileModalProps) => {
     }
   };
 
+  const handleContractorSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const specializations = contractorFormData.specialization
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean);
+    
+    const success = await updateContractorProfile({
+      company_name: contractorFormData.company_name,
+      kra_pin: contractorFormData.kra_pin || undefined,
+      specialization: specializations.length > 0 ? specializations : undefined,
+      years_in_business: contractorFormData.years_in_business ? parseInt(contractorFormData.years_in_business) : undefined,
+      number_of_employees: contractorFormData.number_of_employees ? parseInt(contractorFormData.number_of_employees) : undefined
+    });
+    if (success) {
+      onClose();
+    }
+  };
+
+  const handleGovernmentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const success = await updateGovernmentProfile({
+      department: governmentFormData.department,
+      position: governmentFormData.position,
+      employee_number: governmentFormData.employee_number || undefined,
+      office_location: governmentFormData.office_location || undefined,
+      office_phone: governmentFormData.office_phone || undefined
+    });
+    if (success) {
+      onClose();
+    }
+  };
+
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
+
+  const isContractor = user?.user_type === 'contractor';
+  const isGovernment = user?.user_type === 'government';
 
   return (
     <>
@@ -107,11 +181,23 @@ const UserProfileModal = ({ isOpen, onClose }: UserProfileModalProps) => {
           </DialogHeader>
 
           <Tabs defaultValue="profile" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className={`grid w-full ${isContractor || isGovernment ? 'grid-cols-4' : 'grid-cols-3'}`}>
               <TabsTrigger value="profile">
                 <User className="h-4 w-4 mr-2" />
                 Profile
               </TabsTrigger>
+              {isContractor && (
+                <TabsTrigger value="contractor">
+                  <Building className="h-4 w-4 mr-2" />
+                  Company
+                </TabsTrigger>
+              )}
+              {isGovernment && (
+                <TabsTrigger value="government">
+                  <Briefcase className="h-4 w-4 mr-2" />
+                  Department
+                </TabsTrigger>
+              )}
               <TabsTrigger value="roles">
                 <Shield className="h-4 w-4 mr-2" />
                 Roles
@@ -251,6 +337,157 @@ const UserProfileModal = ({ isOpen, onClose }: UserProfileModalProps) => {
                 </div>
               </form>
             </TabsContent>
+
+            {/* Contractor Tab */}
+            {isContractor && (
+              <TabsContent value="contractor" className="space-y-4">
+                <form onSubmit={handleContractorSubmit} className="space-y-6">
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Company Information</h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="company_name">Company Name *</Label>
+                        <Input
+                          id="company_name"
+                          required
+                          value={contractorFormData.company_name}
+                          onChange={(e) => setContractorFormData(prev => ({ ...prev, company_name: e.target.value }))}
+                          placeholder="Your company name"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="kra_pin">KRA PIN</Label>
+                        <Input
+                          id="kra_pin"
+                          value={contractorFormData.kra_pin}
+                          onChange={(e) => setContractorFormData(prev => ({ ...prev, kra_pin: e.target.value }))}
+                          placeholder="P000000000X"
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="years_in_business">Years in Business</Label>
+                        <Input
+                          id="years_in_business"
+                          type="number"
+                          value={contractorFormData.years_in_business}
+                          onChange={(e) => setContractorFormData(prev => ({ ...prev, years_in_business: e.target.value }))}
+                          placeholder="5"
+                          min="0"
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="number_of_employees">Number of Employees</Label>
+                        <Input
+                          id="number_of_employees"
+                          type="number"
+                          value={contractorFormData.number_of_employees}
+                          onChange={(e) => setContractorFormData(prev => ({ ...prev, number_of_employees: e.target.value }))}
+                          placeholder="10"
+                          min="1"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="specialization">Specializations (comma-separated)</Label>
+                      <Input
+                        id="specialization"
+                        value={contractorFormData.specialization}
+                        onChange={(e) => setContractorFormData(prev => ({ ...prev, specialization: e.target.value }))}
+                        placeholder="Road construction, Building, Plumbing"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end space-x-3 pt-4 border-t">
+                    <Button type="button" variant="outline" onClick={onClose}>
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={profileLoading}>
+                      {profileLoading ? 'Saving...' : 'Save Company Info'}
+                    </Button>
+                  </div>
+                </form>
+              </TabsContent>
+            )}
+
+            {/* Government Tab */}
+            {isGovernment && (
+              <TabsContent value="government" className="space-y-4">
+                <form onSubmit={handleGovernmentSubmit} className="space-y-6">
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Department Information</h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="department">Department *</Label>
+                        <Input
+                          id="department"
+                          required
+                          value={governmentFormData.department}
+                          onChange={(e) => setGovernmentFormData(prev => ({ ...prev, department: e.target.value }))}
+                          placeholder="Ministry of Transport"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="position">Position *</Label>
+                        <Input
+                          id="position"
+                          required
+                          value={governmentFormData.position}
+                          onChange={(e) => setGovernmentFormData(prev => ({ ...prev, position: e.target.value }))}
+                          placeholder="Project Manager"
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="employee_number">Employee Number</Label>
+                        <Input
+                          id="employee_number"
+                          value={governmentFormData.employee_number}
+                          onChange={(e) => setGovernmentFormData(prev => ({ ...prev, employee_number: e.target.value }))}
+                          placeholder="EMP-12345"
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="office_phone">Office Phone</Label>
+                        <Input
+                          id="office_phone"
+                          value={governmentFormData.office_phone}
+                          onChange={(e) => setGovernmentFormData(prev => ({ ...prev, office_phone: e.target.value }))}
+                          placeholder="020 123 4567"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="office_location">Office Location</Label>
+                      <Input
+                        id="office_location"
+                        value={governmentFormData.office_location}
+                        onChange={(e) => setGovernmentFormData(prev => ({ ...prev, office_location: e.target.value }))}
+                        placeholder="Building name, floor, room"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end space-x-3 pt-4 border-t">
+                    <Button type="button" variant="outline" onClick={onClose}>
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={profileLoading}>
+                      {profileLoading ? 'Saving...' : 'Save Department Info'}
+                    </Button>
+                  </div>
+                </form>
+              </TabsContent>
+            )}
 
             {/* Roles Tab */}
             <TabsContent value="roles" className="space-y-4">

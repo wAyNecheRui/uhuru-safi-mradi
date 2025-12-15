@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Briefcase, FileText, DollarSign, Clock, TrendingUp, Award, Loader2 } from 'lucide-react';
+import { Briefcase, FileText, DollarSign, Clock, TrendingUp, Award, Loader2, Eye } from 'lucide-react';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
 import Header from '@/components/Header';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
@@ -122,6 +122,14 @@ const ContractorDashboard = () => {
       iconColor: 'text-blue-600'
     },
     {
+      title: 'My Bids',
+      description: 'Track your submitted bids and their status',
+      icon: Eye,
+      href: '/contractor/tracking',
+      color: 'bg-emerald-500 hover:bg-emerald-600',
+      iconColor: 'text-emerald-600'
+    },
+    {
       title: 'My Projects',
       description: 'Manage your active and completed projects',
       icon: FileText,
@@ -208,7 +216,7 @@ const ContractorDashboard = () => {
 
           {/* Quick Actions */}
           <div className={`grid gap-4 sm:gap-6 mb-6 sm:mb-8 ${
-            isMobile ? 'grid-cols-1' : isTablet ? 'grid-cols-2' : 'grid-cols-2 lg:grid-cols-4'
+            isMobile ? 'grid-cols-1' : isTablet ? 'grid-cols-2' : 'grid-cols-2 lg:grid-cols-3 xl:grid-cols-5'
           }`}>
             {quickActions.map((action) => {
               const IconComponent = action.icon;
