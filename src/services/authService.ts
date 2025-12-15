@@ -62,13 +62,23 @@ export const signUpUser = async (email: string, password: string, userData: Sign
         emailRedirectTo: `${window.location.origin}/auth`,
         data: {
           user_type: userData.type,
-          full_name: userData.name
+          full_name: userData.name,
+          phone_number: userData.phone || null,
+          location: userData.location || null
         }
       }
     });
     
     if (error) {
       return { error };
+    }
+
+    // If contractor, create contractor profile after signup
+    if (data?.user && userData.type === 'contractor' && userData.organization) {
+      await supabase.from('contractor_profiles').upsert({
+        user_id: data.user.id,
+        company_name: userData.organization
+      });
     }
     
     return { error: null };
