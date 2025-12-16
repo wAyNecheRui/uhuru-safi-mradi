@@ -43,9 +43,9 @@ const IssueReportingForm = () => {
 
   const urgencyLevels = [
     { value: 'low', label: 'Low Priority', color: 'bg-green-50 text-green-700 border-green-200' },
-    { value: 'medium', label: 'Medium Priority', color: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
+    { value: 'medium', label: 'Medium Priority', color: 'bg-blue-50 text-blue-700 border-blue-200' },
     { value: 'high', label: 'High Priority', color: 'bg-orange-50 text-orange-700 border-orange-200' },
-    { value: 'critical', label: 'Critical/Emergency', color: 'bg-red-50 text-red-700 border-red-200' }
+    { value: 'urgent', label: 'Urgent/Emergency', color: 'bg-red-50 text-red-700 border-red-200' }
   ];
 
   const kenyanCounties = [

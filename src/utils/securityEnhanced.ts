@@ -181,7 +181,7 @@ export const enhancedReportValidationSchema = z.object({
     .max(200, 'Location must not exceed 200 characters')
     .refine(val => sanitizeInput(val) === val, 'Location contains invalid characters'),
   
-  priority: z.enum(['low', 'medium', 'high', 'critical']),
+  priority: z.enum(['low', 'medium', 'high', 'urgent']),
   
   category: z.string()
     .min(3, 'Category must be at least 3 characters')

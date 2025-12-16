@@ -28,7 +28,7 @@ export const reportValidationSchema = z.object({
     .min(1, 'Location is required')
     .max(500, 'Location must be less than 500 characters'),
   
-  priority: z.enum(['low', 'medium', 'high', 'critical']),
+  priority: z.enum(['low', 'medium', 'high', 'urgent']),
   
   category: z.string()
     .min(1, 'Category is required')

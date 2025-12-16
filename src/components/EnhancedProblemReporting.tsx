@@ -15,8 +15,10 @@ const EnhancedProblemReporting = () => {
     reportData,
     handleInputChange,
     handlePhotoUpload,
+    handleRemovePhoto,
     getCurrentLocation,
-    submitReport
+    submitReport,
+    isSubmitting
   } = useProblemReporting();
 
   return (
@@ -50,16 +52,31 @@ const EnhancedProblemReporting = () => {
 
           <PhotoUploadSection
             photoCount={reportData.photos.length}
+            photos={reportData.photos}
             onPhotoUpload={handlePhotoUpload}
+            onRemovePhoto={handleRemovePhoto}
           />
 
           <div className="flex justify-end space-x-4">
             <Button variant="outline" onClick={() => window.history.back()}>
               Cancel
             </Button>
-            <Button onClick={submitReport} className="bg-slate-600 hover:bg-slate-700">
-              <FileText className="h-4 w-4 mr-2" />
-              Submit Report
+            <Button 
+              onClick={submitReport} 
+              className="bg-slate-600 hover:bg-slate-700"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <span className="animate-spin mr-2">⏳</span>
+                  Submitting...
+                </>
+              ) : (
+                <>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Submit Report
+                </>
+              )}
             </Button>
           </div>
         </CardContent>

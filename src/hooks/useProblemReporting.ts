@@ -39,6 +39,14 @@ export const useProblemReporting = () => {
     toast.success(`${files.length} file(s) added successfully`);
   }, [reportData.photos.length]);
 
+  const handleRemovePhoto = useCallback((index: number) => {
+    setReportData(prev => ({
+      ...prev,
+      photos: prev.photos.filter((_, i) => i !== index)
+    }));
+    toast.success('File removed');
+  }, []);
+
   const getCurrentLocation = useCallback(() => {
     if (!navigator.geolocation) {
       toast.error('GPS not supported on this device');
@@ -155,6 +163,7 @@ export const useProblemReporting = () => {
     reportData,
     handleInputChange,
     handlePhotoUpload,
+    handleRemovePhoto,
     getCurrentLocation,
     submitReport,
     isSubmitting
