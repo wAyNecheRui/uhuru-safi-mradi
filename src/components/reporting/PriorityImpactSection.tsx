@@ -13,13 +13,13 @@ interface PriorityImpactSectionProps {
 const PriorityImpactSection = ({ reportData, onInputChange }: PriorityImpactSectionProps) => {
   const getImpactDescription = (priority: string) => {
     switch (priority) {
-      case 'routine':
-        return 'Regular maintenance required. Affects daily operations but not critical.';
-      case 'standard':
-        return 'Standard infrastructure issue requiring scheduled attention.';
-      case 'elevated':
-        return 'Elevated concern that may affect community services if not addressed.';
-      case 'critical':
+      case 'low':
+        return 'Minor issue requiring routine maintenance. Does not affect daily operations.';
+      case 'medium':
+        return 'Standard infrastructure issue requiring scheduled attention within weeks.';
+      case 'high':
+        return 'Significant concern affecting community services. Requires prompt attention.';
+      case 'urgent':
         return 'Critical infrastructure issue requiring immediate government attention.';
       default:
         return 'Select a priority level to see impact assessment.';

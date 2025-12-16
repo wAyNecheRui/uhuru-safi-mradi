@@ -62,7 +62,7 @@ const validateReportData = (data: any) => {
     errors.push('Location must be between 5 and 200 characters');
   }
 
-  if (!['low', 'medium', 'high', 'critical'].includes(data.priority)) {
+  if (!['low', 'medium', 'high', 'urgent'].includes(data.priority)) {
     errors.push('Invalid priority level');
   }
 

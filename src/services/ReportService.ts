@@ -11,7 +11,7 @@ export interface ProblemReport {
   title: string;
   description: string;
   category: string;
-  priority: 'Low' | 'Medium' | 'High' | 'Critical';
+  priority: 'low' | 'medium' | 'high' | 'urgent';
   location: string;
   coordinates?: string;
   estimated_cost?: number;

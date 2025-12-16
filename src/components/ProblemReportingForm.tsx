@@ -49,10 +49,10 @@ const ProblemReportingForm = () => {
   ];
 
   const priorities = [
-    { value: 'Low', color: 'bg-green-100 text-green-800' },
-    { value: 'Medium', color: 'bg-yellow-100 text-yellow-800' },
-    { value: 'High', color: 'bg-orange-100 text-orange-800' },
-    { value: 'Critical', color: 'bg-red-100 text-red-800' }
+    { value: 'low', color: 'bg-green-100 text-green-800' },
+    { value: 'medium', color: 'bg-blue-100 text-blue-800' },
+    { value: 'high', color: 'bg-orange-100 text-orange-800' },
+    { value: 'urgent', color: 'bg-red-100 text-red-800' }
   ];
 
   const handleInputChange = (field: string, value: string) => {
@@ -125,7 +125,7 @@ const ProblemReportingForm = () => {
             title: data.title,
             description: data.description,
             location: data.location,
-            priority: data.priority as 'Low' | 'Medium' | 'High' | 'Critical',
+            priority: data.priority.toLowerCase() as 'low' | 'medium' | 'high' | 'urgent',
             budget: formData.estimatedCost ? `KSh ${formData.estimatedCost}` : 'TBD',
             reportedBy: user.name || user.email,
             dateReported: new Date().toISOString().split('T')[0],

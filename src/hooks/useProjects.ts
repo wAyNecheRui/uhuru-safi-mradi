@@ -6,7 +6,7 @@ export interface Project {
   title: string;
   description: string;
   location: string;
-  priority: 'Low' | 'Medium' | 'High' | 'Critical';
+  priority: 'low' | 'medium' | 'high' | 'urgent';
   status: 'Pending Review' | 'Active' | 'Bidding' | 'Completed' | 'Cancelled';
   budget: string;
   contractor: string;
@@ -25,7 +25,7 @@ export const useProjects = () => {
       title: "Road Repair - Kilifi County",
       description: "Potholes on main road causing accidents",
       location: "Kilifi, Kenya",
-      priority: "High",
+      priority: "high",
       status: "Active",
       budget: "KSh 2,500,000",
       contractor: "BuildRight Ltd",
@@ -40,7 +40,7 @@ export const useProjects = () => {
       title: "Water Pipeline Extension",
       description: "Community lacks clean water access",
       location: "Nakuru, Kenya",
-      priority: "Critical",
+      priority: "urgent",
       status: "Bidding",
       budget: "KSh 4,200,000",
       contractor: "Pending",
