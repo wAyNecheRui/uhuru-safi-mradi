@@ -15,15 +15,18 @@ interface DescriptionTemplateSectionProps {
 
 const DescriptionTemplateSection = ({ reportData, onInputChange }: DescriptionTemplateSectionProps) => {
   const [showTemplate, setShowTemplate] = useState(false);
+  const [templateApplied, setTemplateApplied] = useState(false);
   
   // Always show a template - use category-specific or fall back to 'other'
   const template = getTemplateByCategory(reportData.category) || DESCRIPTION_TEMPLATES.find(t => t.category === 'other');
   
   const useTemplate = () => {
     if (template) {
+      // Insert the template structure (labels only)
       onInputChange('description', template.template);
+      setTemplateApplied(true);
       setShowTemplate(false);
-      toast.success('Template applied! Fill in the details.');
+      toast.success('Template applied! Fill in the details after each label.');
     }
   };
 
@@ -32,6 +35,18 @@ const DescriptionTemplateSection = ({ reportData, onInputChange }: DescriptionTe
       navigator.clipboard.writeText(template.example);
       toast.success('Example copied to clipboard');
     }
+  };
+  
+  // Get placeholder hints based on template - only show when template is applied and description matches template
+  const getPlaceholderText = () => {
+    if (!template) return "Provide detailed description of the problem, its impact, and any relevant background information...";
+    
+    // If template was applied and user hasn't modified much, show the example as guidance
+    if (templateApplied && reportData.description === template.template) {
+      return template.placeholder;
+    }
+    
+    return "Provide detailed description of the problem, its impact, and any relevant background information...";
   };
 
   return (
@@ -106,10 +121,14 @@ const DescriptionTemplateSection = ({ reportData, onInputChange }: DescriptionTe
       )}
 
       <Textarea
-        placeholder={template ? template.placeholder : "Provide detailed description of the problem, its impact, and any relevant background information..."}
+        placeholder={getPlaceholderText()}
         rows={showTemplate ? 6 : 8}
         value={reportData.description}
-        onChange={(e) => onInputChange('description', e.target.value)}
+        onChange={(e) => {
+          onInputChange('description', e.target.value);
+          // Reset templateApplied if user clears the field
+          if (e.target.value === '') setTemplateApplied(false);
+        }}
         className="min-h-[120px] placeholder:whitespace-pre-line"
       />
       
