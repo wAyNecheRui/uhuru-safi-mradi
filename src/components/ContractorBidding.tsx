@@ -27,6 +27,12 @@ interface ProblemReport {
   created_at: string | null;
   constituency: string | null;
   ward: string | null;
+  bidding_status: string | null;
+  bidding_start_date: string | null;
+  bidding_end_date: string | null;
+  bidding_extensions: number | null;
+  min_bids_required: number | null;
+  is_agpo_reserved: boolean | null;
 }
 
 interface ContractorBid {
@@ -70,11 +76,11 @@ const ContractorBidding = () => {
     try {
       setLoading(true);
       
-      // Fetch approved problems that are open for bidding
+      // Fetch approved problems that are open for bidding (with bidding window info)
       const { data: problemsData, error: problemsError } = await supabase
         .from('problem_reports')
         .select('*')
-        .in('status', ['approved', 'pending'])
+        .eq('status', 'approved')
         .order('priority_score', { ascending: false });
 
       if (problemsError) throw problemsError;

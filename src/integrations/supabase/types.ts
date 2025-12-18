@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      bid_evaluation_history: {
+        Row: {
+          agpo_bonus: number | null
+          bid_id: string
+          created_at: string
+          evaluated_by: string
+          evaluation_notes: string | null
+          experience_score: number
+          id: string
+          price_score: number
+          report_id: string
+          technical_score: number
+          total_score: number
+        }
+        Insert: {
+          agpo_bonus?: number | null
+          bid_id: string
+          created_at?: string
+          evaluated_by: string
+          evaluation_notes?: string | null
+          experience_score?: number
+          id?: string
+          price_score?: number
+          report_id: string
+          technical_score?: number
+          total_score?: number
+        }
+        Update: {
+          agpo_bonus?: number | null
+          bid_id?: string
+          created_at?: string
+          evaluated_by?: string
+          evaluation_notes?: string | null
+          experience_score?: number
+          id?: string
+          price_score?: number
+          report_id?: string
+          technical_score?: number
+          total_score?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bid_evaluation_history_bid_id_fkey"
+            columns: ["bid_id"]
+            isOneToOne: false
+            referencedRelation: "contractor_bids"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bid_evaluation_history_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "problem_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       blockchain_transactions: {
         Row: {
           amount: number
@@ -219,43 +276,67 @@ export type Database = {
       }
       contractor_bids: {
         Row: {
+          agpo_bonus: number | null
           bid_amount: number
           contractor_id: string
           created_at: string
           estimated_duration: number
+          evaluated_at: string | null
+          evaluated_by: string | null
+          evaluation_notes: string | null
+          experience_score: number | null
           id: string
+          price_score: number | null
           proposal: string
           report_id: string
           selected_at: string | null
           status: string
           submitted_at: string
           technical_approach: string | null
+          technical_score: number | null
+          total_score: number | null
         }
         Insert: {
+          agpo_bonus?: number | null
           bid_amount: number
           contractor_id: string
           created_at?: string
           estimated_duration: number
+          evaluated_at?: string | null
+          evaluated_by?: string | null
+          evaluation_notes?: string | null
+          experience_score?: number | null
           id?: string
+          price_score?: number | null
           proposal: string
           report_id: string
           selected_at?: string | null
           status?: string
           submitted_at?: string
           technical_approach?: string | null
+          technical_score?: number | null
+          total_score?: number | null
         }
         Update: {
+          agpo_bonus?: number | null
           bid_amount?: number
           contractor_id?: string
           created_at?: string
           estimated_duration?: number
+          evaluated_at?: string | null
+          evaluated_by?: string | null
+          evaluation_notes?: string | null
+          experience_score?: number | null
           id?: string
+          price_score?: number | null
           proposal?: string
           report_id?: string
           selected_at?: string | null
           status?: string
           submitted_at?: string
           technical_approach?: string | null
+          technical_score?: number | null
+          total_score?: number | null
         }
         Relationships: [
           {
@@ -317,6 +398,10 @@ export type Database = {
       }
       contractor_profiles: {
         Row: {
+          agpo_category: string | null
+          agpo_certificate_url: string | null
+          agpo_verified: boolean | null
+          agpo_verified_at: string | null
           average_rating: number | null
           business_permit_url: string | null
           company_name: string
@@ -339,6 +424,10 @@ export type Database = {
           years_in_business: number | null
         }
         Insert: {
+          agpo_category?: string | null
+          agpo_certificate_url?: string | null
+          agpo_verified?: boolean | null
+          agpo_verified_at?: string | null
           average_rating?: number | null
           business_permit_url?: string | null
           company_name: string
@@ -361,6 +450,10 @@ export type Database = {
           years_in_business?: number | null
         }
         Update: {
+          agpo_category?: string | null
+          agpo_certificate_url?: string | null
+          agpo_verified?: boolean | null
+          agpo_verified_at?: string | null
           average_rating?: number | null
           business_permit_url?: string | null
           company_name?: string
@@ -814,16 +907,26 @@ export type Database = {
           affected_population: number | null
           approved_at: string | null
           approved_by: string | null
+          bidding_end_date: string | null
+          bidding_extensions: number | null
+          bidding_start_date: string | null
+          bidding_status: string | null
           budget_allocated: number | null
           category: string | null
           constituency: string | null
           coordinates: string | null
           created_at: string | null
           description: string
+          direct_procurement_approved: boolean | null
+          direct_procurement_justification: string | null
           estimated_cost: number | null
           gps_coordinates: unknown
           id: string
+          is_agpo_reserved: boolean | null
+          is_emergency: boolean | null
+          is_high_value: boolean | null
           location: string | null
+          min_bids_required: number | null
           photo_urls: string[] | null
           priority: string | null
           priority_score: number | null
@@ -840,16 +943,26 @@ export type Database = {
           affected_population?: number | null
           approved_at?: string | null
           approved_by?: string | null
+          bidding_end_date?: string | null
+          bidding_extensions?: number | null
+          bidding_start_date?: string | null
+          bidding_status?: string | null
           budget_allocated?: number | null
           category?: string | null
           constituency?: string | null
           coordinates?: string | null
           created_at?: string | null
           description: string
+          direct_procurement_approved?: boolean | null
+          direct_procurement_justification?: string | null
           estimated_cost?: number | null
           gps_coordinates?: unknown
           id?: string
+          is_agpo_reserved?: boolean | null
+          is_emergency?: boolean | null
+          is_high_value?: boolean | null
           location?: string | null
+          min_bids_required?: number | null
           photo_urls?: string[] | null
           priority?: string | null
           priority_score?: number | null
@@ -866,16 +979,26 @@ export type Database = {
           affected_population?: number | null
           approved_at?: string | null
           approved_by?: string | null
+          bidding_end_date?: string | null
+          bidding_extensions?: number | null
+          bidding_start_date?: string | null
+          bidding_status?: string | null
           budget_allocated?: number | null
           category?: string | null
           constituency?: string | null
           coordinates?: string | null
           created_at?: string | null
           description?: string
+          direct_procurement_approved?: boolean | null
+          direct_procurement_justification?: string | null
           estimated_cost?: number | null
           gps_coordinates?: unknown
           id?: string
+          is_agpo_reserved?: boolean | null
+          is_emergency?: boolean | null
+          is_high_value?: boolean | null
           location?: string | null
+          min_bids_required?: number | null
           photo_urls?: string[] | null
           priority?: string | null
           priority_score?: number | null
@@ -889,6 +1012,70 @@ export type Database = {
           ward?: string | null
         }
         Relationships: []
+      }
+      project_approval_audit: {
+        Row: {
+          agpo_compliant: boolean | null
+          approval_action: string
+          approved_by: string
+          bid_count: number | null
+          blockchain_hash: string | null
+          created_at: string
+          id: string
+          justification: string | null
+          project_id: string | null
+          report_id: string
+          winning_bid_id: string | null
+        }
+        Insert: {
+          agpo_compliant?: boolean | null
+          approval_action: string
+          approved_by: string
+          bid_count?: number | null
+          blockchain_hash?: string | null
+          created_at?: string
+          id?: string
+          justification?: string | null
+          project_id?: string | null
+          report_id: string
+          winning_bid_id?: string | null
+        }
+        Update: {
+          agpo_compliant?: boolean | null
+          approval_action?: string
+          approved_by?: string
+          bid_count?: number | null
+          blockchain_hash?: string | null
+          created_at?: string
+          id?: string
+          justification?: string | null
+          project_id?: string | null
+          report_id?: string
+          winning_bid_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_approval_audit_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_approval_audit_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "problem_reports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_approval_audit_winning_bid_id_fkey"
+            columns: ["winning_bid_id"]
+            isOneToOne: false
+            referencedRelation: "contractor_bids"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       project_milestones: {
         Row: {
@@ -1662,6 +1849,20 @@ export type Database = {
         Args: { report_id: string; user_lat: number; user_lon: number }
         Returns: boolean
       }
+      check_bid_requirements: {
+        Args: { p_report_id: string }
+        Returns: {
+          agpo_bids: number
+          agpo_required: number
+          bid_count: number
+          can_approve: boolean
+          days_remaining: number
+          extension_count: number
+          meets_requirements: boolean
+          min_required: number
+          status_message: string
+        }[]
+      }
       decrypt_sensitive_data: {
         Args: { encrypted_data: string; key?: string }
         Returns: string
@@ -1670,6 +1871,18 @@ export type Database = {
         Args: { data: string; key?: string }
         Returns: string
       }
+      evaluate_bid: {
+        Args: { p_bid_id: string; p_evaluator_id: string; p_notes?: string }
+        Returns: {
+          agpo_bonus: number
+          bid_id: string
+          experience_score: number
+          price_score: number
+          technical_score: number
+          total_score: number
+        }[]
+      }
+      extend_bidding_window: { Args: { p_report_id: string }; Returns: boolean }
       get_available_workers: {
         Args: never
         Returns: {
@@ -1833,6 +2046,23 @@ export type Database = {
           years_experience: number
         }[]
       }
+      get_top_bids_for_approval: {
+        Args: { p_report_id: string }
+        Returns: {
+          agpo_bonus: number
+          bid_amount: number
+          bid_id: string
+          contractor_id: string
+          contractor_name: string
+          estimated_duration: number
+          experience_score: number
+          is_agpo: boolean
+          price_score: number
+          rank: number
+          technical_score: number
+          total_score: number
+        }[]
+      }
       get_user_roles: {
         Args: { _user_id: string }
         Returns: {
@@ -1856,6 +2086,10 @@ export type Database = {
       is_verified_government_user: {
         Args: { user_uuid?: string }
         Returns: boolean
+      }
+      open_bidding_for_project: {
+        Args: { p_report_id: string }
+        Returns: undefined
       }
       update_system_analytics: { Args: never; Returns: undefined }
     }
