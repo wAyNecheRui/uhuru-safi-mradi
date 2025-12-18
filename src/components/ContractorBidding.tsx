@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -7,164 +6,202 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Progress } from '@/components/ui/progress';
-import { Star, Briefcase, Award, Clock, DollarSign, Users, Shield, FileText, CheckCircle } from 'lucide-react';
+import { Star, Briefcase, Award, Clock, DollarSign, Users, Shield, FileText, CheckCircle, MapPin, Loader2, AlertCircle, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { useProfile } from '@/hooks/useProfile';
+import { supabase } from '@/integrations/supabase/client';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+
+interface ProblemReport {
+  id: string;
+  title: string;
+  description: string;
+  location: string | null;
+  category: string | null;
+  priority: string | null;
+  status: string | null;
+  estimated_cost: number | null;
+  priority_score: number | null;
+  photo_urls: string[] | null;
+  created_at: string | null;
+  constituency: string | null;
+  ward: string | null;
+}
+
+interface ContractorBid {
+  id: string;
+  report_id: string;
+  bid_amount: number;
+  estimated_duration: number;
+  proposal: string;
+  technical_approach: string | null;
+  status: string;
+  submitted_at: string;
+  problem_reports?: { title: string; location: string | null } | null;
+}
 
 const ContractorBidding = () => {
-  const [selectedProject, setSelectedProject] = useState<number | null>(null);
+  const { user } = useAuth();
+  const { contractorProfile, userProfile } = useProfile();
+  const { toast } = useToast();
+  
+  const [problems, setProblems] = useState<ProblemReport[]>([]);
+  const [myBids, setMyBids] = useState<ContractorBid[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedProblem, setSelectedProblem] = useState<ProblemReport | null>(null);
+  const [viewingProblem, setViewingProblem] = useState<ProblemReport | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  
   const [bidForm, setBidForm] = useState({
     amount: '',
-    timeline: '',
-    methodology: '',
-    teamSize: '',
-    experience: ''
+    duration: '',
+    proposal: '',
+    technicalApproach: ''
   });
-  
-  const { toast } = useToast();
 
-  const openProjects = [
-    {
-      id: 1,
-      title: 'Mombasa Road Pothole Repair',
-      description: 'Comprehensive repair of multiple potholes along Mombasa Road affecting traffic flow.',
-      location: 'Mombasa Road, Nairobi',
-      budget: 'KES 2.5M',
-      timeline: '3 weeks',
-      urgency: 'High',
-      requirements: ['KRA Certificate', 'NCA Class 6 or above', 'Road construction experience'],
-      bidsReceived: 12,
-      daysLeft: 5,
-      communityVotes: 234,
-      specifications: 'Cold patch asphalt repair, proper drainage, traffic management during work hours.'
-    },
-    {
-      id: 2,
-      title: 'Kasarani Street Light Installation',
-      description: 'Installation of solar-powered LED street lights in Kasarani residential area.',
-      location: 'Kasarani, Nairobi',
-      budget: 'KES 1.2M',
-      timeline: '2 weeks',
-      urgency: 'Medium',
-      requirements: ['KRA Certificate', 'NCA Class 4 or above', 'Electrical installation experience'],
-      bidsReceived: 8,
-      daysLeft: 7,
-      communityVotes: 189,
-      specifications: 'Solar LED lights, 6m poles, automatic sensors, 2-year warranty required.'
-    },
-    {
-      id: 3,
-      title: 'Kibera Water Pipeline Extension',
-      description: 'Extension of clean water pipeline to serve additional 500 households in Kibera.',
-      location: 'Kibera, Nairobi',
-      budget: 'KES 4.8M',
-      timeline: '6 weeks',
-      urgency: 'Critical',
-      requirements: ['KRA Certificate', 'NCA Class 7 or above', 'Water infrastructure experience'],
-      bidsReceived: 15,
-      daysLeft: 3,
-      communityVotes: 456,
-      specifications: 'HDPE pipes, pressure testing, household connections, quality certification.'
+  useEffect(() => {
+    if (user) {
+      fetchData();
     }
-  ];
+  }, [user]);
 
-  const myBids = [
-    {
-      id: 1,
-      projectTitle: 'School Roof Repair - Mathare Primary',
-      bidAmount: 'KES 1.9M',
-      status: 'Under Review',
-      submittedDate: '2024-01-15',
-      aiRanking: 2,
-      totalBids: 9,
-      feedback: 'Competitive pricing, strong past performance record.'
-    },
-    {
-      id: 2,
-      projectTitle: 'Market Road Rehabilitation',
-      bidAmount: 'KES 4.2M',
-      status: 'Selected',
-      submittedDate: '2024-01-10',
-      aiRanking: 1,
-      totalBids: 12,
-      feedback: 'Best overall score: cost-effective, excellent timeline, proven track record.'
-    },
-    {
-      id: 3,
-      projectTitle: 'Health Center Renovation',
-      bidAmount: 'KES 3.1M',
-      status: 'Not Selected',
-      submittedDate: '2024-01-05',
-      aiRanking: 4,
-      totalBids: 8,
-      feedback: 'Timeline was competitive but cost was higher than selected bid.'
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch approved problems that are open for bidding
+      const { data: problemsData, error: problemsError } = await supabase
+        .from('problem_reports')
+        .select('*')
+        .in('status', ['approved', 'pending'])
+        .order('priority_score', { ascending: false });
+
+      if (problemsError) throw problemsError;
+      setProblems(problemsData || []);
+
+      // Fetch contractor's bids
+      if (user?.id) {
+        const { data: bidsData, error: bidsError } = await supabase
+          .from('contractor_bids')
+          .select(`
+            *,
+            problem_reports(title, location)
+          `)
+          .eq('contractor_id', user.id)
+          .order('submitted_at', { ascending: false });
+
+        if (bidsError) throw bidsError;
+        setMyBids(bidsData || []);
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load projects",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
     }
-  ];
-
-  const contractorProfile = {
-    name: 'ABC Construction Ltd',
-    kraNumber: 'KRA-123456789',
-    ncaClass: 'Class 6',
-    yearsExperience: 12,
-    completedProjects: 89,
-    rating: 4.7,
-    specialties: ['Road Construction', 'Water Infrastructure', 'Building Construction'],
-    certifications: ['ISO 9001:2015', 'OHSAS 18001', 'ISO 14001'],
-    recentProjects: [
-      { name: 'Thika Road Bridge Repair', rating: 4.8, completed: '2023-12-15' },
-      { name: 'Nakuru Water Pipeline', rating: 4.6, completed: '2023-11-20' },
-      { name: 'Meru Hospital Construction', rating: 4.9, completed: '2023-10-10' }
-    ]
   };
 
-  const handleBidSubmit = (e: React.FormEvent) => {
+  const handleBidSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedProject) return;
+    if (!selectedProblem || !user) return;
 
-    toast({
-      title: "Bid submitted successfully!",
-      description: "Your bid has been submitted and will be ranked by our AI system. You'll receive updates via SMS.",
-    });
+    try {
+      setSubmitting(true);
+      
+      const { error } = await supabase
+        .from('contractor_bids')
+        .insert({
+          report_id: selectedProblem.id,
+          contractor_id: user.id,
+          bid_amount: parseFloat(bidForm.amount.replace(/,/g, '')),
+          estimated_duration: parseInt(bidForm.duration),
+          proposal: bidForm.proposal,
+          technical_approach: bidForm.technicalApproach || null
+        });
 
-    setBidForm({
-      amount: '',
-      timeline: '',
-      methodology: '',
-      teamSize: '',
-      experience: ''
-    });
-    setSelectedProject(null);
+      if (error) throw error;
+
+      toast({
+        title: "Bid submitted successfully!",
+        description: "Your bid has been submitted and will be reviewed.",
+      });
+
+      setBidForm({
+        amount: '',
+        duration: '',
+        proposal: '',
+        technicalApproach: ''
+      });
+      setSelectedProblem(null);
+      fetchData();
+    } catch (error: any) {
+      console.error('Error submitting bid:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to submit bid",
+        variant: "destructive"
+      });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'Selected': return 'bg-green-100 text-green-800 border-green-200';
-      case 'Under Review': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'Not Selected': return 'bg-red-100 text-red-800 border-red-200';
+      case 'selected': return 'bg-green-100 text-green-800 border-green-200';
+      case 'submitted':
+      case 'under_review': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'rejected': return 'bg-red-100 text-red-800 border-red-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
-  const getUrgencyColor = (urgency: string) => {
-    switch (urgency) {
-      case 'Critical': return 'bg-red-100 text-red-800';
-      case 'High': return 'bg-orange-100 text-orange-800';
-      case 'Medium': return 'bg-yellow-100 text-yellow-800';
-      case 'Low': return 'bg-green-100 text-green-800';
+  const getPriorityColor = (priority: string | null) => {
+    switch (priority) {
+      case 'critical': return 'bg-red-100 text-red-800';
+      case 'high': return 'bg-orange-100 text-orange-800';
+      case 'medium': return 'bg-yellow-100 text-yellow-800';
+      case 'low': return 'bg-green-100 text-green-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
 
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-KE', {
+      style: 'currency',
+      currency: 'KES',
+      minimumFractionDigits: 0
+    }).format(amount);
+  };
+
+  const hasAlreadyBid = (problemId: string) => {
+    return myBids.some(bid => bid.report_id === problemId);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2">Loading projects...</span>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-7xl mx-auto space-y-6">
-      <Card className="shadow-xl border-t-4 border-t-purple-600">
-        <CardHeader className="bg-gradient-to-r from-purple-50 to-blue-50">
+      <Card className="shadow-xl border-t-4 border-t-primary">
+        <CardHeader className="bg-gradient-to-r from-primary/5 to-secondary/5">
           <CardTitle className="flex items-center text-2xl">
-            <Briefcase className="h-6 w-6 mr-3 text-purple-600" />
-            Contractor Bidding Platform
+            <Briefcase className="h-6 w-6 mr-3 text-primary" />
+            Reported Problems - Available for Bidding
           </CardTitle>
-          <p className="text-gray-600 mt-2">
-            AI-powered bidding system for verified contractors. Transparent, competitive, and merit-based project allocation.
+          <p className="text-muted-foreground mt-2">
+            View community-reported problems and submit your bids to fix them.
           </p>
         </CardHeader>
       </Card>
@@ -181,54 +218,54 @@ const ContractorBidding = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="text-center">
-                <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white text-xl font-bold mx-auto mb-3">
-                  ABC
+                <div className="w-16 h-16 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center text-primary-foreground text-xl font-bold mx-auto mb-3">
+                  {contractorProfile?.company_name?.substring(0, 2).toUpperCase() || userProfile?.full_name?.substring(0, 2).toUpperCase() || 'CO'}
                 </div>
-                <h3 className="font-semibold">{contractorProfile.name}</h3>
+                <h3 className="font-semibold">{contractorProfile?.company_name || 'Not Set'}</h3>
                 <div className="flex items-center justify-center mt-2">
                   <Star className="h-4 w-4 text-yellow-500 mr-1" />
-                  <span className="text-lg font-semibold">{contractorProfile.rating}</span>
-                  <span className="text-sm text-gray-500 ml-1">({contractorProfile.completedProjects} projects)</span>
+                  <span className="text-lg font-semibold">{contractorProfile?.average_rating || 0}</span>
+                  <span className="text-sm text-muted-foreground ml-1">({contractorProfile?.previous_projects_count || 0} projects)</span>
                 </div>
               </div>
 
               <div className="space-y-3 text-sm">
-                <div>
-                  <span className="font-medium text-gray-700">KRA Number:</span>
-                  <div className="text-gray-600">{contractorProfile.kraNumber}</div>
-                </div>
-                <div>
-                  <span className="font-medium text-gray-700">NCA Class:</span>
-                  <Badge className="ml-2 bg-green-100 text-green-800">{contractorProfile.ncaClass}</Badge>
-                </div>
-                <div>
-                  <span className="font-medium text-gray-700">Experience:</span>
-                  <div className="text-gray-600">{contractorProfile.yearsExperience} years</div>
-                </div>
+                {contractorProfile?.kra_pin && (
+                  <div>
+                    <span className="font-medium text-foreground">KRA PIN:</span>
+                    <div className="text-muted-foreground">{contractorProfile.kra_pin}</div>
+                  </div>
+                )}
+                {contractorProfile?.years_in_business && (
+                  <div>
+                    <span className="font-medium text-foreground">Experience:</span>
+                    <div className="text-muted-foreground">{contractorProfile.years_in_business} years</div>
+                  </div>
+                )}
+                {userProfile?.location && (
+                  <div>
+                    <span className="font-medium text-foreground">Location:</span>
+                    <div className="text-muted-foreground">{userProfile.location}</div>
+                  </div>
+                )}
               </div>
 
-              <div>
-                <span className="font-medium text-gray-700 text-sm">Specialties:</span>
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {contractorProfile.specialties.map((specialty, index) => (
-                    <Badge key={index} variant="outline" className="text-xs">
-                      {specialty}
-                    </Badge>
-                  ))}
+              {contractorProfile?.specialization && contractorProfile.specialization.length > 0 && (
+                <div>
+                  <span className="font-medium text-foreground text-sm">Specialties:</span>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {contractorProfile.specialization.map((specialty, index) => (
+                      <Badge key={index} variant="outline" className="text-xs">
+                        {specialty}
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
-              <div>
-                <span className="font-medium text-gray-700 text-sm">Certifications:</span>
-                <div className="space-y-1 mt-1">
-                  {contractorProfile.certifications.map((cert, index) => (
-                    <div key={index} className="flex items-center text-xs text-gray-600">
-                      <CheckCircle className="h-3 w-3 text-green-500 mr-1" />
-                      {cert}
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <Badge className={contractorProfile?.verified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
+                {contractorProfile?.verified ? 'Verified Contractor' : 'Pending Verification'}
+              </Badge>
             </CardContent>
           </Card>
         </div>
@@ -236,259 +273,339 @@ const ContractorBidding = () => {
         {/* Main Content */}
         <div className="lg:col-span-3">
           <Tabs defaultValue="available" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 bg-white shadow-lg">
+            <TabsList className="grid w-full grid-cols-2 bg-background shadow-lg">
               <TabsTrigger 
                 value="available" 
-                className="data-[state=active]:bg-purple-600 data-[state=active]:text-white"
+                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
               >
-                Available Projects ({openProjects.length})
+                Available Problems ({problems.length})
               </TabsTrigger>
               <TabsTrigger 
                 value="mybids" 
-                className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+                className="data-[state=active]:bg-secondary data-[state=active]:text-secondary-foreground"
               >
                 My Bids ({myBids.length})
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="available" className="space-y-6">
-              <div className="grid gap-6">
-                {openProjects.map((project) => (
-                  <Card key={project.id} className="shadow-lg hover:shadow-xl transition-shadow">
-                    <CardContent className="p-6">
-                      <div className="space-y-4">
-                        <div className="flex flex-wrap items-start justify-between gap-2">
-                          <h3 className="text-xl font-semibold text-gray-900">{project.title}</h3>
-                          <div className="flex gap-2">
-                            <Badge className={getUrgencyColor(project.urgency)}>
-                              {project.urgency} Priority
-                            </Badge>
-                            <Badge variant="outline" className="text-blue-600">
-                              {project.daysLeft} days left
-                            </Badge>
+              {problems.length === 0 ? (
+                <Card className="shadow-lg">
+                  <CardContent className="p-8 text-center">
+                    <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">No Problems Available</h3>
+                    <p className="text-muted-foreground">There are no approved problems available for bidding at the moment.</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid gap-6">
+                  {problems.map((problem) => (
+                    <Card key={problem.id} className="shadow-lg hover:shadow-xl transition-shadow">
+                      <CardContent className="p-6">
+                        <div className="space-y-4">
+                          <div className="flex flex-wrap items-start justify-between gap-2">
+                            <h3 className="text-xl font-semibold">{problem.title}</h3>
+                            <div className="flex gap-2">
+                              <Badge className={getPriorityColor(problem.priority)}>
+                                {problem.priority || 'Medium'} Priority
+                              </Badge>
+                              {problem.category && (
+                                <Badge variant="outline">{problem.category}</Badge>
+                              )}
+                            </div>
+                          </div>
+
+                          <p className="text-muted-foreground line-clamp-2">{problem.description}</p>
+
+                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                            <div className="flex items-center">
+                              <MapPin className="h-4 w-4 mr-1" />
+                              {problem.location || 'Location not specified'}
+                            </div>
+                            {problem.constituency && (
+                              <span>{problem.constituency}</span>
+                            )}
+                            {problem.ward && (
+                              <span>{problem.ward}</span>
+                            )}
+                          </div>
+
+                          {problem.photo_urls && problem.photo_urls.length > 0 && (
+                            <div className="flex gap-2 overflow-x-auto">
+                              {problem.photo_urls.slice(0, 3).map((url, index) => (
+                                <img 
+                                  key={index} 
+                                  src={url} 
+                                  alt={`Problem ${index + 1}`}
+                                  className="h-20 w-20 object-cover rounded-lg"
+                                />
+                              ))}
+                              {problem.photo_urls.length > 3 && (
+                                <div className="h-20 w-20 bg-muted rounded-lg flex items-center justify-center text-sm text-muted-foreground">
+                                  +{problem.photo_urls.length - 3} more
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg">
+                            <div className="text-center">
+                              <DollarSign className="h-5 w-5 mx-auto mb-1 text-green-600" />
+                              <div className="font-semibold text-green-600">
+                                {problem.estimated_cost ? formatCurrency(problem.estimated_cost) : 'TBD'}
+                              </div>
+                              <div className="text-xs text-muted-foreground">Estimated Cost</div>
+                            </div>
+                            <div className="text-center">
+                              <Users className="h-5 w-5 mx-auto mb-1 text-primary" />
+                              <div className="font-semibold text-primary">{problem.priority_score || 0}</div>
+                              <div className="text-xs text-muted-foreground">Community Votes</div>
+                            </div>
+                            <div className="text-center">
+                              <Clock className="h-5 w-5 mx-auto mb-1 text-secondary" />
+                              <div className="font-semibold text-secondary">
+                                {problem.created_at ? new Date(problem.created_at).toLocaleDateString() : 'N/A'}
+                              </div>
+                              <div className="text-xs text-muted-foreground">Reported</div>
+                            </div>
+                          </div>
+
+                          <div className="flex justify-between items-center pt-4 border-t">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setViewingProblem(problem)}
+                            >
+                              <Eye className="h-4 w-4 mr-2" />
+                              View Details
+                            </Button>
+                            <div className="flex gap-2">
+                              {hasAlreadyBid(problem.id) ? (
+                                <Badge className="bg-blue-100 text-blue-800">Bid Submitted</Badge>
+                              ) : (
+                                <Button
+                                  onClick={() => setSelectedProblem(problem)}
+                                  className="bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90"
+                                >
+                                  Submit Bid
+                                </Button>
+                              )}
+                            </div>
                           </div>
                         </div>
-
-                        <p className="text-gray-700">{project.description}</p>
-
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
-                          <div className="text-center">
-                            <DollarSign className="h-5 w-5 mx-auto mb-1 text-green-600" />
-                            <div className="font-semibold text-green-600">{project.budget}</div>
-                            <div className="text-xs text-gray-600">Budget</div>
-                          </div>
-                          <div className="text-center">
-                            <Clock className="h-5 w-5 mx-auto mb-1 text-blue-600" />
-                            <div className="font-semibold text-blue-600">{project.timeline}</div>
-                            <div className="text-xs text-gray-600">Timeline</div>
-                          </div>
-                          <div className="text-center">
-                            <Users className="h-5 w-5 mx-auto mb-1 text-purple-600" />
-                            <div className="font-semibold text-purple-600">{project.bidsReceived}</div>
-                            <div className="text-xs text-gray-600">Bids Received</div>
-                          </div>
-                        </div>
-
-                        <div className="space-y-2">
-                          <h4 className="font-medium text-gray-900">Requirements:</h4>
-                          <ul className="grid grid-cols-1 md:grid-cols-2 gap-1 text-sm">
-                            {project.requirements.map((req, index) => (
-                              <li key={index} className="flex items-center text-gray-600">
-                                <CheckCircle className="h-3 w-3 text-green-500 mr-2 flex-shrink-0" />
-                                {req}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-
-                        <div className="space-y-2">
-                          <h4 className="font-medium text-gray-900">Technical Specifications:</h4>
-                          <p className="text-sm text-gray-600">{project.specifications}</p>
-                        </div>
-
-                        <div className="flex justify-between items-center pt-4 border-t">
-                          <div className="text-sm text-gray-600">
-                            Community support: {project.communityVotes} votes
-                          </div>
-                          <Button
-                            onClick={() => setSelectedProject(project.id)}
-                            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-                          >
-                            Submit Bid
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent value="mybids" className="space-y-6">
-              <div className="grid gap-4">
-                {myBids.map((bid) => (
-                  <Card key={bid.id} className="shadow-lg">
-                    <CardContent className="p-6">
-                      <div className="flex flex-col md:flex-row justify-between items-start gap-4">
-                        <div className="flex-1 space-y-2">
-                          <h3 className="text-lg font-semibold text-gray-900">{bid.projectTitle}</h3>
-                          <div className="flex items-center space-x-4 text-sm text-gray-600">
-                            <span>Bid Amount: <span className="font-semibold text-green-600">{bid.bidAmount}</span></span>
-                            <span>Submitted: {new Date(bid.submittedDate).toLocaleDateString()}</span>
-                          </div>
-                          <div className="flex items-center space-x-4">
-                            <Badge className={getStatusColor(bid.status)}>
-                              {bid.status}
-                            </Badge>
-                            <div className="flex items-center text-sm">
-                              <Award className="h-4 w-4 mr-1 text-blue-600" />
-                              AI Ranking: #{bid.aiRanking} of {bid.totalBids}
+              {myBids.length === 0 ? (
+                <Card className="shadow-lg">
+                  <CardContent className="p-8 text-center">
+                    <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">No Bids Yet</h3>
+                    <p className="text-muted-foreground">You haven't submitted any bids. Browse available problems and submit your first bid!</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid gap-4">
+                  {myBids.map((bid) => (
+                    <Card key={bid.id} className="shadow-lg">
+                      <CardContent className="p-6">
+                        <div className="flex flex-col md:flex-row justify-between items-start gap-4">
+                          <div className="flex-1 space-y-2">
+                            <h3 className="text-lg font-semibold">{bid.problem_reports?.title || 'Unknown Project'}</h3>
+                            <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                              <span>Bid: <span className="font-semibold text-green-600">{formatCurrency(bid.bid_amount)}</span></span>
+                              <span>Duration: {bid.estimated_duration} days</span>
+                              <span>Submitted: {new Date(bid.submitted_at).toLocaleDateString()}</span>
                             </div>
+                            <div className="flex items-center space-x-4">
+                              <Badge className={getStatusColor(bid.status)}>
+                                {bid.status.replace('_', ' ').charAt(0).toUpperCase() + bid.status.slice(1)}
+                              </Badge>
+                              {bid.problem_reports?.location && (
+                                <div className="flex items-center text-sm text-muted-foreground">
+                                  <MapPin className="h-4 w-4 mr-1" />
+                                  {bid.problem_reports.location}
+                                </div>
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground line-clamp-2">{bid.proposal}</p>
                           </div>
-                          <p className="text-sm text-gray-600 italic">{bid.feedback}</p>
+                          
+                          {bid.status === 'selected' && (
+                            <Button variant="outline" className="border-green-500 text-green-700 hover:bg-green-50">
+                              View Contract
+                            </Button>
+                          )}
                         </div>
-                        
-                        {bid.status === 'Selected' && (
-                          <Button variant="outline" className="border-green-500 text-green-700 hover:bg-green-50">
-                            View Contract
-                          </Button>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </div>
       </div>
 
-      {/* Bid Submission Modal */}
-      {selectedProject && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <FileText className="h-5 w-5 mr-2 text-purple-600" />
-                Submit Bid for Project #{selectedProject}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleBidSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="amount">Bid Amount (KES)</Label>
-                    <Input
-                      id="amount"
-                      value={bidForm.amount}
-                      onChange={(e) => setBidForm(prev => ({ ...prev, amount: e.target.value }))}
-                      placeholder="e.g., 2,400,000"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="timeline">Timeline</Label>
-                    <Input
-                      id="timeline"
-                      value={bidForm.timeline}
-                      onChange={(e) => setBidForm(prev => ({ ...prev, timeline: e.target.value }))}
-                      placeholder="e.g., 3 weeks"
-                      required
-                    />
-                  </div>
-                </div>
+      {/* View Problem Details Modal */}
+      <Dialog open={!!viewingProblem} onOpenChange={() => setViewingProblem(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{viewingProblem?.title}</DialogTitle>
+            <DialogDescription>
+              Reported on {viewingProblem?.created_at ? new Date(viewingProblem.created_at).toLocaleDateString() : 'N/A'}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {viewingProblem && (
+            <div className="space-y-4">
+              <div>
+                <Label className="text-muted-foreground">Description</Label>
+                <p className="mt-1">{viewingProblem.description}</p>
+              </div>
 
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="methodology">Project Methodology</Label>
-                  <Textarea
-                    id="methodology"
-                    value={bidForm.methodology}
-                    onChange={(e) => setBidForm(prev => ({ ...prev, methodology: e.target.value }))}
-                    placeholder="Describe your approach to completing this project..."
-                    className="h-24"
-                    required
-                  />
+                  <Label className="text-muted-foreground">Location</Label>
+                  <p className="mt-1">{viewingProblem.location || 'Not specified'}</p>
                 </div>
+                <div>
+                  <Label className="text-muted-foreground">Category</Label>
+                  <p className="mt-1">{viewingProblem.category || 'General'}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Priority</Label>
+                  <Badge className={`mt-1 ${getPriorityColor(viewingProblem.priority)}`}>
+                    {viewingProblem.priority || 'Medium'}
+                  </Badge>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Estimated Cost</Label>
+                  <p className="mt-1 font-semibold text-green-600">
+                    {viewingProblem.estimated_cost ? formatCurrency(viewingProblem.estimated_cost) : 'To be determined'}
+                  </p>
+                </div>
+              </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="teamSize">Team Size</Label>
-                    <Input
-                      id="teamSize"
-                      value={bidForm.teamSize}
-                      onChange={(e) => setBidForm(prev => ({ ...prev, teamSize: e.target.value }))}
-                      placeholder="e.g., 12 workers"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="experience">Relevant Experience</Label>
-                    <Input
-                      id="experience"
-                      value={bidForm.experience}
-                      onChange={(e) => setBidForm(prev => ({ ...prev, experience: e.target.value }))}
-                      placeholder="Years of similar work"
-                      required
-                    />
+              {viewingProblem.photo_urls && viewingProblem.photo_urls.length > 0 && (
+                <div>
+                  <Label className="text-muted-foreground">Photos</Label>
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    {viewingProblem.photo_urls.map((url, index) => (
+                      <img 
+                        key={index} 
+                        src={url} 
+                        alt={`Problem ${index + 1}`}
+                        className="w-full h-40 object-cover rounded-lg"
+                      />
+                    ))}
                   </div>
                 </div>
+              )}
 
-                <div className="flex justify-end space-x-3 pt-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setSelectedProject(null)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-                  >
+              <div className="flex justify-end gap-2 pt-4 border-t">
+                <Button variant="outline" onClick={() => setViewingProblem(null)}>
+                  Close
+                </Button>
+                {!hasAlreadyBid(viewingProblem.id) && (
+                  <Button onClick={() => {
+                    setSelectedProblem(viewingProblem);
+                    setViewingProblem(null);
+                  }}>
                     Submit Bid
                   </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
-      {/* AI Ranking Information */}
-      <Card className="bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200">
-        <CardContent className="p-6">
-          <h3 className="font-semibold text-purple-900 mb-4 flex items-center">
-            <Award className="h-5 w-5 mr-2" />
-            AI-Powered Bid Ranking System
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-              <h4 className="font-medium text-purple-800 mb-2">Cost Analysis (40%)</h4>
-              <ul className="space-y-1 text-sm text-purple-700">
-                <li>• Competitive pricing evaluation</li>
-                <li>• Budget efficiency analysis</li>
-                <li>• Value for money assessment</li>
-              </ul>
+      {/* Bid Submission Modal */}
+      <Dialog open={!!selectedProblem} onOpenChange={() => setSelectedProblem(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <FileText className="h-5 w-5 mr-2 text-primary" />
+              Submit Bid
+            </DialogTitle>
+            <DialogDescription>
+              {selectedProblem?.title}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handleBidSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="amount">Bid Amount (KES) *</Label>
+                <Input
+                  id="amount"
+                  value={bidForm.amount}
+                  onChange={(e) => setBidForm(prev => ({ ...prev, amount: e.target.value }))}
+                  placeholder="e.g., 2,400,000"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="duration">Estimated Duration (days) *</Label>
+                <Input
+                  id="duration"
+                  type="number"
+                  value={bidForm.duration}
+                  onChange={(e) => setBidForm(prev => ({ ...prev, duration: e.target.value }))}
+                  placeholder="e.g., 21"
+                  min="1"
+                  required
+                />
+              </div>
             </div>
+
             <div>
-              <h4 className="font-medium text-purple-800 mb-2">Timeline & Capacity (30%)</h4>
-              <ul className="space-y-1 text-sm text-purple-700">
-                <li>• Realistic timeline assessment</li>
-                <li>• Team size and expertise</li>
-                <li>• Current workload analysis</li>
-              </ul>
+              <Label htmlFor="proposal">Proposal *</Label>
+              <Textarea
+                id="proposal"
+                value={bidForm.proposal}
+                onChange={(e) => setBidForm(prev => ({ ...prev, proposal: e.target.value }))}
+                placeholder="Describe your approach to completing this project..."
+                className="h-24"
+                required
+              />
             </div>
+
             <div>
-              <h4 className="font-medium text-purple-800 mb-2">Past Performance (30%)</h4>
-              <ul className="space-y-1 text-sm text-purple-700">
-                <li>• Previous project ratings</li>
-                <li>• On-time completion record</li>
-                <li>• Quality of work history</li>
-              </ul>
+              <Label htmlFor="technicalApproach">Technical Approach</Label>
+              <Textarea
+                id="technicalApproach"
+                value={bidForm.technicalApproach}
+                onChange={(e) => setBidForm(prev => ({ ...prev, technicalApproach: e.target.value }))}
+                placeholder="Describe the technical methodology you'll use..."
+                className="h-24"
+              />
             </div>
-          </div>
-        </CardContent>
-      </Card>
+
+            <div className="flex justify-end gap-2 pt-4 border-t">
+              <Button type="button" variant="outline" onClick={() => setSelectedProblem(null)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={submitting}>
+                {submitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  'Submit Bid'
+                )}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
