@@ -6,7 +6,11 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Shield, CheckCircle, Clock, AlertTriangle, Users, DollarSign, FileText, Gavel, Loader2, Eye, CreditCard, Wallet } from 'lucide-react';
+import { 
+  Shield, CheckCircle, Clock, AlertTriangle, Users, DollarSign, FileText, 
+  Gavel, Loader2, Eye, CreditCard, Wallet, Briefcase, BarChart3, 
+  ClipboardCheck, UserCog, Building2, Scale, Globe, Lock, FolderOpen
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useGovernmentDashboard } from '@/hooks/useGovernmentDashboard';
@@ -59,6 +63,15 @@ const GovernmentDashboard = () => {
     }
   };
 
+  const quickActions = [
+    { label: 'Project Portfolio', icon: FolderOpen, path: '/government/portfolio', color: 'bg-blue-600 hover:bg-blue-700' },
+    { label: 'Approval Dashboard', icon: ClipboardCheck, path: '/government/approvals', color: 'bg-orange-600 hover:bg-orange-700' },
+    { label: 'Contractor Management', icon: Building2, path: '/government/contractors', color: 'bg-purple-600 hover:bg-purple-700' },
+    { label: 'Analytics & Reports', icon: BarChart3, path: '/government/analytics-dashboard', color: 'bg-indigo-600 hover:bg-indigo-700' },
+    { label: 'Compliance & Transparency', icon: Scale, path: '/government/compliance', color: 'bg-teal-600 hover:bg-teal-700' },
+    { label: 'User Management', icon: UserCog, path: '/government/users', color: 'bg-slate-600 hover:bg-slate-700' },
+  ];
+
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       <Card className="shadow-xl border-t-4 border-t-blue-600">
@@ -92,6 +105,30 @@ const GovernmentDashboard = () => {
             </div>
           </div>
         </CardHeader>
+      </Card>
+
+      {/* Quick Navigation Grid */}
+      <Card className="shadow-lg">
+        <CardHeader>
+          <CardTitle className="flex items-center text-lg">
+            <Globe className="h-5 w-5 mr-2 text-blue-600" />
+            Management Modules
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+            {quickActions.map((action) => (
+              <Button
+                key={action.path}
+                onClick={() => navigate(action.path)}
+                className={`${action.color} text-white h-auto py-4 flex flex-col items-center gap-2`}
+              >
+                <action.icon className="h-6 w-6" />
+                <span className="text-xs text-center">{action.label}</span>
+              </Button>
+            ))}
+          </div>
+        </CardContent>
       </Card>
 
       {/* Quick Actions - M-Pesa Payment Management */}
