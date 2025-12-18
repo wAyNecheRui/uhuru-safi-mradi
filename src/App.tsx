@@ -27,6 +27,10 @@ const CitizenCommunityVoting = lazy(() => import("./pages/citizen/CitizenCommuni
 const CitizenSkillsRegistration = lazy(() => import("./pages/citizen/CitizenSkillsRegistration"));
 const CitizenWorkforce = lazy(() => import("./pages/citizen/CitizenWorkforce"));
 const CitizenUSSD = lazy(() => import("./pages/citizen/CitizenUSSD"));
+const CitizenProjects = lazy(() => import("./pages/citizen/CitizenProjects"));
+const CitizenTransparency = lazy(() => import("./pages/citizen/CitizenTransparency"));
+const CitizenNotifications = lazy(() => import("./pages/citizen/CitizenNotifications"));
+const CitizenGuide = lazy(() => import("./pages/citizen/CitizenGuide"));
 
 // Contractor Routes
 const ContractorDashboard = lazy(() => import("./pages/contractor/ContractorDashboard"));
@@ -150,6 +154,38 @@ const App = () => {
                     element={
                       <ProtectedRoute allowedRoles={["citizen"]}>
                         <CitizenUSSD />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/citizen/projects"
+                    element={
+                      <ProtectedRoute allowedRoles={["citizen"]}>
+                        <CitizenProjects />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/citizen/transparency"
+                    element={
+                      <ProtectedRoute allowedRoles={["citizen"]}>
+                        <CitizenTransparency />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/citizen/notifications"
+                    element={
+                      <ProtectedRoute allowedRoles={["citizen"]}>
+                        <CitizenNotifications />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/citizen/guide"
+                    element={
+                      <ProtectedRoute allowedRoles={["citizen"]}>
+                        <CitizenGuide />
                       </ProtectedRoute>
                     }
                   />
