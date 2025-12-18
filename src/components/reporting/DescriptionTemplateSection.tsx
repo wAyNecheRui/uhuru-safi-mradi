@@ -66,10 +66,11 @@ const DescriptionTemplateSection = ({ reportData, onInputChange }: DescriptionTe
             
             <div className="space-y-3">
               <div>
-                <h4 className="text-sm font-semibold text-blue-900 mb-2">Template (replace [bracketed text] with your details):</h4>
+                <h4 className="text-sm font-semibold text-blue-900 mb-2">Template Format (click to use):</h4>
                 <div className="bg-white p-3 rounded border text-sm font-mono whitespace-pre-line text-gray-700">
                   {template.template}
                 </div>
+                <p className="text-xs text-blue-700 mt-1">Click "Use Template" to insert this format, then fill in your details after each colon.</p>
                 <Button
                   type="button"
                   variant="outline"
