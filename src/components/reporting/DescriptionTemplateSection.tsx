@@ -110,7 +110,7 @@ const DescriptionTemplateSection = ({ reportData, onInputChange }: DescriptionTe
         rows={showTemplate ? 6 : 8}
         value={reportData.description}
         onChange={(e) => onInputChange('description', e.target.value)}
-        className="min-h-[120px]"
+        className="min-h-[120px] placeholder:whitespace-pre-line"
       />
       
       {reportData.description.length > 0 && (

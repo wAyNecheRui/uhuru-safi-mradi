@@ -54,17 +54,16 @@ const LocationSection = ({ reportData, onInputChange, onGetCurrentLocation }: Lo
         setIsLocating(false);
       },
       (error) => {
-        console.error('GPS Error:', error);
+        console.error('GPS Error:', error.message || 'Location access denied or unavailable');
         setIsLocating(false);
+        // Call the parent's location handler as fallback
+        onGetCurrentLocation();
       },
-      { enableHighAccuracy: true, timeout: 10000 }
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
     );
   };
 
-  useEffect(() => {
-    // Auto-capture GPS coordinates when component mounts
-    handleGetLocation();
-  }, []);
+  // Remove auto-capture - let user manually trigger GPS to avoid permission issues
 
   const getMapUrl = () => {
     if (!reportData.coordinates) return null;
