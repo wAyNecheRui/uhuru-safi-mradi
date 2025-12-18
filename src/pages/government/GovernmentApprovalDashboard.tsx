@@ -278,6 +278,36 @@ const GovernmentApprovalDashboard = () => {
                         </div>
                       </div>
                       
+                      {/* Show photos if available */}
+                      {report.photo_urls && report.photo_urls.length > 0 && (
+                        <div className="space-y-2">
+                          <span className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                            <Camera className="h-4 w-4" />
+                            Evidence Photos ({report.photo_urls.length}):
+                          </span>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                            {report.photo_urls.slice(0, 4).map((url: string, index: number) => (
+                              <a 
+                                key={index} 
+                                href={url} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="block aspect-square rounded-lg overflow-hidden border hover:shadow-lg transition-shadow"
+                              >
+                                <img 
+                                  src={url} 
+                                  alt={`Evidence ${index + 1}`}
+                                  className="w-full h-full object-cover"
+                                />
+                              </a>
+                            ))}
+                          </div>
+                          {report.photo_urls.length > 4 && (
+                            <p className="text-sm text-gray-500">+ {report.photo_urls.length - 4} more photos</p>
+                          )}
+                        </div>
+                      )}
+                      
                       {/* Community Support */}
                       <div className="flex items-center gap-6">
                         <div className="flex items-center gap-2">

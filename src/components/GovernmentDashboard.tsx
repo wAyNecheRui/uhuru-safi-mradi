@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { 
   Shield, CheckCircle, Clock, AlertTriangle, Users, DollarSign, FileText, 
   Gavel, Loader2, Eye, CreditCard, Wallet, Briefcase, BarChart3, 
-  ClipboardCheck, UserCog, Building2, Scale, Globe, Lock, FolderOpen
+  ClipboardCheck, UserCog, Building2, Scale, Globe, Lock, FolderOpen, Image
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -67,7 +67,7 @@ const GovernmentDashboard = () => {
     { label: 'Project Portfolio', icon: FolderOpen, path: '/government/portfolio', color: 'bg-blue-600 hover:bg-blue-700' },
     { label: 'Approval Dashboard', icon: ClipboardCheck, path: '/government/approvals', color: 'bg-orange-600 hover:bg-orange-700' },
     { label: 'Contractor Management', icon: Building2, path: '/government/contractors', color: 'bg-purple-600 hover:bg-purple-700' },
-    { label: 'Analytics & Reports', icon: BarChart3, path: '/government/analytics-dashboard', color: 'bg-indigo-600 hover:bg-indigo-700' },
+    { label: 'Analytics & Reports', icon: BarChart3, path: '/government/analytics', color: 'bg-indigo-600 hover:bg-indigo-700' },
     { label: 'Compliance & Transparency', icon: Scale, path: '/government/compliance', color: 'bg-teal-600 hover:bg-teal-700' },
     { label: 'User Management', icon: UserCog, path: '/government/users', color: 'bg-slate-600 hover:bg-slate-700' },
   ];
@@ -282,7 +282,7 @@ const GovernmentDashboard = () => {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
                       <div className="text-center">
                         <Users className="h-5 w-5 mx-auto mb-1 text-blue-600" />
                         <div className="font-semibold">{project.priority_score || 0}</div>
@@ -293,7 +293,39 @@ const GovernmentDashboard = () => {
                         <div className="font-semibold">{project.affected_population || 0}</div>
                         <div className="text-xs text-gray-600">Affected Population</div>
                       </div>
+                      <div className="text-center">
+                        <Image className="h-5 w-5 mx-auto mb-1 text-purple-600" />
+                        <div className="font-semibold">{(project.photo_urls?.length || 0) + (project.video_urls?.length || 0)}</div>
+                        <div className="text-xs text-gray-600">Uploaded Files</div>
+                      </div>
                     </div>
+
+                    {/* Show photos if available */}
+                    {project.photo_urls && project.photo_urls.length > 0 && (
+                      <div className="space-y-2">
+                        <span className="text-sm font-medium text-gray-700">Evidence Photos:</span>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                          {project.photo_urls.slice(0, 4).map((url: string, index: number) => (
+                            <a 
+                              key={index} 
+                              href={url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="block aspect-square rounded-lg overflow-hidden border hover:shadow-lg transition-shadow"
+                            >
+                              <img 
+                                src={url} 
+                                alt={`Evidence ${index + 1}`}
+                                className="w-full h-full object-cover"
+                              />
+                            </a>
+                          ))}
+                        </div>
+                        {project.photo_urls.length > 4 && (
+                          <p className="text-sm text-gray-500">+ {project.photo_urls.length - 4} more photos</p>
+                        )}
+                      </div>
+                    )}
 
                     <div className="flex flex-wrap gap-3 pt-4 border-t">
                       <Button
