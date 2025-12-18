@@ -12,7 +12,7 @@ export const useProblemReporting = () => {
   
   const [reportData, setReportData] = useState<ReportData>({
     title: '',
-    category: '',
+    category: 'roads',
     description: '',
     location: '',
     coordinates: '',

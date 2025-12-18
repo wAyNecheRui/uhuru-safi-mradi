@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Lightbulb, FileText, Copy } from 'lucide-react';
 import { ReportData } from '@/types/problemReporting';
-import { getTemplateByCategory } from '@/constants/descriptionTemplates';
+import { getTemplateByCategory, DESCRIPTION_TEMPLATES } from '@/constants/descriptionTemplates';
 import { toast } from 'sonner';
 
 interface DescriptionTemplateSectionProps {
@@ -16,7 +16,8 @@ interface DescriptionTemplateSectionProps {
 const DescriptionTemplateSection = ({ reportData, onInputChange }: DescriptionTemplateSectionProps) => {
   const [showTemplate, setShowTemplate] = useState(false);
   
-  const template = getTemplateByCategory(reportData.category);
+  // Always show a template - use category-specific or fall back to 'other'
+  const template = getTemplateByCategory(reportData.category) || DESCRIPTION_TEMPLATES.find(t => t.category === 'other');
   
   const useTemplate = () => {
     if (template) {
@@ -39,20 +40,18 @@ const DescriptionTemplateSection = ({ reportData, onInputChange }: DescriptionTe
         <label className="block text-sm font-medium text-gray-700">
           Problem Description *
         </label>
-        {template && (
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setShowTemplate(!showTemplate)}
-              className="text-blue-600 border-blue-300 hover:bg-blue-50"
-            >
-              <Lightbulb className="h-4 w-4 mr-1" />
-              {showTemplate ? 'Hide' : 'Show'} Template
-            </Button>
-          </div>
-        )}
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setShowTemplate(!showTemplate)}
+            className="text-blue-600 border-blue-300 hover:bg-blue-50"
+          >
+            <Lightbulb className="h-4 w-4 mr-1" />
+            {showTemplate ? 'Hide' : 'Show'} Template
+          </Button>
+        </div>
       </div>
 
       {showTemplate && template && (
@@ -67,7 +66,7 @@ const DescriptionTemplateSection = ({ reportData, onInputChange }: DescriptionTe
             
             <div className="space-y-3">
               <div>
-                <h4 className="text-sm font-semibold text-blue-900 mb-2">Template Structure:</h4>
+                <h4 className="text-sm font-semibold text-blue-900 mb-2">Template (replace [bracketed text] with your details):</h4>
                 <div className="bg-white p-3 rounded border text-sm font-mono whitespace-pre-line text-gray-700">
                   {template.template}
                 </div>
@@ -84,7 +83,7 @@ const DescriptionTemplateSection = ({ reportData, onInputChange }: DescriptionTe
 
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-sm font-semibold text-blue-900">Example Report:</h4>
+                  <h4 className="text-sm font-semibold text-blue-900">Completed Example:</h4>
                   <Button
                     type="button"
                     variant="ghost"
