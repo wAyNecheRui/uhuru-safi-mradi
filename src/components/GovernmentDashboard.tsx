@@ -282,22 +282,16 @@ const GovernmentDashboard = () => {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
                       <div className="text-center">
                         <Users className="h-5 w-5 mx-auto mb-1 text-blue-600" />
                         <div className="font-semibold">{project.priority_score || 0}</div>
                         <div className="text-xs text-gray-600">Community Votes</div>
-                        <div className="text-sm font-medium text-green-600">85% Support</div>
-                      </div>
-                      <div className="text-center">
-                        <Shield className="h-5 w-5 mx-auto mb-1 text-purple-600" />
-                        <div className="font-semibold">4.5/5.0</div>
-                        <div className="text-xs text-gray-600">Contractor Rating</div>
                       </div>
                       <div className="text-center">
                         <Clock className="h-5 w-5 mx-auto mb-1 text-orange-600" />
-                        <div className="font-semibold">4 weeks</div>
-                        <div className="text-xs text-gray-600">Estimated Timeline</div>
+                        <div className="font-semibold">{project.affected_population || 0}</div>
+                        <div className="text-xs text-gray-600">Affected Population</div>
                       </div>
                     </div>
 
@@ -376,26 +370,15 @@ const GovernmentDashboard = () => {
 
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium text-gray-700">Project Progress</span>
-                        <span className="text-sm text-gray-600">75%</span>
+                        <span className="text-sm font-medium text-gray-700">Project Status</span>
+                        <Badge className="bg-blue-100 text-blue-800">{project.status}</Badge>
                       </div>
-                      <Progress value={75} className="h-3" />
                       <div className="text-sm text-gray-600">
-                        Next milestone: Planning phase
+                        Started: {new Date(project.created_at).toLocaleDateString()}
                       </div>
                     </div>
 
                     <div className="flex items-center justify-between pt-4 border-t">
-                      <div className="flex items-center space-x-4">
-                        <div className="text-sm">
-                          <span className="text-gray-600">Citizen Rating: </span>
-                          <span className="font-semibold text-blue-600">4.2/5.0</span>
-                        </div>
-                        <div className="text-sm">
-                          <span className="text-gray-600">Started: </span>
-                          <span>{new Date(project.created_at).toLocaleDateString()}</span>
-                        </div>
-                      </div>
                       <div className="flex gap-2">
                         <Button variant="outline" size="sm">
                           View Details
@@ -417,82 +400,32 @@ const GovernmentDashboard = () => {
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Performance Metrics</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">On-time completion rate</span>
-                    <span className="font-semibold">87%</span>
-                  </div>
-                  <Progress value={87} className="h-2" />
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Budget adherence rate</span>
-                    <span className="font-semibold">92%</span>
-                  </div>
-                  <Progress value={92} className="h-2" />
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Citizen satisfaction</span>
-                    <span className="font-semibold">4.2/5.0</span>
-                  </div>
-                  <Progress value={84} className="h-2" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Transparency Metrics</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4 text-center">
-                  <div className="p-3 bg-blue-50 rounded-lg">
-                    <div className="text-2xl font-bold text-blue-600">1,247</div>
-                    <div className="text-xs text-blue-700">Total Projects</div>
-                  </div>
-                  <div className="p-3 bg-green-50 rounded-lg">
-                    <div className="text-2xl font-bold text-green-600">98.5%</div>
-                    <div className="text-xs text-green-700">Data Transparency</div>
-                  </div>
-                  <div className="p-3 bg-purple-50 rounded-lg">
-                    <div className="text-2xl font-bold text-purple-600">15,678</div>
-                    <div className="text-xs text-purple-700">Citizen Reports</div>
-                  </div>
-                  <div className="p-3 bg-orange-50 rounded-lg">
-                    <div className="text-2xl font-bold text-orange-600">234</div>
-                    <div className="text-xs text-orange-700">Verified Contractors</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
           <Card>
             <CardHeader>
-              <CardTitle>County Performance Comparison</CardTitle>
+              <CardTitle>Summary</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {['Nairobi', 'Mombasa', 'Kisumu', 'Nakuru', 'Machakos'].map((county, index) => {
-                  const performance = [95, 87, 78, 82, 89][index];
-                  return (
-                    <div key={county} className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">{county} County</span>
-                        <span className="text-sm text-gray-600">{performance}%</span>
-                      </div>
-                      <Progress value={performance} className="h-2" />
-                    </div>
-                  );
-                })}
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4 text-center">
+                <div className="p-3 bg-blue-50 rounded-lg">
+                  <div className="text-2xl font-bold text-blue-600">{activeProjects.length}</div>
+                  <div className="text-xs text-blue-700">Active Projects</div>
+                </div>
+                <div className="p-3 bg-orange-50 rounded-lg">
+                  <div className="text-2xl font-bold text-orange-600">{pendingApprovals.length}</div>
+                  <div className="text-xs text-orange-700">Pending Approvals</div>
+                </div>
               </div>
+              <p className="text-sm text-gray-600 text-center">
+                View detailed analytics in the Analytics & Reporting module.
+              </p>
+              <Button 
+                onClick={() => navigate('/government/analytics-dashboard')}
+                className="w-full"
+                variant="outline"
+              >
+                <BarChart3 className="h-4 w-4 mr-2" />
+                View Full Analytics
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
