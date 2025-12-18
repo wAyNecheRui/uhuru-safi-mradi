@@ -140,17 +140,42 @@ export class ProfileService {
       return { success: false, error: 'User not authenticated' };
     }
 
-    const { error } = await supabase
+    // First check if profile exists
+    const { data: existing } = await supabase
       .from('contractor_profiles')
-      .upsert({
-        user_id: user.id,
-        company_name: profile.company_name || '',
-        ...profile
-      } as any);
+      .select('id')
+      .eq('user_id', user.id)
+      .single();
 
-    if (error) {
-      console.error('Error upserting contractor profile:', error);
-      return { success: false, error: error.message };
+    if (existing) {
+      // Update existing profile
+      const { error } = await supabase
+        .from('contractor_profiles')
+        .update({
+          company_name: profile.company_name,
+          ...profile,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Error updating contractor profile:', error);
+        return { success: false, error: error.message };
+      }
+    } else {
+      // Insert new profile
+      const { error } = await supabase
+        .from('contractor_profiles')
+        .insert({
+          user_id: user.id,
+          company_name: profile.company_name || '',
+          ...profile
+        });
+
+      if (error) {
+        console.error('Error inserting contractor profile:', error);
+        return { success: false, error: error.message };
+      }
     }
 
     return { success: true };
@@ -189,18 +214,44 @@ export class ProfileService {
       return { success: false, error: 'User not authenticated' };
     }
 
-    const { error } = await supabase
+    // First check if profile exists
+    const { data: existing } = await supabase
       .from('government_profiles')
-      .upsert({
-        user_id: user.id,
-        department: profile.department || '',
-        position: profile.position || '',
-        ...profile
-      } as any);
+      .select('id')
+      .eq('user_id', user.id)
+      .single();
 
-    if (error) {
-      console.error('Error upserting government profile:', error);
-      return { success: false, error: error.message };
+    if (existing) {
+      // Update existing profile
+      const { error } = await supabase
+        .from('government_profiles')
+        .update({
+          department: profile.department,
+          position: profile.position,
+          ...profile,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Error updating government profile:', error);
+        return { success: false, error: error.message };
+      }
+    } else {
+      // Insert new profile
+      const { error } = await supabase
+        .from('government_profiles')
+        .insert({
+          user_id: user.id,
+          department: profile.department || '',
+          position: profile.position || '',
+          ...profile
+        });
+
+      if (error) {
+        console.error('Error inserting government profile:', error);
+        return { success: false, error: error.message };
+      }
     }
 
     return { success: true };
