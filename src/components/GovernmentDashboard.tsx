@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,6 +14,7 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useGovernmentDashboard } from '@/hooks/useGovernmentDashboard';
 import { SecurityMonitor } from '@/components/security/SecurityMonitor';
+import GovernmentJurisdictionSettings from '@/components/government/GovernmentJurisdictionSettings';
 
 const GovernmentDashboard = () => {
   const [selectedCounty, setSelectedCounty] = useState('all');
@@ -200,6 +200,9 @@ const GovernmentDashboard = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Jurisdiction Settings */}
+      <GovernmentJurisdictionSettings />
 
       <Tabs defaultValue="approvals" className="space-y-6">
         <TabsList className="grid w-full grid-cols-4 bg-white shadow-lg">

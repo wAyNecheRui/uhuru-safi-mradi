@@ -10,6 +10,7 @@ import ResponsiveContainer from '@/components/ResponsiveContainer';
 import { useResponsive } from '@/hooks/useResponsive';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import ContractorLocationSettings from '@/components/contractor/ContractorLocationSettings';
 
 interface ProjectWithProgress {
   id: string;
@@ -272,6 +273,9 @@ const ContractorDashboard = () => {
               );
             })}
           </div>
+
+          {/* Location Settings */}
+          <ContractorLocationSettings />
 
           {/* Active Projects */}
           <Card className="shadow-lg">
