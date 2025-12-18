@@ -1,9 +1,9 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   ThumbsUp, 
   ThumbsDown, 
@@ -12,12 +12,15 @@ import {
   Users, 
   AlertTriangle,
   CheckCircle,
-  Eye,
-  TrendingUp
+  TrendingUp,
+  Navigation,
+  Loader2,
+  Filter
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useLocationFiltering, ProblemWithDistance } from '@/hooks/useLocationFiltering';
 
 interface ProblemReport {
   id: string;
@@ -34,11 +37,10 @@ interface ProblemReport {
   reporter_name?: string;
   upvotes: number;
   downvotes: number;
-}
-
-interface VoteCount {
-  upvotes: number;
-  downvotes: number;
+  distance_km?: number | null;
+  distance_category?: 'urgent' | 'nearby' | 'county' | 'unknown';
+  can_vote?: boolean;
+  can_verify?: boolean;
 }
 
 const CommunityValidation = () => {
@@ -46,79 +48,115 @@ const CommunityValidation = () => {
   const [reports, setReports] = useState<ProblemReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [votingState, setVotingState] = useState<{ [key: string]: boolean }>({});
+  const [activeTab, setActiveTab] = useState('all');
+  
+  const {
+    userLocation,
+    isLocating,
+    locationError,
+    getCurrentLocation,
+    fetchProblemsWithDistance,
+    canVote,
+    canVerify,
+    getDistanceCategory,
+    formatDistance,
+  } = useLocationFiltering();
 
-  useEffect(() => {
-    fetchReports();
-
-    // Set up real-time subscription for community votes
-    const channel = supabase
-      .channel('community-votes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'community_votes'
-        },
-        (payload) => {
-          console.log('Vote change detected:', payload);
-          // Refresh reports when votes change
-          fetchReports();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
-  const fetchReports = async () => {
+  // Fetch reports with distance using location
+  const fetchReportsWithDistance = useCallback(async () => {
+    if (!userLocation) return;
+    setLoading(true);
     try {
-      let query = supabase
+      const problemsWithDistance = await fetchProblemsWithDistance(
+        userLocation.latitude,
+        userLocation.longitude,
+        20 // 20km radius
+      );
+
+      // Enrich with votes and eligibility
+      const enrichedReports = await Promise.all((problemsWithDistance || []).map(async (problem) => {
+        const { data: voteCounts } = await supabase
+          .from('community_votes')
+          .select('vote_type')
+          .eq('report_id', problem.id);
+
+        const upvotes = voteCounts?.filter(v => v.vote_type === 'upvote').length || 0;
+        const downvotes = voteCounts?.filter(v => v.vote_type === 'downvote').length || 0;
+
+        let userVote = null;
+        if (user) {
+          const { data: userVoteData } = await supabase
+            .from('community_votes')
+            .select('vote_type')
+            .eq('report_id', problem.id)
+            .eq('user_id', user.id)
+            .maybeSingle();
+          userVote = userVoteData?.vote_type || null;
+        }
+
+        const { data: reporterData } = await supabase
+          .from('user_profiles')
+          .select('full_name')
+          .eq('user_id', problem.id)
+          .maybeSingle();
+
+        // Check eligibility
+        const canVoteResult = await canVote(problem.id);
+        const canVerifyResult = await canVerify(problem.id);
+
+        return {
+          id: problem.id,
+          title: problem.title,
+          description: problem.description,
+          priority: problem.priority || 'medium',
+          location: problem.location || 'Location not specified',
+          photo_urls: problem.photo_urls,
+          created_at: problem.created_at,
+          reported_by: '',
+          status: problem.status || 'pending',
+          priority_score: problem.priority_score || 0,
+          user_vote: userVote as 'upvote' | 'downvote' | null,
+          reporter_name: reporterData?.full_name || 'Community Member',
+          upvotes,
+          downvotes,
+          distance_km: problem.distance_km,
+          distance_category: problem.distance_category,
+          can_vote: canVoteResult,
+          can_verify: canVerifyResult,
+        };
+      }));
+
+      setReports(enrichedReports);
+    } catch (error) {
+      console.error('Error fetching reports with distance:', error);
+      toast.error('Failed to load community reports');
+    } finally {
+      setLoading(false);
+    }
+  }, [userLocation, user, fetchProblemsWithDistance, canVote, canVerify]);
+
+  // Fallback fetch without distance
+  const fetchReportsWithoutDistance = useCallback(async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
         .from('problem_reports')
         .select('*')
         .eq('status', 'pending')
         .order('priority_score', { ascending: false })
         .order('created_at', { ascending: false });
 
-      // Filter by user's location if user is logged in and has location info
-      if (user) {
-        const { data: userProfile } = await supabase
-          .from('user_profiles')
-          .select('location')
-          .eq('user_id', user.id)
-          .single();
-
-        if (userProfile?.location) {
-          // Extract county from location (assuming format includes county)
-          const userCounty = userProfile.location.split(',').pop()?.trim();
-          if (userCounty) {
-            query = query.ilike('location', `%${userCounty}%`);
-          }
-        }
-      }
-
-      const { data, error } = await query;
-
       if (error) throw error;
 
-      // For each report, get vote counts and user's current vote
       const reportsWithVotes = await Promise.all((data || []).map(async (report) => {
-        // Get vote counts
-        const { data: voteCounts, error: voteError } = await supabase
+        const { data: voteCounts } = await supabase
           .from('community_votes')
           .select('vote_type')
           .eq('report_id', report.id);
 
-        if (voteError) {
-          console.error('Error fetching vote counts:', voteError);
-        }
-
         const upvotes = voteCounts?.filter(v => v.vote_type === 'upvote').length || 0;
         const downvotes = voteCounts?.filter(v => v.vote_type === 'downvote').length || 0;
 
-        // Get user's current vote if logged in
         let userVote = null;
         if (user) {
           const { data: userVoteData } = await supabase
@@ -127,25 +165,26 @@ const CommunityValidation = () => {
             .eq('report_id', report.id)
             .eq('user_id', user.id)
             .maybeSingle();
-
           userVote = userVoteData?.vote_type || null;
         }
-        // Get reporter name from user_profiles
+
         const { data: reporterData } = await supabase
           .from('user_profiles')
           .select('full_name')
           .eq('user_id', report.reported_by)
-          .single();
-        
+          .maybeSingle();
+
         return {
           ...report,
           priority_score: report.priority_score || 0,
-          user_vote: userVote,
+          user_vote: userVote as 'upvote' | 'downvote' | null,
           reporter_name: reporterData?.full_name || 'Anonymous User',
           priority: report.priority || 'medium',
           location: report.location || 'Location not specified',
           upvotes,
-          downvotes
+          downvotes,
+          can_vote: true,
+          can_verify: true,
         };
       }));
 
@@ -156,7 +195,7 @@ const CommunityValidation = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   const handleVote = async (reportId: string, voteType: 'upvote' | 'downvote') => {
     if (!user) {
@@ -235,7 +274,12 @@ const CommunityValidation = () => {
       if (error) throw error;
 
       toast.success(`Report ${action === 'verify' ? 'verified' : 'flagged'} successfully`);
-      fetchReports(); // Refresh the list
+      // Refresh the list
+      if (userLocation) {
+        fetchReportsWithDistance();
+      } else {
+        fetchReportsWithoutDistance();
+      }
     } catch (error: any) {
       console.error('Verification error:', error);
       toast.error(`Failed to ${action} report`);
@@ -275,6 +319,16 @@ const CommunityValidation = () => {
     );
   }
 
+  // Filter reports by distance category
+  const filteredReports = activeTab === 'all' 
+    ? reports 
+    : reports.filter(r => r.distance_category === activeTab);
+
+  // Group reports by distance category for counts
+  const urgentCount = reports.filter(r => r.distance_category === 'urgent').length;
+  const nearbyCount = reports.filter(r => r.distance_category === 'nearby').length;
+  const countyCount = reports.filter(r => r.distance_category === 'county').length;
+
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       <Card className="border-t-4 border-t-green-600">
@@ -285,26 +339,73 @@ const CommunityValidation = () => {
           </CardTitle>
           <p className="text-gray-600">
             Help validate and prioritize community-reported problems in your area. Your votes help determine which issues get addressed first.
-            {user && (
-              <span className="block text-sm text-blue-600 mt-1">
-                Showing reports from your area and nearby locations.
-              </span>
-            )}
           </p>
+          
+          {/* Location Status */}
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            {isLocating ? (
+              <Badge variant="outline" className="text-blue-600">
+                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                Detecting location...
+              </Badge>
+            ) : userLocation ? (
+              <Badge className="bg-green-100 text-green-800">
+                <Navigation className="h-3 w-3 mr-1" />
+                Location: {userLocation.county || `${userLocation.latitude.toFixed(2)}°, ${userLocation.longitude.toFixed(2)}°`}
+              </Badge>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => getCurrentLocation()}
+                className="text-blue-600"
+              >
+                <MapPin className="h-4 w-4 mr-1" />
+                Enable Location
+              </Button>
+            )}
+            {locationError && (
+              <span className="text-sm text-amber-600">{locationError}</span>
+            )}
+          </div>
         </CardHeader>
       </Card>
 
-      {reports.length === 0 ? (
+      {/* Distance-based Tabs */}
+      {userLocation && (
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-4 bg-white shadow">
+            <TabsTrigger value="all" className="data-[state=active]:bg-gray-900 data-[state=active]:text-white">
+              All ({reports.length})
+            </TabsTrigger>
+            <TabsTrigger value="urgent" className="data-[state=active]:bg-red-600 data-[state=active]:text-white">
+              🔴 Urgent ({urgentCount})
+            </TabsTrigger>
+            <TabsTrigger value="nearby" className="data-[state=active]:bg-yellow-500 data-[state=active]:text-white">
+              🟡 Nearby ({nearbyCount})
+            </TabsTrigger>
+            <TabsTrigger value="county" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+              🔵 County ({countyCount})
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      )}
+
+      {filteredReports.length === 0 ? (
         <Card>
           <CardContent className="p-8 text-center">
             <CheckCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No Reports Pending Validation</h3>
-            <p className="text-gray-600">All community reports have been reviewed and validated.</p>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No Reports in This Category</h3>
+            <p className="text-gray-600">
+              {activeTab === 'all' 
+                ? 'All community reports have been reviewed and validated.'
+                : `No reports in the ${activeTab} category within your area.`}
+            </p>
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-6">
-          {reports.map((report) => (
+          {filteredReports.map((report) => (
             <Card key={report.id} className="hover:shadow-lg transition-shadow">
               <CardContent className="p-6">
                 <div className="flex flex-col lg:flex-row gap-6">
@@ -316,6 +417,17 @@ const CommunityValidation = () => {
                           {report.title}
                         </h3>
                         <div className="flex flex-wrap items-center gap-2 mb-3">
+                          {/* Distance Badge */}
+                          {report.distance_km !== undefined && report.distance_km !== null && (
+                            <Badge className={
+                              report.distance_category === 'urgent' ? 'bg-red-100 text-red-800' :
+                              report.distance_category === 'nearby' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-blue-100 text-blue-800'
+                            }>
+                              <Navigation className="h-3 w-3 mr-1" />
+                              {formatDistance(report.distance_km)}
+                            </Badge>
+                          )}
                           <Badge className={getPriorityColor(report.priority)}>
                             {report.priority.toUpperCase()}
                           </Badge>
@@ -391,13 +503,20 @@ const CommunityValidation = () => {
             </div>
 
                     <div className="space-y-3">
+                      {/* Vote eligibility notice */}
+                      {report.can_vote === false && (
+                        <div className="text-xs text-amber-600 bg-amber-50 p-2 rounded">
+                          <AlertTriangle className="h-3 w-3 inline mr-1" />
+                          You must be within 50km to vote on this issue
+                        </div>
+                      )}
                       <div className="flex gap-2">
                         <Button
                           variant={report.user_vote === 'upvote' ? 'default' : 'outline'}
                           size="sm"
                           className="flex-1"
                           onClick={() => handleVote(report.id, 'upvote')}
-                          disabled={votingState[report.id]}
+                          disabled={votingState[report.id] || report.can_vote === false}
                         >
                           <ThumbsUp className="h-4 w-4 mr-1" />
                           Support
@@ -407,13 +526,24 @@ const CommunityValidation = () => {
                           size="sm"
                           className="flex-1"
                           onClick={() => handleVote(report.id, 'downvote')}
-                          disabled={votingState[report.id]}
+                          disabled={votingState[report.id] || report.can_vote === false}
                         >
                           <ThumbsDown className="h-4 w-4 mr-1" />
                           Dispute
                         </Button>
                       </div>
-
+                      {/* Verification eligibility */}
+                      {report.can_verify && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full text-green-600 border-green-300 hover:bg-green-50"
+                          onClick={() => handleVerify(report.id, 'verify')}
+                        >
+                          <CheckCircle className="h-4 w-4 mr-1" />
+                          Verify (within 10km)
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </div>
