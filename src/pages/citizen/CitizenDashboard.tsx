@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, FileText, Users, MapPin, Clock, Shield, CheckCircle, Wallet, Loader2, Wrench } from 'lucide-react';
+import { AlertTriangle, FileText, Users, MapPin, Clock, Shield, CheckCircle, Wallet, Loader2, Wrench, Eye, Bell, BookOpen, Briefcase, Search, Map } from 'lucide-react';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
 import Header from '@/components/Header';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
@@ -53,16 +53,6 @@ const CitizenDashboard = () => {
       badge: 'Verify'
     },
     {
-      title: 'Skills Registration',
-      description: 'Register your skills for project opportunities',
-      icon: Wrench,
-      href: '/citizen/skills',
-      color: 'bg-blue-500 hover:bg-blue-600',
-      iconColor: 'text-blue-600',
-      count: 0,
-      badge: 'Earn'
-    },
-    {
       title: 'Track My Reports',
       description: 'Monitor progress of your submitted reports',
       icon: FileText,
@@ -71,6 +61,73 @@ const CitizenDashboard = () => {
       iconColor: 'text-purple-600',
       count: stats?.activeReports || 0,
       badge: 'Track'
+    },
+    {
+      title: 'Monitor Projects',
+      description: 'Track active projects and verify milestones',
+      icon: Map,
+      href: '/citizen/projects',
+      color: 'bg-teal-500 hover:bg-teal-600',
+      iconColor: 'text-teal-600',
+      count: 0,
+      badge: 'Monitor'
+    }
+  ];
+
+  const additionalActions = [
+    {
+      title: 'Skills Registration',
+      description: 'Register your skills for project opportunities',
+      icon: Wrench,
+      href: '/citizen/skills',
+      color: 'bg-blue-500 hover:bg-blue-600',
+      iconColor: 'text-blue-600',
+      badge: 'Earn'
+    },
+    {
+      title: 'Job Opportunities',
+      description: 'Find and apply for local workforce jobs',
+      icon: Briefcase,
+      href: '/citizen/workforce',
+      color: 'bg-orange-500 hover:bg-orange-600',
+      iconColor: 'text-orange-600',
+      badge: 'Jobs'
+    },
+    {
+      title: 'Transparency Portal',
+      description: 'View public data, budgets, and contractor ratings',
+      icon: Eye,
+      href: '/citizen/transparency',
+      color: 'bg-indigo-500 hover:bg-indigo-600',
+      iconColor: 'text-indigo-600',
+      badge: 'Data'
+    },
+    {
+      title: 'Notifications',
+      description: 'Project updates and community alerts',
+      icon: Bell,
+      href: '/citizen/notifications',
+      color: 'bg-pink-500 hover:bg-pink-600',
+      iconColor: 'text-pink-600',
+      badge: 'Alerts'
+    },
+    {
+      title: 'Citizen Guide',
+      description: 'Learn how to use the platform effectively',
+      icon: BookOpen,
+      href: '/citizen/guide',
+      color: 'bg-cyan-500 hover:bg-cyan-600',
+      iconColor: 'text-cyan-600',
+      badge: 'Learn'
+    },
+    {
+      title: 'USSD Access',
+      description: 'Access services via *483# for basic phones',
+      icon: Search,
+      href: '/citizen/ussd',
+      color: 'bg-gray-500 hover:bg-gray-600',
+      iconColor: 'text-gray-600',
+      badge: 'SMS'
     }
   ];
 
@@ -253,6 +310,33 @@ const CitizenDashboard = () => {
                 </Link>
               );
             })}
+          </div>
+
+          {/* Additional Actions Grid */}
+          <div className="mb-6 sm:mb-8">
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">More Features</h2>
+            <div className={`grid gap-3 sm:gap-4 ${
+              isMobile ? 'grid-cols-2' : isTablet ? 'grid-cols-3' : 'grid-cols-3 lg:grid-cols-6'
+            }`}>
+              {additionalActions.map((action) => {
+                const IconComponent = action.icon;
+                return (
+                  <Link key={action.title} to={action.href}>
+                    <Card className="h-full hover:shadow-md transition-all duration-200 hover:scale-105 cursor-pointer group p-3 sm:p-4">
+                      <div className="text-center">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-2 group-hover:bg-gray-200 transition-colors">
+                          <IconComponent className={`h-5 w-5 sm:h-6 sm:w-6 ${action.iconColor}`} />
+                        </div>
+                        <h3 className="text-xs sm:text-sm font-medium text-gray-900 mb-1">{action.title}</h3>
+                        <Badge className={`${action.color} text-white text-xs`}>
+                          {action.badge}
+                        </Badge>
+                      </div>
+                    </Card>
+                  </Link>
+                );
+              })}
+            </div>
           </div>
 
           {/* Citizen Impact Section */}
