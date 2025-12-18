@@ -323,9 +323,12 @@ export type Database = {
           company_registration_number: string | null
           created_at: string | null
           id: string
+          is_agpo: boolean | null
           kra_pin: string | null
+          max_project_capacity: number | null
           number_of_employees: number | null
           previous_projects_count: number | null
+          registered_counties: string[] | null
           specialization: string[] | null
           tax_compliance_certificate_url: string | null
           total_contract_value: number | null
@@ -342,9 +345,12 @@ export type Database = {
           company_registration_number?: string | null
           created_at?: string | null
           id?: string
+          is_agpo?: boolean | null
           kra_pin?: string | null
+          max_project_capacity?: number | null
           number_of_employees?: number | null
           previous_projects_count?: number | null
+          registered_counties?: string[] | null
           specialization?: string[] | null
           tax_compliance_certificate_url?: string | null
           total_contract_value?: number | null
@@ -361,9 +367,12 @@ export type Database = {
           company_registration_number?: string | null
           created_at?: string | null
           id?: string
+          is_agpo?: boolean | null
           kra_pin?: string | null
+          max_project_capacity?: number | null
           number_of_employees?: number | null
           previous_projects_count?: number | null
+          registered_counties?: string[] | null
           specialization?: string[] | null
           tax_compliance_certificate_url?: string | null
           total_contract_value?: number | null
@@ -529,6 +538,7 @@ export type Database = {
       }
       government_profiles: {
         Row: {
+          assigned_counties: string[] | null
           clearance_level: string | null
           created_at: string | null
           department: string
@@ -545,6 +555,7 @@ export type Database = {
           verified: boolean | null
         }
         Insert: {
+          assigned_counties?: string[] | null
           clearance_level?: string | null
           created_at?: string | null
           department: string
@@ -561,6 +572,7 @@ export type Database = {
           verified?: boolean | null
         }
         Update: {
+          assigned_counties?: string[] | null
           clearance_level?: string | null
           created_at?: string | null
           department?: string
@@ -804,6 +816,7 @@ export type Database = {
           approved_by: string | null
           budget_allocated: number | null
           category: string | null
+          constituency: string | null
           coordinates: string | null
           created_at: string | null
           description: string
@@ -819,7 +832,9 @@ export type Database = {
           title: string
           updated_at: string | null
           verification_deadline: string | null
+          verified_votes: number | null
           video_urls: string[] | null
+          ward: string | null
         }
         Insert: {
           affected_population?: number | null
@@ -827,6 +842,7 @@ export type Database = {
           approved_by?: string | null
           budget_allocated?: number | null
           category?: string | null
+          constituency?: string | null
           coordinates?: string | null
           created_at?: string | null
           description: string
@@ -842,7 +858,9 @@ export type Database = {
           title: string
           updated_at?: string | null
           verification_deadline?: string | null
+          verified_votes?: number | null
           video_urls?: string[] | null
+          ward?: string | null
         }
         Update: {
           affected_population?: number | null
@@ -850,6 +868,7 @@ export type Database = {
           approved_by?: string | null
           budget_allocated?: number | null
           category?: string | null
+          constituency?: string | null
           coordinates?: string | null
           created_at?: string | null
           description?: string
@@ -865,7 +884,9 @@ export type Database = {
           title?: string
           updated_at?: string | null
           verification_deadline?: string | null
+          verified_votes?: number | null
           video_urls?: string[] | null
+          ward?: string | null
         }
         Relationships: []
       }
@@ -1629,6 +1650,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_distance_km: {
+        Args: { lat1: number; lat2: number; lon1: number; lon2: number }
+        Returns: number
+      }
+      can_user_verify: {
+        Args: { report_id: string; user_lat: number; user_lon: number }
+        Returns: boolean
+      }
+      can_user_vote: {
+        Args: { report_id: string; user_lat: number; user_lon: number }
+        Returns: boolean
+      }
       decrypt_sensitive_data: {
         Args: { encrypted_data: string; key?: string }
         Returns: string
@@ -1725,6 +1758,62 @@ export type Database = {
           verification_status: string
           ward: string
           willing_to_travel: boolean
+        }[]
+      }
+      get_contractor_projects: {
+        Args: { contractor_user_id: string }
+        Returns: {
+          budget: number
+          county: string
+          created_at: string
+          description: string
+          id: string
+          location: string
+          report_id: string
+          status: string
+          title: string
+        }[]
+      }
+      get_government_problems: {
+        Args: { gov_user_id: string }
+        Returns: {
+          category: string
+          county: string
+          created_at: string
+          description: string
+          estimated_cost: number
+          id: string
+          location: string
+          photo_urls: string[]
+          priority: string
+          priority_score: number
+          status: string
+          title: string
+          total_votes: number
+        }[]
+      }
+      get_problems_with_distance: {
+        Args: { max_distance_km?: number; user_lat: number; user_lon: number }
+        Returns: {
+          affected_population: number
+          category: string
+          constituency: string
+          coordinates: string
+          county: string
+          created_at: string
+          description: string
+          distance_category: string
+          distance_km: number
+          estimated_cost: number
+          id: string
+          location: string
+          photo_urls: string[]
+          priority: string
+          priority_score: number
+          status: string
+          title: string
+          verified_votes: number
+          ward: string
         }[]
       }
       get_public_contractor_profiles: {
