@@ -35,6 +35,10 @@ const ContractorProjects = lazy(() => import("./pages/contractor/ContractorProje
 const ContractorVerification = lazy(() => import("./pages/contractor/ContractorVerification"));
 const ContractorTemplates = lazy(() => import("./pages/contractor/ContractorTemplates"));
 const ContractorBidTracking = lazy(() => import("./pages/contractor/ContractorBidTracking"));
+const ContractorFinancials = lazy(() => import("./pages/contractor/ContractorFinancials"));
+const ContractorQuality = lazy(() => import("./pages/contractor/ContractorQuality"));
+const ContractorPerformance = lazy(() => import("./pages/contractor/ContractorPerformance"));
+const ContractorCommunications = lazy(() => import("./pages/contractor/ContractorCommunications"));
 
 // Government Routes
 const GovernmentDashboard = lazy(() => import("./pages/government/GovernmentDashboard"));
@@ -196,6 +200,38 @@ const App = () => {
                     element={
                       <ProtectedRoute allowedRoles={["contractor"]}>
                         <ContractorBidTracking />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/contractor/financials"
+                    element={
+                      <ProtectedRoute allowedRoles={["contractor"]}>
+                        <ContractorFinancials />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/contractor/quality"
+                    element={
+                      <ProtectedRoute allowedRoles={["contractor"]}>
+                        <ContractorQuality />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/contractor/performance"
+                    element={
+                      <ProtectedRoute allowedRoles={["contractor"]}>
+                        <ContractorPerformance />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/contractor/communications"
+                    element={
+                      <ProtectedRoute allowedRoles={["contractor"]}>
+                        <ContractorCommunications />
                       </ProtectedRoute>
                     }
                   />

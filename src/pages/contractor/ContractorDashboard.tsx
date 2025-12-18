@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Briefcase, FileText, DollarSign, Clock, TrendingUp, Award, Loader2, Eye } from 'lucide-react';
+import { Briefcase, FileText, DollarSign, Clock, TrendingUp, Award, Loader2, Eye, CheckCircle, MessageSquare, BarChart3 } from 'lucide-react';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
 import Header from '@/components/Header';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
@@ -152,6 +152,38 @@ const ContractorDashboard = () => {
       href: '/contractor/templates',
       color: 'bg-orange-500 hover:bg-orange-600',
       iconColor: 'text-orange-600'
+    },
+    {
+      title: 'Financials',
+      description: 'Escrow, payments, and financial analytics',
+      icon: DollarSign,
+      href: '/contractor/financials',
+      color: 'bg-teal-500 hover:bg-teal-600',
+      iconColor: 'text-teal-600'
+    },
+    {
+      title: 'Quality Assurance',
+      description: 'Quality checklists and compliance monitoring',
+      icon: CheckCircle,
+      href: '/contractor/quality',
+      color: 'bg-indigo-500 hover:bg-indigo-600',
+      iconColor: 'text-indigo-600'
+    },
+    {
+      title: 'Performance',
+      description: 'Scorecard, ratings, and bid analytics',
+      icon: BarChart3,
+      href: '/contractor/performance',
+      color: 'bg-rose-500 hover:bg-rose-600',
+      iconColor: 'text-rose-600'
+    },
+    {
+      title: 'Communications',
+      description: 'Messages, notifications, and disputes',
+      icon: MessageSquare,
+      href: '/contractor/communications',
+      color: 'bg-cyan-500 hover:bg-cyan-600',
+      iconColor: 'text-cyan-600'
     }
   ];
 
