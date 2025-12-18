@@ -47,6 +47,12 @@ const GovernmentBlockchain = lazy(() => import("./pages/government/GovernmentBlo
 const GovernmentEACC = lazy(() => import("./pages/government/GovernmentEACC"));
 const GovernmentBenchmarks = lazy(() => import("./pages/government/GovernmentBenchmarks"));
 const GovernmentVerificationRequests = lazy(() => import("./pages/government/GovernmentVerificationRequests"));
+const GovernmentPortfolio = lazy(() => import("./pages/government/GovernmentPortfolio"));
+const GovernmentApprovalDashboard = lazy(() => import("./pages/government/GovernmentApprovalDashboard"));
+const GovernmentContractorManagement = lazy(() => import("./pages/government/GovernmentContractorManagement"));
+const GovernmentAnalytics = lazy(() => import("./pages/government/GovernmentAnalytics"));
+const GovernmentCompliance = lazy(() => import("./pages/government/GovernmentCompliance"));
+const GovernmentUserManagement = lazy(() => import("./pages/government/GovernmentUserManagement"));
 
 // Minimal loader for lazy routes
 const PageLoader = () => (
@@ -272,6 +278,54 @@ const App = () => {
                     element={
                       <ProtectedRoute allowedRoles={["government", "admin"]}>
                         <GovernmentVerificationRequests />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/government/portfolio"
+                    element={
+                      <ProtectedRoute allowedRoles={["government", "admin"]}>
+                        <GovernmentPortfolio />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/government/approvals"
+                    element={
+                      <ProtectedRoute allowedRoles={["government", "admin"]}>
+                        <GovernmentApprovalDashboard />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/government/contractors"
+                    element={
+                      <ProtectedRoute allowedRoles={["government", "admin"]}>
+                        <GovernmentContractorManagement />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/government/analytics"
+                    element={
+                      <ProtectedRoute allowedRoles={["government", "admin"]}>
+                        <GovernmentAnalytics />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/government/compliance"
+                    element={
+                      <ProtectedRoute allowedRoles={["government", "admin"]}>
+                        <GovernmentCompliance />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/government/users"
+                    element={
+                      <ProtectedRoute allowedRoles={["government", "admin"]}>
+                        <GovernmentUserManagement />
                       </ProtectedRoute>
                     }
                   />
