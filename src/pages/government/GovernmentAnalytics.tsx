@@ -53,13 +53,23 @@ const GovernmentAnalytics = () => {
       const totalMilestones = milestones.length || 1;
       const avgRating = ratings.reduce((sum, r) => sum + (r.rating || 0), 0) / (ratings.length || 1);
 
+      // Calculate payment timeliness from actual data
+      const paymentTimeliness = totalMilestones > 0 
+        ? Math.round((verifiedMilestones / totalMilestones) * 100) 
+        : 0;
+
+      // Government efficiency based on completed vs total
+      const governmentEfficiency = totalProjects > 0 
+        ? Math.round(((completedProjects + projects.filter(p => p.status === 'in_progress').length) / totalProjects) * 100)
+        : 0;
+
       setKpis({
-        transparencyIndex: Math.round((verifiedMilestones / totalMilestones) * 100),
-        paymentTimeliness: 85, // Example - would calculate from actual payment data
-        projectSuccessRate: Math.round((completedProjects / totalProjects) * 100),
+        transparencyIndex: Math.round((verifiedMilestones / totalMilestones) * 100) || 0,
+        paymentTimeliness,
+        projectSuccessRate: Math.round((completedProjects / totalProjects) * 100) || 0,
         citizenEngagement: reports.length,
-        contractorSatisfaction: Math.round(avgRating * 20),
-        governmentEfficiency: 78 // Example metric
+        contractorSatisfaction: Math.round(avgRating * 20) || 0,
+        governmentEfficiency
       });
 
       // Calculate regional data
@@ -265,71 +275,17 @@ const GovernmentAnalytics = () => {
                 </CardContent>
               </Card>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Problem Types by Region</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm">Roads & Infrastructure</span>
-                        <Badge>45%</Badge>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm">Water & Sanitation</span>
-                        <Badge>28%</Badge>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm">Healthcare Facilities</span>
-                        <Badge>15%</Badge>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm">Education</span>
-                        <Badge>12%</Badge>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Seasonal Project Patterns</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm">Q1 (Jan-Mar)</span>
-                        <div className="flex items-center gap-2">
-                          <Progress value={65} className="w-24 h-2" />
-                          <span className="text-xs">65%</span>
-                        </div>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm">Q2 (Apr-Jun)</span>
-                        <div className="flex items-center gap-2">
-                          <Progress value={85} className="w-24 h-2" />
-                          <span className="text-xs">85%</span>
-                        </div>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm">Q3 (Jul-Sep)</span>
-                        <div className="flex items-center gap-2">
-                          <Progress value={72} className="w-24 h-2" />
-                          <span className="text-xs">72%</span>
-                        </div>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm">Q4 (Oct-Dec)</span>
-                        <div className="flex items-center gap-2">
-                          <Progress value={58} className="w-24 h-2" />
-                          <span className="text-xs">58%</span>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Data Summary</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-gray-600 text-center py-4">
+                    Regional analytics are calculated from actual project and report data in the system.
+                    As more data is collected, detailed category breakdowns will appear here.
+                  </p>
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
         </ResponsiveContainer>
