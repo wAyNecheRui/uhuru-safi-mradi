@@ -3,16 +3,27 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, MapPin, Clock, FileText, Eye } from 'lucide-react';
+import { Search, MapPin, Clock, FileText, Eye, Trash2 } from 'lucide-react';
 import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
 import ReportDetailsModal from '@/components/ReportDetailsModal';
 import { useCitizenData } from '@/hooks/useCitizenData';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 const CitizenTrackReports = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedReport, setSelectedReport] = useState<any>(null);
-  const { reports, isLoading } = useCitizenData();
+  const { reports, isLoading, deleteReport, isDeletingReport } = useCitizenData();
   
   const breadcrumbItems = [
     { label: 'Home', href: '/' },
@@ -140,10 +151,39 @@ const CitizenTrackReports = () => {
                     <p className="text-sm text-gray-500">
                       Track progress and receive SMS updates
                     </p>
-                    <Button variant="outline" size="sm" onClick={() => setSelectedReport(report)}>
-                      <Eye className="h-4 w-4 mr-2" />
-                      View Details
-                    </Button>
+                    <div className="flex gap-2">
+                      {report.status === 'pending' && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="destructive" size="sm" disabled={isDeletingReport}>
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Report?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will permanently delete your report "{report.title}". This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => deleteReport(report.id)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+                      <Button variant="outline" size="sm" onClick={() => setSelectedReport(report)}>
+                        <Eye className="h-4 w-4 mr-2" />
+                        View Details
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
