@@ -104,6 +104,34 @@ const WorkforceIntegration = () => {
     });
   };
 
+  const handleViewJobDetails = (jobId: number) => {
+    toast({
+      title: "Job Details",
+      description: "Full job details will be displayed. Check the skills required and location.",
+    });
+  };
+
+  const handleViewWorkerProfile = (workerId: number) => {
+    toast({
+      title: "Worker Profile",
+      description: "Complete worker profile with contact information and job history.",
+    });
+  };
+
+  const handleContactWorker = (workerId: number, phone: string) => {
+    toast({
+      title: "Contact Info",
+      description: `Call ${phone} to reach this worker.`,
+    });
+  };
+
+  const handleUpdateSkillsProfile = () => {
+    toast({
+      title: "Profile Updated!",
+      description: "Your skills profile has been saved. You'll receive job matches soon.",
+    });
+  };
+
   const getUrgencyColor = (urgency: string) => {
     switch (urgency) {
       case 'Critical': return 'bg-red-100 text-red-800';
@@ -191,7 +219,11 @@ const WorkforceIntegration = () => {
                       >
                         Apply Now
                       </Button>
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleViewJobDetails(job.id)}
+                      >
                         View Details
                       </Button>
                     </div>
@@ -257,7 +289,10 @@ const WorkforceIntegration = () => {
                     <Input placeholder="+254 7XX XXX XXX" />
                   </div>
                 </div>
-                <Button className="mt-4 bg-blue-600 hover:bg-blue-700">
+                <Button 
+                  className="mt-4 bg-blue-600 hover:bg-blue-700"
+                  onClick={handleUpdateSkillsProfile}
+                >
                   Update Skills Profile
                 </Button>
               </div>
@@ -317,11 +352,18 @@ const WorkforceIntegration = () => {
                     </div>
 
                     <div className="flex flex-col space-y-2">
-                      <Button className="bg-blue-600 hover:bg-blue-700">
+                      <Button 
+                        className="bg-blue-600 hover:bg-blue-700"
+                        onClick={() => handleContactWorker(worker.id, worker.phone)}
+                      >
                         <Phone className="h-4 w-4 mr-2" />
                         Contact
                       </Button>
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleViewWorkerProfile(worker.id)}
+                      >
                         View Profile
                       </Button>
                     </div>

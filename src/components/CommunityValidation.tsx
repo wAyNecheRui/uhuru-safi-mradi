@@ -135,6 +135,13 @@ const CommunityValidation = () => {
     }
   }, [userLocation, user, fetchProblemsWithDistance, canVote, canVerify]);
 
+  // Effect to fetch reports with distance when location is available
+  useEffect(() => {
+    if (userLocation) {
+      fetchReportsWithDistance();
+    }
+  }, [userLocation, fetchReportsWithDistance]);
+
   // Fallback fetch without distance
   const fetchReportsWithoutDistance = useCallback(async () => {
     setLoading(true);
@@ -285,6 +292,13 @@ const CommunityValidation = () => {
       toast.error(`Failed to ${action} report`);
     }
   };
+
+  // Effect for fallback fetch when no location
+  useEffect(() => {
+    if (!userLocation && !isLocating) {
+      fetchReportsWithoutDistance();
+    }
+  }, [userLocation, isLocating, fetchReportsWithoutDistance]);
 
   const getPriorityColor = (priority: string) => {
     switch (priority.toLowerCase()) {

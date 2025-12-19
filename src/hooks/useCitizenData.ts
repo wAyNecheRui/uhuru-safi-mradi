@@ -92,8 +92,13 @@ export const useCitizenData = () => {
         ).length || 0;
         const completedReports = reports?.filter(r => r.status === 'completed').length || 0;
         
-        // For now, set community votes to 0 since we don't have this table yet
-        const communityVotes = 0;
+        // Count user's community votes
+        const { data: votesData } = await supabase
+          .from('community_votes')
+          .select('id')
+          .eq('user_id', user.id);
+        
+        const communityVotes = votesData?.length || 0;
         
         const verificationStatus = verifications?.some(v => v.status === 'verified') 
           ? 'verified' 

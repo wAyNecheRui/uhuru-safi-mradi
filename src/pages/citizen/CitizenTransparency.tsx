@@ -118,6 +118,19 @@ const CitizenTransparency = () => {
   const totalEscrowHeld = escrowAccounts.reduce((sum, acc) => sum + (acc.held_amount || 0), 0);
   const totalEscrowReleased = escrowAccounts.reduce((sum, acc) => sum + (acc.released_amount || 0), 0);
 
+  const handleViewPortfolio = (contractorId: string) => {
+    toast.info('Portfolio viewer opening. Showing contractor project history.');
+  };
+
+  const handleReportContractorIssue = (contractorId: string) => {
+    toast.info('Issue report form opened. Your report will be reviewed by EACC.');
+  };
+
+  const handleDownloadReport = (projectId: string) => {
+    toast.success('Downloading escrow account report...');
+    // In a real implementation, this would generate and download a PDF
+  };
+
   const filteredContractors = contractors.filter(contractor =>
     contractor.company_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (contractor.specialization || []).some(s => s.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -278,11 +291,20 @@ const CitizenTransparency = () => {
                             </div>
                           </div>
                           <div className="flex flex-col gap-2">
-                            <Button variant="outline" size="sm">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleViewPortfolio(contractor.id)}
+                            >
                               <Eye className="h-4 w-4 mr-2" />
                               View Portfolio
                             </Button>
-                            <Button variant="outline" size="sm" className="text-orange-600">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="text-orange-600"
+                              onClick={() => handleReportContractorIssue(contractor.id)}
+                            >
                               <AlertTriangle className="h-4 w-4 mr-2" />
                               Report Issue
                             </Button>
@@ -350,7 +372,11 @@ const CitizenTransparency = () => {
                             </div>
                           </div>
                         </div>
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleDownloadReport(account.project_id)}
+                        >
                           <Download className="h-4 w-4 mr-2" />
                           Download Report
                         </Button>
