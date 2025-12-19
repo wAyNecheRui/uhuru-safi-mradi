@@ -1,16 +1,64 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, Wrench, MapPin, Star, Briefcase, Phone, Calendar } from 'lucide-react';
+import { Users, Wrench, MapPin, Star, Briefcase, Phone, Loader2, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import JobDetailsModal from '@/components/citizen/JobDetailsModal';
+
+interface Job {
+  id: string;
+  title: string;
+  description: string;
+  location: string;
+  required_skills: string[];
+  duration_days: number | null;
+  wage_min: number | null;
+  wage_max: number | null;
+  positions_available: number | null;
+  status: string | null;
+  created_at: string | null;
+}
+
+interface Worker {
+  id: string;
+  user_id: string;
+  skills: string[];
+  county: string;
+  phone_number: string;
+  rating: number | null;
+  total_jobs_completed: number | null;
+  availability_status: string | null;
+  experience_years: number | null;
+}
+
+interface Application {
+  id: string;
+  job_id: string;
+  applicant_id: string;
+  status: string | null;
+}
 
 const WorkforceIntegration = () => {
-  const [selectedSkill, setSelectedSkill] = useState('');
+  const { user } = useAuth();
   const { toast } = useToast();
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [workers, setWorkers] = useState<Worker[]>([]);
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [showJobModal, setShowJobModal] = useState(false);
+  const [isApplying, setIsApplying] = useState(false);
+  
+  // Skills registration form state
+  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+  const [experience, setExperience] = useState('');
+  const [phone, setPhone] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   const skillCategories = [
     {
@@ -33,112 +81,207 @@ const WorkforceIntegration = () => {
     }
   ];
 
-  const availableJobs = [
-    {
-      id: 1,
-      title: 'Road Repair Crew - Thika Road',
-      location: 'Kasarani, Nairobi',
-      skillsNeeded: ['Masonry', 'Road Construction'],
-      duration: '2 weeks',
-      dailyRate: 1500,
-      urgency: 'High',
-      description: 'Pothole repair and road surface maintenance on Thika Road section.',
-      applicants: 12,
-      spotsAvailable: 5
-    },
-    {
-      id: 2,
-      title: 'Water Pipeline Installation',
-      location: 'Kibera, Nairobi',
-      skillsNeeded: ['Plumbing', 'Water Systems'],
-      duration: '3 weeks',
-      dailyRate: 1800,
-      urgency: 'Critical',
-      description: 'Install new water pipeline to connect 200+ households.',
-      applicants: 8,
-      spotsAvailable: 3
-    },
-    {
-      id: 3,
-      title: 'School Roof Repair',
-      location: 'Mathare, Nairobi',
-      skillsNeeded: ['Roofing', 'Carpentry'],
-      duration: '1 week',
-      dailyRate: 1200,
-      urgency: 'Medium',
-      description: 'Replace damaged roof sections at Mathare Primary School.',
-      applicants: 15,
-      spotsAvailable: 8
+  useEffect(() => {
+    fetchData();
+  }, [user]);
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      // Fetch open jobs
+      const { data: jobsData, error: jobsError } = await supabase
+        .from('workforce_jobs')
+        .select('*')
+        .eq('status', 'open')
+        .order('created_at', { ascending: false });
+
+      if (jobsError) throw jobsError;
+      setJobs(jobsData || []);
+
+      // Fetch workers (only for government users to see)
+      const { data: workersData } = await supabase
+        .from('citizen_workers')
+        .select('*')
+        .eq('availability_status', 'available')
+        .limit(10);
+
+      setWorkers(workersData || []);
+
+      // Fetch user's applications if logged in
+      if (user) {
+        const { data: appsData } = await supabase
+          .from('job_applications')
+          .select('*')
+          .eq('applicant_id', user.id);
+
+        setApplications(appsData || []);
+      }
+    } catch (error: any) {
+      console.error('Error fetching workforce data:', error);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
-  const registeredWorkers = [
-    {
-      id: 1,
-      name: 'John Mwangi',
-      skills: ['Masonry', 'Carpentry'],
-      experience: '5 years',
-      location: 'Kasarani, Nairobi',
-      rating: 4.8,
-      completedJobs: 23,
-      availability: 'Available',
-      phone: '+254 712 345 678'
-    },
-    {
-      id: 2,
-      name: 'Grace Wanjiku',
-      skills: ['Plumbing', 'Water Systems'],
-      experience: '3 years',
-      location: 'Kibera, Nairobi',
-      rating: 4.6,
-      completedJobs: 18,
-      availability: 'Busy until Feb 15',
-      phone: '+254 723 456 789'
+  const hasAppliedToJob = (jobId: string) => {
+    return applications.some(app => app.job_id === jobId);
+  };
+
+  const handleJobApplication = async (jobId: string) => {
+    if (!user) {
+      toast({
+        title: "Login Required",
+        description: "Please log in to apply for jobs.",
+        variant: "destructive"
+      });
+      return;
     }
-  ];
 
-  const handleJobApplication = (jobId: number) => {
-    toast({
-      title: "Application submitted!",
-      description: "You will be contacted if selected for this opportunity.",
-    });
-  };
-
-  const handleViewJobDetails = (jobId: number) => {
-    toast({
-      title: "Job Details",
-      description: "Full job details will be displayed. Check the skills required and location.",
-    });
-  };
-
-  const handleViewWorkerProfile = (workerId: number) => {
-    toast({
-      title: "Worker Profile",
-      description: "Complete worker profile with contact information and job history.",
-    });
-  };
-
-  const handleContactWorker = (workerId: number, phone: string) => {
-    toast({
-      title: "Contact Info",
-      description: `Call ${phone} to reach this worker.`,
-    });
-  };
-
-  const handleUpdateSkillsProfile = () => {
-    toast({
-      title: "Profile Updated!",
-      description: "Your skills profile has been saved. You'll receive job matches soon.",
-    });
-  };
-
-  const getUrgencyColor = (urgency: string) => {
-    switch (urgency) {
-      case 'Critical': return 'bg-red-100 text-red-800';
-      case 'High': return 'bg-orange-100 text-orange-800';
-      case 'Medium': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
+    if (hasAppliedToJob(jobId)) {
+      toast({
+        title: "Already Applied",
+        description: "You have already applied to this job.",
+        variant: "destructive"
+      });
+      return;
     }
+
+    setIsApplying(true);
+    try {
+      const { error } = await supabase
+        .from('job_applications')
+        .insert({
+          job_id: jobId,
+          applicant_id: user.id,
+          application_message: 'Application submitted via workforce portal'
+        });
+
+      if (error) throw error;
+
+      // Update local state
+      setApplications([...applications, {
+        id: crypto.randomUUID(),
+        job_id: jobId,
+        applicant_id: user.id,
+        status: 'pending'
+      }]);
+
+      toast({
+        title: "Application Submitted!",
+        description: "Your application has been submitted. You will be notified when reviewed.",
+      });
+
+      setShowJobModal(false);
+    } catch (error: any) {
+      console.error('Error applying for job:', error);
+      toast({
+        title: "Application Failed",
+        description: error.message || "Failed to submit application. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsApplying(false);
+    }
+  };
+
+  const handleViewJobDetails = (job: Job) => {
+    setSelectedJob(job);
+    setShowJobModal(true);
+  };
+
+  const handleSkillToggle = (skill: string) => {
+    setSelectedSkills(prev => 
+      prev.includes(skill) 
+        ? prev.filter(s => s !== skill)
+        : [...prev, skill]
+    );
+  };
+
+  const handleUpdateSkillsProfile = async () => {
+    if (!user) {
+      toast({
+        title: "Login Required",
+        description: "Please log in to register your skills.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (selectedSkills.length === 0) {
+      toast({
+        title: "Select Skills",
+        description: "Please select at least one skill.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      // Check if worker profile exists
+      const { data: existing } = await supabase
+        .from('citizen_workers')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (existing) {
+        // Update existing profile
+        const { error } = await supabase
+          .from('citizen_workers')
+          .update({
+            skills: selectedSkills,
+            experience_years: experience ? parseInt(experience) : null,
+            phone_number: phone || undefined,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', user.id);
+
+        if (error) throw error;
+      } else {
+        // Create new profile
+        const { error } = await supabase
+          .from('citizen_workers')
+          .insert({
+            user_id: user.id,
+            skills: selectedSkills,
+            experience_years: experience ? parseInt(experience) : 0,
+            phone_number: phone || '0700000000',
+            county: 'Nairobi', // Default, should be from user profile
+            availability_status: 'available'
+          });
+
+        if (error) throw error;
+      }
+
+      toast({
+        title: "Profile Updated!",
+        description: "Your skills profile has been saved. You'll receive job matches soon.",
+      });
+    } catch (error: any) {
+      console.error('Error updating skills:', error);
+      toast({
+        title: "Update Failed",
+        description: error.message || "Failed to update skills profile.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleContactWorker = (phone: string) => {
+    window.location.href = `tel:${phone}`;
+  };
+
+  const getWageDisplay = (job: Job) => {
+    if (job.wage_min && job.wage_max) {
+      return `KES ${job.wage_min.toLocaleString()} - ${job.wage_max.toLocaleString()}/day`;
+    }
+    if (job.wage_min) {
+      return `From KES ${job.wage_min.toLocaleString()}/day`;
+    }
+    return 'Negotiable';
   };
 
   return (
@@ -149,96 +292,116 @@ const WorkforceIntegration = () => {
             <Users className="h-6 w-6 mr-3 text-green-600" />
             Citizen Workforce Integration
           </CardTitle>
-          <p className="text-gray-600 mt-2">
+          <p className="text-muted-foreground mt-2">
             Connect skilled citizens with local infrastructure projects. Register your skills and find opportunities in your community.
           </p>
         </CardHeader>
       </Card>
 
       <Tabs defaultValue="jobs" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3 bg-white shadow-lg">
+        <TabsList className="grid w-full grid-cols-3 bg-card shadow-lg">
           <TabsTrigger value="jobs">Available Jobs</TabsTrigger>
           <TabsTrigger value="skills">Skills Registry</TabsTrigger>
           <TabsTrigger value="workers">Local Workers</TabsTrigger>
         </TabsList>
 
         <TabsContent value="jobs" className="space-y-6">
-          <div className="grid gap-6">
-            {availableJobs.map((job) => (
-              <Card key={job.id} className="shadow-lg hover:shadow-xl transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex flex-col lg:flex-row justify-between items-start gap-4">
-                    <div className="flex-1 space-y-3">
-                      <div className="flex items-start justify-between">
-                        <h3 className="text-xl font-semibold text-gray-900">{job.title}</h3>
-                        <Badge className={getUrgencyColor(job.urgency)}>
-                          {job.urgency}
-                        </Badge>
-                      </div>
+          {loading ? (
+            <Card>
+              <CardContent className="p-8 flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </CardContent>
+            </Card>
+          ) : jobs.length === 0 ? (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No Jobs Available</h3>
+                <p className="text-muted-foreground">
+                  There are no open job opportunities at the moment. Check back later or register your skills to get notified.
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-6">
+              {jobs.map((job) => {
+                const hasApplied = hasAppliedToJob(job.id);
+                return (
+                  <Card key={job.id} className="shadow-lg hover:shadow-xl transition-shadow">
+                    <CardContent className="p-6">
+                      <div className="flex flex-col lg:flex-row justify-between items-start gap-4">
+                        <div className="flex-1 space-y-3">
+                          <div className="flex items-start justify-between">
+                            <h3 className="text-xl font-semibold">{job.title}</h3>
+                            {hasApplied && (
+                              <Badge className="bg-green-100 text-green-800">
+                                Applied
+                              </Badge>
+                            )}
+                          </div>
 
-                      <div className="flex items-center text-gray-600">
-                        <MapPin className="h-4 w-4 mr-2" />
-                        {job.location}
-                      </div>
+                          <div className="flex items-center text-muted-foreground">
+                            <MapPin className="h-4 w-4 mr-2" />
+                            {job.location}
+                          </div>
 
-                      <p className="text-gray-700">{job.description}</p>
+                          <p className="text-muted-foreground">{job.description}</p>
 
-                      <div className="flex flex-wrap gap-2">
-                        <span className="text-sm text-gray-600">Skills needed:</span>
-                        {job.skillsNeeded.map((skill, index) => (
-                          <Badge key={index} variant="outline" className="text-blue-700 border-blue-300">
-                            {skill}
-                          </Badge>
-                        ))}
-                      </div>
+                          <div className="flex flex-wrap gap-2">
+                            <span className="text-sm text-muted-foreground">Skills needed:</span>
+                            {job.required_skills.map((skill, index) => (
+                              <Badge key={index} variant="outline" className="text-primary border-primary/50">
+                                {skill}
+                              </Badge>
+                            ))}
+                          </div>
 
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                        <div>
-                          <span className="text-gray-600">Duration:</span>
-                          <div className="font-medium">{job.duration}</div>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                            <div>
+                              <span className="text-muted-foreground">Duration:</span>
+                              <div className="font-medium">{job.duration_days ? `${job.duration_days} days` : 'Flexible'}</div>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Daily Rate:</span>
+                              <div className="font-medium text-green-600">{getWageDisplay(job)}</div>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Spots Available:</span>
+                              <div className="font-medium text-primary">{job.positions_available || 'Multiple'}</div>
+                            </div>
+                          </div>
                         </div>
-                        <div>
-                          <span className="text-gray-600">Daily Rate:</span>
-                          <div className="font-medium text-green-600">KES {job.dailyRate.toLocaleString()}</div>
-                        </div>
-                        <div>
-                          <span className="text-gray-600">Applicants:</span>
-                          <div className="font-medium">{job.applicants}</div>
-                        </div>
-                        <div>
-                          <span className="text-gray-600">Spots Available:</span>
-                          <div className="font-medium text-blue-600">{job.spotsAvailable}</div>
+
+                        <div className="flex flex-col space-y-2">
+                          <Button
+                            onClick={() => handleJobApplication(job.id)}
+                            className="bg-green-600 hover:bg-green-700"
+                            disabled={hasApplied || isApplying}
+                          >
+                            {hasApplied ? 'Already Applied' : 'Apply Now'}
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleViewJobDetails(job)}
+                          >
+                            View Details
+                          </Button>
                         </div>
                       </div>
-                    </div>
-
-                    <div className="flex flex-col space-y-2">
-                      <Button
-                        onClick={() => handleJobApplication(job.id)}
-                        className="bg-green-600 hover:bg-green-700"
-                      >
-                        Apply Now
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleViewJobDetails(job.id)}
-                      >
-                        View Details
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="skills" className="space-y-6">
           <Card className="shadow-lg">
             <CardHeader>
               <CardTitle>Register Your Skills</CardTitle>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-muted-foreground">
                 Add your skills to get matched with relevant job opportunities in your area.
               </p>
             </CardHeader>
@@ -262,10 +425,12 @@ const WorkforceIntegration = () => {
                               type="checkbox"
                               id={`${category.name}-${skill}`}
                               className="rounded border-gray-300"
+                              checked={selectedSkills.includes(skill)}
+                              onChange={() => handleSkillToggle(skill)}
                             />
                             <label
                               htmlFor={`${category.name}-${skill}`}
-                              className="text-sm text-gray-700 cursor-pointer"
+                              className="text-sm cursor-pointer"
                             >
                               {skill}
                             </label>
@@ -277,23 +442,40 @@ const WorkforceIntegration = () => {
                 ))}
               </div>
 
-              <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-                <h4 className="font-medium text-blue-800 mb-3">Additional Information</h4>
+              <div className="mt-6 p-4 bg-muted rounded-lg">
+                <h4 className="font-medium text-primary mb-3">Additional Information</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Years of Experience</label>
-                    <Input placeholder="e.g., 5 years" />
+                    <label className="block text-sm font-medium mb-1">Years of Experience</label>
+                    <Input 
+                      placeholder="e.g., 5" 
+                      type="number"
+                      value={experience}
+                      onChange={(e) => setExperience(e.target.value)}
+                    />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                    <Input placeholder="+254 7XX XXX XXX" />
+                    <label className="block text-sm font-medium mb-1">Phone Number</label>
+                    <Input 
+                      placeholder="+254 7XX XXX XXX" 
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                    />
                   </div>
                 </div>
                 <Button 
-                  className="mt-4 bg-blue-600 hover:bg-blue-700"
+                  className="mt-4 bg-primary hover:bg-primary/90"
                   onClick={handleUpdateSkillsProfile}
+                  disabled={isSaving}
                 >
-                  Update Skills Profile
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Update Skills Profile'
+                  )}
                 </Button>
               </div>
             </CardContent>
@@ -301,77 +483,84 @@ const WorkforceIntegration = () => {
         </TabsContent>
 
         <TabsContent value="workers" className="space-y-6">
-          <div className="grid gap-6">
-            {registeredWorkers.map((worker) => (
-              <Card key={worker.id} className="shadow-lg">
-                <CardContent className="p-6">
-                  <div className="flex flex-col lg:flex-row justify-between items-start gap-4">
-                    <div className="flex-1 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-xl font-semibold text-gray-900">{worker.name}</h3>
-                        <div className="flex items-center">
-                          <Star className="h-4 w-4 text-yellow-400 fill-current mr-1" />
-                          <span className="font-medium">{worker.rating}/5.0</span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center text-gray-600">
-                        <MapPin className="h-4 w-4 mr-2" />
-                        {worker.location}
-                      </div>
-
-                      <div className="flex flex-wrap gap-2">
-                        <span className="text-sm text-gray-600">Skills:</span>
-                        {worker.skills.map((skill, index) => (
-                          <Badge key={index} variant="outline" className="text-green-700 border-green-300">
-                            {skill}
-                          </Badge>
-                        ))}
-                      </div>
-
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                        <div>
-                          <span className="text-gray-600">Experience:</span>
-                          <div className="font-medium">{worker.experience}</div>
-                        </div>
-                        <div>
-                          <span className="text-gray-600">Completed Jobs:</span>
-                          <div className="font-medium">{worker.completedJobs}</div>
-                        </div>
-                        <div>
-                          <span className="text-gray-600">Availability:</span>
-                          <div className={`font-medium ${worker.availability === 'Available' ? 'text-green-600' : 'text-orange-600'}`}>
-                            {worker.availability}
+          {loading ? (
+            <Card>
+              <CardContent className="p-8 flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </CardContent>
+            </Card>
+          ) : workers.length === 0 ? (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No Workers Found</h3>
+                <p className="text-muted-foreground">
+                  No registered workers are currently available. Be the first to register your skills!
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-6">
+              {workers.map((worker) => (
+                <Card key={worker.id} className="shadow-lg">
+                  <CardContent className="p-6">
+                    <div className="flex flex-col lg:flex-row justify-between items-start gap-4">
+                      <div className="flex-1 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-xl font-semibold">Skilled Worker</h3>
+                          <div className="flex items-center">
+                            <Star className="h-4 w-4 text-yellow-400 fill-current mr-1" />
+                            <span className="font-medium">{worker.rating || 0}/5.0</span>
                           </div>
                         </div>
-                        <div>
-                          <span className="text-gray-600">Phone:</span>
-                          <div className="font-medium">{worker.phone}</div>
+
+                        <div className="flex items-center text-muted-foreground">
+                          <MapPin className="h-4 w-4 mr-2" />
+                          {worker.county}
+                        </div>
+
+                        <div className="flex flex-wrap gap-2">
+                          <span className="text-sm text-muted-foreground">Skills:</span>
+                          {worker.skills.map((skill, index) => (
+                            <Badge key={index} variant="outline" className="text-green-700 border-green-300">
+                              {skill}
+                            </Badge>
+                          ))}
+                        </div>
+
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                          <div>
+                            <span className="text-muted-foreground">Experience:</span>
+                            <div className="font-medium">{worker.experience_years || 0} years</div>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Completed Jobs:</span>
+                            <div className="font-medium">{worker.total_jobs_completed || 0}</div>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Availability:</span>
+                            <div className={`font-medium ${worker.availability_status === 'available' ? 'text-green-600' : 'text-orange-600'}`}>
+                              {worker.availability_status === 'available' ? 'Available' : 'Busy'}
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="flex flex-col space-y-2">
-                      <Button 
-                        className="bg-blue-600 hover:bg-blue-700"
-                        onClick={() => handleContactWorker(worker.id, worker.phone)}
-                      >
-                        <Phone className="h-4 w-4 mr-2" />
-                        Contact
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleViewWorkerProfile(worker.id)}
-                      >
-                        View Profile
-                      </Button>
+                      <div className="flex flex-col space-y-2">
+                        <Button 
+                          className="bg-primary hover:bg-primary/90"
+                          onClick={() => handleContactWorker(worker.phone_number)}
+                        >
+                          <Phone className="h-4 w-4 mr-2" />
+                          Contact
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </TabsContent>
       </Tabs>
 
@@ -409,6 +598,16 @@ const WorkforceIntegration = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Job Details Modal */}
+      <JobDetailsModal
+        isOpen={showJobModal}
+        onClose={() => setShowJobModal(false)}
+        job={selectedJob}
+        onApply={handleJobApplication}
+        hasApplied={selectedJob ? hasAppliedToJob(selectedJob.id) : false}
+        isApplying={isApplying}
+      />
     </div>
   );
 };

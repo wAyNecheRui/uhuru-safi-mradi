@@ -3,26 +3,24 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { 
   MapPin, 
   Search, 
   Clock, 
   DollarSign, 
-  User, 
-  Star, 
   CheckCircle,
   AlertTriangle,
   Eye,
   Camera,
   QrCode,
+  Star,
   TrendingUp,
-  Calendar
 } from 'lucide-react';
 import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
+import ProjectMapModal from '@/components/citizen/ProjectMapModal';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -54,7 +52,7 @@ const CitizenProjects = () => {
   const [milestones, setMilestones] = useState<{ [key: string]: Milestone[] }>({});
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [showMapModal, setShowMapModal] = useState(false);
 
   const breadcrumbItems = [
     { label: 'Home', href: '/' },
@@ -223,7 +221,7 @@ const CitizenProjects = () => {
                 </div>
                 <Button 
                   variant="outline"
-                  onClick={() => toast.info('Map view feature coming soon. Projects will be displayed on an interactive map.')}
+                  onClick={() => setShowMapModal(true)}
                 >
                   <MapPin className="h-4 w-4 mr-2" />
                   Map View
@@ -374,6 +372,13 @@ const CitizenProjects = () => {
           )}
         </ResponsiveContainer>
       </main>
+
+      {/* Map Modal */}
+      <ProjectMapModal
+        isOpen={showMapModal}
+        onClose={() => setShowMapModal(false)}
+        projects={filteredProjects}
+      />
     </div>
   );
 };
