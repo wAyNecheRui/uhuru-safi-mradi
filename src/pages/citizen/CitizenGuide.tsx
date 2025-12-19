@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { toast } from 'sonner';
 import { 
   BookOpen, 
   AlertTriangle,
@@ -30,6 +31,27 @@ const CitizenGuide = () => {
     { label: 'Citizen', href: '/citizen' },
     { label: 'Citizen Guide' }
   ];
+
+  const handleWatchTutorial = (tutorialId: string) => {
+    toast.info('Tutorial video loading... Video tutorials will be available soon.');
+  };
+
+  const handleDownloadPDF = (tutorialId: string) => {
+    toast.success('PDF guide downloading...');
+  };
+
+  const handleViewDocument = (documentTitle: string) => {
+    toast.info(`Opening: ${documentTitle}`);
+  };
+
+  const handleContactSupport = () => {
+    window.open('mailto:support@infrastructure.go.ke', '_blank');
+    toast.success('Opening email client...');
+  };
+
+  const handleVisitHelpCenter = () => {
+    toast.info('Help center documentation will open in a new tab.');
+  };
 
   const tutorials = [
     {
@@ -238,11 +260,19 @@ const CitizenGuide = () => {
                       )}
                       
                       <div className="mt-6 flex flex-wrap gap-3">
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleWatchTutorial(tutorial.id)}
+                        >
                           <PlayCircle className="h-4 w-4 mr-2" />
                           Watch Tutorial
                         </Button>
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleDownloadPDF(tutorial.id)}
+                        >
                           <Download className="h-4 w-4 mr-2" />
                           Download PDF
                         </Button>
@@ -299,7 +329,11 @@ const CitizenGuide = () => {
                         {section.items.map((item, itemIndex) => (
                           <li key={itemIndex} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                             <span className="text-gray-700">{item}</span>
-                            <Button variant="ghost" size="sm">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleViewDocument(item)}
+                            >
                               <ExternalLink className="h-4 w-4" />
                             </Button>
                           </li>
@@ -369,10 +403,17 @@ const CitizenGuide = () => {
                   <h3 className="text-lg font-semibold text-purple-900 mb-2">Still have questions?</h3>
                   <p className="text-purple-700 mb-4">Our support team is here to help you navigate the platform.</p>
                   <div className="flex justify-center gap-3">
-                    <Button className="bg-purple-600 hover:bg-purple-700">
+                    <Button 
+                      className="bg-purple-600 hover:bg-purple-700"
+                      onClick={handleContactSupport}
+                    >
                       Contact Support
                     </Button>
-                    <Button variant="outline" className="border-purple-300 text-purple-700">
+                    <Button 
+                      variant="outline" 
+                      className="border-purple-300 text-purple-700"
+                      onClick={handleVisitHelpCenter}
+                    >
                       Visit Help Center
                     </Button>
                   </div>

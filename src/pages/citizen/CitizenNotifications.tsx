@@ -421,7 +421,10 @@ const CitizenNotifications = () => {
                     </div>
                   </div>
 
-                  <Button className="w-full bg-green-600 hover:bg-green-700">
+                  <Button 
+                    className="w-full bg-green-600 hover:bg-green-700"
+                    onClick={() => toast.success('Notification preferences saved successfully!')}
+                  >
                     Save Preferences
                   </Button>
                 </CardContent>

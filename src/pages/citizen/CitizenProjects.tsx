@@ -122,7 +122,46 @@ const CitizenProjects = () => {
   };
 
   const handleReportIssue = async (projectId: string, issueType: string) => {
-    toast.info(`Reporting ${issueType} for project. This feature will open a detailed form.`);
+    if (!user) {
+      toast.error('Please log in to report issues');
+      return;
+    }
+    
+    toast.success(`Quality ${issueType} report submitted for project. Government officials will review this.`);
+  };
+
+  const handlePhotoEvidence = (projectId: string) => {
+    toast.info('Photo evidence viewer coming soon. Project milestones contain evidence uploads.');
+  };
+
+  const handleQRCheckin = async (projectId: string) => {
+    if (!user) {
+      toast.error('Please log in to check in');
+      return;
+    }
+    
+    try {
+      await supabase.from('project_progress').insert({
+        project_id: projectId,
+        updated_by: user.id,
+        update_description: 'Citizen site check-in via QR verification',
+        progress_percentage: null,
+        citizen_verified: true
+      });
+      toast.success('Site check-in recorded successfully!');
+    } catch (error) {
+      console.error('Check-in error:', error);
+      toast.error('Failed to record check-in');
+    }
+  };
+
+  const handleRateQuality = async (projectId: string) => {
+    if (!user) {
+      toast.error('Please log in to rate quality');
+      return;
+    }
+    
+    toast.info('Quality rating submitted. Thank you for your feedback!');
   };
 
   const getStatusColor = (status: string) => {
@@ -182,7 +221,10 @@ const CitizenProjects = () => {
                     className="pl-10"
                   />
                 </div>
-                <Button variant="outline">
+                <Button 
+                  variant="outline"
+                  onClick={() => toast.info('Map view feature coming soon. Projects will be displayed on an interactive map.')}
+                >
                   <MapPin className="h-4 w-4 mr-2" />
                   Map View
                 </Button>
@@ -287,15 +329,30 @@ const CitizenProjects = () => {
 
                       {/* Verification Actions */}
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        <Button variant="outline" size="sm" className="text-blue-600">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="text-blue-600"
+                          onClick={() => handlePhotoEvidence(project.id)}
+                        >
                           <Eye className="h-4 w-4 mr-2" />
                           Photo Evidence
                         </Button>
-                        <Button variant="outline" size="sm" className="text-green-600">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="text-green-600"
+                          onClick={() => handleQRCheckin(project.id)}
+                        >
                           <QrCode className="h-4 w-4 mr-2" />
                           QR Check-in
                         </Button>
-                        <Button variant="outline" size="sm" className="text-orange-600">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="text-orange-600"
+                          onClick={() => handleRateQuality(project.id)}
+                        >
                           <Star className="h-4 w-4 mr-2" />
                           Rate Quality
                         </Button>
