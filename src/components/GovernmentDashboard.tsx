@@ -457,6 +457,9 @@ const GovernmentDashboard = () => {
               ))}
             </div>
           )}
+
+          {/* Approved Reports - Ready to Open Bidding */}
+          <ApprovedReportsSection openBidding={openBidding} />
         </TabsContent>
 
         <TabsContent value="active" className="space-y-6">
