@@ -3,13 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Dialog } from '@/components/ui/dialog';
 import { Clock, DollarSign, MapPin, Calendar, Award, Loader2, Briefcase } from 'lucide-react';
 import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
+import ProgressUpdateForm from '@/components/contractor/ProgressUpdateForm';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -27,6 +25,7 @@ interface ProjectWithExtras {
   problem_reports?: { title: string; location: string | null; category: string | null } | null;
   progress?: number;
   rating?: number;
+  milestones?: { id: string; title: string; milestone_number: number; status: string }[];
 }
 
 const ContractorProjects = () => {
@@ -37,11 +36,6 @@ const ContractorProjects = () => {
   const [loading, setLoading] = useState(true);
   const [updateModalOpen, setUpdateModalOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<ProjectWithExtras | null>(null);
-  const [progressUpdate, setProgressUpdate] = useState({
-    progress: '',
-    description: '',
-  });
-  const [submitting, setSubmitting] = useState(false);
 
   const breadcrumbItems = [
     { label: 'Home', href: '/' },
@@ -77,7 +71,7 @@ const ContractorProjects = () => {
       
       const completedRaw = projects?.filter(p => p.status === 'completed') || [];
 
-      // Fetch progress for active projects and build typed array
+      // Fetch progress and milestones for active projects
       const activeWithProgress: ProjectWithExtras[] = [];
       for (const project of activeRaw) {
         const { data: progress } = await supabase
@@ -88,9 +82,16 @@ const ContractorProjects = () => {
           .limit(1)
           .single();
         
+        const { data: milestones } = await supabase
+          .from('project_milestones')
+          .select('id, title, milestone_number, status')
+          .eq('project_id', project.id)
+          .order('milestone_number', { ascending: true });
+        
         activeWithProgress.push({
           ...project,
-          progress: progress?.progress_percentage || 0
+          progress: progress?.progress_percentage || 0,
+          milestones: milestones || []
         } as ProjectWithExtras);
       }
 
@@ -126,49 +127,15 @@ const ContractorProjects = () => {
     }
   };
 
-  const handleUpdateProgress = (project: any) => {
+  const handleUpdateProgress = (project: ProjectWithExtras) => {
     setSelectedProject(project);
-    setProgressUpdate({
-      progress: project.progress?.toString() || '0',
-      description: '',
-    });
     setUpdateModalOpen(true);
   };
 
-  const submitProgressUpdate = async () => {
-    if (!selectedProject || !user) return;
-    
-    try {
-      setSubmitting(true);
-      
-      const { error } = await supabase
-        .from('project_progress')
-        .insert({
-          project_id: selectedProject.id,
-          updated_by: user.id,
-          progress_percentage: parseInt(progressUpdate.progress),
-          update_description: progressUpdate.description || 'Progress update',
-        });
-
-      if (error) throw error;
-
-      toast({
-        title: "Progress Updated",
-        description: "Your project progress has been updated successfully.",
-      });
-
-      setUpdateModalOpen(false);
-      fetchProjects();
-    } catch (error) {
-      console.error('Error updating progress:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update progress",
-        variant: "destructive"
-      });
-    } finally {
-      setSubmitting(false);
-    }
+  const handleProgressSubmitted = () => {
+    setUpdateModalOpen(false);
+    setSelectedProject(null);
+    fetchProjects();
   };
 
   const formatCurrency = (amount: number) => {
@@ -375,58 +342,16 @@ const ContractorProjects = () => {
 
       {/* Update Progress Modal */}
       <Dialog open={updateModalOpen} onOpenChange={setUpdateModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Update Project Progress</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label>Project</Label>
-              <p className="text-sm text-gray-600">{selectedProject?.title}</p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="progress">Progress Percentage (%)</Label>
-              <Input
-                id="progress"
-                type="number"
-                min="0"
-                max="100"
-                value={progressUpdate.progress}
-                onChange={(e) => setProgressUpdate(prev => ({ ...prev, progress: e.target.value }))}
-                placeholder="Enter progress percentage"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">Update Description</Label>
-              <Textarea
-                id="description"
-                value={progressUpdate.description}
-                onChange={(e) => setProgressUpdate(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Describe the work completed..."
-                rows={4}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setUpdateModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={submitProgressUpdate} 
-              disabled={submitting}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              {submitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                'Save Progress'
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
+        {selectedProject && (
+          <ProgressUpdateForm
+            projectId={selectedProject.id}
+            projectTitle={selectedProject.title}
+            currentProgress={selectedProject.progress || 0}
+            milestones={selectedProject.milestones || []}
+            onClose={() => setUpdateModalOpen(false)}
+            onSubmitted={handleProgressSubmitted}
+          />
+        )}
       </Dialog>
     </div>
   );
