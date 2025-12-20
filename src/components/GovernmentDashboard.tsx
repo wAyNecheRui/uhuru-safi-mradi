@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -21,6 +21,108 @@ import { useGovernmentDashboard } from '@/hooks/useGovernmentDashboard';
 import { SecurityMonitor } from '@/components/security/SecurityMonitor';
 import GovernmentJurisdictionSettings from '@/components/government/GovernmentJurisdictionSettings';
 import { WorkflowGuardService, WORKFLOW_STATUS, MIN_VOTES_THRESHOLD } from '@/services/WorkflowGuardService';
+import { supabase } from '@/integrations/supabase/client';
+
+// Component for Approved Reports that are ready to open for bidding
+const ApprovedReportsSection = ({ openBidding }: { openBidding: (reportId: string) => Promise<boolean> }) => {
+  const [approvedReports, setApprovedReports] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [processingId, setProcessingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchApprovedReports();
+  }, []);
+
+  const fetchApprovedReports = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('problem_reports')
+        .select('*')
+        .eq('status', 'approved')
+        .eq('bidding_status', 'not_open')
+        .order('approved_at', { ascending: false });
+
+      if (error) throw error;
+      setApprovedReports(data || []);
+    } catch (error) {
+      console.error('Error fetching approved reports:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOpenBidding = async (reportId: string) => {
+    setProcessingId(reportId);
+    try {
+      await openBidding(reportId);
+      // Remove from local list after success
+      setApprovedReports(prev => prev.filter(r => r.id !== reportId));
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Card className="shadow-lg">
+        <CardContent className="p-6 text-center">
+          <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
+          <p className="text-sm text-muted-foreground">Loading approved reports...</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (approvedReports.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="space-y-4 mt-6">
+      <h3 className="text-lg font-semibold flex items-center gap-2">
+        <PlayCircle className="h-5 w-5 text-green-600" />
+        Ready to Open Bidding ({approvedReports.length})
+      </h3>
+      <div className="grid gap-4">
+        {approvedReports.map((report) => (
+          <Card key={report.id} className="shadow-md border-l-4 border-l-green-500">
+            <CardContent className="p-4">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <h4 className="font-semibold">{report.title}</h4>
+                  <p className="text-sm text-muted-foreground">{report.location}</p>
+                  <div className="flex gap-2 mt-2">
+                    <Badge className="bg-green-100 text-green-800">Approved</Badge>
+                    <Badge variant="outline">
+                      Budget: KES {report.budget_allocated?.toLocaleString() || report.estimated_cost?.toLocaleString() || 'TBD'}
+                    </Badge>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => handleOpenBidding(report.id)}
+                  disabled={processingId === report.id}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  {processingId === report.id ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Opening...
+                    </>
+                  ) : (
+                    <>
+                      <PlayCircle className="h-4 w-4 mr-2" />
+                      Open Bidding
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 const GovernmentDashboard = () => {
   const [selectedCounty, setSelectedCounty] = useState('all');
