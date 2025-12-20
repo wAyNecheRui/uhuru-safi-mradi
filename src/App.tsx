@@ -64,6 +64,14 @@ const GovernmentUserManagement = lazy(() => import("./pages/government/Governmen
 const GovernmentBidApproval = lazy(() => import("./pages/government/GovernmentBidApproval"));
 const GovernmentMilestones = lazy(() => import("./pages/government/GovernmentMilestones"));
 const GovernmentPaymentRelease = lazy(() => import("./pages/government/GovernmentPaymentRelease"));
+const GovernmentEscrowFunding = lazy(() => import("./pages/government/GovernmentEscrowFunding"));
+const GovernmentLPO = lazy(() => import("./pages/government/GovernmentLPO"));
+
+// Public Routes
+const PublicTransparencyPortal = lazy(() => import("./pages/public/PublicTransparencyPortal"));
+
+// Dispute Resolution
+const DisputeResolution = lazy(() => import("./pages/DisputeResolution"));
 
 // Minimal loader for lazy routes
 const PageLoader = () => (
@@ -428,6 +436,33 @@ const App = () => {
                       </ProtectedRoute>
                     }
                   />
+                  <Route
+                    path="/government/escrow-funding"
+                    element={
+                      <ProtectedRoute allowedRoles={["government", "admin"]}>
+                        <GovernmentEscrowFunding />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/government/lpo"
+                    element={
+                      <ProtectedRoute allowedRoles={["government", "admin"]}>
+                        <GovernmentLPO />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/disputes"
+                    element={
+                      <ProtectedRoute>
+                        <DisputeResolution />
+                      </ProtectedRoute>
+                    }
+                  />
+                  
+                  {/* Public Routes */}
+                  <Route path="/transparency" element={<PublicTransparencyPortal />} />
                   
                   {/* Catch-all route */}
                   <Route path="*" element={<NotFound />} />
