@@ -76,11 +76,12 @@ const ContractorBidding = () => {
     try {
       setLoading(true);
       
-      // Fetch approved problems that are open for bidding (with bidding window info)
+      // Fetch problems that are open for bidding (status = 'bidding_open')
+      // Only show projects that have been approved AND opened for bidding
       const { data: problemsData, error: problemsError } = await supabase
         .from('problem_reports')
         .select('*')
-        .eq('status', 'approved')
+        .eq('status', 'bidding_open')
         .order('priority_score', { ascending: false });
 
       if (problemsError) throw problemsError;
