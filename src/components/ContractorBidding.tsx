@@ -248,7 +248,7 @@ const ContractorBidding = () => {
       WORKFLOW_STATUS.CONTRACTOR_SELECTED,
       WORKFLOW_STATUS.IN_PROGRESS
     ];
-    const index = steps.indexOf(status as typeof WORKFLOW_STATUS[keyof typeof WORKFLOW_STATUS] || WORKFLOW_STATUS.PENDING);
+    const index = steps.indexOf(status as typeof steps[number]);
     return index >= 0 ? index : 0;
   };
 
