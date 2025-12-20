@@ -1,10 +1,4 @@
-
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
+import { supabase } from '@/integrations/supabase/client';
 
 export interface EscrowAccount {
   id: string;
@@ -105,7 +99,7 @@ export class EscrowService {
       throw new Error(error.message);
     }
 
-    return data;
+    return data as unknown as EscrowAccount;
   }
 
   // Get payment transactions
@@ -120,6 +114,6 @@ export class EscrowService {
       throw new Error(error.message);
     }
 
-    return data || [];
+    return (data || []) as unknown as PaymentTransaction[];
   }
 }

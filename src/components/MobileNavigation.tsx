@@ -30,6 +30,7 @@ const MobileNavigation = ({ onNavigate }: MobileNavigationProps) => {
   const menuItems = [
     { label: 'Home', path: '/' },
     { label: 'Contractors', path: '/contractor-database' },
+    { label: 'Transparency Portal', path: '/transparency' },
     { label: 'About', path: '/about' },
     { label: 'Contact', path: '/contact' },
     { label: 'Sign In', path: '/auth' },
