@@ -1,9 +1,9 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Progress } from '@/components/ui/progress';
 import { 
   ThumbsUp, 
   ThumbsDown, 
@@ -15,12 +15,14 @@ import {
   TrendingUp,
   Navigation,
   Loader2,
-  Filter
+  Filter,
+  Info
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useLocationFiltering, ProblemWithDistance } from '@/hooks/useLocationFiltering';
+import { WorkflowGuardService, MIN_VOTES_THRESHOLD, WORKFLOW_STATUS } from '@/services/WorkflowGuardService';
 
 interface ProblemReport {
   id: string;
@@ -142,14 +144,15 @@ const CommunityValidation = () => {
     }
   }, [userLocation, fetchReportsWithDistance]);
 
-  // Fallback fetch without distance
+  // Fallback fetch without distance - only fetch pending reports for voting
   const fetchReportsWithoutDistance = useCallback(async () => {
     setLoading(true);
     try {
+      // Only fetch reports that are pending (awaiting community votes)
       const { data, error } = await supabase
         .from('problem_reports')
         .select('*')
-        .eq('status', 'pending')
+        .eq('status', WORKFLOW_STATUS.PENDING)
         .order('priority_score', { ascending: false })
         .order('created_at', { ascending: false });
 
@@ -227,6 +230,7 @@ const CommunityValidation = () => {
       if (error) throw error;
 
       // Update local state immediately for better UX
+      let newTotalVotes = 0;
       setReports(prev => prev.map(report => {
         if (report.id === reportId) {
           const wasUpvote = report.user_vote === 'upvote';
@@ -243,6 +247,8 @@ const CommunityValidation = () => {
           if (voteType === 'upvote') newUpvotes++;
           if (voteType === 'downvote') newDownvotes++;
           
+          newTotalVotes = newUpvotes + newDownvotes;
+          
           return { 
             ...report, 
             user_vote: voteType,
@@ -254,7 +260,18 @@ const CommunityValidation = () => {
         return report;
       }));
 
-      toast.success(`Vote submitted successfully`);
+      // Check if this vote triggers a status change (reaches 50 votes threshold)
+      const statusResult = await WorkflowGuardService.checkAndUpdateStatusAfterVote(reportId);
+      
+      if (statusResult.statusChanged) {
+        toast.success('Vote submitted! This report has reached the review threshold and will now be reviewed by government officials.', {
+          duration: 5000
+        });
+        // Remove this report from the list as it's now under_review
+        setReports(prev => prev.filter(r => r.id !== reportId));
+      } else {
+        toast.success(`Vote submitted successfully`);
+      }
     } catch (error: any) {
       console.error('Voting error:', error);
       toast.error('Failed to submit vote');
@@ -513,6 +530,23 @@ const CommunityValidation = () => {
                   <ThumbsDown className="h-3 w-3 mr-1" />
                   {report.downvotes}
                 </div>
+              </div>
+              
+              {/* Vote Progress to Government Review */}
+              <div className="mt-3 space-y-1">
+                <div className="flex justify-between text-xs text-gray-600">
+                  <span>Progress to Review</span>
+                  <span>{Math.min(report.upvotes + report.downvotes, MIN_VOTES_THRESHOLD)}/{MIN_VOTES_THRESHOLD}</span>
+                </div>
+                <Progress 
+                  value={Math.min(((report.upvotes + report.downvotes) / MIN_VOTES_THRESHOLD) * 100, 100)} 
+                  className="h-2"
+                />
+                <p className="text-xs text-gray-500">
+                  {report.upvotes + report.downvotes >= MIN_VOTES_THRESHOLD 
+                    ? '✓ Ready for government review' 
+                    : `${MIN_VOTES_THRESHOLD - (report.upvotes + report.downvotes)} more votes needed`}
+                </p>
               </div>
             </div>
 
