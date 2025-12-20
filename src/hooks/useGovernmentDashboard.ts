@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { WorkflowGuardService, WORKFLOW_STATUS } from '@/services/WorkflowGuardService';
 
 export const useGovernmentDashboard = () => {
   const [pendingApprovals, setPendingApprovals] = useState([]);
@@ -23,15 +24,17 @@ export const useGovernmentDashboard = () => {
     try {
       setLoading(true);
 
-      // Fetch pending approvals (reports with bids)
+      // Fetch reports that are UNDER_REVIEW (passed 50-vote threshold, ready for government approval)
+      // NOT 'pending' - those are still collecting votes
       const { data: pendingData } = await supabase
         .from('problem_reports')
         .select(`
           *,
-          contractor_bids(*)
+          contractor_bids(*),
+          community_votes(vote_type)
         `)
-        .eq('status', 'pending')
-        .order('created_at', { ascending: false });
+        .eq('status', WORKFLOW_STATUS.UNDER_REVIEW)
+        .order('priority_score', { ascending: false });
 
       // Fetch active projects
       const { data: activeData } = await supabase
@@ -67,7 +70,14 @@ export const useGovernmentDashboard = () => {
         });
       }
 
-      setPendingApprovals(pendingData || []);
+      // Add vote counts to pending data
+      const pendingWithVotes = (pendingData || []).map((report: any) => ({
+        ...report,
+        vote_count: report.community_votes?.length || 0,
+        upvotes: report.community_votes?.filter((v: any) => v.vote_type === 'upvote').length || 0
+      }));
+
+      setPendingApprovals(pendingWithVotes);
       setActiveProjects(activeData || []);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -83,26 +93,45 @@ export const useGovernmentDashboard = () => {
 
   const handleApproval = async (projectId: string, action: 'approve' | 'reject' | 'request_more_info') => {
     try {
-      const actionMessages = {
-        approve: 'Project approved! Escrow funds will be released to contractor.',
-        reject: 'Project rejected. Community and contractor will be notified.',
-        request_more_info: 'Additional information requested from contractor.'
-      };
+      if (action === 'approve') {
+        // Use WorkflowGuardService to ensure proper transition
+        const result = await WorkflowGuardService.approveReport(projectId);
+        
+        if (!result.success) {
+          toast({
+            title: "Cannot Approve",
+            description: result.error,
+            variant: "destructive"
+          });
+          return;
+        }
 
-      // Update report status
-      await supabase
-        .from('problem_reports')
-        .update({ 
-          status: action === 'approve' ? 'approved' : 'rejected',
-          approved_at: action === 'approve' ? new Date().toISOString() : null,
-          approved_by: action === 'approve' ? (await supabase.auth.getUser()).data.user?.id : null
-        })
-        .eq('id', projectId);
+        toast({
+          title: "Report Approved",
+          description: "The report has been approved. You can now open bidding for this project.",
+        });
+      } else if (action === 'reject') {
+        // Update to rejected status
+        const { error } = await supabase
+          .from('problem_reports')
+          .update({ 
+            status: WORKFLOW_STATUS.REJECTED,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', projectId);
 
-      toast({
-        title: `Project ${action.replace('_', ' ')}`,
-        description: actionMessages[action],
-      });
+        if (error) throw error;
+
+        toast({
+          title: "Report Rejected",
+          description: "The report has been rejected. Community and reporter will be notified.",
+        });
+      } else {
+        toast({
+          title: "Information Requested",
+          description: "Additional information has been requested from the reporter.",
+        });
+      }
 
       fetchDashboardData(); // Refresh data
     } catch (error) {
@@ -115,11 +144,34 @@ export const useGovernmentDashboard = () => {
     }
   };
 
+  const openBidding = async (reportId: string) => {
+    const result = await WorkflowGuardService.openBidding(reportId);
+    
+    if (!result.success) {
+      toast({
+        title: "Cannot Open Bidding",
+        description: result.error,
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    toast({
+      title: "Bidding Opened",
+      description: "Contractors can now submit bids for this project.",
+    });
+    
+    fetchDashboardData();
+    return true;
+  };
+
   return {
     pendingApprovals,
     activeProjects,
     budgetOverview,
     loading,
-    handleApproval
+    handleApproval,
+    openBidding,
+    refreshData: fetchDashboardData
   };
 };

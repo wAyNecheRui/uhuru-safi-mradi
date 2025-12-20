@@ -5,22 +5,36 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { 
   Shield, CheckCircle, Clock, AlertTriangle, Users, DollarSign, FileText, 
   Gavel, Loader2, Eye, CreditCard, Wallet, Briefcase, BarChart3, 
-  ClipboardCheck, UserCog, Building2, Scale, Globe, Lock, FolderOpen, Image
+  ClipboardCheck, UserCog, Building2, Scale, Globe, Lock, FolderOpen, Image,
+  PlayCircle, XCircle
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useGovernmentDashboard } from '@/hooks/useGovernmentDashboard';
 import { SecurityMonitor } from '@/components/security/SecurityMonitor';
 import GovernmentJurisdictionSettings from '@/components/government/GovernmentJurisdictionSettings';
+import { WorkflowGuardService, WORKFLOW_STATUS, MIN_VOTES_THRESHOLD } from '@/services/WorkflowGuardService';
 
 const GovernmentDashboard = () => {
   const [selectedCounty, setSelectedCounty] = useState('all');
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { pendingApprovals, activeProjects, budgetOverview, loading, handleApproval } = useGovernmentDashboard();
+  const { pendingApprovals, activeProjects, budgetOverview, loading, handleApproval, openBidding } = useGovernmentDashboard();
+  
+  // Dialog states
+  const [approveDialogOpen, setApproveDialogOpen] = useState(false);
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [selectedReport, setSelectedReport] = useState<any>(null);
+  const [budgetAmount, setBudgetAmount] = useState('');
+  const [rejectReason, setRejectReason] = useState('');
+  const [processing, setProcessing] = useState(false);
 
   if (loading) {
     return (
@@ -36,31 +50,71 @@ const GovernmentDashboard = () => {
   }
 
   const getUrgencyColor = (urgency: string) => {
-    switch (urgency) {
-      case 'Critical': return 'bg-red-100 text-red-800 border-red-200';
-      case 'High': return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'Medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'Low': return 'bg-green-100 text-green-800 border-green-200';
+    switch (urgency?.toLowerCase()) {
+      case 'critical': return 'bg-red-100 text-red-800 border-red-200';
+      case 'high': return 'bg-orange-100 text-orange-800 border-orange-200';
+      case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'low': return 'bg-green-100 text-green-800 border-green-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
-  const getRiskColor = (risk: string) => {
-    switch (risk) {
-      case 'High': return 'bg-red-100 text-red-800';
-      case 'Medium': return 'bg-yellow-100 text-yellow-800';
-      case 'Low': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
+  const handleApproveClick = (project: any) => {
+    setSelectedReport(project);
+    setBudgetAmount(project.estimated_cost?.toString() || '');
+    setApproveDialogOpen(true);
+  };
+
+  const handleRejectClick = (project: any) => {
+    setSelectedReport(project);
+    setRejectReason('');
+    setRejectDialogOpen(true);
+  };
+
+  const confirmApproval = async () => {
+    if (!selectedReport) return;
+    
+    setProcessing(true);
+    try {
+      // First update budget if provided
+      if (budgetAmount) {
+        const { supabase } = await import('@/integrations/supabase/client');
+        await supabase
+          .from('problem_reports')
+          .update({ 
+            estimated_cost: parseFloat(budgetAmount.replace(/,/g, '')),
+            budget_allocated: parseFloat(budgetAmount.replace(/,/g, ''))
+          })
+          .eq('id', selectedReport.id);
+      }
+      
+      await handleApproval(selectedReport.id, 'approve');
+      setApproveDialogOpen(false);
+      setSelectedReport(null);
+    } catch (error) {
+      console.error('Approval error:', error);
+    } finally {
+      setProcessing(false);
     }
   };
 
-  const getRecommendationColor = (recommendation: string) => {
-    switch (recommendation) {
-      case 'APPROVE': return 'bg-green-100 text-green-800';
-      case 'REVIEW': return 'bg-yellow-100 text-yellow-800';
-      case 'REJECT': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+  const confirmRejection = async () => {
+    if (!selectedReport) return;
+    
+    setProcessing(true);
+    try {
+      await handleApproval(selectedReport.id, 'reject');
+      setRejectDialogOpen(false);
+      setSelectedReport(null);
+    } catch (error) {
+      console.error('Rejection error:', error);
+    } finally {
+      setProcessing(false);
     }
+  };
+
+  const handleOpenBidding = async (reportId: string) => {
+    await openBidding(reportId);
   };
 
   const quickActions = [
@@ -210,7 +264,7 @@ const GovernmentDashboard = () => {
             value="approvals" 
             className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
           >
-            Pending Approvals ({pendingApprovals.length})
+            Ready for Approval ({pendingApprovals.length})
           </TabsTrigger>
           <TabsTrigger 
             value="active" 
@@ -234,197 +288,241 @@ const GovernmentDashboard = () => {
         </TabsList>
 
         <TabsContent value="approvals" className="space-y-6">
-          <div className="grid gap-6">
-            {pendingApprovals.map((project) => (
-              <Card key={project.id} className="shadow-lg border-l-4 border-l-orange-500">
-                <CardContent className="p-6">
-                  <div className="space-y-4">
-                    <div className="flex flex-wrap items-start justify-between gap-2">
-                       <h3 className="text-xl font-semibold text-gray-900">{project.title}</h3>
-                      <div className="flex gap-2">
-                        <Badge className={getUrgencyColor(project.priority || 'medium')}>
-                          {(project.priority || 'medium').toUpperCase()} Priority
-                        </Badge>
-                        <Badge className={getRiskColor('low')}>
-                          Low Risk
-                        </Badge>
-                        <Badge className={getRecommendationColor('approve')}>
-                          AI: APPROVE
-                        </Badge>
-                      </div>
-                    </div>
+          {/* Info Banner */}
+          <Card className="bg-blue-50 border-blue-200">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <CheckCircle className="h-5 w-5 text-blue-600 mt-0.5" />
+                <div>
+                  <h4 className="font-semibold text-blue-900">Community Validated Reports</h4>
+                  <p className="text-sm text-blue-700">
+                    These reports have received at least {MIN_VOTES_THRESHOLD} community votes and are ready for your review and approval.
+                    Only reports in "Under Review" status appear here.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                      <div>
-                        <span className="text-sm font-medium text-gray-700">Location:</span>
-                        <div className="text-gray-900">{project.location || 'Not specified'}</div>
-                      </div>
-                      <div>
-                        <span className="text-sm font-medium text-gray-700">Budget:</span>
-                        <div className="text-green-600 font-semibold">
-                          {new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES' }).format(project.budget_allocated || 0)}
+          {pendingApprovals.length === 0 ? (
+            <Card className="shadow-lg">
+              <CardContent className="p-8 text-center">
+                <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No Reports Pending Approval</h3>
+                <p className="text-muted-foreground">
+                  Reports that receive {MIN_VOTES_THRESHOLD}+ community votes will appear here for your review.
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-6">
+              {pendingApprovals.map((project: any) => (
+                <Card key={project.id} className="shadow-lg border-l-4 border-l-blue-500">
+                  <CardContent className="p-6">
+                    <div className="space-y-4">
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <h3 className="text-xl font-semibold text-gray-900">{project.title}</h3>
+                        <div className="flex gap-2">
+                          <Badge className="bg-blue-100 text-blue-800">
+                            Under Review
+                          </Badge>
+                          <Badge className={getUrgencyColor(project.priority || 'medium')}>
+                            {(project.priority || 'medium').toUpperCase()} Priority
+                          </Badge>
                         </div>
                       </div>
-                      <div>
-                        <span className="text-sm font-medium text-gray-700">Selected Contractor:</span>
-                        <div className="text-gray-900">
-                          {project.contractor_bids?.[0] ? 'Contractor Selected' : 'No bids yet'}
+
+                      <p className="text-gray-600">{project.description}</p>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div>
+                          <span className="text-sm font-medium text-gray-700">Location:</span>
+                          <div className="text-gray-900">{project.location || 'Not specified'}</div>
+                        </div>
+                        <div>
+                          <span className="text-sm font-medium text-gray-700">Estimated Cost:</span>
+                          <div className="text-green-600 font-semibold">
+                            {project.estimated_cost ? 
+                              new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES' }).format(project.estimated_cost) : 
+                              'Not estimated'
+                            }
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-sm font-medium text-gray-700">Community Votes:</span>
+                          <div className="text-blue-600 font-semibold flex items-center gap-1">
+                            <Users className="h-4 w-4" />
+                            {project.vote_count || 0} votes
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-sm font-medium text-gray-700">Reported:</span>
+                          <div className="text-gray-900">
+                            {new Date(project.created_at).toLocaleDateString()}
+                          </div>
                         </div>
                       </div>
-                      <div>
-                        <span className="text-sm font-medium text-gray-700">Bid Amount:</span>
-                        <div className="text-blue-600 font-semibold">
-                          {project.contractor_bids?.[0] ? 
-                            new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES' }).format(project.contractor_bids[0].bid_amount) : 
-                            'N/A'
-                          }
+
+                      {/* Verification Checklist */}
+                      <div className="p-4 bg-gray-50 rounded-lg">
+                        <h4 className="font-semibold mb-3">Approval Checklist</h4>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                          <div className="flex items-center gap-2">
+                            {(project.vote_count || 0) >= MIN_VOTES_THRESHOLD ? (
+                              <CheckCircle className="h-4 w-4 text-green-600" />
+                            ) : (
+                              <XCircle className="h-4 w-4 text-red-500" />
+                            )}
+                            <span className="text-sm">{MIN_VOTES_THRESHOLD}+ Votes</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {project.coordinates || project.gps_coordinates ? (
+                              <CheckCircle className="h-4 w-4 text-green-600" />
+                            ) : (
+                              <XCircle className="h-4 w-4 text-red-500" />
+                            )}
+                            <span className="text-sm">GPS Location</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {(project.photo_urls?.length > 0 || project.video_urls?.length > 0) ? (
+                              <CheckCircle className="h-4 w-4 text-green-600" />
+                            ) : (
+                              <XCircle className="h-4 w-4 text-red-500" />
+                            )}
+                            <span className="text-sm">Media Evidence</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {project.estimated_cost ? (
+                              <CheckCircle className="h-4 w-4 text-green-600" />
+                            ) : (
+                              <XCircle className="h-4 w-4 text-red-500" />
+                            )}
+                            <span className="text-sm">Cost Estimate</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
-                      <div className="text-center">
-                        <Users className="h-5 w-5 mx-auto mb-1 text-blue-600" />
-                        <div className="font-semibold">{project.priority_score || 0}</div>
-                        <div className="text-xs text-gray-600">Community Votes</div>
-                      </div>
-                      <div className="text-center">
-                        <Clock className="h-5 w-5 mx-auto mb-1 text-orange-600" />
-                        <div className="font-semibold">{project.affected_population || 0}</div>
-                        <div className="text-xs text-gray-600">Affected Population</div>
-                      </div>
-                      <div className="text-center">
-                        <Image className="h-5 w-5 mx-auto mb-1 text-purple-600" />
-                        <div className="font-semibold">{(project.photo_urls?.length || 0) + (project.video_urls?.length || 0)}</div>
-                        <div className="text-xs text-gray-600">Uploaded Files</div>
-                      </div>
-                    </div>
-
-                    {/* Show photos if available */}
-                    {project.photo_urls && project.photo_urls.length > 0 && (
-                      <div className="space-y-2">
-                        <span className="text-sm font-medium text-gray-700">Evidence Photos:</span>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                          {project.photo_urls.slice(0, 4).map((url: string, index: number) => (
-                            <a 
-                              key={index} 
-                              href={url} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="block aspect-square rounded-lg overflow-hidden border hover:shadow-lg transition-shadow"
-                            >
-                              <img 
-                                src={url} 
-                                alt={`Evidence ${index + 1}`}
-                                className="w-full h-full object-cover"
-                              />
-                            </a>
-                          ))}
+                      {/* Show photos if available */}
+                      {project.photo_urls && project.photo_urls.length > 0 && (
+                        <div className="space-y-2">
+                          <span className="text-sm font-medium text-gray-700">Evidence Photos:</span>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                            {project.photo_urls.slice(0, 4).map((url: string, index: number) => (
+                              <a 
+                                key={index} 
+                                href={url} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="block aspect-square rounded-lg overflow-hidden border hover:shadow-lg transition-shadow"
+                              >
+                                <img 
+                                  src={url} 
+                                  alt={`Evidence ${index + 1}`}
+                                  className="w-full h-full object-cover"
+                                />
+                              </a>
+                            ))}
+                          </div>
                         </div>
-                        {project.photo_urls.length > 4 && (
-                          <p className="text-sm text-gray-500">+ {project.photo_urls.length - 4} more photos</p>
-                        )}
-                      </div>
-                    )}
+                      )}
 
-                    <div className="flex flex-wrap gap-3 pt-4 border-t">
-                      <Button
-                        onClick={() => handleApproval(project.id, 'approve')}
-                        className="bg-green-600 hover:bg-green-700 text-white"
-                      >
-                        <CheckCircle className="h-4 w-4 mr-2" />
-                        Approve Project
-                      </Button>
-                      <Button
-                        onClick={() => handleApproval(project.id, 'request_more_info')}
-                        variant="outline"
-                        className="border-yellow-500 text-yellow-700 hover:bg-yellow-50"
-                      >
-                        <FileText className="h-4 w-4 mr-2" />
-                        Request Info
-                      </Button>
-                      <Button
-                        onClick={() => handleApproval(project.id, 'reject')}
-                        variant="outline"
-                        className="border-red-500 text-red-700 hover:bg-red-50"
-                      >
-                        <AlertTriangle className="h-4 w-4 mr-2" />
-                        Reject
-                      </Button>
+                      <div className="flex flex-wrap gap-3 pt-4 border-t">
+                        <Button
+                          onClick={() => handleApproveClick(project)}
+                          className="bg-green-600 hover:bg-green-700 text-white"
+                        >
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                          Approve Report
+                        </Button>
+                        <Button
+                          onClick={() => handleApproval(project.id, 'request_more_info')}
+                          variant="outline"
+                          className="border-yellow-500 text-yellow-700 hover:bg-yellow-50"
+                        >
+                          <FileText className="h-4 w-4 mr-2" />
+                          Request Info
+                        </Button>
+                        <Button
+                          onClick={() => handleRejectClick(project)}
+                          variant="outline"
+                          className="border-red-500 text-red-700 hover:bg-red-50"
+                        >
+                          <AlertTriangle className="h-4 w-4 mr-2" />
+                          Reject
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="active" className="space-y-6">
-          <div className="grid gap-6">
-            {activeProjects.map((project) => (
-              <Card key={project.id} className="shadow-lg border-l-4 border-l-green-500">
-                <CardContent className="p-6">
-                  <div className="space-y-4">
-                    <div className="flex flex-wrap items-start justify-between gap-2">
-                       <h3 className="text-xl font-semibold text-gray-900">{project.title}</h3>
-                      <div className="flex gap-2">
+          {activeProjects.length === 0 ? (
+            <Card className="shadow-lg">
+              <CardContent className="p-8 text-center">
+                <Briefcase className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No Active Projects</h3>
+                <p className="text-muted-foreground">
+                  Projects will appear here once contractors are selected and work begins.
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-6">
+              {activeProjects.map((project: any) => (
+                <Card key={project.id} className="shadow-lg border-l-4 border-l-green-500">
+                  <CardContent className="p-6">
+                    <div className="space-y-4">
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <h3 className="text-xl font-semibold text-gray-900">{project.title}</h3>
                         <Badge className="bg-green-100 text-green-800">
-                          {project.status}
+                          {project.status?.replace('_', ' ').toUpperCase()}
                         </Badge>
-                        {(project.issues || 0) > 0 && (
-                          <Badge className="bg-red-100 text-red-800">
-                            {project.issues} Issues
-                          </Badge>
-                        )}
                       </div>
-                    </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-                      <div>
-                        <span className="font-medium text-gray-700">Location:</span>
-                        <div>{project.problem_reports?.location || 'Not specified'}</div>
-                      </div>
-                      <div>
-                        <span className="font-medium text-gray-700">Contractor:</span>
-                        <div>Contractor assigned</div>
-                      </div>
-                      <div>
-                        <span className="font-medium text-gray-700">Budget:</span>
-                        <div className="text-green-600 font-semibold">
-                          {new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES' }).format(project.budget || 0)}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <span className="text-sm font-medium text-gray-700">Budget:</span>
+                          <div className="text-green-600 font-semibold">
+                            {project.budget ? 
+                              new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES' }).format(project.budget) : 
+                              'TBD'
+                            }
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-sm font-medium text-gray-700">Location:</span>
+                          <div className="text-gray-900">
+                            {project.problem_reports?.location || 'Not specified'}
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-sm font-medium text-gray-700">Started:</span>
+                          <div className="text-gray-900">
+                            {new Date(project.created_at).toLocaleDateString()}
+                          </div>
                         </div>
                       </div>
-                      <div>
-                        <span className="font-medium text-gray-700">Expected Completion:</span>
-                        <div>{new Date(project.created_at).toLocaleDateString()}</div>
-                      </div>
-                    </div>
 
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium text-gray-700">Project Status</span>
-                        <Badge className="bg-blue-100 text-blue-800">{project.status}</Badge>
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        Started: {new Date(project.created_at).toLocaleDateString()}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-4 border-t">
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => navigate(`/government/portfolio`)}
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
                           View Details
                         </Button>
-                        <Button variant="outline" size="sm">
-                          Site Inspection
-                        </Button>
                       </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="security" className="space-y-6">
@@ -432,66 +530,99 @@ const GovernmentDashboard = () => {
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Summary</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 text-center">
-                <div className="p-3 bg-blue-50 rounded-lg">
-                  <div className="text-2xl font-bold text-blue-600">{activeProjects.length}</div>
-                  <div className="text-xs text-blue-700">Active Projects</div>
-                </div>
-                <div className="p-3 bg-orange-50 rounded-lg">
-                  <div className="text-2xl font-bold text-orange-600">{pendingApprovals.length}</div>
-                  <div className="text-xs text-orange-700">Pending Approvals</div>
-                </div>
-              </div>
-              <p className="text-sm text-gray-600 text-center">
-                View detailed analytics in the Analytics & Reporting module.
+          <Card className="shadow-lg">
+            <CardContent className="p-6 text-center">
+              <BarChart3 className="h-12 w-12 text-purple-600 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Analytics Dashboard</h3>
+              <p className="text-gray-600 mb-4">
+                View detailed analytics and reports for all projects.
               </p>
-              <Button 
-                onClick={() => navigate('/government/analytics-dashboard')}
-                className="w-full"
-                variant="outline"
-              >
-                <BarChart3 className="h-4 w-4 mr-2" />
-                View Full Analytics
+              <Button onClick={() => navigate('/government/analytics')}>
+                Open Analytics Dashboard
               </Button>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
 
-      {/* Blockchain Audit Trail */}
-      <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
-        <CardContent className="p-6">
-          <h3 className="font-semibold text-blue-900 mb-4 flex items-center">
-            <Shield className="h-5 w-5 mr-2" />
-            Blockchain Transparency Features
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* Approve Dialog */}
+      <Dialog open={approveDialogOpen} onOpenChange={setApproveDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Approve Report</DialogTitle>
+            <DialogDescription>
+              Confirm approval for: {selectedReport?.title}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
             <div>
-              <h4 className="font-medium text-blue-800 mb-2">Audit Trail Benefits</h4>
-              <ul className="space-y-1 text-sm text-blue-700">
-                <li>• Immutable record of all fund transfers</li>
-                <li>• Real-time budget tracking and allocation</li>
-                <li>• Automated compliance with EACC regulations</li>
-                <li>• Transparent contractor payment milestones</li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-medium text-blue-800 mb-2">Integration Status</h4>
-              <ul className="space-y-1 text-sm text-blue-700">
-                <li>• Hyperledger Fabric blockchain deployed</li>
-                <li>• CBEAC integration for fund releases</li>
-                <li>• M-Pesa API for contractor payments</li>
-                <li>• SMS notifications via USSD gateway</li>
-              </ul>
+              <Label htmlFor="budget">Allocated Budget (KES)</Label>
+              <Input
+                id="budget"
+                type="text"
+                value={budgetAmount}
+                onChange={(e) => setBudgetAmount(e.target.value)}
+                placeholder="e.g., 500,000"
+              />
+              <p className="text-sm text-muted-foreground mt-1">
+                This budget will be used for contractor bidding
+              </p>
             </div>
           </div>
-        </CardContent>
-      </Card>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setApproveDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={confirmApproval} 
+              disabled={processing}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {processing ? 'Approving...' : 'Confirm Approval'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reject Dialog */}
+      <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reject Report</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to reject: {selectedReport?.title}?
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div>
+              <Label htmlFor="reason">Rejection Reason</Label>
+              <Textarea
+                id="reason"
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                placeholder="Provide a reason for rejection..."
+                rows={3}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRejectDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={confirmRejection} 
+              disabled={processing}
+              variant="destructive"
+            >
+              {processing ? 'Rejecting...' : 'Confirm Rejection'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
