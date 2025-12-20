@@ -62,6 +62,8 @@ const GovernmentAnalytics = lazy(() => import("./pages/government/GovernmentAnal
 const GovernmentCompliance = lazy(() => import("./pages/government/GovernmentCompliance"));
 const GovernmentUserManagement = lazy(() => import("./pages/government/GovernmentUserManagement"));
 const GovernmentBidApproval = lazy(() => import("./pages/government/GovernmentBidApproval"));
+const GovernmentMilestones = lazy(() => import("./pages/government/GovernmentMilestones"));
+const GovernmentPaymentRelease = lazy(() => import("./pages/government/GovernmentPaymentRelease"));
 
 // Minimal loader for lazy routes
 const PageLoader = () => (
@@ -407,6 +409,22 @@ const App = () => {
                     element={
                       <ProtectedRoute allowedRoles={["government", "admin"]}>
                         <GovernmentBidApproval />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/government/milestones"
+                    element={
+                      <ProtectedRoute allowedRoles={["government", "admin"]}>
+                        <GovernmentMilestones />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/government/payment-release"
+                    element={
+                      <ProtectedRoute allowedRoles={["government", "admin"]}>
+                        <GovernmentPaymentRelease />
                       </ProtectedRoute>
                     }
                   />

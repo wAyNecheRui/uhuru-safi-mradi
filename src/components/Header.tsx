@@ -1,8 +1,8 @@
-
 import React from 'react';
 import { Shield } from 'lucide-react';
 import ProfileButton from '@/components/ProfileButton';
 import { useAuth } from '@/contexts/AuthContext';
+import NotificationBell from '@/components/notifications/NotificationBell';
 
 interface HeaderProps {
   showCountySelector?: boolean;
@@ -45,8 +45,13 @@ const Header = ({ showCountySelector = false, selectedCounty = 'Nairobi', onCoun
             </div>
           </div>
           
-          <div className="flex items-center space-x-3">
-            {isAuthenticated && <ProfileButton />}
+          <div className="flex items-center space-x-2 sm:space-x-3">
+            {isAuthenticated && (
+              <>
+                <NotificationBell />
+                <ProfileButton />
+              </>
+            )}
             
             {showCountySelector && (
               <div className="flex-shrink-0">
