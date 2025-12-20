@@ -100,6 +100,12 @@ const Landing = () => {
             <div className="hidden md:flex items-center space-x-6">
               <button 
                 className="text-white hover:text-slate-200 transition-colors text-sm lg:text-base"
+                onClick={() => navigate('/transparency')}
+              >
+                Transparency
+              </button>
+              <button 
+                className="text-white hover:text-slate-200 transition-colors text-sm lg:text-base"
                 onClick={() => navigate('/about')}
               >
                 About

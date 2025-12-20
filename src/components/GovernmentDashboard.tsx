@@ -226,6 +226,8 @@ const GovernmentDashboard = () => {
     { label: 'Contractor Management', icon: Building2, path: '/government/contractors', color: 'bg-purple-600 hover:bg-purple-700' },
     { label: 'Analytics & Reports', icon: BarChart3, path: '/government/analytics', color: 'bg-indigo-600 hover:bg-indigo-700' },
     { label: 'Compliance', icon: Scale, path: '/government/compliance', color: 'bg-teal-600 hover:bg-teal-700' },
+    { label: 'Escrow Funding', icon: Wallet, path: '/government/escrow-funding', color: 'bg-emerald-600 hover:bg-emerald-700' },
+    { label: 'Issue LPO', icon: FileText, path: '/government/lpo', color: 'bg-cyan-600 hover:bg-cyan-700' },
   ];
 
   return (
