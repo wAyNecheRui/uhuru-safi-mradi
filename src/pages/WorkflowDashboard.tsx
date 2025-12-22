@@ -16,7 +16,6 @@ import { useAuth } from '@/contexts/AuthContext';
 const WorkflowDashboard = () => {
   const { reportId } = useParams<{ reportId: string }>();
   const { user } = useAuth();
-  const [selectedCounty, setSelectedCounty] = useState('Nairobi');
   const [report, setReport] = useState<any>(null);
   const [workflowState, setWorkflowState] = useState<WorkflowState | null>(null);
   const [loading, setLoading] = useState(true);
@@ -52,7 +51,7 @@ const WorkflowDashboard = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
-        <Header selectedCounty={selectedCounty} onCountyChange={setSelectedCounty} />
+        <Header />
         <ResponsiveContainer className="py-8">
           <div className="animate-pulse space-y-6">
             <div className="h-8 bg-gray-200 rounded w-1/3"></div>
@@ -65,7 +64,7 @@ const WorkflowDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
-      <Header selectedCounty={selectedCounty} onCountyChange={setSelectedCounty} />
+      <Header />
       
       <ResponsiveContainer className="py-8">
         <div className="space-y-6">

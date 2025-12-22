@@ -17,19 +17,6 @@ const CitizenDashboard = () => {
   const { isMobile, isTablet } = useResponsive();
   const { user, isAuthenticated } = useAuth();
   const { reports, stats, isLoading, hasError } = useCitizenData();
-  const [selectedCounty, setSelectedCounty] = useState('Nairobi');
-
-  // Auth check disabled for presentation mode
-  // useEffect(() => {
-  //   if (!isAuthenticated) {
-  //     navigate('/auth');
-  //   }
-  // }, [isAuthenticated, navigate]);
-
-  const handleCountyChange = (county: string) => {
-    console.log('Citizen Dashboard - County changed to:', county);
-    setSelectedCounty(county);
-  };
 
   const quickActions = [
     {
@@ -196,7 +183,7 @@ const CitizenDashboard = () => {
   if (hasError) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
-        <Header selectedCounty={selectedCounty} onCountyChange={handleCountyChange} />
+        <Header />
         <main>
           <ResponsiveContainer className="py-6 sm:py-8">
             <Card className="p-6 text-center">

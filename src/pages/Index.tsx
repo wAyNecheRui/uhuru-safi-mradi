@@ -22,25 +22,15 @@ import { useRecentIssues } from '@/hooks/useRecentIssues';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('overview');
-  const [selectedCounty, setSelectedCounty] = useState('Nairobi');
   const { isMobile } = useResponsive();
   const { stats: projectStats, loading: statsLoading } = useProjectStats();
   const { issues: recentIssues, loading: issuesLoading } = useRecentIssues(3);
 
   const getText = (en: string) => en;
 
-  const handleCountyChange = (county: string) => {
-    console.log('County changed to:', county);
-    setSelectedCounty(county);
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
-      <Header 
-        showCountySelector={true}
-        selectedCounty={selectedCounty}
-        onCountyChange={handleCountyChange}
-      />
+      <Header />
 
       <main>
         <ResponsiveContainer className="py-6 sm:py-8">
@@ -68,11 +58,11 @@ const Index = () => {
                   <CardHeader>
                     <CardTitle className="flex items-center text-lg sm:text-xl">
                       <MapPin className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-green-600" />
-                      Project Map - {selectedCounty}
+                      Project Map
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-0">
-                    <ProjectMap selectedCounty={selectedCounty} />
+                    <ProjectMap selectedCounty="Nairobi" />
                   </CardContent>
                 </Card>
 
