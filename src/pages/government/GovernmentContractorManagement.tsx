@@ -35,40 +35,58 @@ const GovernmentContractorManagement = () => {
 
   const fetchContractorData = async () => {
     try {
-      const [contractorsRes, credentialsRes] = await Promise.all([
-        supabase
-          .from('contractor_profiles')
-          .select(`
-            *,
-            contractor_ratings(rating, work_quality, completion_timeliness),
-            contractor_credentials(*)
-          `)
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('contractor_credentials')
-          .select('*')
-          .eq('verification_status', 'pending')
-      ]);
+      // Fetch contractor profiles - government can view all via RLS
+      const { data: contractorsData, error: contractorsError } = await supabase
+        .from('contractor_profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-      if (contractorsRes.error) throw contractorsRes.error;
-      if (credentialsRes.error) throw credentialsRes.error;
+      if (contractorsError) {
+        console.error('Contractors error:', contractorsError);
+        throw contractorsError;
+      }
 
-      setContractors(contractorsRes.data || []);
-      setCredentials(credentialsRes.data || []);
+      // Fetch pending credentials separately
+      const { data: credentialsData, error: credentialsError } = await supabase
+        .from('contractor_credentials')
+        .select('*')
+        .eq('verification_status', 'pending');
 
-      // Calculate AGPO stats (example calculations)
-      const total = contractorsRes.data?.length || 1;
+      if (credentialsError) {
+        console.error('Credentials error:', credentialsError);
+      }
+
+      // Fetch ratings separately
+      const { data: ratingsData } = await supabase
+        .from('contractor_ratings')
+        .select('contractor_id, rating, work_quality, completion_timeliness');
+
+      // Merge ratings into contractors
+      const contractorsWithRatings = (contractorsData || []).map(contractor => {
+        const contractorRatings = ratingsData?.filter(r => r.contractor_id === contractor.user_id) || [];
+        return {
+          ...contractor,
+          contractor_ratings: contractorRatings
+        };
+      });
+
+      setContractors(contractorsWithRatings);
+      setCredentials(credentialsData || []);
+
+      // Calculate AGPO stats
+      const total = contractorsWithRatings.length || 1;
+      const agpoContractors = contractorsWithRatings.filter(c => c.is_agpo);
       setAgpoStats({
-        womenPercentage: Math.round((total * 0.22) / total * 100),
-        youthPercentage: Math.round((total * 0.15) / total * 100),
-        pwdPercentage: Math.round((total * 0.05) / total * 100),
+        womenPercentage: Math.round((agpoContractors.filter(c => c.agpo_category === 'women').length / total) * 100),
+        youthPercentage: Math.round((agpoContractors.filter(c => c.agpo_category === 'youth').length / total) * 100),
+        pwdPercentage: Math.round((agpoContractors.filter(c => c.agpo_category === 'pwd').length / total) * 100),
         totalTarget: 30
       });
     } catch (error) {
       console.error('Error fetching contractor data:', error);
       toast({
         title: "Error",
-        description: "Failed to fetch contractor data",
+        description: "Failed to fetch contractor data. Please ensure you're logged in as a government user.",
         variant: "destructive"
       });
     } finally {
@@ -122,7 +140,7 @@ const GovernmentContractorManagement = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
-        <Header selectedCounty="Nairobi" onCountyChange={() => {}} />
+        <Header />
         <main className="flex items-center justify-center h-[60vh]">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </main>
@@ -132,7 +150,7 @@ const GovernmentContractorManagement = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
-      <Header selectedCounty="Nairobi" onCountyChange={() => {}} />
+      <Header />
       
       <main>
         <ResponsiveContainer className="py-6 sm:py-8 space-y-6">

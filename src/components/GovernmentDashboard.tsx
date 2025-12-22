@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -125,7 +125,6 @@ const ApprovedReportsSection = ({ openBidding }: { openBidding: (reportId: strin
 };
 
 const GovernmentDashboard = () => {
-  const [selectedCounty, setSelectedCounty] = useState('all');
   const { toast } = useToast();
   const navigate = useNavigate();
   const { pendingApprovals, activeProjects, budgetOverview, loading, handleApproval, openBidding } = useGovernmentDashboard();
@@ -244,23 +243,9 @@ const GovernmentDashboard = () => {
                 Streamlined project approval, budget oversight, and transparency management.
               </p>
             </div>
-            <div className="flex items-center space-x-4">
-              <Select value={selectedCounty} onValueChange={setSelectedCounty}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Select County" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Counties</SelectItem>
-                  <SelectItem value="nairobi">Nairobi County</SelectItem>
-                  <SelectItem value="mombasa">Mombasa County</SelectItem>
-                  <SelectItem value="kisumu">Kisumu County</SelectItem>
-                  <SelectItem value="nakuru">Nakuru County</SelectItem>
-                </SelectContent>
-              </Select>
-              <Badge className="bg-blue-100 text-blue-800">
-                Live Dashboard
-              </Badge>
-            </div>
+            <Badge className="bg-blue-100 text-blue-800">
+              Live Dashboard
+            </Badge>
           </div>
         </CardHeader>
       </Card>
@@ -289,7 +274,7 @@ const GovernmentDashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Quick Actions - M-Pesa Payment Management */}
+      {/* M-Pesa Payment Workflow */}
       <Card className="shadow-lg border-l-4 border-l-green-600">
         <CardContent className="p-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
@@ -298,26 +283,17 @@ const GovernmentDashboard = () => {
                 <Wallet className="h-6 w-6 text-green-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900">M-Pesa Payment Management</h3>
-                <p className="text-sm text-gray-600">Fund escrow accounts and release contractor payments</p>
+                <h3 className="font-semibold text-gray-900">M-Pesa Payment Workflow</h3>
+                <p className="text-sm text-gray-600">Step-by-step milestone payments: Fund escrow → Verify work → Release payment</p>
               </div>
             </div>
-            <div className="flex gap-2">
-              <Button 
-                onClick={() => navigate('/government/escrow')}
-                className="bg-green-600 hover:bg-green-700"
-              >
-                <CreditCard className="h-4 w-4 mr-2" />
-                Manage Escrow & Payments
-              </Button>
-              <Button 
-                onClick={() => navigate('/government/payments')}
-                variant="outline"
-              >
-                <DollarSign className="h-4 w-4 mr-2" />
-                Payment Transparency
-              </Button>
-            </div>
+            <Button 
+              onClick={() => navigate('/government/escrow')}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              <CreditCard className="h-4 w-4 mr-2" />
+              Manage Payments
+            </Button>
           </div>
         </CardContent>
       </Card>

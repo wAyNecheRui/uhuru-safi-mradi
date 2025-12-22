@@ -132,22 +132,6 @@ const EscrowManagement = () => {
         </CardContent>
       </Card>
 
-      {!hasRealData && (
-        <Card className="border-blue-200 bg-blue-50">
-          <CardContent className="p-4">
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="h-5 w-5 text-blue-600 mt-0.5" />
-              <div>
-                <p className="font-medium text-blue-900">Demo Mode Active</p>
-                <p className="text-sm text-blue-700">
-                  M-Pesa C2B/B2C payments are simulated. Once approved projects exist, 
-                  you can fund escrow accounts and release milestone payments.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {escrowProjects.length === 0 ? (
         <Card>
