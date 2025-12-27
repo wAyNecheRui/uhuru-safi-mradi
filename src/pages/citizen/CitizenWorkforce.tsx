@@ -1,18 +1,10 @@
-
-import React, { useState } from 'react';
+import React from 'react';
 import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
 import WorkforceIntegration from '@/components/WorkforceIntegration';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
 
 const CitizenWorkforce = () => {
-  const [selectedCounty, setSelectedCounty] = useState('Nairobi');
-
-  const handleCountyChange = (county: string) => {
-    console.log('Citizen Workforce - County changed to:', county);
-    setSelectedCounty(county);
-  };
-
   const breadcrumbItems = [
     { label: 'Home', href: '/' },
     { label: 'Citizen', href: '/citizen' },
@@ -21,10 +13,7 @@ const CitizenWorkforce = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
-      <Header 
-        selectedCounty={selectedCounty}
-        onCountyChange={handleCountyChange}
-      />
+      <Header />
       
       <main>
         <ResponsiveContainer className="py-6 sm:py-8">
