@@ -118,12 +118,26 @@ const CitizenTransparency = () => {
   const totalEscrowHeld = escrowAccounts.reduce((sum, acc) => sum + (acc.held_amount || 0), 0);
   const totalEscrowReleased = escrowAccounts.reduce((sum, acc) => sum + (acc.released_amount || 0), 0);
 
-  const handleViewPortfolio = (contractorId: string) => {
-    toast.info('Portfolio viewer opening. Showing contractor project history.');
+  const handleViewPortfolio = async (contractorId: string) => {
+    try {
+      // Fetch contractor's projects
+      const { data: projects } = await supabase
+        .from('projects')
+        .select('id, title, status, budget')
+        .eq('contractor_id', contractorId);
+      
+      const projectCount = projects?.length || 0;
+      const totalValue = projects?.reduce((sum, p) => sum + (p.budget || 0), 0) || 0;
+      
+      toast.success(`Contractor Portfolio: ${projectCount} projects worth KES ${totalValue.toLocaleString()}`);
+    } catch (error) {
+      toast.error('Failed to load portfolio');
+    }
   };
 
   const handleReportContractorIssue = (contractorId: string) => {
-    toast.info('Issue report form opened. Your report will be reviewed by EACC.');
+    toast.info('Redirecting to EACC issue reporting...');
+    window.open('https://eacc.go.ke/default/report-corruption/', '_blank');
   };
 
   const handleDownloadReport = (projectId: string) => {

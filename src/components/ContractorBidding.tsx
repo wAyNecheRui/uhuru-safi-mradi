@@ -6,19 +6,21 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Star, Briefcase, Award, Clock, DollarSign, Users, Shield, FileText, CheckCircle, MapPin, Loader2, AlertCircle, Eye, Lock } from 'lucide-react';
+import { Star, Briefcase, Award, Clock, DollarSign, Users, Shield, FileText, CheckCircle, MapPin, Loader2, AlertCircle, Eye, Lock, Navigation } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { WorkflowGuardService, WORKFLOW_STATUS, MIN_VOTES_THRESHOLD } from '@/services/WorkflowGuardService';
+import ProblemLocationModal from './contractor/ProblemLocationModal';
 
 interface ProblemReport {
   id: string;
   title: string;
   description: string;
   location: string | null;
+  coordinates: string | null;
   category: string | null;
   priority: string | null;
   status: string | null;
@@ -59,6 +61,7 @@ const ContractorBidding = () => {
   const [loading, setLoading] = useState(true);
   const [selectedProblem, setSelectedProblem] = useState<ProblemReport | null>(null);
   const [viewingProblem, setViewingProblem] = useState<ProblemReport | null>(null);
+  const [locationProblem, setLocationProblem] = useState<ProblemReport | null>(null);
   const [submitting, setSubmitting] = useState(false);
   
   const [bidForm, setBidForm] = useState({
@@ -399,10 +402,14 @@ const ContractorBidding = () => {
                           <p className="text-muted-foreground line-clamp-2">{problem.description}</p>
 
                           <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <div className="flex items-center">
+                            <button 
+                              className="flex items-center hover:text-primary transition-colors"
+                              onClick={() => setLocationProblem(problem)}
+                            >
                               <MapPin className="h-4 w-4 mr-1" />
                               {problem.location || 'Location not specified'}
-                            </div>
+                              <Navigation className="h-3 w-3 ml-1 text-blue-500" />
+                            </button>
                           </div>
 
                           {problem.photo_urls && problem.photo_urls.length > 0 && (
@@ -791,6 +798,13 @@ const ContractorBidding = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Location Map Modal */}
+      <ProblemLocationModal
+        isOpen={!!locationProblem}
+        onClose={() => setLocationProblem(null)}
+        problem={locationProblem}
+      />
     </div>
   );
 };
