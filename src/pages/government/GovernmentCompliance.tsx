@@ -130,11 +130,35 @@ const GovernmentCompliance = () => {
               <p className="text-gray-600">Public accountability portal and policy monitoring</p>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline">
+              <Button variant="outline" onClick={() => {
+                window.open('/transparency', '_blank');
+              }}>
                 <Eye className="h-4 w-4 mr-2" />
                 Preview Public View
               </Button>
-              <Button>
+              <Button onClick={() => {
+                toast({
+                  title: "Exporting Data",
+                  description: "Compliance data export initiated."
+                });
+                // Generate compliance data
+                const complianceData = {
+                  exportDate: new Date().toISOString(),
+                  complianceScore: getCompliancePercentage(),
+                  categories: complianceChecklist.map(c => ({
+                    category: c.category,
+                    items: c.items.map(i => ({ label: i.label, status: i.status }))
+                  })),
+                  blockchainRecords: blockchainRecords.length
+                };
+                const blob = new Blob([JSON.stringify(complianceData, null, 2)], { type: 'application/json' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `compliance-data-${new Date().toISOString().split('T')[0]}.json`;
+                a.click();
+                window.URL.revokeObjectURL(url);
+              }}>
                 <Download className="h-4 w-4 mr-2" />
                 Export Data
               </Button>

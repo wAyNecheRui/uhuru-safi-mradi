@@ -131,7 +131,21 @@ const GovernmentAnalytics = () => {
               <h1 className="text-3xl font-bold text-gray-900 mb-2">Analytics & Reporting</h1>
               <p className="text-gray-600">Performance metrics and regional development insights</p>
             </div>
-            <Button>
+            <Button onClick={() => {
+              toast({
+                title: "Generating Report",
+                description: "Your analytics report is being generated. Download will start shortly."
+              });
+              // Generate CSV data
+              const csvContent = `Analytics Report - ${new Date().toLocaleDateString()}\n\nKPI,Value\nTransparency Index,${kpis.transparencyIndex}%\nPayment Timeliness,${kpis.paymentTimeliness}%\nProject Success Rate,${kpis.projectSuccessRate}%\nCitizen Engagement,${kpis.citizenEngagement}\nContractor Satisfaction,${kpis.contractorSatisfaction}%\nGovernment Efficiency,${kpis.governmentEfficiency}%`;
+              const blob = new Blob([csvContent], { type: 'text/csv' });
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `analytics-report-${new Date().toISOString().split('T')[0]}.csv`;
+              a.click();
+              window.URL.revokeObjectURL(url);
+            }}>
               <Download className="h-4 w-4 mr-2" />
               Export Report
             </Button>
