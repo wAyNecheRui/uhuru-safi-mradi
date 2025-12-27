@@ -140,57 +140,6 @@ const CitizenNotifications = () => {
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
-  // Sample notifications for demo
-  const sampleNotifications: Notification[] = [
-    {
-      id: '1',
-      title: 'Problem Report Approved',
-      message: 'Your reported problem "Pothole on Mombasa Road" has been approved and funding allocated.',
-      type: 'success',
-      category: 'report',
-      read: false,
-      created_at: new Date().toISOString()
-    },
-    {
-      id: '2',
-      title: 'Contractor Started Work',
-      message: 'ABC Construction has started work on the road repair project in your area.',
-      type: 'info',
-      category: 'project',
-      read: false,
-      created_at: new Date(Date.now() - 3600000).toISOString()
-    },
-    {
-      id: '3',
-      title: 'Verification Needed',
-      message: 'Milestone 2 of "Water Pipeline Installation" requires your verification.',
-      type: 'warning',
-      category: 'verification',
-      read: true,
-      created_at: new Date(Date.now() - 86400000).toISOString()
-    },
-    {
-      id: '4',
-      title: 'Community Meeting',
-      message: 'Community development meeting scheduled for next week at Kasarani Community Center.',
-      type: 'info',
-      category: 'system',
-      read: true,
-      created_at: new Date(Date.now() - 172800000).toISOString()
-    },
-    {
-      id: '5',
-      title: 'Urgent Voting Needed',
-      message: '5 new problems in your area need community votes. Your participation matters!',
-      type: 'warning',
-      category: 'report',
-      read: false,
-      created_at: new Date(Date.now() - 7200000).toISOString()
-    }
-  ];
-
-  const displayNotifications = notifications.length > 0 ? notifications : sampleNotifications;
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
       <Header />
@@ -232,7 +181,7 @@ const CitizenNotifications = () => {
                     <div className="animate-pulse">Loading notifications...</div>
                   </CardContent>
                 </Card>
-              ) : displayNotifications.length === 0 ? (
+              ) : notifications.length === 0 ? (
                 <Card>
                   <CardContent className="p-8 text-center">
                     <Bell className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -242,7 +191,7 @@ const CitizenNotifications = () => {
                 </Card>
               ) : (
                 <div className="space-y-3">
-                  {displayNotifications.map((notification) => (
+                  {notifications.map((notification) => (
                     <Card 
                       key={notification.id} 
                       className={`hover:shadow-lg transition-shadow cursor-pointer ${
@@ -285,7 +234,7 @@ const CitizenNotifications = () => {
             </TabsContent>
 
             <TabsContent value="unread" className="space-y-4">
-              {displayNotifications.filter(n => !n.read).length === 0 ? (
+              {notifications.filter(n => !n.read).length === 0 ? (
                 <Card>
                   <CardContent className="p-8 text-center">
                     <CheckCircle className="h-12 w-12 text-green-400 mx-auto mb-4" />
@@ -295,7 +244,7 @@ const CitizenNotifications = () => {
                 </Card>
               ) : (
                 <div className="space-y-3">
-                  {displayNotifications.filter(n => !n.read).map((notification) => (
+                  {notifications.filter(n => !n.read).map((notification) => (
                     <Card 
                       key={notification.id} 
                       className="bg-blue-50 border-blue-200 hover:shadow-lg transition-shadow cursor-pointer"
@@ -324,7 +273,7 @@ const CitizenNotifications = () => {
             </TabsContent>
 
             <TabsContent value="projects" className="space-y-4">
-              {displayNotifications.filter(n => n.category === 'project' || n.category === 'verification').length === 0 ? (
+              {notifications.filter(n => n.category === 'project' || n.category === 'verification').length === 0 ? (
                 <Card>
                   <CardContent className="p-8 text-center">
                     <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -334,7 +283,7 @@ const CitizenNotifications = () => {
                 </Card>
               ) : (
                 <div className="space-y-3">
-                  {displayNotifications
+                  {notifications
                     .filter(n => n.category === 'project' || n.category === 'verification')
                     .map((notification) => (
                       <Card key={notification.id} className="hover:shadow-lg transition-shadow">
