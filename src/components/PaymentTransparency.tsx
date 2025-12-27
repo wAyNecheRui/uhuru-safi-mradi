@@ -115,13 +115,13 @@ const PaymentTransparency = () => {
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       {!hasRealData && (
-        <Card className="border-blue-200 bg-blue-50">
+        <Card className="border-muted bg-muted/50">
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
-              <AlertTriangle className="h-5 w-5 text-blue-600 mt-0.5" />
+              <AlertTriangle className="h-5 w-5 text-muted-foreground mt-0.5" />
               <div>
-                <p className="font-medium text-blue-900">Demo Mode</p>
-                <p className="text-sm text-blue-700">Showing sample data. Real payment data will appear here once projects have escrow accounts and transactions.</p>
+                <p className="font-medium">No Payment Data</p>
+                <p className="text-sm text-muted-foreground">Payment data will appear here once projects have escrow accounts and transactions.</p>
               </div>
             </div>
           </CardContent>
