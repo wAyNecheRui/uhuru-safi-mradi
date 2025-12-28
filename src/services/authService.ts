@@ -6,7 +6,7 @@ export const loadUserProfile = async (userId: string, email: string): Promise<Au
   try {
     const { data: profile } = await supabase
       .from('user_profiles')
-      .select('full_name, user_type, phone_number, location')
+      .select('full_name, user_type, phone_number, location, county, sub_county, ward')
       .eq('user_id', userId)
       .maybeSingle();
 
@@ -18,7 +18,10 @@ export const loadUserProfile = async (userId: string, email: string): Promise<Au
       profile: profile ? {
         full_name: profile.full_name,
         phone_number: profile.phone_number,
-        location: profile.location
+        location: profile.location,
+        county: profile.county,
+        sub_county: profile.sub_county,
+        ward: profile.ward
       } : undefined
     };
   } catch (error) {
@@ -64,7 +67,13 @@ export const signUpUser = async (email: string, password: string, userData: Sign
           user_type: userData.type,
           full_name: userData.name,
           phone_number: userData.phone || null,
-          location: userData.location || null
+          county: userData.county || null,
+          sub_county: userData.sub_county || null,
+          ward: userData.ward || null,
+          national_id: userData.national_id || null,
+          id_type: userData.id_type || 'national_id',
+          gender: userData.gender || null,
+          date_of_birth: userData.date_of_birth || null
         }
       }
     });
@@ -75,18 +84,35 @@ export const signUpUser = async (email: string, password: string, userData: Sign
 
     // Create role-specific profiles after signup
     if (data?.user) {
-      // Contractor profile with all fields
+      // Update user_profiles with additional Kenya-specific data
+      await supabase.from('user_profiles').update({
+        national_id: userData.national_id || null,
+        id_type: userData.id_type || 'national_id',
+        gender: userData.gender || null,
+        date_of_birth: userData.date_of_birth || null,
+        county: userData.county || null,
+        sub_county: userData.sub_county || null,
+        ward: userData.ward || null
+      }).eq('user_id', data.user.id);
+
+      // Contractor profile with all NCA and AGPO fields
       if (userData.type === 'contractor' && userData.organization) {
         const specializations = userData.specialization 
-          ? userData.specialization.split(',').map(s => s.trim()).filter(Boolean)
+          ? [userData.specialization]
           : [];
         
         await supabase.from('contractor_profiles').upsert({
           user_id: data.user.id,
           company_name: userData.organization,
+          company_registration_number: userData.company_registration_number || null,
           kra_pin: userData.kra_pin || null,
           specialization: specializations.length > 0 ? specializations : null,
-          years_in_business: userData.years_in_business ? parseInt(userData.years_in_business) : null
+          years_in_business: userData.years_in_business ? parseInt(userData.years_in_business) : null,
+          is_agpo: userData.is_agpo || false,
+          agpo_category: userData.is_agpo ? userData.agpo_category : null,
+          // NCA category stored in max_project_capacity based on NCA limits
+          max_project_capacity: getNCAMaxValue(userData.nca_category),
+          registered_counties: userData.county ? [userData.county] : []
         });
       }
       
@@ -98,17 +124,24 @@ export const signUpUser = async (email: string, password: string, userData: Sign
             user_id: data.user.id,
             full_name: userData.name,
             skills: skillsArray,
-            location: userData.location || null
+            location: userData.county || null,
+            phone_number: userData.phone || null
           });
         }
       }
       
-      // Government profile with department and position
+      // Government profile with GHRIS-aligned fields
       if (userData.type === 'government') {
         await supabase.from('government_profiles').upsert({
           user_id: data.user.id,
           department: userData.department || 'Pending Assignment',
-          position: userData.position || 'Pending Assignment'
+          position: userData.position || 'Pending Assignment',
+          employee_number: userData.employee_number || null,
+          office_phone: userData.office_phone || null,
+          supervisor_name: userData.supervisor_name || null,
+          clearance_level: 'standard', // Default, to be upgraded by admin
+          assigned_counties: userData.county ? [userData.county] : [],
+          verified: false // Requires manual verification
         });
       }
     }
@@ -118,6 +151,22 @@ export const signUpUser = async (email: string, password: string, userData: Sign
     return { error };
   }
 };
+
+// Helper function to convert NCA category to max project value
+function getNCAMaxValue(ncaCategory: string | undefined): number {
+  const ncaLimits: Record<string, number> = {
+    'NCA1': 999999999, // Unlimited
+    'NCA2': 500000000,
+    'NCA3': 300000000,
+    'NCA4': 200000000,
+    'NCA5': 100000000,
+    'NCA6': 50000000,
+    'NCA7': 20000000,
+    'NCA8': 10000000,
+    'pending': 5000000 // Default for pending registration
+  };
+  return ncaLimits[ncaCategory || 'pending'] || 5000000;
+}
 
 export const signOutUser = async () => {
   try {
