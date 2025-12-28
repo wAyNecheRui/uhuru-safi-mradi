@@ -138,9 +138,9 @@ const CitizenGuide = () => {
       description: 'View approved development plans for your county',
       icon: FileText,
       items: [
-        'Nairobi County - Annual Development Plan 2024',
-        'Nairobi County - 5-Year Strategic Plan 2023-2028',
-        'Infrastructure Priority Areas 2024'
+        'Access your county\'s annual development plan',
+        'View multi-year strategic plans',
+        'Check infrastructure priority areas'
       ]
     },
     {
@@ -148,11 +148,11 @@ const CitizenGuide = () => {
       description: 'See how public funds are allocated in your constituency',
       icon: DollarSign,
       items: [
-        'Roads & Transport: KES 2.5B (35%)',
-        'Water & Sanitation: KES 1.8B (25%)',
-        'Healthcare Infrastructure: KES 1.2B (17%)',
-        'Education Facilities: KES 900M (13%)',
-        'Other Infrastructure: KES 700M (10%)'
+        'Roads & Transport allocations',
+        'Water & Sanitation allocations',
+        'Healthcare Infrastructure allocations',
+        'Education Facilities allocations',
+        'Other Infrastructure allocations'
       ]
     },
     {
@@ -160,10 +160,10 @@ const CitizenGuide = () => {
       description: 'Review past project outcomes in your area',
       icon: CheckCircle,
       items: [
-        '2023: 45 projects completed (87% on time)',
-        '2023: KES 3.2B disbursed to contractors',
-        '2023: Average citizen satisfaction: 4.2/5',
-        '2022: 38 projects completed (79% on time)'
+        'View completed projects in your county',
+        'Check disbursement records',
+        'See citizen satisfaction ratings',
+        'Compare year-over-year performance'
       ]
     }
   ];
