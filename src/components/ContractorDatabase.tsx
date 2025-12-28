@@ -40,14 +40,14 @@ const ContractorDatabase = () => {
           name: profile.organization || 'Independent Contractor',
           category: profile.skills?.[0] || 'General Construction',
           location: profile.location || 'Kenya',
-          rating: 4.5, // Default rating - could be calculated from reviews
-          reviewCount: 12, // Default - could come from actual reviews
+          rating: 0, // Will be calculated from actual reviews
+          reviewCount: 0, // Will come from actual reviews
           specializations: profile.skills || [],
-          experience: `${profile.years_experience || 'New'} years`,
-          isVerified: true, // Assume verified if in database
-          eaccStatus: 'cleared' as const,
-          kraStatus: 'verified' as const,
-          ncaStatus: 'valid' as const,
+          experience: profile.years_experience ? `${profile.years_experience} years` : 'New',
+          isVerified: true, // If in database, assume verified
+          eaccStatus: 'pending' as const,
+          kraStatus: 'pending' as const,
+          ncaStatus: 'pending' as const,
           portfolio: profile.portfolio,
           certifications: profile.certifications
         }));
