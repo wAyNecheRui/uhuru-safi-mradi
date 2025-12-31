@@ -123,13 +123,21 @@ export const useCitizenData = () => {
     staleTime: 10 * 60 * 1000, // 10 minutes
   });
 
-  // Submit a vote on a report (placeholder functionality)
+  // Submit a vote on a report
   const submitVote = useMutation({
     mutationFn: async ({ reportId, voteType }: { reportId: string; voteType: 'upvote' | 'downvote' }) => {
       if (!user?.id) throw new Error('User not authenticated');
       
-      // For now, just simulate the vote since we don't have community_votes table
-      console.log('Vote submitted:', { reportId, voteType, userId: user.id });
+      // Upsert vote to community_votes table
+      const { error } = await supabase
+        .from('community_votes')
+        .upsert({
+          report_id: reportId,
+          user_id: user.id,
+          vote_type: voteType
+        }, { onConflict: 'report_id,user_id' });
+      
+      if (error) throw error;
       return { success: true };
     },
     onSuccess: () => {
