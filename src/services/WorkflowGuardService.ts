@@ -27,7 +27,7 @@ export const WORKFLOW_STATUS = {
   REJECTED: 'rejected',
 } as const;
 
-export const MIN_VOTES_THRESHOLD = 3;
+export const MIN_VOTES_THRESHOLD = 50;
 
 // Valid status transitions
 const VALID_TRANSITIONS: Record<string, string[]> = {

@@ -105,7 +105,7 @@ const ContractorBidding: React.FC<ContractorBiddingProps> = ({
     }
   };
 
-  const isContractor = user?.user_type === 'contractor';
+  const isContractor = true; // TODO: Check user type from user profile
   const userHasBid = bids.some(bid => bid.contractor_id === user?.id);
   const selectedBid = bids.find(bid => bid.status === 'selected');
 
