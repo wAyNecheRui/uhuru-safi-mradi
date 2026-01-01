@@ -1,8 +1,8 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Mail, Lock } from 'lucide-react';
+import { Loader2, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 
 interface LoginFormProps {
   formData: {
@@ -20,6 +20,8 @@ const LoginForm: React.FC<LoginFormProps> = ({
   onInputChange,
   onSubmit
 }) => {
+  const [showPassword, setShowPassword] = useState(false);
+
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <div className="space-y-2">
@@ -43,14 +45,21 @@ const LoginForm: React.FC<LoginFormProps> = ({
         <div className="relative">
           <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
           <Input
-            type="password"
+            type={showPassword ? 'text' : 'password'}
             placeholder="Enter your password"
             value={formData.password}
             onChange={(e) => onInputChange('password', e.target.value)}
             disabled={isLoading}
-            className="pl-10 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="pl-10 pr-10 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             required
           />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600"
+          >
+            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
         </div>
       </div>
 
