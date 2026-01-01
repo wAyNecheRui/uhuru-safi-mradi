@@ -96,43 +96,11 @@ const ContractorCommunications = () => {
         actionUrl: n.action_url || undefined
       })) || [];
 
-      // Mock messages (would come from a messaging table in production)
-      const mockMessages: Message[] = [
-        {
-          id: '1',
-          from: 'County Engineer - Nairobi',
-          fromType: 'government',
-          subject: 'Project Site Inspection Schedule',
-          preview: 'Your project site inspection has been scheduled for...',
-          timestamp: new Date().toISOString(),
-          read: false
-        },
-        {
-          id: '2',
-          from: 'Citizen Verification Team',
-          fromType: 'citizen',
-          subject: 'Milestone Verification Complete',
-          preview: 'The community has verified your milestone completion...',
-          timestamp: new Date(Date.now() - 86400000).toISOString(),
-          read: true
-        },
-        {
-          id: '3',
-          from: 'ABC Supplies Ltd',
-          fromType: 'supplier',
-          subject: 'Material Delivery Confirmation',
-          preview: 'Your order for construction materials has been confirmed...',
-          timestamp: new Date(Date.now() - 172800000).toISOString(),
-          read: true
-        }
-      ];
-
-      // Mock disputes
-      const mockDisputes: Dispute[] = [];
-
-      setMessages(mockMessages);
+      // Messages would come from a messaging table in production
+      // Currently not implemented - showing empty state
+      setMessages([]);
       setNotifications(formattedNotifications);
-      setDisputes(mockDisputes);
+      setDisputes([]);
 
     } catch (error) {
       console.error('Error fetching communications:', error);
