@@ -3,7 +3,7 @@
  * 
  * WORKFLOW STATES:
  * 1. pending        → Initial state when citizen reports a problem
- * 2. under_review   → Auto-transitions when votes reach MIN_VOTES_THRESHOLD (50)
+ * 2. under_review   → Auto-transitions when votes reach MIN_VOTES_THRESHOLD (3)
  * 3. approved       → Government approves (only if under_review + all checks pass)
  * 4. bidding_open   → Government opens bidding (auto or manual after approval)
  * 5. contractor_selected → Government selects a contractor bid
@@ -27,7 +27,7 @@ export const WORKFLOW_STATUS = {
   REJECTED: 'rejected',
 } as const;
 
-export const MIN_VOTES_THRESHOLD = 50;
+export const MIN_VOTES_THRESHOLD = 3;
 
 // Valid status transitions
 const VALID_TRANSITIONS: Record<string, string[]> = {
