@@ -1,17 +1,44 @@
 import React from 'react';
-import { Shield } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Shield, Home } from 'lucide-react';
 import ProfileButton from '@/components/ProfileButton';
 import { useAuth } from '@/contexts/AuthContext';
 import NotificationBell from '@/components/notifications/NotificationBell';
+import { Button } from '@/components/ui/button';
 
 const Header = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+  const navigate = useNavigate();
+
+  const handleHomeClick = () => {
+    if (isAuthenticated && user) {
+      // Navigate to user's respective dashboard
+      switch (user.user_type) {
+        case 'citizen':
+          navigate('/citizen');
+          break;
+        case 'contractor':
+          navigate('/contractor');
+          break;
+        case 'government':
+          navigate('/government');
+          break;
+        default:
+          navigate('/');
+      }
+    } else {
+      navigate('/');
+    }
+  };
 
   return (
     <header className="bg-white shadow-lg border-b-4 border-gradient-to-r from-slate-600 to-blue-600" style={{borderImage: 'linear-gradient(to right, #475569, #2563eb) 1'}}>
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center space-x-3 sm:space-x-4 flex-1 min-w-0">
+          <div 
+            className="flex items-center space-x-3 sm:space-x-4 flex-1 min-w-0 cursor-pointer"
+            onClick={handleHomeClick}
+          >
             <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-slate-600 to-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
               <Shield className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
             </div>
@@ -28,6 +55,15 @@ const Header = () => {
           <div className="flex items-center space-x-2 sm:space-x-3">
             {isAuthenticated && (
               <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleHomeClick}
+                  className="hidden sm:flex items-center gap-2"
+                >
+                  <Home className="h-4 w-4" />
+                  Dashboard
+                </Button>
                 <NotificationBell />
                 <ProfileButton />
               </>

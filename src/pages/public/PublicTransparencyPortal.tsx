@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Loader2, Search, Building2, MapPin, Calendar, DollarSign, 
   Users, TrendingUp, Eye, ExternalLink, Shield, Clock,
-  CheckCircle2, XCircle, AlertCircle
+  CheckCircle2, XCircle, AlertCircle, ArrowLeft, Home
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -48,6 +49,7 @@ interface Stats {
 }
 
 export default function PublicTransparencyPortal() {
+  const navigate = useNavigate();
   const [projects, setProjects] = useState<Project[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -193,6 +195,20 @@ export default function PublicTransparencyPortal() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Navigation Bar */}
+      <div className="bg-background border-b sticky top-0 z-50">
+        <div className="container mx-auto px-6 py-3">
+          <Button
+            variant="ghost"
+            onClick={() => navigate('/')}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Home
+          </Button>
+        </div>
+      </div>
+
       {/* Hero Header */}
       <div className="bg-primary text-primary-foreground py-12">
         <div className="container mx-auto px-6">

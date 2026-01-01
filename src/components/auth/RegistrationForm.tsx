@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, User, Mail, Phone, MapPin, Building, Briefcase, FileText, CreditCard, Calendar, Shield, Users } from 'lucide-react';
+import { Loader2, User, Mail, Phone, MapPin, Building, Briefcase, FileText, CreditCard, Calendar, Shield, Users, Eye, EyeOff } from 'lucide-react';
 import UserTypeSelector from './UserTypeSelector';
 import { 
   KENYA_COUNTIES, 
@@ -59,6 +59,9 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
   onInputChange,
   onSubmit
 }) => {
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   return (
     <form onSubmit={onSubmit} className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
       {/* User Type Selection */}
@@ -468,27 +471,47 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <label className="block text-sm font-medium text-slate-700">Password *</label>
-            <Input
-              type="password"
-              placeholder="Min. 6 characters"
-              value={formData.password}
-              onChange={(e) => onInputChange('password', e.target.value)}
-              disabled={isLoading}
-              required
-              minLength={6}
-            />
+            <div className="relative">
+              <Input
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Min. 6 characters"
+                value={formData.password}
+                onChange={(e) => onInputChange('password', e.target.value)}
+                disabled={isLoading}
+                required
+                minLength={6}
+                className="pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
           </div>
 
           <div className="space-y-2">
             <label className="block text-sm font-medium text-slate-700">Confirm Password *</label>
-            <Input
-              type="password"
-              placeholder="Confirm your password"
-              value={formData.confirmPassword}
-              onChange={(e) => onInputChange('confirmPassword', e.target.value)}
-              disabled={isLoading}
-              required
-            />
+            <div className="relative">
+              <Input
+                type={showConfirmPassword ? 'text' : 'password'}
+                placeholder="Confirm your password"
+                value={formData.confirmPassword}
+                onChange={(e) => onInputChange('confirmPassword', e.target.value)}
+                disabled={isLoading}
+                required
+                className="pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              >
+                {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
           </div>
         </div>
       </div>

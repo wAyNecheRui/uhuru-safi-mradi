@@ -103,28 +103,16 @@ const About = () => {
               </div>
             </div>
 
-            {/* Impact Statistics */}
+            {/* Impact Note */}
             <div className="bg-white rounded-xl shadow-sm p-6 sm:p-8 mx-4 sm:mx-0">
               <div className="bg-gradient-to-r from-slate-50 to-blue-50 rounded-lg p-6 sm:p-8">
                 <h2 className="text-xl sm:text-2xl font-semibold text-slate-900 mb-6 text-center">Our Impact</h2>
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                  <div className="text-center">
-                    <div className="text-2xl sm:text-3xl font-bold text-blue-600 mb-2">1,247</div>
-                    <div className="text-slate-600 text-sm sm:text-base">Projects Tracked</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl sm:text-3xl font-bold text-emerald-600 mb-2">KES 2.4B</div>
-                    <div className="text-slate-600 text-sm sm:text-base">Funds Managed</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl sm:text-3xl font-bold text-purple-600 mb-2">3,456</div>
-                    <div className="text-slate-600 text-sm sm:text-base">Citizen Reports</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl sm:text-3xl font-bold text-indigo-600 mb-2">234</div>
-                    <div className="text-slate-600 text-sm sm:text-base">Verified Contractors</div>
-                  </div>
-                </div>
+                <p className="text-slate-700 text-center leading-relaxed">
+                  Since launch, Uhuru Safi has enabled citizens across Kenya to report infrastructure issues, 
+                  track government projects in real-time, and ensure transparent allocation of public funds. 
+                  Our platform connects verified contractors with legitimate projects while providing 
+                  secure escrow-based payments upon milestone completion.
+                </p>
               </div>
             </div>
 
