@@ -71,16 +71,16 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
         disabled={isLoading}
       />
 
-      {/* Personal Information Section */}
+      {/* Essential Information Section */}
       <div className="space-y-4 p-4 bg-slate-50 rounded-lg border">
         <h4 className="font-medium text-slate-900 flex items-center">
           <User className="h-4 w-4 mr-2" />
-          Personal Information
+          {formData.type === 'citizen' ? 'Basic Information' : 'Personal Information'}
         </h4>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-slate-700">Full Name (As per ID) *</label>
+            <label className="block text-sm font-medium text-slate-700">Full Name *</label>
             <div className="relative">
               <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
               <Input
@@ -126,82 +126,6 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
           </div>
 
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-slate-700">Gender *</label>
-            <Select value={formData.gender} onValueChange={(value) => onInputChange('gender', value)}>
-              <SelectTrigger disabled={isLoading}>
-                <SelectValue placeholder="Select gender" />
-              </SelectTrigger>
-              <SelectContent>
-                {GENDER_OPTIONS.map(option => (
-                  <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-slate-700">Date of Birth *</label>
-            <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <Input
-                type="date"
-                value={formData.date_of_birth}
-                onChange={(e) => onInputChange('date_of_birth', e.target.value)}
-                disabled={isLoading}
-                className="pl-10"
-                required
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-slate-700">ID Type *</label>
-            <Select value={formData.id_type} onValueChange={(value) => onInputChange('id_type', value)}>
-              <SelectTrigger disabled={isLoading}>
-                <SelectValue placeholder="Select ID type" />
-              </SelectTrigger>
-              <SelectContent>
-                {ID_TYPES.map(type => (
-                  <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2 md:col-span-2">
-            <label className="block text-sm font-medium text-slate-700">
-              {formData.id_type === 'national_id' ? 'National ID Number' : 'ID/Passport Number'} *
-            </label>
-            <div className="relative">
-              <CreditCard className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <Input
-                placeholder={formData.id_type === 'national_id' ? 'e.g., 12345678' : 'Enter ID number'}
-                value={formData.national_id}
-                onChange={(e) => onInputChange('national_id', e.target.value)}
-                disabled={isLoading}
-                className="pl-10"
-                required
-              />
-            </div>
-            <p className="text-xs text-slate-500">This will be verified against government records</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Location Section */}
-      <div className="space-y-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-        <h4 className="font-medium text-blue-900 flex items-center">
-          <MapPin className="h-4 w-4 mr-2" />
-          Location (County of Residence)
-        </h4>
-        <p className="text-xs text-blue-700">
-          {formData.type === 'citizen' && 'Your county determines which issues you can vote on and verify.'}
-          {formData.type === 'contractor' && 'You can register for multiple counties after verification.'}
-          {formData.type === 'government' && 'Your assigned counties will be set by administration after verification.'}
-        </p>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="space-y-2">
             <label className="block text-sm font-medium text-slate-700">County *</label>
             <Select value={formData.county} onValueChange={(value) => onInputChange('county', value)}>
               <SelectTrigger disabled={isLoading}>
@@ -215,25 +139,91 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-slate-700">Sub-County</label>
-            <Input
-              placeholder="Enter sub-county"
-              value={formData.sub_county}
-              onChange={(e) => onInputChange('sub_county', e.target.value)}
-              disabled={isLoading}
-            />
-          </div>
+          {/* Additional fields only for non-citizen users */}
+          {formData.type !== 'citizen' && (
+            <>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-slate-700">Gender *</label>
+                <Select value={formData.gender} onValueChange={(value) => onInputChange('gender', value)}>
+                  <SelectTrigger disabled={isLoading}>
+                    <SelectValue placeholder="Select gender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {GENDER_OPTIONS.map(option => (
+                      <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-slate-700">Ward</label>
-            <Input
-              placeholder="Enter ward"
-              value={formData.ward}
-              onChange={(e) => onInputChange('ward', e.target.value)}
-              disabled={isLoading}
-            />
-          </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-slate-700">Date of Birth *</label>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <Input
+                    type="date"
+                    value={formData.date_of_birth}
+                    onChange={(e) => onInputChange('date_of_birth', e.target.value)}
+                    disabled={isLoading}
+                    className="pl-10"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-slate-700">ID Type *</label>
+                <Select value={formData.id_type} onValueChange={(value) => onInputChange('id_type', value)}>
+                  <SelectTrigger disabled={isLoading}>
+                    <SelectValue placeholder="Select ID type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ID_TYPES.map(type => (
+                      <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-slate-700">
+                  {formData.id_type === 'national_id' ? 'National ID Number' : 'ID/Passport Number'} *
+                </label>
+                <div className="relative">
+                  <CreditCard className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <Input
+                    placeholder={formData.id_type === 'national_id' ? 'e.g., 12345678' : 'Enter ID number'}
+                    value={formData.national_id}
+                    onChange={(e) => onInputChange('national_id', e.target.value)}
+                    disabled={isLoading}
+                    className="pl-10"
+                    required
+                  />
+                </div>
+                <p className="text-xs text-slate-500">This will be verified against government records</p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-slate-700">Sub-County</label>
+                <Input
+                  placeholder="Enter sub-county"
+                  value={formData.sub_county}
+                  onChange={(e) => onInputChange('sub_county', e.target.value)}
+                  disabled={isLoading}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-slate-700">Ward</label>
+                <Input
+                  placeholder="Enter ward"
+                  value={formData.ward}
+                  onChange={(e) => onInputChange('ward', e.target.value)}
+                  disabled={isLoading}
+                />
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -516,18 +506,26 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
         </div>
       </div>
 
-      {/* Important Notes */}
+      {/* Important Notes - Simplified for citizens */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-800 space-y-2">
         <p><strong>Important:</strong></p>
         <ul className="list-disc list-inside space-y-1">
-          <li>Your National ID/Passport number will be verified against government records.</li>
-          <li>County selection at registration is based on your residence and cannot be changed without verification.</li>
-          <li>
-            {formData.type === 'citizen' && 'You can vote and verify issues within your registered county.'}
-            {formData.type === 'contractor' && 'After verification, you can register for additional counties.'}
-            {formData.type === 'government' && 'County assignments are managed by system administrators.'}
-          </li>
-          <li>False information may result in account suspension and legal action.</li>
+          {formData.type === 'citizen' ? (
+            <>
+              <li>You can report issues and vote on problems in your registered county.</li>
+              <li>Complete your profile later to access more features.</li>
+            </>
+          ) : (
+            <>
+              <li>Your National ID/Passport number will be verified against government records.</li>
+              <li>County selection at registration is based on your residence.</li>
+              <li>
+                {formData.type === 'contractor' && 'After verification, you can register for additional counties.'}
+                {formData.type === 'government' && 'County assignments are managed by system administrators.'}
+              </li>
+              <li>False information may result in account suspension and legal action.</li>
+            </>
+          )}
         </ul>
       </div>
 
