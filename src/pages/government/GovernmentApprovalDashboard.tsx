@@ -35,6 +35,7 @@ const GovernmentApprovalDashboard = () => {
   const [showApproveDialog, setShowApproveDialog] = useState(false);
   const [budgetAmount, setBudgetAmount] = useState('');
   const [processing, setProcessing] = useState(false);
+  const [assignedCounties, setAssignedCounties] = useState<string[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -43,8 +44,23 @@ const GovernmentApprovalDashboard = () => {
 
   const fetchPendingReports = async () => {
     try {
-      // Only fetch reports that are in 'under_review' status (meaning they have 50+ votes)
-      const { data, error } = await supabase
+      // Get current user's assigned counties
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      let counties: string[] = [];
+      if (user) {
+        const { data: govProfile } = await supabase
+          .from('government_profiles')
+          .select('assigned_counties')
+          .eq('user_id', user.id)
+          .single();
+        
+        counties = govProfile?.assigned_counties || [];
+        setAssignedCounties(counties);
+      }
+
+      // Build query - filter by assigned counties if set
+      let query = supabase
         .from('problem_reports')
         .select(`
           *,
@@ -52,6 +68,15 @@ const GovernmentApprovalDashboard = () => {
         `)
         .eq('status', WORKFLOW_STATUS.UNDER_REVIEW)
         .order('priority_score', { ascending: false });
+
+      // If government official has assigned counties, filter by those
+      if (counties.length > 0) {
+        query = query.or(
+          counties.map(county => `location.ilike.%${county}%`).join(',')
+        );
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
 

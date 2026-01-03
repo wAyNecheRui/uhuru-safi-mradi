@@ -6,6 +6,7 @@ import { WorkflowGuardService, WORKFLOW_STATUS } from '@/services/WorkflowGuardS
 export const useGovernmentDashboard = () => {
   const [pendingApprovals, setPendingApprovals] = useState([]);
   const [activeProjects, setActiveProjects] = useState([]);
+  const [assignedCounties, setAssignedCounties] = useState<string[]>([]);
   const [budgetOverview, setBudgetOverview] = useState({
     totalAllocated: 'KES 0',
     totalSpent: 'KES 0', 
@@ -24,9 +25,23 @@ export const useGovernmentDashboard = () => {
     try {
       setLoading(true);
 
-      // Fetch reports that are UNDER_REVIEW (passed 50-vote threshold, ready for government approval)
-      // NOT 'pending' - those are still collecting votes
-      const { data: pendingData } = await supabase
+      // Get current user and their assigned counties
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      let counties: string[] = [];
+      if (user) {
+        const { data: govProfile } = await supabase
+          .from('government_profiles')
+          .select('assigned_counties')
+          .eq('user_id', user.id)
+          .single();
+        
+        counties = govProfile?.assigned_counties || [];
+        setAssignedCounties(counties);
+      }
+
+      // Build query for problem reports - filter by assigned counties if set
+      let pendingQuery = supabase
         .from('problem_reports')
         .select(`
           *,
@@ -36,8 +51,20 @@ export const useGovernmentDashboard = () => {
         .eq('status', WORKFLOW_STATUS.UNDER_REVIEW)
         .order('priority_score', { ascending: false });
 
-      // Fetch active projects
-      const { data: activeData } = await supabase
+      // If government official has assigned counties, filter by those
+      // If no counties assigned, they can see all (national level access)
+      if (counties.length > 0) {
+        // Filter reports where location contains any of the assigned counties
+        // or ward/constituency is in the assigned counties
+        pendingQuery = pendingQuery.or(
+          counties.map(county => `location.ilike.%${county}%`).join(',')
+        );
+      }
+
+      const { data: pendingData } = await pendingQuery;
+
+      // Fetch active projects - also filtered by counties if applicable
+      let projectQuery = supabase
         .from('projects')
         .select(`
           *,
@@ -46,6 +73,8 @@ export const useGovernmentDashboard = () => {
         `)
         .in('status', ['in_progress', 'planning'])
         .order('created_at', { ascending: false });
+
+      const { data: activeData } = await projectQuery;
 
       // Calculate budget overview from projects and reports
       const { data: budgetData } = await supabase
@@ -168,6 +197,7 @@ export const useGovernmentDashboard = () => {
   return {
     pendingApprovals,
     activeProjects,
+    assignedCounties,
     budgetOverview,
     loading,
     handleApproval,
