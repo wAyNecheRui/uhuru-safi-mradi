@@ -348,9 +348,13 @@ const CommunityVoting = () => {
                               </Button>
                             </div>
 
-                            {votePercentage >= 70 && issue.totalVotes >= 3 && (
+                            {issue.totalVotes >= 50 ? (
                               <div className="mt-3 p-2 bg-green-100 border border-green-200 rounded text-sm text-green-800 text-center">
-                                High community support! Eligible for approval.
+                                ✅ 50+ votes reached! Moved to government review.
+                              </div>
+                            ) : (
+                              <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-800 text-center">
+                                {50 - issue.totalVotes} more votes needed for government review
                               </div>
                             )}
                           </div>
@@ -423,7 +427,7 @@ const CommunityVoting = () => {
               <ul className="space-y-2 text-sm text-blue-700">
                 <li className="flex items-start">
                   <span className="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                  Issues with 70%+ support and minimum 3 votes move to approval phase
+                  Issues with 50+ votes automatically move to government review phase
                 </li>
                 <li className="flex items-start">
                   <span className="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
