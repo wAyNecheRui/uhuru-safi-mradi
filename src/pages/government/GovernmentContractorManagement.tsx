@@ -203,8 +203,8 @@ const GovernmentContractorManagement = () => {
                               <CheckCircle className="h-3 w-3 mr-1" /> Verified
                             </Badge>
                           ) : (
-                            <Badge className="bg-yellow-100 text-yellow-800">
-                              <Clock className="h-3 w-3 mr-1" /> Pending
+                            <Badge className="bg-yellow-100 text-yellow-800" title="Contractor account awaiting credential verification by government officials">
+                              <Clock className="h-3 w-3 mr-1" /> Awaiting Verification
                             </Badge>
                           )}
                         </div>
@@ -247,10 +247,29 @@ const GovernmentContractorManagement = () => {
                       </div>
 
                       <div className="flex justify-end gap-2">
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            toast({
+                              title: contractor.company_name,
+                              description: `${contractor.specialization?.join(', ') || 'No specialization'} • ${contractor.years_in_business || 0} years • KRA: ${contractor.kra_pin || 'N/A'} • ${contractor.verified ? 'Verified' : 'Pending Verification'}`
+                            });
+                          }}
+                        >
                           View Profile
                         </Button>
-                        <Button size="sm">
+                        <Button 
+                          size="sm"
+                          onClick={() => {
+                            const ratings = contractor.contractor_ratings || [];
+                            const avgRating = getAverageRating(ratings);
+                            toast({
+                              title: `Performance Report: ${contractor.company_name}`,
+                              description: `Rating: ${avgRating}/5 • Projects: ${contractor.previous_projects_count || 0} • Contract Value: KES ${(contractor.total_contract_value || 0).toLocaleString()}`
+                            });
+                          }}
+                        >
                           Performance Report
                         </Button>
                       </div>

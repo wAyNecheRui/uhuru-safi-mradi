@@ -16,6 +16,7 @@ import {
   QrCode,
   Star,
   TrendingUp,
+  ArrowLeft,
 } from 'lucide-react';
 import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
@@ -198,6 +199,13 @@ const CitizenProjects = () => {
       
       <main>
         <ResponsiveContainer className="py-6 sm:py-8">
+          <div className="flex items-center gap-4 mb-4">
+            <Button variant="ghost" size="sm" onClick={() => window.history.back()}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back
+            </Button>
+          </div>
+          
           <BreadcrumbNav items={breadcrumbItems} />
           
           <div className="mb-8">
@@ -205,27 +213,18 @@ const CitizenProjects = () => {
             <p className="text-gray-600">Monitor active infrastructure projects, verify milestones, and track community investments.</p>
           </div>
 
-          {/* Search and Filters */}
+          {/* Search Only - No Filter Dropdowns */}
           <Card className="mb-6">
             <CardContent className="p-6">
-              <div className="flex flex-col md:flex-row gap-4">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    type="text"
-                    placeholder="Search projects by name or description..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                <Button 
-                  variant="outline"
-                  onClick={() => setShowMapModal(true)}
-                >
-                  <MapPin className="h-4 w-4 mr-2" />
-                  Map View
-                </Button>
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  type="text"
+                  placeholder="Search projects by name or description..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
               </div>
             </CardContent>
           </Card>

@@ -7,7 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { Checkbox } from '@/components/ui/checkbox';
 import { 
   Shield, CheckCircle, AlertTriangle, Clock, FileText, 
-  ClipboardCheck, AlertCircle, RefreshCw, Loader2, Building2
+  ClipboardCheck, AlertCircle, RefreshCw, Loader2, Building2, ArrowLeft
 } from 'lucide-react';
 import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
@@ -160,6 +160,13 @@ const ContractorQuality = () => {
       
       <main>
         <ResponsiveContainer className="py-6 sm:py-8">
+          <div className="flex items-center gap-4 mb-4">
+            <Button variant="ghost" size="sm" onClick={() => window.history.back()}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back
+            </Button>
+          </div>
+          
           <BreadcrumbNav items={breadcrumbItems} />
           
           <div className="mb-8">
@@ -202,7 +209,11 @@ const ContractorQuality = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-600">Quality Score</p>
-                    <p className="text-2xl font-bold text-gray-900">92%</p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {checkpoints.length > 0 
+                        ? `${Math.round(checkpoints.filter(c => c.passed).length / checkpoints.length * 100)}%`
+                        : 'N/A'}
+                    </p>
                   </div>
                   <Shield className="h-8 w-8 text-blue-600" />
                 </div>

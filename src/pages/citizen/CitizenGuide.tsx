@@ -259,24 +259,7 @@ const CitizenGuide = () => {
                         </div>
                       )}
                       
-                      <div className="mt-6 flex flex-wrap gap-3">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleWatchTutorial(tutorial.id)}
-                        >
-                          <PlayCircle className="h-4 w-4 mr-2" />
-                          Watch Tutorial
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleDownloadPDF(tutorial.id)}
-                        >
-                          <Download className="h-4 w-4 mr-2" />
-                          Download PDF
-                        </Button>
-                      </div>
+                      {/* Tutorial buttons removed as requested */}
                     </CardContent>
                   </Card>
                 );
@@ -344,7 +327,7 @@ const CitizenGuide = () => {
                 );
               })}
 
-              {/* Contact Information */}
+              {/* Contact Information - Removed USSD reference */}
               <Card className="border-green-200 bg-green-50">
                 <CardHeader>
                   <CardTitle className="flex items-center text-green-800">
@@ -353,16 +336,10 @@ const CitizenGuide = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid md:grid-cols-3 gap-4">
-                    <div className="p-4 bg-white rounded-lg text-center">
-                      <Phone className="h-8 w-8 text-green-600 mx-auto mb-2" />
-                      <h4 className="font-medium mb-1">Helpline</h4>
-                      <p className="text-green-600 font-semibold">*483#</p>
-                      <p className="text-sm text-gray-600">USSD Access</p>
-                    </div>
+                  <div className="grid md:grid-cols-2 gap-4">
                     <div className="p-4 bg-white rounded-lg text-center">
                       <Phone className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-                      <h4 className="font-medium mb-1">SMS Support</h4>
+                      <h4 className="font-medium mb-1">Support Hotline</h4>
                       <p className="text-blue-600 font-semibold">0800 123 456</p>
                       <p className="text-sm text-gray-600">Toll-free</p>
                     </div>

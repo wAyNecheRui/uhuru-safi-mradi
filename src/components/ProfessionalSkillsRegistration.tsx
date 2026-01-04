@@ -317,6 +317,102 @@ const ProfessionalSkillsRegistration = () => {
     }
   };
 
+  // If user already has a profile, show their current data
+  if (existingRegistration && formData.selectedSkills.length > 0) {
+    return (
+      <div className="max-w-6xl mx-auto space-y-6">
+        <Card className="border-t-4 border-t-green-600">
+          <CardHeader>
+            <CardTitle className="flex items-center text-2xl">
+              <Award className="h-6 w-6 mr-3 text-green-600" />
+              Your Professional Profile
+            </CardTitle>
+            <p className="text-gray-600 mt-2">
+              Your skills are registered and visible to contractors looking for workers.
+            </p>
+          </CardHeader>
+          <CardContent className="p-6 space-y-6">
+            {/* Profile Summary */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <User className="h-5 w-5 text-gray-500" />
+                  <div>
+                    <p className="text-sm text-gray-500">Full Name</p>
+                    <p className="font-medium">{formData.fullName || 'Not set'}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Phone className="h-5 w-5 text-gray-500" />
+                  <div>
+                    <p className="text-sm text-gray-500">Phone</p>
+                    <p className="font-medium">{formData.phoneNumber || 'Not set'}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <MapPin className="h-5 w-5 text-gray-500" />
+                  <div>
+                    <p className="text-sm text-gray-500">Location</p>
+                    <p className="font-medium">{formData.county || 'Not set'}{formData.subCounty ? `, ${formData.subCounty}` : ''}</p>
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <Building className="h-5 w-5 text-gray-500" />
+                  <div>
+                    <p className="text-sm text-gray-500">Organization</p>
+                    <p className="font-medium">{formData.organization || 'Independent'}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Calendar className="h-5 w-5 text-gray-500" />
+                  <div>
+                    <p className="text-sm text-gray-500">Experience</p>
+                    <p className="font-medium">{formData.yearsExperience ? `${formData.yearsExperience} years` : 'Not specified'}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Badge className={formData.availableForWork ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
+                    {formData.availableForWork ? '✓ Available for Work' : 'Not Available'}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+
+            {/* Skills */}
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
+                <Wrench className="h-4 w-4 mr-2" />
+                Your Registered Skills
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                {formData.selectedSkills.map((skill, idx) => (
+                  <Badge key={idx} className="bg-blue-100 text-blue-800">{skill}</Badge>
+                ))}
+              </div>
+            </div>
+
+            {/* Certifications */}
+            {formData.certifications && (
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-2">Certifications</h4>
+                <p className="text-gray-700">{formData.certifications}</p>
+              </div>
+            )}
+
+            <Button 
+              onClick={() => setExistingRegistration(null)} 
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              Update Profile
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       <Card className="border-t-4 border-t-blue-600">
@@ -327,8 +423,7 @@ const ProfessionalSkillsRegistration = () => {
           </CardTitle>
           <p className="text-gray-600 mt-2">
             Register your professional skills and expertise to be considered for infrastructure 
-            development projects in Kenya. Your skills will be verified and matched with relevant 
-            project opportunities.
+            development projects in Kenya.
           </p>
         </CardHeader>
         
