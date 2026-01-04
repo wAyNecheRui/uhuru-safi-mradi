@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { 
   DollarSign, Wallet, CreditCard, TrendingUp, Clock, CheckCircle, 
-  AlertTriangle, BarChart3, PiggyBank, ArrowUpRight, ArrowDownRight, Loader2
+  AlertTriangle, BarChart3, PiggyBank, ArrowUpRight, ArrowDownRight, Loader2, ArrowLeft
 } from 'lucide-react';
 import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
@@ -166,6 +166,13 @@ const ContractorFinancials = () => {
       
       <main>
         <ResponsiveContainer className="py-6 sm:py-8">
+          <div className="flex items-center gap-4 mb-4">
+            <Button variant="ghost" size="sm" onClick={() => window.history.back()}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back
+            </Button>
+          </div>
+          
           <BreadcrumbNav items={breadcrumbItems} />
           
           <div className="mb-8">
@@ -396,29 +403,34 @@ const ContractorFinancials = () => {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4">
-                      <div>
-                        <div className="flex justify-between text-sm mb-1">
-                          <span>Payment Collection Rate</span>
-                          <span className="font-bold">85%</span>
-                        </div>
-                        <Progress value={85} className="h-2" />
+                    {stats.totalEscrow === 0 ? (
+                      <div className="text-center py-4 text-gray-500">
+                        <p>No project data available yet. Key metrics will appear once you have active projects.</p>
                       </div>
-                      <div>
-                        <div className="flex justify-between text-sm mb-1">
-                          <span>On-Time Payment Rate</span>
-                          <span className="font-bold">92%</span>
+                    ) : (
+                      <div className="space-y-4">
+                        <div>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span>Payment Collection Rate</span>
+                            <span className="font-bold">{stats.totalEscrow > 0 ? Math.round((stats.releasedPayments / stats.totalEscrow) * 100) : 0}%</span>
+                          </div>
+                          <Progress value={stats.totalEscrow > 0 ? (stats.releasedPayments / stats.totalEscrow) * 100 : 0} className="h-2" />
                         </div>
-                        <Progress value={92} className="h-2" />
-                      </div>
-                      <div>
-                        <div className="flex justify-between text-sm mb-1">
-                          <span>Budget Utilization</span>
-                          <span className="font-bold">78%</span>
+                        <div>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span>Escrow Funded</span>
+                            <span className="font-bold">{stats.totalEscrow > 0 ? Math.round((stats.pendingPayments / stats.totalEscrow) * 100) : 0}%</span>
+                          </div>
+                          <Progress value={stats.totalEscrow > 0 ? (stats.pendingPayments / stats.totalEscrow) * 100 : 0} className="h-2" />
                         </div>
-                        <Progress value={78} className="h-2" />
+                        <div>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span>Active Projects</span>
+                            <span className="font-bold">{escrowAccounts.length}</span>
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </CardContent>
                 </Card>
               </div>

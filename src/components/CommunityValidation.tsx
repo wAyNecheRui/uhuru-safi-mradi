@@ -551,8 +551,15 @@ const CommunityValidation = () => {
             </div>
 
                     <div className="space-y-3">
+                      {/* Already voted notice */}
+                      {report.user_vote && (
+                        <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded text-center">
+                          <CheckCircle className="h-3 w-3 inline mr-1" />
+                          You've already {report.user_vote === 'upvote' ? 'supported' : 'disputed'} this issue
+                        </div>
+                      )}
                       {/* Vote eligibility notice */}
-                      {report.can_vote === false && (
+                      {!report.user_vote && report.can_vote === false && (
                         <div className="text-xs text-amber-600 bg-amber-50 p-2 rounded">
                           <AlertTriangle className="h-3 w-3 inline mr-1" />
                           You must be within 50km to vote on this issue
@@ -564,34 +571,22 @@ const CommunityValidation = () => {
                           size="sm"
                           className="flex-1"
                           onClick={() => handleVote(report.id, 'upvote')}
-                          disabled={votingState[report.id] || report.can_vote === false}
+                          disabled={votingState[report.id] || report.can_vote === false || !!report.user_vote}
                         >
                           <ThumbsUp className="h-4 w-4 mr-1" />
-                          Support
+                          {report.user_vote === 'upvote' ? 'Supported' : 'Support'}
                         </Button>
                         <Button
                           variant={report.user_vote === 'downvote' ? 'destructive' : 'outline'}
                           size="sm"
                           className="flex-1"
                           onClick={() => handleVote(report.id, 'downvote')}
-                          disabled={votingState[report.id] || report.can_vote === false}
+                          disabled={votingState[report.id] || report.can_vote === false || !!report.user_vote}
                         >
                           <ThumbsDown className="h-4 w-4 mr-1" />
-                          Dispute
+                          {report.user_vote === 'downvote' ? 'Disputed' : 'Dispute'}
                         </Button>
                       </div>
-                      {/* Verification eligibility */}
-                      {report.can_verify && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full text-green-600 border-green-300 hover:bg-green-50"
-                          onClick={() => handleVerify(report.id, 'verify')}
-                        >
-                          <CheckCircle className="h-4 w-4 mr-1" />
-                          Verify (within 10km)
-                        </Button>
-                      )}
                     </div>
                   </div>
                 </div>

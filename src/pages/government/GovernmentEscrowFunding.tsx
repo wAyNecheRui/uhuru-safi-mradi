@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Loader2, Wallet, Building2, ArrowRight, CheckCircle2, AlertCircle, Phone } from "lucide-react";
+import { Loader2, Wallet, Building2, ArrowRight, CheckCircle2, AlertCircle, Phone, ArrowLeft } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 
@@ -130,6 +130,12 @@ export default function GovernmentEscrowFunding() {
 
   return (
     <div className="container mx-auto p-6 max-w-6xl">
+      <div className="mb-4">
+        <Button variant="ghost" size="sm" onClick={() => window.history.back()}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Dashboard
+        </Button>
+      </div>
       <div className="mb-8">
         <h1 className="text-3xl font-bold flex items-center gap-3">
           <Wallet className="h-8 w-8 text-primary" />

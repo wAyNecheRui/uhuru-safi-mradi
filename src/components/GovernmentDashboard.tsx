@@ -335,8 +335,7 @@ const GovernmentDashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Jurisdiction Settings */}
-      <GovernmentJurisdictionSettings />
+      {/* Jurisdiction settings moved to registration - not displayed here */}
 
       <Tabs defaultValue="approvals" className="space-y-6">
         <TabsList className="grid w-full grid-cols-4 bg-white shadow-lg">
