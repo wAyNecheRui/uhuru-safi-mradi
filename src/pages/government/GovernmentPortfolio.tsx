@@ -1,29 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import { 
-  Building, MapPin, Calendar, DollarSign, Users, Search, 
-  Filter, Clock, AlertTriangle, CheckCircle, XCircle,
-  TrendingUp, BarChart3, Loader2
+  Building, MapPin, Calendar, DollarSign, Search, 
+  Clock, AlertTriangle, TrendingUp, Loader2, ArrowLeft
 } from 'lucide-react';
 import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 const GovernmentPortfolio = () => {
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [priorityFilter, setPriorityFilter] = useState('all');
-  const [countyFilter, setCountyFilter] = useState('all');
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const [stats, setStats] = useState({
     totalActive: 0,
@@ -77,9 +74,7 @@ const GovernmentPortfolio = () => {
   const filteredProjects = projects.filter(project => {
     const matchesSearch = project.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           project.problem_reports?.location?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
-    const matchesPriority = priorityFilter === 'all' || project.problem_reports?.priority === priorityFilter;
-    return matchesSearch && matchesStatus && matchesPriority;
+    return matchesSearch;
   });
 
   const getStatusColor = (status: string) => {
@@ -129,11 +124,18 @@ const GovernmentPortfolio = () => {
       
       <main>
         <ResponsiveContainer className="py-6 sm:py-8 space-y-6">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="sm" onClick={() => navigate('/government')}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Dashboard
+            </Button>
+          </div>
+          
           <BreadcrumbNav items={breadcrumbItems} />
           
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Project Portfolio Overview</h1>
-            <p className="text-gray-600">Real-time project monitoring with filters and analytics</p>
+            <p className="text-gray-600">Real-time project monitoring with search</p>
           </div>
 
           {/* Quick Stats Panel */}
@@ -187,60 +189,17 @@ const GovernmentPortfolio = () => {
             </Card>
           </div>
 
-          {/* Filters */}
+          {/* Search Only */}
           <Card>
             <CardContent className="p-4">
-              <div className="flex flex-wrap gap-4">
-                <div className="flex-1 min-w-[200px]">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input 
-                      placeholder="Search projects..." 
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-                
-                <Select value={countyFilter} onValueChange={setCountyFilter}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue placeholder="County" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Counties</SelectItem>
-                    <SelectItem value="nairobi">Nairobi</SelectItem>
-                    <SelectItem value="mombasa">Mombasa</SelectItem>
-                    <SelectItem value="kisumu">Kisumu</SelectItem>
-                    <SelectItem value="nakuru">Nakuru</SelectItem>
-                  </SelectContent>
-                </Select>
-                
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="planning">Planning</SelectItem>
-                    <SelectItem value="in_progress">Active</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="delayed">Delayed</SelectItem>
-                  </SelectContent>
-                </Select>
-                
-                <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue placeholder="Priority" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Priorities</SelectItem>
-                    <SelectItem value="urgent">Urgent</SelectItem>
-                    <SelectItem value="high">High</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="low">Low</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="relative max-w-md">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input 
+                  placeholder="Search projects by name or location..." 
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
               </div>
             </CardContent>
           </Card>

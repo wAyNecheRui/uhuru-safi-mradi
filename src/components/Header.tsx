@@ -1,10 +1,9 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield, Home } from 'lucide-react';
+import { Shield } from 'lucide-react';
 import ProfileButton from '@/components/ProfileButton';
 import { useAuth } from '@/contexts/AuthContext';
 import NotificationBell from '@/components/notifications/NotificationBell';
-import { Button } from '@/components/ui/button';
 
 const Header = () => {
   const { isAuthenticated, user } = useAuth();
@@ -55,15 +54,6 @@ const Header = () => {
           <div className="flex items-center space-x-2 sm:space-x-3">
             {isAuthenticated && (
               <>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleHomeClick}
-                  className="hidden sm:flex items-center gap-2"
-                >
-                  <Home className="h-4 w-4" />
-                  Dashboard
-                </Button>
                 <NotificationBell />
                 <ProfileButton />
               </>
