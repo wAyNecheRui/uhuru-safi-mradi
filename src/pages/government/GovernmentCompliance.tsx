@@ -7,7 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { 
   Shield, FileText, CheckCircle, XCircle, AlertCircle,
   Download, Eye, Calendar, Loader2,
-  Link2, Database, ArrowLeft
+  Link2, Database
 } from 'lucide-react';
 import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
@@ -227,13 +227,6 @@ This report is auto-generated based on real system data.
       
       <main>
         <ResponsiveContainer className="py-6 sm:py-8 space-y-6">
-          <div className="flex items-center gap-4 mb-4">
-            <Button variant="ghost" size="sm" onClick={() => navigate('/government')}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Dashboard
-            </Button>
-          </div>
-          
           <BreadcrumbNav items={breadcrumbItems} />
           
           <div className="flex flex-wrap justify-between items-start gap-4">
