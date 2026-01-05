@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Menu, Shield, X, ChevronRight } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { TouchGesture } from './mobile/TouchGestures';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface MobileNavigationProps {
   onNavigate?: (path: string) => void;
@@ -14,6 +15,7 @@ const MobileNavigation = ({ onNavigate }: MobileNavigationProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { isAuthenticated, user } = useAuth();
 
   const handleNavigation = (path: string) => {
     navigate(path);
@@ -27,13 +29,30 @@ const MobileNavigation = ({ onNavigate }: MobileNavigationProps) => {
 
   const isActive = (path: string) => location.pathname === path;
 
+  // Get home path based on user type
+  const getHomePath = () => {
+    if (isAuthenticated && user) {
+      switch (user.user_type) {
+        case 'citizen':
+          return '/citizen';
+        case 'contractor':
+          return '/contractor';
+        case 'government':
+          return '/government';
+        default:
+          return '/';
+      }
+    }
+    return '/';
+  };
+
   const menuItems = [
-    { label: 'Home', path: '/' },
+    { label: 'Home', path: getHomePath() },
     { label: 'Contractors', path: '/contractor-database' },
     { label: 'Transparency Portal', path: '/transparency' },
     { label: 'About', path: '/about' },
     { label: 'Contact', path: '/contact' },
-    { label: 'Sign In', path: '/auth' },
+    ...(isAuthenticated ? [] : [{ label: 'Sign In', path: '/auth' }]),
   ];
 
   return (

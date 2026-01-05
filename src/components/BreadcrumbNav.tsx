@@ -10,6 +10,7 @@ import {
   BreadcrumbPage, 
   BreadcrumbSeparator 
 } from '@/components/ui/breadcrumb';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface BreadcrumbNavProps {
   items?: Array<{
@@ -20,12 +21,37 @@ interface BreadcrumbNavProps {
 
 const BreadcrumbNav = ({ items = [] }: BreadcrumbNavProps) => {
   const location = useLocation();
+  const { isAuthenticated, user } = useAuth();
   const pathSegments = location.pathname.split('/').filter(Boolean);
   
+  // Get home path based on user type
+  const getHomePath = () => {
+    if (isAuthenticated && user) {
+      switch (user.user_type) {
+        case 'citizen':
+          return '/citizen';
+        case 'contractor':
+          return '/contractor';
+        case 'government':
+          return '/government';
+        default:
+          return '/';
+      }
+    }
+    return '/';
+  };
+
+  const homePath = getHomePath();
+  
   const generateBreadcrumbs = () => {
-    if (items.length > 0) return items;
+    if (items.length > 0) {
+      // Update the Home item to use the correct path
+      return items.map(item => 
+        item.label === 'Home' ? { ...item, href: homePath } : item
+      );
+    }
     
-    const breadcrumbs = [{ label: 'Home', href: '/' }];
+    const breadcrumbs = [{ label: 'Home', href: homePath }];
     
     let currentPath = '';
     pathSegments.forEach((segment, index) => {
