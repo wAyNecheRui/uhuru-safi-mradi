@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { 
   Building, MapPin, Calendar, DollarSign, Search, 
-  Clock, AlertTriangle, TrendingUp, Loader2, ArrowLeft
+  Clock, AlertTriangle, TrendingUp, Loader2
 } from 'lucide-react';
 import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
@@ -124,13 +124,6 @@ const GovernmentPortfolio = () => {
       
       <main>
         <ResponsiveContainer className="py-6 sm:py-8 space-y-6">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" onClick={() => navigate('/government')}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Dashboard
-            </Button>
-          </div>
-          
           <BreadcrumbNav items={breadcrumbItems} />
           
           <div>
