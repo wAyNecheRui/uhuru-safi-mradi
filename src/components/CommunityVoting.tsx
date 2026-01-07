@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ThumbsUp, ThumbsDown, Users, MapPin, Clock, AlertTriangle, Camera, MessageSquare, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { MIN_VOTES_THRESHOLD } from '@/services/WorkflowGuardService';
 
 interface PendingReport {
   id: string;
@@ -348,13 +349,13 @@ const CommunityVoting = () => {
                               </Button>
                             </div>
 
-                            {issue.totalVotes >= 3 ? (
+                            {issue.totalVotes >= MIN_VOTES_THRESHOLD ? (
                               <div className="mt-3 p-2 bg-green-100 border border-green-200 rounded text-sm text-green-800 text-center">
-                                ✅ 3+ votes reached! Moved to government review.
+                                ✅ {MIN_VOTES_THRESHOLD}+ votes reached! Moved to government review.
                               </div>
                             ) : (
                               <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-800 text-center">
-                                {3 - issue.totalVotes} more votes needed for government review
+                                {MIN_VOTES_THRESHOLD - issue.totalVotes} more votes needed for government review
                               </div>
                             )}
                           </div>
@@ -427,7 +428,7 @@ const CommunityVoting = () => {
               <ul className="space-y-2 text-sm text-blue-700">
                 <li className="flex items-start">
                   <span className="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                  Issues with 3+ votes automatically move to government review phase
+                  Issues with {MIN_VOTES_THRESHOLD}+ votes automatically move to government review phase
                 </li>
                 <li className="flex items-start">
                   <span className="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>

@@ -334,7 +334,7 @@ export class WorkflowService {
     // Determine current step and completion status
     if (report.status === 'submitted') {
       currentStep = 'community_validation';
-      canProceed = (report.priority_score || 0) >= 3; // Minimum 3 votes threshold
+      canProceed = (report.priority_score || 0) >= 3; // Minimum 3 votes threshold for testing
       if (!canProceed) requirements.push('Needs at least 3 community votes');
     } else if (report.status === 'community_review') {
       completedSteps.push('community_validation');

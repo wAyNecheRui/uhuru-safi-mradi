@@ -5,9 +5,9 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { 
-  Building, CheckCircle, XCircle, AlertCircle, Star, 
-  Clock, FileText, Shield, Award, Users, TrendingUp,
-  Loader2, Search, Filter
+  Building, CheckCircle, XCircle, Star, 
+  Clock, FileText, Award, TrendingUp,
+  Loader2, Search
 } from 'lucide-react';
 import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
@@ -15,6 +15,7 @@ import ResponsiveContainer from '@/components/ResponsiveContainer';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
+import ContractorProfileModal from '@/components/government/ContractorProfileModal';
 
 const GovernmentContractorManagement = () => {
   const [contractors, setContractors] = useState<any[]>([]);
@@ -27,6 +28,8 @@ const GovernmentContractorManagement = () => {
   });
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedContractor, setSelectedContractor] = useState<any>(null);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -251,26 +254,11 @@ const GovernmentContractorManagement = () => {
                           variant="outline" 
                           size="sm"
                           onClick={() => {
-                            toast({
-                              title: contractor.company_name,
-                              description: `${contractor.specialization?.join(', ') || 'No specialization'} • ${contractor.years_in_business || 0} years • KRA: ${contractor.kra_pin || 'N/A'} • ${contractor.verified ? 'Verified' : 'Pending Verification'}`
-                            });
+                            setSelectedContractor(contractor);
+                            setIsProfileModalOpen(true);
                           }}
                         >
-                          View Profile
-                        </Button>
-                        <Button 
-                          size="sm"
-                          onClick={() => {
-                            const ratings = contractor.contractor_ratings || [];
-                            const avgRating = getAverageRating(ratings);
-                            toast({
-                              title: `Performance Report: ${contractor.company_name}`,
-                              description: `Rating: ${avgRating}/5 • Projects: ${contractor.previous_projects_count || 0} • Contract Value: KES ${(contractor.total_contract_value || 0).toLocaleString()}`
-                            });
-                          }}
-                        >
-                          Performance Report
+                          View Full Profile
                         </Button>
                       </div>
                     </CardContent>
@@ -424,6 +412,14 @@ const GovernmentContractorManagement = () => {
               </Card>
             </TabsContent>
           </Tabs>
+
+          {/* Contractor Profile Modal */}
+          <ContractorProfileModal
+            isOpen={isProfileModalOpen}
+            onClose={() => setIsProfileModalOpen(false)}
+            contractor={selectedContractor}
+            ratings={selectedContractor?.contractor_ratings || []}
+          />
         </ResponsiveContainer>
       </main>
     </div>

@@ -75,7 +75,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
       <div className="space-y-4 p-4 bg-slate-50 rounded-lg border">
         <h4 className="font-medium text-slate-900 flex items-center">
           <User className="h-4 w-4 mr-2" />
-          {formData.type === 'citizen' ? 'Basic Information' : 'Personal Information'}
+          Basic Information
         </h4>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -111,7 +111,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
           </div>
 
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-slate-700">Phone Number *</label>
+            <label className="block text-sm font-medium text-slate-700">Phone Number</label>
             <div className="relative">
               <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
               <Input
@@ -120,16 +120,15 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
                 onChange={(e) => onInputChange('phone', e.target.value)}
                 disabled={isLoading}
                 className="pl-10"
-                required
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-slate-700">County *</label>
+            <label className="block text-sm font-medium text-slate-700">County</label>
             <Select value={formData.county} onValueChange={(value) => onInputChange('county', value)}>
               <SelectTrigger disabled={isLoading}>
-                <SelectValue placeholder="Select county" />
+                <SelectValue placeholder="Select county (optional)" />
               </SelectTrigger>
               <SelectContent className="max-h-60">
                 {KENYA_COUNTIES.map(county => (
@@ -138,8 +137,6 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
               </SelectContent>
             </Select>
           </div>
-
-          {/* Additional ID fields are now optional for simplified registration */}
         </div>
       </div>
 
@@ -164,15 +161,15 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
         </div>
       )}
       
-      {/* Contractor-specific fields (AGPO & NCA aligned) */}
+      {/* Contractor-specific fields (Simplified) */}
       {formData.type === 'contractor' && (
         <div className="space-y-4 p-4 bg-orange-50 rounded-lg border border-orange-200">
           <h4 className="font-medium text-orange-900 flex items-center">
             <Building className="h-4 w-4 mr-2" />
-            Contractor Registration (NCA & AGPO Aligned)
+            Contractor Registration
           </h4>
           <p className="text-xs text-orange-700">
-            Information aligned with NCA registration and AGPO requirements for government procurement.
+            Basic information to get started. Additional details can be added later in your profile.
           </p>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -192,17 +189,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-slate-700">Company Registration Number</label>
-              <Input
-                placeholder="e.g., PVT-XXXXXXXX"
-                value={formData.company_registration_number}
-                onChange={(e) => onInputChange('company_registration_number', e.target.value)}
-                disabled={isLoading}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-slate-700">KRA PIN *</label>
+              <label className="block text-sm font-medium text-slate-700">KRA PIN</label>
               <div className="relative">
                 <FileText className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <Input
@@ -211,39 +198,12 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
                   onChange={(e) => onInputChange('kra_pin', e.target.value.toUpperCase())}
                   disabled={isLoading}
                   className="pl-10"
-                  required
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-slate-700">NCA Category *</label>
-              <Select value={formData.nca_category} onValueChange={(value) => onInputChange('nca_category', value)}>
-                <SelectTrigger disabled={isLoading}>
-                  <SelectValue placeholder="Select NCA category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {NCA_CATEGORIES.map(cat => (
-                    <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-slate-700">Years in Business</label>
-              <Input
-                type="number"
-                placeholder="e.g., 5"
-                value={formData.years_in_business}
-                onChange={(e) => onInputChange('years_in_business', e.target.value)}
-                disabled={isLoading}
-                min="0"
-              />
-            </div>
-
-            <div className="space-y-2 md:col-span-2">
-              <label className="block text-sm font-medium text-slate-700">Primary Specialization *</label>
+              <label className="block text-sm font-medium text-slate-700">Primary Specialization</label>
               <Select value={formData.specialization} onValueChange={(value) => onInputChange('specialization', value)}>
                 <SelectTrigger disabled={isLoading}>
                   <SelectValue placeholder="Select specialization" />
@@ -265,7 +225,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
                   disabled={isLoading}
                 />
                 <label htmlFor="is_agpo" className="text-sm font-medium text-slate-700">
-                  I am registered under AGPO (Access to Government Procurement Opportunities)
+                  AGPO registered (Women/Youth/PWD)
                 </label>
               </div>
               
@@ -282,7 +242,6 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
                       ))}
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-slate-500">30% of government tenders are reserved for AGPO registered suppliers.</p>
                 </div>
               )}
             </div>
@@ -290,16 +249,13 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
         </div>
       )}
 
-      {/* Government-specific fields (GHRIS aligned) */}
+      {/* Government-specific fields (Simplified) */}
       {formData.type === 'government' && (
         <div className="space-y-4 p-4 bg-purple-50 rounded-lg border border-purple-200">
           <h4 className="font-medium text-purple-900 flex items-center">
             <Shield className="h-4 w-4 mr-2" />
             Government Official Registration
           </h4>
-          <p className="text-xs text-purple-700">
-            Your account requires verification before activation. Provide your official details as per GHRIS records.
-          </p>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2 md:col-span-2">
@@ -331,41 +287,18 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-slate-700">Employee/Staff Number *</label>
+              <label className="block text-sm font-medium text-slate-700">Employee/Staff Number</label>
               <Input
                 placeholder="e.g., EMP/12345"
                 value={formData.employee_number}
                 onChange={(e) => onInputChange('employee_number', e.target.value)}
-                disabled={isLoading}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-slate-700">Office Phone</label>
-              <Input
-                placeholder="e.g., 020-XXXXXXX"
-                value={formData.office_phone}
-                onChange={(e) => onInputChange('office_phone', e.target.value)}
-                disabled={isLoading}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-slate-700">Supervisor Name</label>
-              <Input
-                placeholder="Name of immediate supervisor"
-                value={formData.supervisor_name}
-                onChange={(e) => onInputChange('supervisor_name', e.target.value)}
                 disabled={isLoading}
               />
             </div>
           </div>
 
           <div className="p-3 bg-yellow-100 border border-yellow-300 rounded text-xs text-yellow-800">
-            <strong>Note:</strong> Government accounts require manual verification. Your account will be activated 
-            after your credentials are verified against GHRIS records. Clearance level and county assignments 
-            will be set by system administrators.
+            <strong>Note:</strong> Government accounts require verification before activation.
           </div>
         </div>
       )}
