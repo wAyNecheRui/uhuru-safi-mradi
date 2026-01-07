@@ -68,7 +68,8 @@ const ContactModal = ({ isOpen, onClose }: ContactModalProps) => {
                   <Phone className="w-5 h-5 text-blue-600" />
                   <div>
                     <div className="font-semibold text-slate-900">Phone</div>
-                    <div className="text-slate-600">+254 700 123 456</div>
+                    <div className="text-slate-600">0728 277 587</div>
+                    <div className="text-slate-600">0798 561 854</div>
                   </div>
                 </div>
                 <div className="flex items-center space-x-3">
@@ -77,25 +78,6 @@ const ContactModal = ({ isOpen, onClose }: ContactModalProps) => {
                     <div className="font-semibold text-slate-900">Address</div>
                     <div className="text-slate-600">Nairobi, Kenya</div>
                   </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Support Hours */}
-            <div className="bg-emerald-50 rounded-lg p-6">
-              <h4 className="font-semibold text-slate-900 mb-3">Support Hours</h4>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-slate-600">Monday - Friday</span>
-                  <span className="text-slate-900">8:00 AM - 6:00 PM EAT</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-600">Saturday</span>
-                  <span className="text-slate-900">9:00 AM - 1:00 PM EAT</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-600">Sunday</span>
-                  <span className="text-slate-900">Closed</span>
                 </div>
               </div>
             </div>
