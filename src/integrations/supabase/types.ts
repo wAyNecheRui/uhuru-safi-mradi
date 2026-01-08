@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_logs: {
+        Row: {
+          action: string
+          id: string
+          ip_address: unknown
+          new_data: Json | null
+          old_data: Json | null
+          performed_at: string | null
+          performed_by: string | null
+          record_id: string | null
+          table_name: string
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          id?: string
+          ip_address?: unknown
+          new_data?: Json | null
+          old_data?: Json | null
+          performed_at?: string | null
+          performed_by?: string | null
+          record_id?: string | null
+          table_name: string
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          id?: string
+          ip_address?: unknown
+          new_data?: Json | null
+          old_data?: Json | null
+          performed_at?: string | null
+          performed_by?: string | null
+          record_id?: string | null
+          table_name?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       bid_evaluation_history: {
         Row: {
           agpo_bonus: number | null
