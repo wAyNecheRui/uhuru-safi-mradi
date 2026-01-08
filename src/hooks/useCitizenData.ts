@@ -141,18 +141,20 @@ export const useCitizenData = () => {
     }
   });
 
-  // Delete a report (if allowed)
+  // Soft delete a report (uses soft_delete_record function)
   const deleteReport = useMutation({
     mutationFn: async (reportId: string) => {
       if (!user?.id) throw new Error('User not authenticated');
       
-      const { error } = await supabase
-        .from('problem_reports')
-        .delete()
-        .eq('id', reportId)
-        .eq('reported_by', user.id); // Ensure user can only delete their own reports
+      // Use soft delete instead of hard delete
+      const { data, error } = await supabase
+        .rpc('soft_delete_record', {
+          p_table_name: 'problem_reports',
+          p_record_id: reportId
+        });
       
       if (error) throw error;
+      if (!data) throw new Error('Report not found or already deleted');
     },
     onSuccess: () => {
       toast.success('Report deleted successfully');
