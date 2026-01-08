@@ -319,6 +319,8 @@ export type Database = {
           bid_amount: number
           contractor_id: string
           created_at: string
+          deleted_at: string | null
+          deleted_by: string | null
           estimated_duration: number
           evaluated_at: string | null
           evaluated_by: string | null
@@ -340,6 +342,8 @@ export type Database = {
           bid_amount: number
           contractor_id: string
           created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
           estimated_duration: number
           evaluated_at?: string | null
           evaluated_by?: string | null
@@ -361,6 +365,8 @@ export type Database = {
           bid_amount?: number
           contractor_id?: string
           created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
           estimated_duration?: number
           evaluated_at?: string | null
           evaluated_by?: string | null
@@ -635,6 +641,8 @@ export type Database = {
       escrow_accounts: {
         Row: {
           created_at: string
+          deleted_at: string | null
+          deleted_by: string | null
           held_amount: number
           id: string
           project_id: string
@@ -646,6 +654,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
           held_amount?: number
           id?: string
           project_id: string
@@ -657,6 +667,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
           held_amount?: number
           id?: string
           project_id?: string
@@ -963,6 +975,8 @@ export type Database = {
         Row: {
           amount: number
           created_at: string
+          deleted_at: string | null
+          deleted_by: string | null
           escrow_account_id: string
           id: string
           milestone_id: string | null
@@ -974,6 +988,8 @@ export type Database = {
         Insert: {
           amount: number
           created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
           escrow_account_id: string
           id?: string
           milestone_id?: string | null
@@ -985,6 +1001,8 @@ export type Database = {
         Update: {
           amount?: number
           created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
           escrow_account_id?: string
           id?: string
           milestone_id?: string | null
@@ -1024,6 +1042,8 @@ export type Database = {
           constituency: string | null
           coordinates: string | null
           created_at: string | null
+          deleted_at: string | null
+          deleted_by: string | null
           description: string
           direct_procurement_approved: boolean | null
           direct_procurement_justification: string | null
@@ -1060,6 +1080,8 @@ export type Database = {
           constituency?: string | null
           coordinates?: string | null
           created_at?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
           description: string
           direct_procurement_approved?: boolean | null
           direct_procurement_justification?: string | null
@@ -1096,6 +1118,8 @@ export type Database = {
           constituency?: string | null
           coordinates?: string | null
           created_at?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
           description?: string
           direct_procurement_approved?: boolean | null
           direct_procurement_justification?: string | null
@@ -1321,6 +1345,8 @@ export type Database = {
           budget: number | null
           contractor_id: string | null
           created_at: string | null
+          deleted_at: string | null
+          deleted_by: string | null
           description: string
           id: string
           report_id: string | null
@@ -1332,6 +1358,8 @@ export type Database = {
           budget?: number | null
           contractor_id?: string | null
           created_at?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
           description: string
           id?: string
           report_id?: string | null
@@ -1343,6 +1371,8 @@ export type Database = {
           budget?: number | null
           contractor_id?: string | null
           created_at?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
           description?: string
           id?: string
           report_id?: string | null
@@ -2198,6 +2228,10 @@ export type Database = {
       open_bidding_for_project: {
         Args: { p_report_id: string }
         Returns: undefined
+      }
+      soft_delete_record: {
+        Args: { p_record_id: string; p_table_name: string }
+        Returns: boolean
       }
       update_system_analytics: { Args: never; Returns: undefined }
     }
