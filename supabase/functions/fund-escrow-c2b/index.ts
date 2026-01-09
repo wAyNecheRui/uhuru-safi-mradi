@@ -103,6 +103,19 @@ serve(async (req) => {
   }
 
   try {
+    // Use service role for admin operations to bypass RLS
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
+    )
+
+    // Use anon key for user auth verification
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
@@ -134,17 +147,27 @@ serve(async (req) => {
 
     const { project_id, amount, treasury_reference, phone_number } = await req.json()
 
-    console.log(`[C2B] Processing treasury funding for project: ${project_id}, amount: ${amount}`)
+    console.log(`[C2B] Processing treasury funding for project: ${project_id}, amount: ${amount}, user: ${user.id}`)
 
-    // Verify user is government official
-    const { data: profile, error: profileError } = await supabaseClient
+    // Verify user is government official - use admin client to bypass RLS
+    const { data: profile, error: profileError } = await supabaseAdmin
       .from('user_profiles')
       .select('user_type, full_name, phone_number')
       .eq('user_id', user.id)
       .single()
 
-    if (profileError || !profile || profile.user_type !== 'government') {
-      console.error('[C2B] Unauthorized access attempt by non-government user')
+    console.log(`[C2B] User profile lookup result:`, { profile, profileError })
+
+    if (profileError) {
+      console.error('[C2B] Profile lookup error:', profileError)
+      return new Response(
+        JSON.stringify({ error: 'Failed to verify user profile' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    if (!profile || profile.user_type !== 'government') {
+      console.error(`[C2B] Unauthorized access attempt by user ${user.id} with type: ${profile?.user_type}`)
       return new Response(
         JSON.stringify({ error: 'Unauthorized - Only government users can fund escrow' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -159,8 +182,8 @@ serve(async (req) => {
       )
     }
 
-    // Get or create escrow account
-    let { data: escrow, error: escrowError } = await supabaseClient
+    // Get or create escrow account - use admin client
+    let { data: escrow, error: escrowError } = await supabaseAdmin
       .from('escrow_accounts')
       .select('*')
       .eq('project_id', project_id)
@@ -172,7 +195,8 @@ serve(async (req) => {
 
     // Create escrow if doesn't exist
     if (!escrow) {
-      const { data: newEscrow, error: createError } = await supabaseClient
+      console.log(`[C2B] Creating new escrow account for project: ${project_id}`)
+      const { data: newEscrow, error: createError } = await supabaseAdmin
         .from('escrow_accounts')
         .insert({
           project_id,
@@ -211,7 +235,7 @@ serve(async (req) => {
         
         // For STK Push, payment is pending until callback confirms it
         // Create a pending transaction record
-        const { data: transaction, error: transactionError } = await supabaseClient
+        const { data: transaction, error: transactionError } = await supabaseAdmin
           .from('payment_transactions')
           .insert({
             escrow_account_id: escrow.id,
@@ -276,8 +300,8 @@ serve(async (req) => {
     transactionId = mpesaResponse.TransID;
     console.log(`[C2B] Simulation response:`, mpesaResponse)
 
-    // Create payment transaction record (completed for simulation)
-    const { data: transaction, error: transactionError } = await supabaseClient
+    // Create payment transaction record (completed for simulation) - use admin client
+    const { data: transaction, error: transactionError } = await supabaseAdmin
       .from('payment_transactions')
       .insert({
         escrow_account_id: escrow.id,
@@ -293,7 +317,7 @@ serve(async (req) => {
     if (transactionError) throw transactionError
 
     // Update escrow account balance
-    const { error: updateError } = await supabaseClient
+    const { error: updateError } = await supabaseAdmin
       .from('escrow_accounts')
       .update({
         held_amount: escrow.held_amount + amount,
@@ -305,7 +329,7 @@ serve(async (req) => {
     if (updateError) throw updateError
 
     // Create blockchain record for transparency
-    const { error: blockchainError } = await supabaseClient
+    const { error: blockchainError } = await supabaseAdmin
       .from('blockchain_transactions')
       .insert({
         project_id,
@@ -333,7 +357,7 @@ serve(async (req) => {
     }
 
     // Create realtime update
-    await supabaseClient
+    await supabaseAdmin
       .from('realtime_project_updates')
       .insert({
         project_id,

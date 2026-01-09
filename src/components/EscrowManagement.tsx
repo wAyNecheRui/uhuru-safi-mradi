@@ -16,9 +16,11 @@ const EscrowManagement = () => {
   
   const { 
     escrowProjects, 
+    readyForEscrowProjects,
     blockchainTransactions, 
     loading, 
     processingPayment,
+    createEscrowForProject,
     handleFundEscrow,
     handleReleaseFunds 
   } = useEscrowManagement();
@@ -133,15 +135,50 @@ const EscrowManagement = () => {
       </Card>
 
 
-      {escrowProjects.length === 0 ? (
+      {/* Projects Ready for Escrow Setup */}
+      {readyForEscrowProjects && readyForEscrowProjects.length > 0 && (
+        <Card className="shadow-lg border-l-4 border-l-blue-500">
+          <CardHeader>
+            <CardTitle className="flex items-center text-lg">
+              <Wallet className="h-5 w-5 mr-2 text-blue-600" />
+              Projects Ready for Escrow Setup ({readyForEscrowProjects.length})
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">These projects have a contractor selected and need escrow accounts created.</p>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {readyForEscrowProjects.map((project: any) => (
+              <div key={project.id} className="border rounded-lg p-4 flex justify-between items-center">
+                <div>
+                  <h4 className="font-medium">{project.title}</h4>
+                  <p className="text-sm text-muted-foreground">Budget: {formatAmount(project.budget || 0)}</p>
+                </div>
+                <Button
+                  onClick={() => createEscrowForProject(project.id, project.budget || 0)}
+                  disabled={processingPayment === project.id}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  {processingPayment === project.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <Shield className="h-4 w-4 mr-2" />
+                  )}
+                  Create Escrow
+                </Button>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {escrowProjects.length === 0 && (!readyForEscrowProjects || readyForEscrowProjects.length === 0) ? (
         <Card>
           <CardContent className="p-8 text-center text-muted-foreground">
             <Shield className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p className="text-lg font-medium">No Escrow Projects Yet</p>
-            <p className="text-sm mt-2">Projects with approved budgets will appear here for fund management.</p>
+            <p className="text-sm mt-2">Projects with selected contractors will appear here for escrow setup and fund management.</p>
           </CardContent>
         </Card>
-      ) : (
+      ) : escrowProjects.length > 0 && (
         <div className="space-y-6">
           <h3 className="text-lg font-semibold">Active Escrow Projects ({escrowProjects.length})</h3>
           {escrowProjects.map((project: any) => {

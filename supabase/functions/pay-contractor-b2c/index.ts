@@ -96,6 +96,19 @@ serve(async (req) => {
   }
 
   try {
+    // Use service role for admin operations to bypass RLS
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
+    )
+
+    // Use anon key for user auth verification
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
@@ -127,25 +140,35 @@ serve(async (req) => {
 
     const { milestone_id, contractor_phone } = await req.json()
 
-    console.log(`[B2C] Processing contractor payment for milestone: ${milestone_id}`)
+    console.log(`[B2C] Processing contractor payment for milestone: ${milestone_id}, user: ${user.id}`)
 
-    // Verify user is government official
-    const { data: profile, error: profileError } = await supabaseClient
+    // Verify user is government official - use admin client to bypass RLS
+    const { data: profile, error: profileError } = await supabaseAdmin
       .from('user_profiles')
       .select('user_type, full_name')
       .eq('user_id', user.id)
       .single()
 
-    if (profileError || !profile || profile.user_type !== 'government') {
-      console.error('[B2C] Unauthorized access attempt by non-government user')
+    console.log(`[B2C] User profile lookup result:`, { profile, profileError })
+
+    if (profileError) {
+      console.error('[B2C] Profile lookup error:', profileError)
+      return new Response(
+        JSON.stringify({ error: 'Failed to verify user profile' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    if (!profile || profile.user_type !== 'government') {
+      console.error(`[B2C] Unauthorized access attempt by user ${user.id} with type: ${profile?.user_type}`)
       return new Response(
         JSON.stringify({ error: 'Unauthorized - Only government users can release payments' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Get milestone details
-    const { data: milestone, error: milestoneError } = await supabaseClient
+    // Get milestone details - use admin client
+    const { data: milestone, error: milestoneError } = await supabaseAdmin
       .from('project_milestones')
       .select('*, project_id')
       .eq('id', milestone_id)
@@ -159,7 +182,7 @@ serve(async (req) => {
     }
 
     // Check if milestone has sufficient citizen verifications
-    const { data: verifications } = await supabaseClient
+    const { data: verifications } = await supabaseAdmin
       .from('milestone_verifications')
       .select('*')
       .eq('milestone_id', milestone_id)
@@ -169,8 +192,8 @@ serve(async (req) => {
 
     console.log(`[B2C] Milestone ${milestone_id} has ${citizenVerificationCount} citizen verifications`)
 
-    // Get escrow account
-    const { data: escrow, error: escrowError } = await supabaseClient
+    // Get escrow account - use admin client
+    const { data: escrow, error: escrowError } = await supabaseAdmin
       .from('escrow_accounts')
       .select('*')
       .eq('project_id', milestone.project_id)
@@ -194,8 +217,8 @@ serve(async (req) => {
       )
     }
 
-    // Get contractor details
-    const { data: project } = await supabaseClient
+    // Get contractor details - use admin client
+    const { data: project } = await supabaseAdmin
       .from('projects')
       .select('contractor_id, title')
       .eq('id', milestone.project_id)
@@ -205,7 +228,7 @@ serve(async (req) => {
     let contractorPhoneNumber = contractor_phone || '254700000000'
 
     if (project?.contractor_id) {
-      const { data: contractorProfile } = await supabaseClient
+      const { data: contractorProfile } = await supabaseAdmin
         .from('contractor_profiles')
         .select('company_name')
         .eq('user_id', project.contractor_id)
@@ -216,7 +239,7 @@ serve(async (req) => {
       }
 
       // Try to get contractor's phone from user_profiles
-      const { data: contractorUser } = await supabaseClient
+      const { data: contractorUser } = await supabaseAdmin
         .from('user_profiles')
         .select('phone_number')
         .eq('user_id', project.contractor_id)
@@ -249,7 +272,7 @@ serve(async (req) => {
         transactionId = mpesaResponse.ConversationID;
         
         // B2C is async, create pending transaction
-        const { data: transaction, error: transactionError } = await supabaseClient
+        const { data: transaction, error: transactionError } = await supabaseAdmin
           .from('payment_transactions')
           .insert({
             escrow_account_id: escrow.id,
@@ -312,8 +335,8 @@ serve(async (req) => {
     transactionId = mpesaResponse.TransactionID;
     console.log(`[B2C] Simulation response:`, mpesaResponse)
 
-    // Create payment transaction record (completed for simulation)
-    const { data: transaction, error: transactionError } = await supabaseClient
+    // Create payment transaction record (completed for simulation) - use admin client
+    const { data: transaction, error: transactionError } = await supabaseAdmin
       .from('payment_transactions')
       .insert({
         escrow_account_id: escrow.id,
@@ -330,7 +353,7 @@ serve(async (req) => {
     if (transactionError) throw transactionError
 
     // Update milestone status
-    const { error: milestoneUpdateError } = await supabaseClient
+    const { error: milestoneUpdateError } = await supabaseAdmin
       .from('project_milestones')
       .update({
         status: 'paid',
@@ -342,7 +365,7 @@ serve(async (req) => {
     if (milestoneUpdateError) throw milestoneUpdateError
 
     // Update escrow account balance
-    const { error: escrowUpdateError } = await supabaseClient
+    const { error: escrowUpdateError } = await supabaseAdmin
       .from('escrow_accounts')
       .update({
         held_amount: escrow.held_amount - milestoneAmount,
@@ -354,7 +377,7 @@ serve(async (req) => {
     if (escrowUpdateError) throw escrowUpdateError
 
     // Create blockchain record for transparency
-    const { error: blockchainError } = await supabaseClient
+    const { error: blockchainError } = await supabaseAdmin
       .from('blockchain_transactions')
       .insert({
         project_id: milestone.project_id,
@@ -385,7 +408,7 @@ serve(async (req) => {
     }
 
     // Create realtime update
-    await supabaseClient
+    await supabaseAdmin
       .from('realtime_project_updates')
       .insert({
         project_id: milestone.project_id,
@@ -403,7 +426,7 @@ serve(async (req) => {
       })
 
     // Create notification
-    await supabaseClient
+    await supabaseAdmin
       .from('notifications')
       .insert({
         user_id: user.id,
