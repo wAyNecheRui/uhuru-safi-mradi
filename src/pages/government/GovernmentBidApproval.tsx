@@ -62,11 +62,11 @@ const GovernmentBidApproval = () => {
     try {
       setLoading(true);
       
-      // Get all approved projects with open bidding
+      // Get all projects that are approved OR have bidding open
       const { data: projects, error } = await supabase
         .from('problem_reports')
         .select('*')
-        .eq('status', 'approved')
+        .in('status', ['approved', 'bidding_open'])
         .order('created_at', { ascending: false });
 
       if (error) throw error;
