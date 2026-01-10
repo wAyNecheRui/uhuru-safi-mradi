@@ -4,13 +4,27 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog } from '@/components/ui/dialog';
-import { Clock, DollarSign, MapPin, Calendar, Award, Loader2, Briefcase } from 'lucide-react';
+import { 
+  Clock, DollarSign, MapPin, Calendar, Award, Loader2, Briefcase, 
+  Camera, CheckCircle, AlertCircle, Target, Upload
+} from 'lucide-react';
 import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
 import ProgressUpdateForm from '@/components/contractor/ProgressUpdateForm';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+
+interface Milestone {
+  id: string;
+  title: string;
+  description: string;
+  milestone_number: number;
+  status: string;
+  payment_percentage: number;
+  evidence_urls: string[] | null;
+  submitted_at: string | null;
+}
 
 interface ProjectWithExtras {
   id: string;
@@ -25,7 +39,7 @@ interface ProjectWithExtras {
   problem_reports?: { title: string; location: string | null; category: string | null } | null;
   progress?: number;
   rating?: number;
-  milestones?: { id: string; title: string; milestone_number: number; status: string }[];
+  milestones?: Milestone[];
 }
 
 const ContractorProjects = () => {
@@ -84,7 +98,7 @@ const ContractorProjects = () => {
         
         const { data: milestones } = await supabase
           .from('project_milestones')
-          .select('id, title, milestone_number, status')
+          .select('id, title, description, milestone_number, status, payment_percentage, evidence_urls, submitted_at')
           .eq('project_id', project.id)
           .order('milestone_number', { ascending: true });
         
@@ -224,8 +238,9 @@ const ContractorProjects = () => {
                     </div>
                   </CardHeader>
                   
-                  <CardContent>
-                    <div className="mb-4">
+                  <CardContent className="space-y-4">
+                    {/* Progress Bar */}
+                    <div>
                       <div className="flex justify-between text-sm mb-2">
                         <span className="font-medium">Project Progress</span>
                         <span className="font-bold">{project.progress || 0}%</span>
@@ -237,8 +252,58 @@ const ContractorProjects = () => {
                         ></div>
                       </div>
                     </div>
+
+                    {/* Milestones Section */}
+                    {project.milestones && project.milestones.length > 0 && (
+                      <div className="border rounded-lg p-4 bg-slate-50">
+                        <h4 className="font-medium mb-3 flex items-center">
+                          <Target className="h-4 w-4 mr-2 text-blue-600" />
+                          Project Milestones
+                        </h4>
+                        <div className="space-y-3">
+                          {project.milestones.map((milestone) => (
+                            <div key={milestone.id} className="flex items-center justify-between p-3 bg-white rounded border">
+                              <div className="flex items-center gap-3">
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                                  milestone.status === 'paid' ? 'bg-green-100 text-green-700' :
+                                  milestone.status === 'verified' ? 'bg-blue-100 text-blue-700' :
+                                  milestone.status === 'submitted' ? 'bg-amber-100 text-amber-700' :
+                                  milestone.status === 'in_progress' ? 'bg-purple-100 text-purple-700' :
+                                  'bg-gray-100 text-gray-700'
+                                }`}>
+                                  {milestone.milestone_number}
+                                </div>
+                                <div>
+                                  <p className="font-medium text-sm">{milestone.title}</p>
+                                  <p className="text-xs text-muted-foreground">{milestone.payment_percentage}% of budget</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {milestone.evidence_urls && milestone.evidence_urls.length > 0 && (
+                                  <Badge variant="outline" className="text-xs">
+                                    <Camera className="h-3 w-3 mr-1" />
+                                    {milestone.evidence_urls.length} photos
+                                  </Badge>
+                                )}
+                                <Badge className={`text-xs ${
+                                  milestone.status === 'paid' ? 'bg-green-100 text-green-800' :
+                                  milestone.status === 'verified' ? 'bg-blue-100 text-blue-800' :
+                                  milestone.status === 'submitted' ? 'bg-amber-100 text-amber-800' :
+                                  milestone.status === 'in_progress' ? 'bg-purple-100 text-purple-800' :
+                                  'bg-gray-100 text-gray-800'
+                                }`}>
+                                  {milestone.status === 'paid' && <CheckCircle className="h-3 w-3 mr-1" />}
+                                  {milestone.status}
+                                </Badge>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                     
-                    <div className="flex justify-between items-center">
+                    {/* Actions Bar */}
+                    <div className="flex justify-between items-center pt-2">
                       <div className="flex items-center text-sm text-gray-600">
                         <Clock className="h-4 w-4 mr-1" />
                         Last updated: {new Date(project.updated_at).toLocaleDateString()}
@@ -249,9 +314,10 @@ const ContractorProjects = () => {
                         </Badge>
                         <Button 
                           size="sm" 
-                          variant="outline"
                           onClick={() => handleUpdateProgress(project)}
+                          className="bg-primary"
                         >
+                          <Upload className="h-4 w-4 mr-2" />
                           Update Progress
                         </Button>
                       </div>
