@@ -6,88 +6,37 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// M-Pesa Daraja API Configuration
-const MPESA_CONSUMER_KEY = Deno.env.get('MPESA_CONSUMER_KEY') ?? '';
-const MPESA_CONSUMER_SECRET = Deno.env.get('MPESA_CONSUMER_SECRET') ?? '';
-const MPESA_SHORTCODE = Deno.env.get('MPESA_SHORTCODE') ?? '174379';
-const MPESA_CALLBACK_URL = Deno.env.get('MPESA_CALLBACK_URL') ?? '';
+// Demo mode configuration - simulates M-Pesa B2C payments for testing
+const DEMO_MODE = true;
+const DEMO_SHORTCODE = '174379';
 
-// B2C specific configuration
-const MPESA_B2C_INITIATOR = Deno.env.get('MPESA_B2C_INITIATOR') ?? 'testapi';
-const MPESA_B2C_SECURITY_CREDENTIAL = Deno.env.get('MPESA_B2C_SECURITY_CREDENTIAL') ?? '';
-
-// Use sandbox for development
-const MPESA_BASE_URL = 'https://sandbox.safaricom.co.ke';
-
-// Get M-Pesa OAuth token
-async function getMpesaToken(): Promise<string> {
-  const credentials = btoa(`${MPESA_CONSUMER_KEY}:${MPESA_CONSUMER_SECRET}`);
-  
-  const response = await fetch(`${MPESA_BASE_URL}/oauth/v1/generate?grant_type=client_credentials`, {
-    method: 'GET',
-    headers: {
-      'Authorization': `Basic ${credentials}`,
-    },
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('[M-Pesa] Token error:', errorText);
-    throw new Error('Failed to get M-Pesa access token');
-  }
-
-  const data = await response.json();
-  console.log('[M-Pesa] Token obtained successfully');
-  return data.access_token;
+// Generate simulated M-Pesa B2C transaction reference
+function generateDemoB2CTransactionId(): string {
+  const timestamp = Date.now().toString(36).toUpperCase();
+  const random = Math.random().toString(36).substr(2, 8).toUpperCase();
+  return `B2C${timestamp}${random}`;
 }
 
-// Initiate B2C payment
-async function initiateB2CPayment(
-  token: string,
-  phoneNumber: string,
-  amount: number,
-  remarks: string,
-  occasion: string
-): Promise<any> {
-  // Format phone number (ensure it starts with 254)
-  const formattedPhone = phoneNumber.startsWith('0') 
-    ? `254${phoneNumber.slice(1)}` 
-    : phoneNumber.startsWith('+') 
-      ? phoneNumber.slice(1) 
-      : phoneNumber;
-
-  const requestBody = {
-    InitiatorName: MPESA_B2C_INITIATOR,
-    SecurityCredential: MPESA_B2C_SECURITY_CREDENTIAL,
-    CommandID: 'BusinessPayment',
-    Amount: Math.round(amount),
-    PartyA: MPESA_SHORTCODE,
-    PartyB: formattedPhone,
-    Remarks: remarks,
-    QueueTimeOutURL: MPESA_CALLBACK_URL || `https://vncyydrizdexkojfnonu.supabase.co/functions/v1/mpesa-b2c-timeout`,
-    ResultURL: MPESA_CALLBACK_URL || `https://vncyydrizdexkojfnonu.supabase.co/functions/v1/mpesa-b2c-result`,
-    Occasion: occasion,
+// Simulate M-Pesa B2C payment response
+function simulateB2CPayment(amount: number, contractorName: string, contractorPhone: string) {
+  const transactionId = generateDemoB2CTransactionId();
+  const conversationId = `AG_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+  
+  return {
+    ConversationID: conversationId,
+    OriginatorConversationID: `OC_${Date.now()}`,
+    ResponseCode: '0',
+    ResponseDescription: 'Accept the service request successfully.',
+    TransactionID: transactionId,
+    TransactionAmount: amount,
+    ReceiverPartyPublicName: `${contractorPhone} - ${contractorName}`,
+    B2CChargesPaidAccountAvailableFunds: 0,
+    TransactionCompletedDateTime: new Date().toISOString(),
+    ResultCode: '0',
+    ResultDesc: 'The service request is processed successfully.',
+    _demo: true,
+    _timestamp: new Date().toISOString()
   };
-
-  console.log('[M-Pesa] B2C request:', { ...requestBody, SecurityCredential: '***' });
-
-  const response = await fetch(`${MPESA_BASE_URL}/mpesa/b2c/v1/paymentrequest`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(requestBody),
-  });
-
-  const data = await response.json();
-  console.log('[M-Pesa] B2C response:', data);
-
-  if (!response.ok || data.errorCode) {
-    throw new Error(data.errorMessage || 'B2C payment failed');
-  }
-
-  return data;
 }
 
 serve(async (req) => {
@@ -140,7 +89,7 @@ serve(async (req) => {
 
     const { milestone_id, contractor_phone } = await req.json()
 
-    console.log(`[B2C] Processing contractor payment for milestone: ${milestone_id}, user: ${user.id}`)
+    console.log(`[B2C-DEMO] Processing contractor payment for milestone: ${milestone_id}, user: ${user.id}`)
 
     // Verify user is government official - use admin client to bypass RLS
     const { data: profile, error: profileError } = await supabaseAdmin
@@ -149,10 +98,10 @@ serve(async (req) => {
       .eq('user_id', user.id)
       .single()
 
-    console.log(`[B2C] User profile lookup result:`, { profile, profileError })
+    console.log(`[B2C-DEMO] User profile lookup result:`, { profile, profileError })
 
     if (profileError) {
-      console.error('[B2C] Profile lookup error:', profileError)
+      console.error('[B2C-DEMO] Profile lookup error:', profileError)
       return new Response(
         JSON.stringify({ error: 'Failed to verify user profile' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -160,7 +109,7 @@ serve(async (req) => {
     }
 
     if (!profile || profile.user_type !== 'government') {
-      console.error(`[B2C] Unauthorized access attempt by user ${user.id} with type: ${profile?.user_type}`)
+      console.error(`[B2C-DEMO] Unauthorized access attempt by user ${user.id} with type: ${profile?.user_type}`)
       return new Response(
         JSON.stringify({ error: 'Unauthorized - Only government users can release payments' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -181,7 +130,7 @@ serve(async (req) => {
       )
     }
 
-    // Check if milestone has sufficient citizen verifications
+    // Check if milestone has citizen verifications
     const { data: verifications } = await supabaseAdmin
       .from('milestone_verifications')
       .select('*')
@@ -190,7 +139,7 @@ serve(async (req) => {
     const approvedVerifications = verifications?.filter(v => v.verification_status === 'approved') || []
     const citizenVerificationCount = approvedVerifications.length
 
-    console.log(`[B2C] Milestone ${milestone_id} has ${citizenVerificationCount} citizen verifications`)
+    console.log(`[B2C-DEMO] Milestone ${milestone_id} has ${citizenVerificationCount} citizen verifications`)
 
     // Get escrow account - use admin client
     const { data: escrow, error: escrowError } = await supabaseAdmin
@@ -224,7 +173,7 @@ serve(async (req) => {
       .eq('id', milestone.project_id)
       .single()
 
-    let contractorName = 'Contractor'
+    let contractorName = 'Demo Contractor'
     let contractorPhoneNumber = contractor_phone || '254700000000'
 
     if (project?.contractor_id) {
@@ -250,92 +199,15 @@ serve(async (req) => {
       }
     }
 
-    // Check if M-Pesa credentials are configured for B2C
-    const hasMpesaCredentials = MPESA_CONSUMER_KEY && MPESA_CONSUMER_SECRET && MPESA_B2C_SECURITY_CREDENTIAL;
+    // Demo mode - simulate M-Pesa B2C payment
+    console.log('[B2C-DEMO] Running in DEMO mode - simulating M-Pesa B2C payment');
     
-    let mpesaResponse: any;
-    let transactionId: string;
+    const mpesaResponse = simulateB2CPayment(milestoneAmount, contractorName, contractorPhoneNumber);
+    const transactionId = mpesaResponse.TransactionID;
 
-    if (hasMpesaCredentials && contractorPhoneNumber) {
-      // Use real M-Pesa B2C
-      console.log('[B2C] Using real M-Pesa Daraja API');
-      
-      try {
-        const mpesaToken = await getMpesaToken();
-        mpesaResponse = await initiateB2CPayment(
-          mpesaToken,
-          contractorPhoneNumber,
-          milestoneAmount,
-          `Payment for ${milestone.title}`,
-          `Milestone ${milestone.milestone_number}`
-        );
-        transactionId = mpesaResponse.ConversationID;
-        
-        // B2C is async, create pending transaction
-        const { data: transaction, error: transactionError } = await supabaseAdmin
-          .from('payment_transactions')
-          .insert({
-            escrow_account_id: escrow.id,
-            milestone_id: milestone_id,
-            amount: milestoneAmount,
-            transaction_type: 'release',
-            payment_method: 'mpesa',
-            status: 'pending',
-            stripe_transaction_id: transactionId
-          })
-          .select()
-          .single()
+    console.log(`[B2C-DEMO] Simulated B2C payment:`, mpesaResponse);
 
-        if (transactionError) throw transactionError;
-
-        return new Response(
-          JSON.stringify({
-            success: true,
-            message: 'M-Pesa B2C payment initiated. Awaiting confirmation.',
-            pending: true,
-            transaction: {
-              id: transaction.id,
-              conversation_id: transactionId,
-              originator_conversation_id: mpesaResponse.OriginatorConversationID,
-              amount: milestoneAmount,
-              status: 'pending'
-            },
-            milestone: {
-              id: milestone_id,
-              title: milestone.title,
-              status: 'payment_pending'
-            },
-            mpesa_response: mpesaResponse
-          }),
-          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-        
-      } catch (mpesaError) {
-        console.error('[B2C] M-Pesa API error:', mpesaError);
-        console.log('[B2C] Falling back to simulation mode');
-      }
-    }
-
-    // Simulation mode (fallback or when no credentials)
-    console.log('[B2C] Using simulation mode for M-Pesa B2C');
-    
-    mpesaResponse = {
-      ConversationID: `B2C${Date.now()}${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
-      OriginatorConversationID: `AG_${Date.now()}`,
-      ResponseCode: '0',
-      ResponseDescription: 'Accept the service request successfully.',
-      TransactionID: `B2C${Date.now().toString(36).toUpperCase()}`,
-      TransactionAmount: milestoneAmount,
-      ReceiverPartyPublicName: `${contractorPhoneNumber} - ${contractorName}`,
-      B2CChargesPaidAccountAvailableFunds: escrow.held_amount - milestoneAmount,
-      TransactionCompletedDateTime: new Date().toISOString(),
-      _simulated: true
-    }
-
-    transactionId = mpesaResponse.TransactionID;
-    console.log(`[B2C] Simulation response:`, mpesaResponse)
-
-    // Create payment transaction record (completed for simulation) - use admin client
+    // Create payment transaction record - use admin client
     const { data: transaction, error: transactionError } = await supabaseAdmin
       .from('payment_transactions')
       .insert({
@@ -343,7 +215,7 @@ serve(async (req) => {
         milestone_id: milestone_id,
         amount: milestoneAmount,
         transaction_type: 'release',
-        payment_method: 'mpesa',
+        payment_method: 'mpesa_demo',
         status: 'completed',
         stripe_transaction_id: transactionId
       })
@@ -394,7 +266,7 @@ serve(async (req) => {
           citizen_verifications: citizenVerificationCount,
           approved_by: profile.full_name || 'Government Official',
           timestamp: new Date().toISOString(),
-          simulated: mpesaResponse._simulated || false
+          demo_mode: true
         },
         signatures: [
           { role: 'Government Approver', status: 'signed', timestamp: new Date().toISOString() },
@@ -404,7 +276,7 @@ serve(async (req) => {
       })
 
     if (blockchainError) {
-      console.error('[B2C] Blockchain record error:', blockchainError)
+      console.error('[B2C-DEMO] Blockchain record error:', blockchainError)
     }
 
     // Create realtime update
@@ -413,7 +285,7 @@ serve(async (req) => {
       .insert({
         project_id: milestone.project_id,
         update_type: 'milestone_paid',
-        message: `Contractor paid KES ${milestoneAmount.toLocaleString()} for "${milestone.title}" via M-Pesa B2C. Reference: ${transactionId}`,
+        message: `Demo: Contractor paid KES ${milestoneAmount.toLocaleString()} for "${milestone.title}". Ref: ${transactionId}`,
         created_by: user.id,
         metadata: {
           milestone_id,
@@ -421,29 +293,41 @@ serve(async (req) => {
           mpesa_reference: transactionId,
           contractor: contractorName,
           citizen_verifications: citizenVerificationCount,
-          simulated: mpesaResponse._simulated || false
+          demo_mode: true
         }
       })
 
-    // Create notification
+    // Create notifications
     await supabaseAdmin
       .from('notifications')
       .insert({
         user_id: user.id,
         title: 'Milestone Payment Released',
-        message: `Payment of KES ${milestoneAmount.toLocaleString()} released to ${contractorName} for "${milestone.title}". M-Pesa Ref: ${transactionId}`,
+        message: `Demo: KES ${milestoneAmount.toLocaleString()} paid to ${contractorName} for "${milestone.title}". Ref: ${transactionId}`,
         type: 'success',
         category: 'payment'
       })
 
-    console.log(`[B2C] Contractor paid successfully. Transaction ID: ${transaction.id}`)
+    // Notify contractor if we have their ID
+    if (project?.contractor_id) {
+      await supabaseAdmin
+        .from('notifications')
+        .insert({
+          user_id: project.contractor_id,
+          title: 'Payment Received',
+          message: `Demo: You received KES ${milestoneAmount.toLocaleString()} for completing "${milestone.title}". Ref: ${transactionId}`,
+          type: 'success',
+          category: 'payment'
+        })
+    }
+
+    console.log(`[B2C-DEMO] Contractor paid successfully. Transaction ID: ${transaction.id}`)
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: mpesaResponse._simulated 
-          ? 'Contractor paid successfully (simulation mode)' 
-          : 'Contractor paid successfully via M-Pesa B2C',
+        message: 'Contractor paid successfully (Demo Mode)',
+        demo_mode: true,
         transaction: {
           id: transaction.id,
           mpesa_reference: transactionId,
@@ -470,7 +354,7 @@ serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('[B2C] Error:', error)
+    console.error('[B2C-DEMO] Error:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
