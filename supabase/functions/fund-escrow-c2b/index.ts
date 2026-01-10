@@ -6,95 +6,40 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// M-Pesa Daraja API Configuration
-const MPESA_CONSUMER_KEY = Deno.env.get('MPESA_CONSUMER_KEY') ?? '';
-const MPESA_CONSUMER_SECRET = Deno.env.get('MPESA_CONSUMER_SECRET') ?? '';
-const MPESA_PASSKEY = Deno.env.get('MPESA_PASSKEY') ?? '';
-const MPESA_SHORTCODE = Deno.env.get('MPESA_SHORTCODE') ?? '174379';
-const MPESA_CALLBACK_URL = Deno.env.get('MPESA_CALLBACK_URL') ?? '';
+// Demo mode configuration - simulates M-Pesa transactions for testing
+const DEMO_MODE = true;
+const DEMO_SHORTCODE = '174379';
 
-// Use sandbox for development, production for live
-const MPESA_BASE_URL = 'https://sandbox.safaricom.co.ke';
-
-// Get M-Pesa OAuth token
-async function getMpesaToken(): Promise<string> {
-  const credentials = btoa(`${MPESA_CONSUMER_KEY}:${MPESA_CONSUMER_SECRET}`);
-  
-  const response = await fetch(`${MPESA_BASE_URL}/oauth/v1/generate?grant_type=client_credentials`, {
-    method: 'GET',
-    headers: {
-      'Authorization': `Basic ${credentials}`,
-    },
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('[M-Pesa] Token error:', errorText);
-    throw new Error('Failed to get M-Pesa access token');
-  }
-
-  const data = await response.json();
-  console.log('[M-Pesa] Token obtained successfully');
-  return data.access_token;
+// Generate simulated M-Pesa transaction reference
+function generateDemoTransactionId(): string {
+  const timestamp = Date.now().toString(36).toUpperCase();
+  const random = Math.random().toString(36).substr(2, 8).toUpperCase();
+  return `DEMO${timestamp}${random}`;
 }
 
-// Generate M-Pesa password
-function generateMpesaPassword(shortcode: string, passkey: string): { password: string; timestamp: string } {
+// Simulate M-Pesa C2B payment response
+function simulateC2BPayment(amount: number, treasuryReference: string, projectId: string) {
+  const transactionId = generateDemoTransactionId();
   const timestamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14);
-  const password = btoa(`${shortcode}${passkey}${timestamp}`);
-  return { password, timestamp };
-}
-
-// Initiate STK Push for C2B payment
-async function initiateStkPush(
-  token: string,
-  phoneNumber: string,
-  amount: number,
-  accountReference: string,
-  transactionDesc: string
-): Promise<any> {
-  const { password, timestamp } = generateMpesaPassword(MPESA_SHORTCODE, MPESA_PASSKEY);
   
-  // Format phone number (ensure it starts with 254)
-  const formattedPhone = phoneNumber.startsWith('0') 
-    ? `254${phoneNumber.slice(1)}` 
-    : phoneNumber.startsWith('+') 
-      ? phoneNumber.slice(1) 
-      : phoneNumber;
-
-  const requestBody = {
-    BusinessShortCode: MPESA_SHORTCODE,
-    Password: password,
-    Timestamp: timestamp,
-    TransactionType: 'CustomerPayBillOnline',
-    Amount: Math.round(amount), // M-Pesa requires integer amounts
-    PartyA: formattedPhone,
-    PartyB: MPESA_SHORTCODE,
-    PhoneNumber: formattedPhone,
-    CallBackURL: MPESA_CALLBACK_URL || `https://vncyydrizdexkojfnonu.supabase.co/functions/v1/mpesa-callback`,
-    AccountReference: accountReference,
-    TransactionDesc: transactionDesc,
+  return {
+    TransactionType: 'PayBill',
+    TransID: transactionId,
+    TransTime: timestamp,
+    TransAmount: amount,
+    BusinessShortCode: DEMO_SHORTCODE,
+    BillRefNumber: treasuryReference || `GOV-${projectId.slice(-8)}`,
+    OrgAccountBalance: amount,
+    ThirdPartyTransID: `TRS${Date.now()}`,
+    MSISDN: '254700000000',
+    FirstName: 'COUNTY',
+    MiddleName: 'TREASURY',
+    LastName: 'DEMO',
+    ResultCode: '0',
+    ResultDesc: 'The service request is processed successfully.',
+    _demo: true,
+    _timestamp: new Date().toISOString()
   };
-
-  console.log('[M-Pesa] STK Push request:', { ...requestBody, Password: '***' });
-
-  const response = await fetch(`${MPESA_BASE_URL}/mpesa/stkpush/v1/processrequest`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(requestBody),
-  });
-
-  const data = await response.json();
-  console.log('[M-Pesa] STK Push response:', data);
-
-  if (!response.ok || data.errorCode) {
-    throw new Error(data.errorMessage || data.CustomerMessage || 'STK Push failed');
-  }
-
-  return data;
 }
 
 serve(async (req) => {
@@ -145,9 +90,9 @@ serve(async (req) => {
       )
     }
 
-    const { project_id, amount, treasury_reference, phone_number } = await req.json()
+    const { project_id, amount, treasury_reference } = await req.json()
 
-    console.log(`[C2B] Processing treasury funding for project: ${project_id}, amount: ${amount}, user: ${user.id}`)
+    console.log(`[C2B-DEMO] Processing treasury funding for project: ${project_id}, amount: ${amount}, user: ${user.id}`)
 
     // Verify user is government official - use admin client to bypass RLS
     const { data: profile, error: profileError } = await supabaseAdmin
@@ -156,10 +101,10 @@ serve(async (req) => {
       .eq('user_id', user.id)
       .single()
 
-    console.log(`[C2B] User profile lookup result:`, { profile, profileError })
+    console.log(`[C2B-DEMO] User profile lookup result:`, { profile, profileError })
 
     if (profileError) {
-      console.error('[C2B] Profile lookup error:', profileError)
+      console.error('[C2B-DEMO] Profile lookup error:', profileError)
       return new Response(
         JSON.stringify({ error: 'Failed to verify user profile' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -167,7 +112,7 @@ serve(async (req) => {
     }
 
     if (!profile || profile.user_type !== 'government') {
-      console.error(`[C2B] Unauthorized access attempt by user ${user.id} with type: ${profile?.user_type}`)
+      console.error(`[C2B-DEMO] Unauthorized access attempt by user ${user.id} with type: ${profile?.user_type}`)
       return new Response(
         JSON.stringify({ error: 'Unauthorized - Only government users can fund escrow' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -195,7 +140,7 @@ serve(async (req) => {
 
     // Create escrow if doesn't exist
     if (!escrow) {
-      console.log(`[C2B] Creating new escrow account for project: ${project_id}`)
+      console.log(`[C2B-DEMO] Creating new escrow account for project: ${project_id}`)
       const { data: newEscrow, error: createError } = await supabaseAdmin
         .from('escrow_accounts')
         .insert({
@@ -212,102 +157,22 @@ serve(async (req) => {
       escrow = newEscrow
     }
 
-    // Check if M-Pesa credentials are configured
-    const hasMpesaCredentials = MPESA_CONSUMER_KEY && MPESA_CONSUMER_SECRET && MPESA_PASSKEY;
+    // Demo mode - simulate M-Pesa C2B payment
+    console.log('[C2B-DEMO] Running in DEMO mode - simulating M-Pesa payment');
     
-    let mpesaResponse: any;
-    let transactionId: string;
+    const mpesaResponse = simulateC2BPayment(amount, treasury_reference, project_id);
+    const transactionId = mpesaResponse.TransID;
 
-    if (hasMpesaCredentials && phone_number) {
-      // Use real M-Pesa STK Push
-      console.log('[C2B] Using real M-Pesa Daraja API');
-      
-      try {
-        const mpesaToken = await getMpesaToken();
-        mpesaResponse = await initiateStkPush(
-          mpesaToken,
-          phone_number,
-          amount,
-          treasury_reference || `GOV-${project_id.slice(-8)}`,
-          `Treasury funding for project ${project_id.slice(-8)}`
-        );
-        transactionId = mpesaResponse.CheckoutRequestID;
-        
-        // For STK Push, payment is pending until callback confirms it
-        // Create a pending transaction record
-        const { data: transaction, error: transactionError } = await supabaseAdmin
-          .from('payment_transactions')
-          .insert({
-            escrow_account_id: escrow.id,
-            amount: amount,
-            transaction_type: 'deposit',
-            payment_method: 'mpesa',
-            status: 'pending',
-            stripe_transaction_id: transactionId // Using this field for M-Pesa reference
-          })
-          .select()
-          .single()
+    console.log(`[C2B-DEMO] Simulated transaction:`, mpesaResponse);
 
-        if (transactionError) throw transactionError;
-
-        return new Response(
-          JSON.stringify({
-            success: true,
-            message: 'M-Pesa STK Push initiated. Please complete payment on your phone.',
-            pending: true,
-            transaction: {
-              id: transaction.id,
-              checkout_request_id: transactionId,
-              merchant_request_id: mpesaResponse.MerchantRequestID,
-              amount,
-              status: 'pending'
-            },
-            escrow: {
-              id: escrow.id,
-              current_balance: escrow.held_amount
-            },
-            mpesa_response: mpesaResponse
-          }),
-          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-        
-      } catch (mpesaError) {
-        console.error('[C2B] M-Pesa API error:', mpesaError);
-        // Fall back to simulation if M-Pesa fails
-        console.log('[C2B] Falling back to simulation mode');
-      }
-    }
-
-    // Simulation mode (fallback or when no credentials)
-    console.log('[C2B] Using simulation mode for M-Pesa C2B');
-    
-    mpesaResponse = {
-      TransactionType: 'PayBill',
-      TransID: `C2B${Date.now()}${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
-      TransTime: new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14),
-      TransAmount: amount,
-      BusinessShortCode: MPESA_SHORTCODE,
-      BillRefNumber: treasury_reference || `GOV-${project_id.slice(-8)}`,
-      OrgAccountBalance: amount,
-      ThirdPartyTransID: `TRS${Date.now()}`,
-      MSISDN: phone_number || '254700000000',
-      FirstName: 'COUNTY',
-      MiddleName: 'TREASURY',
-      LastName: 'DEPARTMENT',
-      _simulated: true
-    }
-
-    transactionId = mpesaResponse.TransID;
-    console.log(`[C2B] Simulation response:`, mpesaResponse)
-
-    // Create payment transaction record (completed for simulation) - use admin client
+    // Create payment transaction record - use admin client
     const { data: transaction, error: transactionError } = await supabaseAdmin
       .from('payment_transactions')
       .insert({
         escrow_account_id: escrow.id,
         amount: amount,
         transaction_type: 'deposit',
-        payment_method: 'mpesa',
+        payment_method: 'mpesa_demo',
         status: 'completed',
         stripe_transaction_id: transactionId
       })
@@ -344,7 +209,7 @@ serve(async (req) => {
           treasury_reference: mpesaResponse.BillRefNumber,
           funded_by: profile.full_name || 'Government Official',
           timestamp: new Date().toISOString(),
-          simulated: mpesaResponse._simulated || false
+          demo_mode: true
         },
         signatures: [
           { role: 'Treasury Officer', status: 'signed', timestamp: new Date().toISOString() },
@@ -353,7 +218,7 @@ serve(async (req) => {
       })
 
     if (blockchainError) {
-      console.error('[C2B] Blockchain record error:', blockchainError)
+      console.error('[C2B-DEMO] Blockchain record error:', blockchainError)
     }
 
     // Create realtime update
@@ -362,24 +227,34 @@ serve(async (req) => {
       .insert({
         project_id,
         update_type: 'escrow_funded',
-        message: `Treasury funded escrow with KES ${amount.toLocaleString()} via M-Pesa C2B. Reference: ${transactionId}`,
+        message: `Treasury funded escrow with KES ${amount.toLocaleString()} (Demo Mode). Reference: ${transactionId}`,
         created_by: user.id,
         metadata: {
           amount,
           mpesa_reference: transactionId,
           transaction_id: transaction.id,
-          simulated: mpesaResponse._simulated || false
+          demo_mode: true
         }
       })
 
-    console.log(`[C2B] Escrow funded successfully. Transaction ID: ${transaction.id}`)
+    // Create notification for the user
+    await supabaseAdmin
+      .from('notifications')
+      .insert({
+        user_id: user.id,
+        title: 'Escrow Funded Successfully',
+        message: `Demo: KES ${amount.toLocaleString()} deposited to project escrow. Ref: ${transactionId}`,
+        type: 'success',
+        category: 'payment'
+      })
+
+    console.log(`[C2B-DEMO] Escrow funded successfully. Transaction ID: ${transaction.id}`)
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: mpesaResponse._simulated 
-          ? 'Escrow funded successfully (simulation mode)' 
-          : 'Escrow funded successfully via M-Pesa C2B',
+        message: 'Escrow funded successfully (Demo Mode)',
+        demo_mode: true,
         transaction: {
           id: transaction.id,
           mpesa_reference: transactionId,
@@ -397,7 +272,7 @@ serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('[C2B] Error:', error)
+    console.error('[C2B-DEMO] Error:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
