@@ -8,7 +8,7 @@ import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import { 
   Camera, Upload, X, Loader2, MapPin, Cloud, 
-  CheckCircle, AlertCircle, Image as ImageIcon
+  CheckCircle, AlertCircle, Image as ImageIcon, Send
 } from 'lucide-react';
 import {
   Dialog,
@@ -284,14 +284,20 @@ const ProgressUpdateForm: React.FC<ProgressUpdateFormProps> = ({
           />
         </div>
 
-        {/* Photo Upload */}
+        {/* Photo Upload for Milestone Verification */}
         <div className="space-y-2">
-          <Label>Photo Evidence</Label>
-          <div className="border-2 border-dashed rounded-lg p-4">
+          <Label className="flex items-center">
+            <Camera className="h-4 w-4 mr-2 text-blue-600" />
+            Photo Evidence for Citizen Verification
+          </Label>
+          <p className="text-xs text-muted-foreground mb-2">
+            Upload photos of completed work. Citizens will use these to verify milestone completion.
+          </p>
+          <div className="border-2 border-dashed border-blue-200 rounded-lg p-4 bg-blue-50/50">
             {photoUrls.length > 0 && (
               <div className="grid grid-cols-3 gap-2 mb-4">
                 {photoUrls.map((url, index) => (
-                  <div key={index} className="relative aspect-square rounded-lg overflow-hidden">
+                  <div key={index} className="relative aspect-square rounded-lg overflow-hidden border-2 border-blue-200">
                     <img src={url} alt={`Photo ${index + 1}`} className="w-full h-full object-cover" />
                     <Button
                       variant="destructive"
@@ -307,25 +313,56 @@ const ProgressUpdateForm: React.FC<ProgressUpdateFormProps> = ({
             )}
 
             {photos.length < 5 && (
-              <div className="text-center">
+              <div className="text-center space-y-3">
                 <input
                   ref={fileInputRef}
                   type="file"
                   accept="image/*"
+                  capture="environment"
                   multiple
                   onChange={handlePhotoSelect}
                   className="hidden"
                 />
-                <Button
-                  variant="outline"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <Camera className="h-4 w-4 mr-2" />
-                  Add Photos ({photos.length}/5)
-                </Button>
+                <div className="flex justify-center gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      if (fileInputRef.current) {
+                        fileInputRef.current.removeAttribute('capture');
+                        fileInputRef.current.click();
+                      }
+                    }}
+                    className="border-blue-300 text-blue-700 hover:bg-blue-50"
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    Choose Photos
+                  </Button>
+                  <Button
+                    variant="default"
+                    onClick={() => {
+                      if (fileInputRef.current) {
+                        fileInputRef.current.setAttribute('capture', 'environment');
+                        fileInputRef.current.click();
+                      }
+                    }}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    <Camera className="h-4 w-4 mr-2" />
+                    Take Photo
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {photos.length}/5 photos • JPG, PNG supported
+                </p>
               </div>
             )}
           </div>
+          {selectedMilestoneId && (
+            <p className="text-xs text-amber-600 flex items-center mt-1">
+              <AlertCircle className="h-3 w-3 mr-1" />
+              Photos will be attached to the selected milestone for citizen verification
+            </p>
+          )}
         </div>
 
         {/* Location */}

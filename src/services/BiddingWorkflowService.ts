@@ -141,7 +141,7 @@ export class BiddingWorkflowService {
   }
 
   /**
-   * Select winning bid and create project
+   * Select winning bid and create/update project with contractor
    */
   static async selectWinningBid(
     reportId: string, 
@@ -152,6 +152,30 @@ export class BiddingWorkflowService {
     if (!user) return false;
 
     try {
+      // Get the bid details first
+      const { data: selectedBidData, error: bidFetchError } = await supabase
+        .from('contractor_bids')
+        .select('*')
+        .eq('id', bidId)
+        .single();
+
+      if (bidFetchError || !selectedBidData) {
+        console.error('Error fetching bid:', bidFetchError);
+        return false;
+      }
+
+      // Get the report details for project creation
+      const { data: reportData, error: reportFetchError } = await supabase
+        .from('problem_reports')
+        .select('*')
+        .eq('id', reportId)
+        .single();
+
+      if (reportFetchError || !reportData) {
+        console.error('Error fetching report:', reportFetchError);
+        return false;
+      }
+
       // First, reject all other bids
       await supabase
         .from('contractor_bids')
@@ -160,17 +184,55 @@ export class BiddingWorkflowService {
         .neq('id', bidId);
 
       // Select the winning bid
-      const { data: selectedBid, error: bidError } = await supabase
+      const { error: bidError } = await supabase
         .from('contractor_bids')
         .update({
           status: 'selected',
           selected_at: new Date().toISOString()
         })
-        .eq('id', bidId)
-        .select()
-        .single();
+        .eq('id', bidId);
 
       if (bidError) throw bidError;
+
+      // Check if project already exists for this report
+      const { data: existingProject } = await supabase
+        .from('projects')
+        .select('id')
+        .eq('report_id', reportId)
+        .single();
+
+      if (existingProject) {
+        // Update existing project with contractor
+        const { error: updateProjectError } = await supabase
+          .from('projects')
+          .update({
+            contractor_id: selectedBidData.contractor_id,
+            budget: selectedBidData.bid_amount,
+            status: 'in_progress',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingProject.id);
+
+        if (updateProjectError) {
+          console.error('Error updating project:', updateProjectError);
+        }
+      } else {
+        // Create new project
+        const { error: createProjectError } = await supabase
+          .from('projects')
+          .insert({
+            report_id: reportId,
+            title: reportData.title,
+            description: reportData.description,
+            budget: selectedBidData.bid_amount,
+            contractor_id: selectedBidData.contractor_id,
+            status: 'in_progress'
+          });
+
+        if (createProjectError) {
+          console.error('Error creating project:', createProjectError);
+        }
+      }
 
       // Update report status
       await supabase
@@ -192,6 +254,17 @@ export class BiddingWorkflowService {
           justification,
           bid_count: await this.getBidCount(reportId),
           agpo_compliant: true
+        });
+
+      // Create notification for the contractor
+      await supabase
+        .from('notifications')
+        .insert({
+          user_id: selectedBidData.contractor_id,
+          title: 'Bid Selected!',
+          message: `Congratulations! Your bid for "${reportData.title}" has been selected. You can now start working on the project.`,
+          type: 'success',
+          category: 'bidding'
         });
 
       return true;
