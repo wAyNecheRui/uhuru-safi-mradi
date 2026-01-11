@@ -2002,13 +2002,10 @@ export type Database = {
         }[]
       }
       decrypt_sensitive_data: {
-        Args: { encrypted_data: string; key?: string }
+        Args: { encrypted_data: string }
         Returns: string
       }
-      encrypt_sensitive_data: {
-        Args: { data: string; key?: string }
-        Returns: string
-      }
+      encrypt_sensitive_data: { Args: { data: string }; Returns: string }
       evaluate_bid: {
         Args: { p_bid_id: string; p_evaluator_id: string; p_notes?: string }
         Returns: {
