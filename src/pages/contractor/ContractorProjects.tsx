@@ -4,9 +4,11 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog } from '@/components/ui/dialog';
+import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { 
   Clock, DollarSign, MapPin, Calendar, Award, Loader2, Briefcase, 
-  Camera, CheckCircle, AlertCircle, Target, Upload
+  Camera, CheckCircle, AlertCircle, Target, Upload, Wallet, Lock, Info
 } from 'lucide-react';
 import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
@@ -14,6 +16,7 @@ import ProgressUpdateForm from '@/components/contractor/ProgressUpdateForm';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { EscrowWorkflowService, ProjectEscrowStatus } from '@/services/EscrowWorkflowService';
 
 interface Milestone {
   id: string;
@@ -24,6 +27,14 @@ interface Milestone {
   payment_percentage: number;
   evidence_urls: string[] | null;
   submitted_at: string | null;
+}
+
+interface EscrowInfo {
+  id: string;
+  total_amount: number;
+  held_amount: number;
+  released_amount: number;
+  status: string;
 }
 
 interface ProjectWithExtras {
@@ -40,6 +51,9 @@ interface ProjectWithExtras {
   progress?: number;
   rating?: number;
   milestones?: Milestone[];
+  escrow?: EscrowInfo | null;
+  canWork?: boolean;
+  workBlockedReason?: string;
 }
 
 const ContractorProjects = () => {
@@ -85,7 +99,7 @@ const ContractorProjects = () => {
       
       const completedRaw = projects?.filter(p => p.status === 'completed') || [];
 
-      // Fetch progress and milestones for active projects
+      // Fetch progress, milestones, and escrow for active projects
       const activeWithProgress: ProjectWithExtras[] = [];
       for (const project of activeRaw) {
         const { data: progress } = await supabase
@@ -102,10 +116,23 @@ const ContractorProjects = () => {
           .eq('project_id', project.id)
           .order('milestone_number', { ascending: true });
         
+        // Fetch escrow info
+        const { data: escrow } = await supabase
+          .from('escrow_accounts')
+          .select('*')
+          .eq('project_id', project.id)
+          .single();
+
+        // Check if contractor can work
+        const workStatus = await EscrowWorkflowService.canContractorWork(project.id);
+        
         activeWithProgress.push({
           ...project,
           progress: progress?.progress_percentage || 0,
-          milestones: milestones || []
+          milestones: milestones || [],
+          escrow: escrow || null,
+          canWork: workStatus.allowed,
+          workBlockedReason: workStatus.allowed ? undefined : workStatus.reason
         } as ProjectWithExtras);
       }
 
@@ -211,6 +238,37 @@ const ContractorProjects = () => {
             ) : (
               activeProjects.map((project) => (
                 <Card key={project.id} className="shadow-lg">
+                  {/* Escrow Status Alert */}
+                  {!project.canWork && (
+                    <Alert className="m-4 mb-0 border-yellow-300 bg-yellow-50">
+                      <Lock className="h-4 w-4 text-yellow-600" />
+                      <AlertTitle className="text-yellow-800">Awaiting Escrow Funding</AlertTitle>
+                      <AlertDescription className="text-yellow-700">
+                        {project.workBlockedReason || 'Government must fund the escrow before work can begin.'}
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  
+                  {/* Escrow Funding Progress */}
+                  {project.escrow && (
+                    <div className="mx-4 mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium flex items-center gap-1">
+                          <Wallet className="h-4 w-4" />
+                          Escrow Funding
+                        </span>
+                        <Badge className={project.escrow.held_amount >= project.escrow.total_amount ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
+                          {project.escrow.held_amount >= project.escrow.total_amount ? 'Fully Funded' : `${Math.round((project.escrow.held_amount / project.escrow.total_amount) * 100)}% Funded`}
+                        </Badge>
+                      </div>
+                      <Progress value={(project.escrow.held_amount / project.escrow.total_amount) * 100} className="h-2" />
+                      <div className="flex justify-between text-xs mt-1 text-muted-foreground">
+                        <span>Held: KES {project.escrow.held_amount.toLocaleString()}</span>
+                        <span>Total: KES {project.escrow.total_amount.toLocaleString()}</span>
+                      </div>
+                    </div>
+                  )}
+
                   <CardHeader>
                     <div className="flex justify-between items-start">
                       <div>
@@ -223,7 +281,7 @@ const ContractorProjects = () => {
                           </div>
                           <div className="flex items-center">
                             <Calendar className="h-4 w-4 mr-1" />
-                            Started: {new Date(project.created_at).toLocaleDateString()}
+                            Started: {new Date(project.created_at || '').toLocaleDateString()}
                           </div>
                         </div>
                       </div>
