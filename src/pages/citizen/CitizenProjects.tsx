@@ -17,11 +17,13 @@ import {
   Star,
   TrendingUp,
   ArrowLeft,
+  Wallet,
 } from 'lucide-react';
 import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
 import ProjectMapModal from '@/components/citizen/ProjectMapModal';
+import ProjectProgressViewer from '@/components/citizen/ProjectProgressViewer';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -45,15 +47,25 @@ interface Milestone {
   payment_percentage: number;
   milestone_number: number;
   target_completion_date: string | null;
+  evidence_urls: string[] | null;
+}
+
+interface EscrowInfo {
+  held_amount: number;
+  released_amount: number;
+  total_amount: number;
+  status: string;
 }
 
 const CitizenProjects = () => {
   const { user } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
   const [milestones, setMilestones] = useState<{ [key: string]: Milestone[] }>({});
+  const [escrowInfo, setEscrowInfo] = useState<{ [key: string]: EscrowInfo }>({});
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showMapModal, setShowMapModal] = useState(false);
+  const [selectedProjectForProgress, setSelectedProjectForProgress] = useState<Project | null>(null);
 
   const breadcrumbItems = [
     { label: 'Home', href: '/' },
@@ -75,7 +87,7 @@ const CitizenProjects = () => {
       if (error) throw error;
       setProjects(data || []);
 
-      // Fetch milestones for each project
+      // Fetch milestones and escrow info for each project
       for (const project of data || []) {
         const { data: milestonesData } = await supabase
           .from('project_milestones')
@@ -87,6 +99,20 @@ const CitizenProjects = () => {
           ...prev,
           [project.id]: milestonesData || []
         }));
+
+        // Fetch escrow info
+        const { data: escrowData } = await supabase
+          .from('escrow_accounts')
+          .select('*')
+          .eq('project_id', project.id)
+          .single();
+
+        if (escrowData) {
+          setEscrowInfo(prev => ({
+            ...prev,
+            [project.id]: escrowData
+          }));
+        }
       }
     } catch (error: any) {
       console.error('Error fetching projects:', error);
@@ -247,7 +273,9 @@ const CitizenProjects = () => {
             <div className="space-y-6">
               {filteredProjects.map((project) => {
                 const projectMilestones = milestones[project.id] || [];
+                const projectEscrow = escrowInfo[project.id];
                 const progress = calculateProgress(projectMilestones);
+                const photosCount = projectMilestones.reduce((sum, m) => sum + (m.evidence_urls?.length || 0), 0);
 
                 return (
                   <Card key={project.id} className="shadow-lg hover:shadow-xl transition-shadow">
@@ -264,6 +292,12 @@ const CitizenProjects = () => {
                               <DollarSign className="h-3 w-3 mr-1" />
                               KES {(project.budget || 0).toLocaleString()}
                             </Badge>
+                            {photosCount > 0 && (
+                              <Badge variant="outline" className="text-purple-600">
+                                <Camera className="h-3 w-3 mr-1" />
+                                {photosCount} photos
+                              </Badge>
+                            )}
                           </div>
                         </div>
                         <div className="text-right">
@@ -273,6 +307,35 @@ const CitizenProjects = () => {
                       </div>
                     </CardHeader>
                     <CardContent>
+                      {/* Escrow & Funding Status */}
+                      {projectEscrow && (
+                        <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-medium flex items-center gap-1">
+                              <Wallet className="h-4 w-4" />
+                              Escrow Status
+                            </span>
+                            <Badge className={projectEscrow.held_amount >= projectEscrow.total_amount ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
+                              {projectEscrow.held_amount >= projectEscrow.total_amount ? 'Fully Funded' : 'Partial'}
+                            </Badge>
+                          </div>
+                          <div className="grid grid-cols-3 gap-2 text-xs">
+                            <div>
+                              <span className="text-muted-foreground">Total Budget</span>
+                              <p className="font-medium">KES {projectEscrow.total_amount.toLocaleString()}</p>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Held</span>
+                              <p className="font-medium text-blue-600">KES {projectEscrow.held_amount.toLocaleString()}</p>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Released</span>
+                              <p className="font-medium text-green-600">KES {projectEscrow.released_amount.toLocaleString()}</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
                       {/* Progress Bar */}
                       <div className="mb-6">
                         <div className="flex justify-between text-sm text-gray-600 mb-2">
@@ -298,8 +361,14 @@ const CitizenProjects = () => {
                                     <div className="font-medium text-gray-900">
                                       {milestone.milestone_number}. {milestone.title}
                                     </div>
-                                    <div className="text-sm text-gray-600">
-                                      {milestone.payment_percentage}% of budget
+                                    <div className="text-sm text-gray-600 flex items-center gap-2">
+                                      <span>{milestone.payment_percentage}% of budget</span>
+                                      {milestone.evidence_urls && milestone.evidence_urls.length > 0 && (
+                                        <Badge variant="outline" className="text-xs">
+                                          <Camera className="h-3 w-3 mr-1" />
+                                          {milestone.evidence_urls.length} photos
+                                        </Badge>
+                                      )}
                                     </div>
                                   </div>
                                 </div>
@@ -325,12 +394,21 @@ const CitizenProjects = () => {
                       )}
 
                       {/* Verification Actions */}
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="text-primary"
+                          onClick={() => setSelectedProjectForProgress(project)}
+                        >
+                          <TrendingUp className="h-4 w-4 mr-2" />
+                          View Progress
+                        </Button>
                         <Button 
                           variant="outline" 
                           size="sm" 
                           className="text-blue-600"
-                          onClick={() => handlePhotoEvidence(project.id)}
+                          onClick={() => setSelectedProjectForProgress(project)}
                         >
                           <Eye className="h-4 w-4 mr-2" />
                           Photo Evidence
@@ -378,6 +456,16 @@ const CitizenProjects = () => {
         onClose={() => setShowMapModal(false)}
         projects={filteredProjects}
       />
+
+      {/* Progress Viewer Modal */}
+      {selectedProjectForProgress && (
+        <ProjectProgressViewer
+          projectId={selectedProjectForProgress.id}
+          projectTitle={selectedProjectForProgress.title}
+          isOpen={!!selectedProjectForProgress}
+          onClose={() => setSelectedProjectForProgress(null)}
+        />
+      )}
     </div>
   );
 };

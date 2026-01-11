@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   CheckCircle, XCircle, AlertCircle, Clock, DollarSign, 
   Users, FileText, Award, TrendingUp, Loader2, RefreshCw,
-  AlertTriangle, MapPin, Camera, Shield, Gavel
+  AlertTriangle, MapPin, Camera, Shield, Gavel, Wallet
 } from 'lucide-react';
 import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
@@ -16,6 +17,7 @@ import ResponsiveContainer from '@/components/ResponsiveContainer';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { BiddingWorkflowService, BidRequirements, TopBid } from '@/services/BiddingWorkflowService';
+import { EscrowWorkflowService } from '@/services/EscrowWorkflowService';
 import {
   Dialog,
   DialogContent,
@@ -114,6 +116,8 @@ const GovernmentBidApproval = () => {
     }
   };
 
+  const navigate = useNavigate();
+
   const handleSelectBid = async () => {
     if (!selectedProject || !selectedBid) return;
     
@@ -126,15 +130,25 @@ const GovernmentBidApproval = () => {
       );
 
       if (success) {
+        // Create escrow account for the project
+        const escrowCreated = await EscrowWorkflowService.createEscrowForProject(selectedProject.id);
+        
         toast({
-          title: "Contractor Selected",
-          description: "The winning contractor has been selected and the project will proceed."
+          title: "Contractor Selected Successfully!",
+          description: escrowCreated 
+            ? "Escrow account created. Please proceed to fund the project before work can begin."
+            : "The winning contractor has been selected. Please set up escrow funding."
         });
+        
         setShowApprovalDialog(false);
         setSelectedProject(null);
         setSelectedBid(null);
         setJustification('');
-        fetchProjects();
+        
+        // Redirect to escrow funding page
+        setTimeout(() => {
+          navigate('/government/escrow-funding');
+        }, 1500);
       } else {
         throw new Error('Failed to select contractor');
       }
