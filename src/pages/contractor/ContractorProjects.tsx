@@ -8,11 +8,13 @@ import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { 
   Clock, DollarSign, MapPin, Calendar, Award, Loader2, Briefcase, 
-  Camera, CheckCircle, AlertCircle, Target, Upload, Wallet, Lock, Info
+  Camera, CheckCircle, AlertCircle, Target, Upload, Wallet, Lock, Info, Users
 } from 'lucide-react';
 import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
 import ProgressUpdateForm from '@/components/contractor/ProgressUpdateForm';
+import ProjectLifecycleTracker from '@/components/workflow/ProjectLifecycleTracker';
+import WorkforceHiringPanel from '@/components/contractor/WorkforceHiringPanel';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -237,7 +239,11 @@ const ContractorProjects = () => {
               </Card>
             ) : (
               activeProjects.map((project) => (
-                <Card key={project.id} className="shadow-lg">
+                <div key={project.id} className="space-y-4">
+                  {/* Project Lifecycle Tracker */}
+                  <ProjectLifecycleTracker projectId={project.id} compact />
+                  
+                  <Card className="shadow-lg">
                   {/* Escrow Status Alert */}
                   {!project.canWork && (
                     <Alert className="m-4 mb-0 border-yellow-300 bg-yellow-50">
@@ -374,6 +380,7 @@ const ContractorProjects = () => {
                           size="sm" 
                           onClick={() => handleUpdateProgress(project)}
                           className="bg-primary"
+                          disabled={!project.canWork}
                         >
                           <Upload className="h-4 w-4 mr-2" />
                           Update Progress
@@ -382,6 +389,15 @@ const ContractorProjects = () => {
                     </div>
                   </CardContent>
                 </Card>
+                
+                {/* Workforce Hiring Panel - only show when work can start */}
+                {project.canWork && (
+                  <WorkforceHiringPanel 
+                    projectId={project.id} 
+                    projectLocation={project.problem_reports?.location || undefined}
+                  />
+                )}
+                </div>
               ))
             )}
           </TabsContent>
