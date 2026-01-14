@@ -2,16 +2,23 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Building, MapPin, Calendar, DollarSign, Users, Loader2, FolderOpen } from 'lucide-react';
+import { Dialog } from '@/components/ui/dialog';
+import { Building, MapPin, Calendar, DollarSign, Users, Loader2, FolderOpen, Target, Award, CheckCircle } from 'lucide-react';
 import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
+import ProjectLifecycleTracker from '@/components/workflow/ProjectLifecycleTracker';
+import ProjectCompletionForm from '@/components/government/ProjectCompletionForm';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 
 const GovernmentProjects = () => {
+  const { user } = useAuth();
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [expandedProject, setExpandedProject] = useState<string | null>(null);
+  const [completionProject, setCompletionProject] = useState<any | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -149,9 +156,24 @@ const GovernmentProjects = () => {
                       {project.status?.replace('_', ' ').toUpperCase() || 'PLANNING'}
                     </Badge>
                     <div className="flex gap-2">
-                      <Button size="sm" variant="outline">
-                        View Details
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => setExpandedProject(expandedProject === project.id ? null : project.id)}
+                      >
+                        <Target className="h-4 w-4 mr-1" />
+                        {expandedProject === project.id ? 'Hide Lifecycle' : 'View Lifecycle'}
                       </Button>
+                      {project.status === 'in_progress' && (
+                        <Button 
+                          size="sm" 
+                          className="bg-green-600 hover:bg-green-700"
+                          onClick={() => setCompletionProject(project)}
+                        >
+                          <Award className="h-4 w-4 mr-1" />
+                          Complete Project
+                        </Button>
+                      )}
                       <Button 
                         size="sm" 
                         className="bg-purple-600 hover:bg-purple-700"
@@ -161,12 +183,47 @@ const GovernmentProjects = () => {
                       </Button>
                     </div>
                   </div>
+
+                  {/* Expanded Lifecycle Tracker */}
+                  {expandedProject === project.id && (
+                    <div className="mt-4 pt-4 border-t">
+                      <ProjectLifecycleTracker 
+                        projectId={project.id}
+                        onAction={(step) => {
+                          if (step.actionBy === 'government') {
+                            if (step.name.includes('Escrow')) {
+                              navigate('/government/escrow-funding');
+                            } else if (step.name.includes('Payment')) {
+                              navigate('/government/payment-release');
+                            } else if (step.name.includes('Complete')) {
+                              setCompletionProject(project);
+                            }
+                          }
+                        }}
+                      />
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))
           )}
         </div>
       </main>
+
+      {/* Project Completion Dialog */}
+      {completionProject && (
+        <ProjectCompletionForm
+          projectId={completionProject.id}
+          projectTitle={completionProject.title}
+          budget={completionProject.budget}
+          open={!!completionProject}
+          onOpenChange={(open) => !open && setCompletionProject(null)}
+          onCompleted={() => {
+            setCompletionProject(null);
+            fetchProjects();
+          }}
+        />
+      )}
     </div>
   );
 };

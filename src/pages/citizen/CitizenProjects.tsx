@@ -18,12 +18,15 @@ import {
   TrendingUp,
   ArrowLeft,
   Wallet,
+  Target,
 } from 'lucide-react';
 import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
 import ProjectMapModal from '@/components/citizen/ProjectMapModal';
 import ProjectProgressViewer from '@/components/citizen/ProjectProgressViewer';
+import ProjectLifecycleTracker from '@/components/workflow/ProjectLifecycleTracker';
+import MilestoneVerificationCard from '@/components/citizen/MilestoneVerificationCard';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -66,7 +69,7 @@ const CitizenProjects = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showMapModal, setShowMapModal] = useState(false);
   const [selectedProjectForProgress, setSelectedProjectForProgress] = useState<Project | null>(null);
-
+  const [selectedProjectForLifecycle, setSelectedProjectForLifecycle] = useState<Project | null>(null);
   const breadcrumbItems = [
     { label: 'Home', href: '/' },
     { label: 'Citizen', href: '/citizen' },
@@ -345,51 +348,31 @@ const CitizenProjects = () => {
                         <Progress value={progress} className="h-3" />
                       </div>
 
-                      {/* Milestones */}
+                      {/* Milestones with Verification Cards */}
                       {projectMilestones.length > 0 && (
                         <div className="mb-6">
-                          <h4 className="font-semibold text-gray-900 mb-4">Milestones</h4>
+                          <h4 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                            <Target className="h-5 w-5 text-primary" />
+                            Milestones - Your Verification Required for Payment Release
+                          </h4>
                           <div className="space-y-3">
                             {projectMilestones.map((milestone) => (
-                              <div 
-                                key={milestone.id} 
-                                className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
-                              >
-                                <div className="flex items-center gap-3">
-                                  {getMilestoneStatusIcon(milestone.status)}
-                                  <div>
-                                    <div className="font-medium text-gray-900">
-                                      {milestone.milestone_number}. {milestone.title}
-                                    </div>
-                                    <div className="text-sm text-gray-600 flex items-center gap-2">
-                                      <span>{milestone.payment_percentage}% of budget</span>
-                                      {milestone.evidence_urls && milestone.evidence_urls.length > 0 && (
-                                        <Badge variant="outline" className="text-xs">
-                                          <Camera className="h-3 w-3 mr-1" />
-                                          {milestone.evidence_urls.length} photos
-                                        </Badge>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <Badge className={getStatusColor(milestone.status)}>
-                                    {milestone.status}
-                                  </Badge>
-                                  {milestone.status === 'submitted' && (
-                                    <Button 
-                                      size="sm" 
-                                      onClick={() => handleVerifyMilestone(milestone.id, 5)}
-                                      className="bg-green-600 hover:bg-green-700"
-                                    >
-                                      <CheckCircle className="h-4 w-4 mr-1" />
-                                      Verify
-                                    </Button>
-                                  )}
-                                </div>
-                              </div>
+                              <MilestoneVerificationCard
+                                key={milestone.id}
+                                milestone={{
+                                  ...milestone,
+                                  completion_criteria: null
+                                }}
+                                projectId={project.id}
+                                onVerified={fetchProjects}
+                              />
                             ))}
                           </div>
+                          <p className="text-sm text-muted-foreground mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                            <AlertTriangle className="h-4 w-4 inline mr-1 text-blue-600" />
+                            <strong>Important:</strong> Contractor payments are only released after citizens verify milestone completion. 
+                            At least 2 citizen verifications are required per milestone.
+                          </p>
                         </div>
                       )}
 
@@ -399,10 +382,12 @@ const CitizenProjects = () => {
                           variant="outline" 
                           size="sm" 
                           className="text-primary"
-                          onClick={() => setSelectedProjectForProgress(project)}
+                          onClick={() => setSelectedProjectForLifecycle(
+                            selectedProjectForLifecycle?.id === project.id ? null : project
+                          )}
                         >
-                          <TrendingUp className="h-4 w-4 mr-2" />
-                          View Progress
+                          <Target className="h-4 w-4 mr-2" />
+                          Full Lifecycle
                         </Button>
                         <Button 
                           variant="outline" 
@@ -441,6 +426,13 @@ const CitizenProjects = () => {
                           Report Issue
                         </Button>
                       </div>
+                      
+                      {/* Lifecycle Tracker (Expandable) */}
+                      {selectedProjectForLifecycle?.id === project.id && (
+                        <div className="mt-6">
+                          <ProjectLifecycleTracker projectId={project.id} />
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 );
