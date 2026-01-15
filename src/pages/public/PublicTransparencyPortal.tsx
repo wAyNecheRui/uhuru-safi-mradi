@@ -7,10 +7,11 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import RegionalDevelopmentStats from "@/components/cycles/RegionalDevelopmentStats";
 import { 
   Loader2, Search, Building2, MapPin, Calendar, DollarSign, 
   Users, TrendingUp, Eye, ExternalLink, Shield, Clock,
-  CheckCircle2, XCircle, AlertCircle, ArrowLeft, Home
+  CheckCircle2, XCircle, AlertCircle, ArrowLeft, Home, BarChart3, Globe
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -81,7 +82,7 @@ export default function PublicTransparencyPortal() {
               .from('problem_reports')
               .select('location, category, priority')
               .eq('id', project.report_id)
-              .single();
+              .maybeSingle();
             report = data;
           }
 
@@ -90,7 +91,7 @@ export default function PublicTransparencyPortal() {
             .from('escrow_accounts')
             .select('total_amount, held_amount, released_amount')
             .eq('project_id', project.id)
-            .single();
+            .maybeSingle();
 
           // Get milestones
           const { data: milestones } = await supabase
@@ -105,7 +106,7 @@ export default function PublicTransparencyPortal() {
               .from('contractor_profiles')
               .select('company_name, average_rating')
               .eq('user_id', project.contractor_id)
-              .single();
+              .maybeSingle();
             contractor = data;
           }
 
@@ -220,6 +221,16 @@ export default function PublicTransparencyPortal() {
             Track government infrastructure projects, fund allocation, and contractor performance. 
             All data is public and verified on the blockchain.
           </p>
+          <div className="flex flex-wrap gap-2 mt-4">
+            <Badge variant="secondary" className="bg-white/20">
+              <Globe className="h-3 w-3 mr-1" />
+              Accountability & Transparency Cycle
+            </Badge>
+            <Badge variant="secondary" className="bg-white/20">
+              <BarChart3 className="h-3 w-3 mr-1" />
+              Community Impact Measurement
+            </Badge>
+          </div>
         </div>
       </div>
 
@@ -286,6 +297,7 @@ export default function PublicTransparencyPortal() {
         <Tabs defaultValue="projects">
           <TabsList className="mb-6">
             <TabsTrigger value="projects">Projects ({filteredProjects.length})</TabsTrigger>
+            <TabsTrigger value="regional">Regional Impact</TabsTrigger>
             <TabsTrigger value="blockchain">Blockchain Records ({blockchainRecords.length})</TabsTrigger>
           </TabsList>
 
@@ -381,6 +393,21 @@ export default function PublicTransparencyPortal() {
                 </Card>
               )}
             </div>
+          </TabsContent>
+
+          <TabsContent value="regional">
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-primary" />
+                  Regional Development Statistics
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Community impact measurements showing regional development from infrastructure projects.
+                </p>
+              </CardHeader>
+            </Card>
+            <RegionalDevelopmentStats />
           </TabsContent>
 
           <TabsContent value="blockchain">

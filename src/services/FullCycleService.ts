@@ -758,8 +758,12 @@ export class AccountabilityTransparencyCycle {
           stats.completedProjects++;
         }
 
-        if (project.escrow_accounts) {
-          stats.fundsReleased += project.escrow_accounts.released_amount || 0;
+        // escrow_accounts is an array from the join - take the first one if exists
+        const escrow = Array.isArray(project.escrow_accounts) 
+          ? project.escrow_accounts[0] 
+          : project.escrow_accounts;
+        if (escrow) {
+          stats.fundsReleased += escrow.released_amount || 0;
         }
       });
 
