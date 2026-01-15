@@ -278,8 +278,20 @@ const GovernmentPortfolio = () => {
                     </div>
                     
                     <div className="flex justify-end gap-2">
-                      <Button variant="outline" size="sm">View Details</Button>
-                      <Button size="sm" className="bg-primary">Manage</Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => navigate(`/government/projects`, { state: { projectId: project.id } })}
+                      >
+                        View Details
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        className="bg-primary"
+                        onClick={() => navigate(`/government/milestones`, { state: { projectId: project.id } })}
+                      >
+                        Manage
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
