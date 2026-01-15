@@ -69,6 +69,7 @@ const GovernmentLPO = lazy(() => import("./pages/government/GovernmentLPO"));
 
 // Public Routes
 const PublicTransparencyPortal = lazy(() => import("./pages/public/PublicTransparencyPortal"));
+const UserGuide = lazy(() => import("./pages/UserGuide"));
 
 // Dispute Resolution
 const DisputeResolution = lazy(() => import("./pages/DisputeResolution"));
@@ -107,6 +108,7 @@ const App = () => {
                   <Route path="/how-it-works" element={<HowItWorks />} />
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/auth" element={<Auth />} />
+                  <Route path="/user-guide" element={<UserGuide />} />
                   <Route path="/contractor-database" element={<ContractorDatabasePage />} />
                   <Route path="/workforce" element={<WorkforcePage />} />
                   <Route path="/analytics" element={<AnalyticsPage />} />
