@@ -94,7 +94,8 @@ export const useProblemReporting = () => {
         for (const photo of reportData.photos) {
           const fileExt = photo.name.split('.').pop();
           const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-          const filePath = `problem-reports/${fileName}`;
+          // Path must start with user.id to satisfy RLS policy
+          const filePath = `${user.id}/problem-reports/${fileName}`;
 
           const { error: uploadError } = await supabase.storage
             .from('report-files')

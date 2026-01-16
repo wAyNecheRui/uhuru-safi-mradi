@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Camera, MapPin, Upload, Trash2, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface MediaFile {
   id: string;
@@ -29,6 +30,7 @@ const CameraIntegration: React.FC<CameraIntegrationProps> = ({
   allowVideo = true,
   reportId
 }) => {
+  const { user } = useAuth();
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
   const [uploading, setUploading] = useState(false);
   const [capturing, setCapturing] = useState(false);
@@ -129,9 +131,12 @@ const CameraIntegration: React.FC<CameraIntegrationProps> = ({
   };
 
   const uploadToSupabase = async (file: File, fileName: string): Promise<string> => {
+    if (!user) throw new Error('User must be logged in to upload files');
+    
+    // Path must start with user.id to satisfy RLS policy
     const { data, error } = await supabase.storage
       .from('report-files')
-      .upload(`${reportId || 'temp'}/${fileName}`, file, {
+      .upload(`${user.id}/${reportId || 'media'}/${fileName}`, file, {
         cacheControl: '3600',
         upsert: false
       });

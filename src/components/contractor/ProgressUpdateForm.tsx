@@ -125,12 +125,13 @@ const ProgressUpdateForm: React.FC<ProgressUpdateFormProps> = ({
   };
 
   const uploadPhotos = async (): Promise<string[]> => {
-    if (photos.length === 0) return [];
+    if (photos.length === 0 || !user) return [];
 
     const uploadedUrls: string[] = [];
     
     for (const photo of photos) {
-      const fileName = `progress/${projectId}/${Date.now()}_${photo.name}`;
+      // Path must start with user.id to satisfy RLS policy
+      const fileName = `${user.id}/progress/${projectId}/${Date.now()}_${photo.name}`;
       
       const { data, error } = await supabase.storage
         .from('report-files')
