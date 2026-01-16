@@ -169,10 +169,15 @@ export class ReportService {
     return { upvotes, downvotes };
   }
 
-  static async uploadFile(file: File, reportId?: string, projectId?: string): Promise<string> {
+  static async uploadFile(file: File, reportId?: string, projectId?: string, userId?: string): Promise<string> {
+    if (!userId) {
+      throw new Error('User ID is required for file upload');
+    }
+    
     const fileExt = file.name.split('.').pop();
     const fileName = `${Math.random()}.${fileExt}`;
-    const filePath = `uploads/${fileName}`;
+    // Path must start with user.id to satisfy RLS policy
+    const filePath = `${userId}/uploads/${fileName}`;
 
     const { error: uploadError } = await supabase.storage
       .from('report-files')
