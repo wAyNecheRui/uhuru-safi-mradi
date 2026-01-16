@@ -351,10 +351,30 @@ const CitizenProjects = () => {
                       {/* Milestones with Verification Cards */}
                       {projectMilestones.length > 0 && (
                         <div className="mb-6">
-                          <h4 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                            <Target className="h-5 w-5 text-primary" />
-                            Milestones - Your Verification Required for Payment Release
-                          </h4>
+                          <div className="flex items-center justify-between mb-4">
+                            <h4 className="font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                              <Target className="h-5 w-5 text-primary" />
+                              Milestones - Verify to Release Payments
+                            </h4>
+                            <Badge variant="outline" className="text-green-600 border-green-300">
+                              {projectMilestones.filter(m => m.status === 'paid').length}/{projectMilestones.length} Paid
+                            </Badge>
+                          </div>
+                          
+                          {/* How It Works Info Box */}
+                          <div className="mb-4 p-4 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-lg border border-green-200 dark:border-green-700">
+                            <h5 className="font-semibold text-green-800 dark:text-green-200 mb-2 flex items-center gap-2">
+                              <CheckCircle className="h-4 w-4" />
+                              How Citizen Verification Works
+                            </h5>
+                            <ol className="text-sm text-green-700 dark:text-green-300 space-y-1 list-decimal list-inside">
+                              <li>Contractor submits milestone with photo evidence</li>
+                              <li><strong>2+ citizens</strong> must verify the work quality</li>
+                              <li>Average rating must be <strong>3+ stars</strong></li>
+                              <li><strong>Payment automatically releases</strong> from escrow to contractor</li>
+                            </ol>
+                          </div>
+
                           <div className="space-y-3">
                             {projectMilestones.map((milestone) => (
                               <MilestoneVerificationCard
@@ -368,11 +388,6 @@ const CitizenProjects = () => {
                               />
                             ))}
                           </div>
-                          <p className="text-sm text-muted-foreground mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                            <AlertTriangle className="h-4 w-4 inline mr-1 text-blue-600" />
-                            <strong>Important:</strong> Contractor payments are only released after citizens verify milestone completion. 
-                            At least 2 citizen verifications are required per milestone.
-                          </p>
                         </div>
                       )}
 
