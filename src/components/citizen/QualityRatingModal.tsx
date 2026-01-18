@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -27,6 +27,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { LiveNotificationService } from '@/services/LiveNotificationService';
+import { MilestonePaymentService } from '@/services/MilestonePaymentService';
 
 interface QualityRatingModalProps {
   isOpen: boolean;
@@ -57,10 +58,11 @@ const QualityRatingModal: React.FC<QualityRatingModalProps> = ({
   const [additionalComments, setAdditionalComments] = useState('');
   const [hasAlreadyRated, setHasAlreadyRated] = useState(false);
   const [checkingStatus, setCheckingStatus] = useState(true);
+  const [activeMilestone, setActiveMilestone] = useState<{ id: string; title: string } | null>(null);
 
-  // Check if user has already rated this project
-  React.useEffect(() => {
-    const checkExistingRating = async () => {
+  // Check if user has already rated this project and get active milestone
+  useEffect(() => {
+    const checkStatusAndMilestone = async () => {
       if (!user || !isOpen) {
         setCheckingStatus(false);
         return;
@@ -68,7 +70,8 @@ const QualityRatingModal: React.FC<QualityRatingModalProps> = ({
       
       setCheckingStatus(true);
       try {
-        const { data } = await supabase
+        // Check existing quality rating
+        const { data: existingRating } = await supabase
           .from('quality_checkpoints')
           .select('id')
           .eq('project_id', projectId)
@@ -77,7 +80,20 @@ const QualityRatingModal: React.FC<QualityRatingModalProps> = ({
           .eq('checkpoint_name', 'Citizen Quality Review')
           .maybeSingle();
         
-        setHasAlreadyRated(!!data);
+        setHasAlreadyRated(!!existingRating);
+
+        // Get the current active milestone (first in_progress or submitted milestone)
+        const { data: milestones } = await supabase
+          .from('project_milestones')
+          .select('id, title, status, milestone_number')
+          .eq('project_id', projectId)
+          .in('status', ['in_progress', 'submitted', 'pending'])
+          .order('milestone_number', { ascending: true })
+          .limit(1);
+
+        if (milestones && milestones.length > 0) {
+          setActiveMilestone({ id: milestones[0].id, title: milestones[0].title });
+        }
       } catch (error) {
         console.error('Error checking rating status:', error);
       } finally {
@@ -85,7 +101,7 @@ const QualityRatingModal: React.FC<QualityRatingModalProps> = ({
       }
     };
 
-    checkExistingRating();
+    checkStatusAndMilestone();
   }, [user, projectId, isOpen]);
   
   const [categories, setCategories] = useState<RatingCategory[]>([
@@ -202,6 +218,37 @@ const QualityRatingModal: React.FC<QualityRatingModalProps> = ({
           return;
         }
         throw error;
+      }
+
+      // CRITICAL: Also create milestone_verification for auto-payment workflow
+      if (activeMilestone) {
+        const { error: mvError } = await supabase.from('milestone_verifications').insert({
+          milestone_id: activeMilestone.id,
+          verifier_id: user.id,
+          verification_status: 'approved',
+          verification_notes: `Citizen Quality Review - Rating: ${Math.round(overallRating)}/5. Categories: Workmanship ${categories.find(c => c.id === 'workmanship')?.rating || 0}/5, Materials ${categories.find(c => c.id === 'materials')?.rating || 0}/5, Safety ${categories.find(c => c.id === 'safety')?.rating || 0}/5, Timeliness ${categories.find(c => c.id === 'timeliness')?.rating || 0}/5, Professionalism ${categories.find(c => c.id === 'professionalism')?.rating || 0}/5. ${additionalComments || ''}`,
+          verification_photos: []
+        });
+
+        if (mvError) {
+          console.error('Error creating milestone verification:', mvError);
+          // Continue anyway - quality checkpoint was saved
+        } else {
+          console.log('[QualityRating] Created milestone verification for auto-payment check');
+          
+          // Trigger auto-payment check
+          const paymentResult = await MilestonePaymentService.triggerAutomatedPayment(activeMilestone.id);
+          
+          if (paymentResult.success && !paymentResult.alreadyPaid) {
+            toast({
+              title: '💰 Payment Auto-Released!',
+              description: paymentResult.message,
+              duration: 8000
+            });
+          } else if (!paymentResult.success) {
+            console.log('[QualityRating] Auto-payment check result:', paymentResult.message);
+          }
+        }
       }
 
       // Send live notifications

@@ -106,10 +106,14 @@ serve(async (req) => {
     let totalRating = 0
     let ratingCount = 0
     approvedVerifications.forEach(v => {
-      const match = v.verification_notes?.match(/Rating:\s*(\d)/)
+      // Match both integer and decimal ratings like "Rating: 4/5" or "Rating: 3.8/5" or "Rating: 4.0000000000000000/5"
+      const match = v.verification_notes?.match(/Rating:\s*([\d.]+)/)
       if (match) {
-        totalRating += parseInt(match[1])
-        ratingCount++
+        const rating = parseFloat(match[1])
+        if (!isNaN(rating) && rating >= 1 && rating <= 5) {
+          totalRating += rating
+          ratingCount++
+        }
       }
     })
     const averageRating = ratingCount > 0 ? totalRating / ratingCount : 0
