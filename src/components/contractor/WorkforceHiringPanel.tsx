@@ -156,54 +156,43 @@ const WorkforceHiringPanel: React.FC<WorkforceHiringPanelProps> = ({
     setShowApplicants(true);
     
     try {
-      // Fetch detailed applicant information
-      const { data, error } = await supabase
+      // Fetch job applications
+      const { data: applications, error: appsError } = await supabase
         .from('job_applications')
-        .select(`
-          id,
-          status,
-          applicant_id,
-          application_message,
-          applied_at,
-          citizen_workers!job_applications_applicant_id_fkey (
-            id,
-            phone_number,
-            skills,
-            experience_years,
-            rating,
-            county,
-            daily_rate,
-            user_id
-          )
-        `)
+        .select('id, status, applicant_id, application_message, applied_at')
         .eq('job_id', job.id)
         .order('applied_at', { ascending: false });
 
-      if (error) throw error;
+      if (appsError) throw appsError;
 
-      // Fetch user profiles for worker names
-      const applicantsWithProfiles = await Promise.all(
-        (data || []).map(async (app: any) => {
-          if (app.citizen_workers?.user_id) {
-            const { data: profile } = await supabase
-              .from('user_profiles')
-              .select('full_name')
-              .eq('user_id', app.citizen_workers.user_id)
-              .single();
-            
-            return {
-              ...app,
-              worker: {
-                ...app.citizen_workers,
-                user_profiles: profile
-              }
-            };
-          }
-          return { ...app, worker: app.citizen_workers };
+      // Fetch worker and profile data for each applicant
+      const applicantsWithDetails = await Promise.all(
+        (applications || []).map(async (app) => {
+          // applicant_id is the user_id, so we query citizen_workers by user_id
+          const { data: worker } = await supabase
+            .from('citizen_workers')
+            .select('id, phone_number, skills, experience_years, rating, county, daily_rate, user_id')
+            .eq('user_id', app.applicant_id)
+            .single();
+
+          // Fetch user profile for the name
+          const { data: profile } = await supabase
+            .from('user_profiles')
+            .select('full_name')
+            .eq('user_id', app.applicant_id)
+            .single();
+
+          return {
+            ...app,
+            worker: worker ? {
+              ...worker,
+              user_profiles: profile
+            } : null
+          };
         })
       );
 
-      setApplicants(applicantsWithProfiles);
+      setApplicants(applicantsWithDetails);
     } catch (error) {
       console.error('Error fetching applicants:', error);
       toast({
