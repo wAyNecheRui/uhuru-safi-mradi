@@ -176,6 +176,9 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
         newStatus.approvedCount,
         newStatus.requiredCount
       );
+      
+      // Check if payment threshold is reached
+      if (newStatus.canRelease) {
         toast({
           title: "🎉 Verification Threshold Reached!",
           description: "Triggering automated payment release..."
