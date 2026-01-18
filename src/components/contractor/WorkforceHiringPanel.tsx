@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { 
   Users, Briefcase, MapPin, DollarSign, Clock, 
-  Plus, UserCheck, X, Loader2, Search
+  Plus, UserCheck, X, Loader2, Search, Eye, CheckCircle, XCircle,
+  Star, Phone, Mail, FileText
 } from 'lucide-react';
 import {
   Dialog,
@@ -18,6 +19,8 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ProjectLifecycleService } from '@/services/ProjectLifecycleService';
+import { useViewport } from '@/hooks/useViewport';
+import { cn } from '@/lib/utils';
 
 interface WorkforceJob {
   id: string;
@@ -32,6 +35,27 @@ interface WorkforceJob {
   positions_filled: number;
   status: string;
   applicants_count?: number;
+  job_applications?: JobApplication[];
+}
+
+interface JobApplication {
+  id: string;
+  status: string;
+  applicant_id: string;
+  application_message?: string;
+  applied_at?: string;
+  worker?: {
+    id: string;
+    phone_number: string;
+    skills: string[];
+    experience_years: number | null;
+    rating: number | null;
+    county: string;
+    daily_rate: number | null;
+    user_profiles?: {
+      full_name: string;
+    };
+  };
 }
 
 interface AvailableWorker {
@@ -58,11 +82,17 @@ const WorkforceHiringPanel: React.FC<WorkforceHiringPanelProps> = ({
   onHire
 }) => {
   const { toast } = useToast();
+  const { isMobile } = useViewport();
   const [jobs, setJobs] = useState<WorkforceJob[]>([]);
   const [workers, setWorkers] = useState<AvailableWorker[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateJob, setShowCreateJob] = useState(false);
   const [showWorkerSearch, setShowWorkerSearch] = useState(false);
+  const [showApplicants, setShowApplicants] = useState(false);
+  const [selectedJob, setSelectedJob] = useState<WorkforceJob | null>(null);
+  const [applicants, setApplicants] = useState<JobApplication[]>([]);
+  const [loadingApplicants, setLoadingApplicants] = useState(false);
+  const [processingApplication, setProcessingApplication] = useState<string | null>(null);
   const [searchSkill, setSearchSkill] = useState('');
   const [creating, setCreating] = useState(false);
   
@@ -85,12 +115,12 @@ const WorkforceHiringPanel: React.FC<WorkforceHiringPanelProps> = ({
     try {
       setLoading(true);
       
-      // Fetch jobs for this project
+      // Fetch jobs for this project with applications
       const { data: jobsData, error: jobsError } = await supabase
         .from('workforce_jobs')
         .select(`
           *,
-          job_applications(id, status)
+          job_applications(id, status, applicant_id, application_message, applied_at)
         `)
         .eq('project_id', projectId)
         .order('created_at', { ascending: false });
@@ -117,6 +147,116 @@ const WorkforceHiringPanel: React.FC<WorkforceHiringPanelProps> = ({
       console.error('Error fetching workforce data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchApplicants = async (job: WorkforceJob) => {
+    setLoadingApplicants(true);
+    setSelectedJob(job);
+    setShowApplicants(true);
+    
+    try {
+      // Fetch detailed applicant information
+      const { data, error } = await supabase
+        .from('job_applications')
+        .select(`
+          id,
+          status,
+          applicant_id,
+          application_message,
+          applied_at,
+          citizen_workers!job_applications_applicant_id_fkey (
+            id,
+            phone_number,
+            skills,
+            experience_years,
+            rating,
+            county,
+            daily_rate,
+            user_id
+          )
+        `)
+        .eq('job_id', job.id)
+        .order('applied_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Fetch user profiles for worker names
+      const applicantsWithProfiles = await Promise.all(
+        (data || []).map(async (app: any) => {
+          if (app.citizen_workers?.user_id) {
+            const { data: profile } = await supabase
+              .from('user_profiles')
+              .select('full_name')
+              .eq('user_id', app.citizen_workers.user_id)
+              .single();
+            
+            return {
+              ...app,
+              worker: {
+                ...app.citizen_workers,
+                user_profiles: profile
+              }
+            };
+          }
+          return { ...app, worker: app.citizen_workers };
+        })
+      );
+
+      setApplicants(applicantsWithProfiles);
+    } catch (error) {
+      console.error('Error fetching applicants:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load applicants",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingApplicants(false);
+    }
+  };
+
+  const handleReviewApplication = async (applicationId: string, status: 'accepted' | 'rejected') => {
+    setProcessingApplication(applicationId);
+    
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Must be logged in');
+
+      const { error } = await supabase
+        .from('job_applications')
+        .update({
+          status,
+          reviewed_at: new Date().toISOString(),
+          reviewed_by: user.id
+        })
+        .eq('id', applicationId);
+
+      if (error) throw error;
+
+      toast({
+        title: status === 'accepted' ? "Worker Hired!" : "Application Rejected",
+        description: status === 'accepted' 
+          ? "The worker has been notified and can now join your project."
+          : "The applicant has been notified of your decision."
+      });
+
+      // Refresh applicants list
+      if (selectedJob) {
+        fetchApplicants(selectedJob);
+      }
+      
+      // Refresh main job list
+      fetchData();
+      onHire?.();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to process application",
+        variant: "destructive"
+      });
+    } finally {
+      setProcessingApplication(null);
     }
   };
 
@@ -181,6 +321,27 @@ const WorkforceHiringPanel: React.FC<WorkforceHiringPanelProps> = ({
     )
   );
 
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'accepted':
+        return <Badge className="bg-green-100 text-green-800">Hired</Badge>;
+      case 'rejected':
+        return <Badge className="bg-red-100 text-red-800">Rejected</Badge>;
+      default:
+        return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
+    }
+  };
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'Unknown';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-KE', { 
+      day: 'numeric', 
+      month: 'short', 
+      year: 'numeric' 
+    });
+  };
+
   if (loading) {
     return (
       <Card>
@@ -194,20 +355,20 @@ const WorkforceHiringPanel: React.FC<WorkforceHiringPanelProps> = ({
   return (
     <>
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
+        <CardHeader className={isMobile ? 'p-4' : undefined}>
+          <CardTitle className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <Users className="h-5 w-5 text-primary" />
-              <span>Workforce Integration</span>
+              <span className="text-base sm:text-lg">Workforce Integration</span>
             </div>
             <div className="flex gap-2">
               <Button size="sm" variant="outline" onClick={() => setShowWorkerSearch(true)}>
                 <Search className="h-4 w-4 mr-1" />
-                Find Workers
+                <span className={isMobile ? 'sr-only' : ''}>Find Workers</span>
               </Button>
               <Button size="sm" onClick={() => setShowCreateJob(true)}>
                 <Plus className="h-4 w-4 mr-1" />
-                Post Job
+                <span className={isMobile ? 'sr-only' : ''}>Post Job</span>
               </Button>
             </div>
           </CardTitle>
@@ -216,10 +377,10 @@ const WorkforceHiringPanel: React.FC<WorkforceHiringPanelProps> = ({
           </p>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className={isMobile ? 'p-4 pt-0' : undefined}>
           {jobs.length === 0 ? (
-            <div className="text-center py-8 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-              <Briefcase className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <div className="text-center py-8 bg-muted/50 rounded-lg">
+              <Briefcase className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="font-semibold mb-2">No Job Postings Yet</h3>
               <p className="text-sm text-muted-foreground mb-4">
                 Post jobs to hire local workers for your project
@@ -234,10 +395,13 @@ const WorkforceHiringPanel: React.FC<WorkforceHiringPanelProps> = ({
               {jobs.map((job) => (
                 <div 
                   key={job.id}
-                  className="flex items-start justify-between p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg"
+                  className={cn(
+                    "p-4 bg-muted/50 rounded-lg",
+                    isMobile ? 'space-y-3' : 'flex items-start justify-between'
+                  )}
                 >
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
+                  <div className="space-y-2 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <h4 className="font-semibold">{job.title}</h4>
                       <Badge variant={job.status === 'open' ? 'default' : 'secondary'}>
                         {job.status}
@@ -274,15 +438,28 @@ const WorkforceHiringPanel: React.FC<WorkforceHiringPanelProps> = ({
                       </div>
                     )}
                   </div>
-                  <div className="text-right">
-                    <div className="text-lg font-bold">
-                      {job.positions_filled}/{job.positions_available}
+                  
+                  <div className={cn(
+                    "flex items-center gap-4",
+                    isMobile ? 'justify-between' : 'flex-col items-end'
+                  )}>
+                    <div className={isMobile ? '' : 'text-right'}>
+                      <div className="text-lg font-bold">
+                        {job.positions_filled}/{job.positions_available}
+                      </div>
+                      <p className="text-xs text-muted-foreground">Positions Filled</p>
                     </div>
-                    <p className="text-xs text-muted-foreground">Positions Filled</p>
+                    
                     {job.applicants_count! > 0 && (
-                      <Badge className="mt-2 bg-blue-100 text-blue-800">
-                        {job.applicants_count} applicants
-                      </Badge>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => fetchApplicants(job)}
+                        className="flex items-center gap-1"
+                      >
+                        <Eye className="h-4 w-4" />
+                        <span>{job.applicants_count} Applicants</span>
+                      </Button>
                     )}
                   </div>
                 </div>
@@ -292,9 +469,159 @@ const WorkforceHiringPanel: React.FC<WorkforceHiringPanelProps> = ({
         </CardContent>
       </Card>
 
+      {/* View Applicants Dialog */}
+      <Dialog open={showApplicants} onOpenChange={setShowApplicants}>
+        <DialogContent className={cn(
+          "max-h-[85vh] overflow-auto",
+          isMobile ? 'max-w-[95vw]' : 'max-w-2xl'
+        )}>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-primary" />
+              Applicants for: {selectedJob?.title}
+            </DialogTitle>
+          </DialogHeader>
+          
+          {loadingApplicants ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : applicants.length === 0 ? (
+            <div className="text-center py-8">
+              <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">No applicants yet</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {applicants.map((app) => (
+                <div 
+                  key={app.id}
+                  className="p-4 border rounded-lg space-y-3"
+                >
+                  {/* Applicant Header */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="font-semibold">
+                          {app.worker?.user_profiles?.full_name || 'Anonymous Worker'}
+                        </h4>
+                        {getStatusBadge(app.status)}
+                        {app.worker?.rating && (
+                          <Badge variant="outline" className="text-amber-600">
+                            <Star className="h-3 w-3 mr-1 fill-current" />
+                            {app.worker.rating.toFixed(1)}
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1 flex-wrap">
+                        <span className="flex items-center gap-1">
+                          <MapPin className="h-3 w-3" />
+                          {app.worker?.county || 'Unknown location'}
+                        </span>
+                        {app.worker?.experience_years && (
+                          <span>{app.worker.experience_years} years exp.</span>
+                        )}
+                        {app.worker?.daily_rate && (
+                          <span className="flex items-center gap-1">
+                            <DollarSign className="h-3 w-3" />
+                            KES {app.worker.daily_rate.toLocaleString()}/day
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">
+                      Applied {formatDate(app.applied_at)}
+                    </span>
+                  </div>
+                  
+                  {/* Skills */}
+                  {app.worker?.skills && app.worker.skills.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {app.worker.skills.slice(0, 6).map((skill, i) => (
+                        <Badge key={i} variant="secondary" className="text-xs">
+                          {skill}
+                        </Badge>
+                      ))}
+                      {app.worker.skills.length > 6 && (
+                        <Badge variant="outline" className="text-xs">
+                          +{app.worker.skills.length - 6} more
+                        </Badge>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Application Message */}
+                  {app.application_message && (
+                    <div className="bg-muted/50 p-3 rounded-lg">
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
+                        <FileText className="h-3 w-3" />
+                        Application Message
+                      </div>
+                      <p className="text-sm">{app.application_message}</p>
+                    </div>
+                  )}
+                  
+                  {/* Contact & Actions */}
+                  <div className={cn(
+                    "flex gap-2 pt-2",
+                    isMobile ? 'flex-col' : 'items-center justify-between'
+                  )}>
+                    {app.worker?.phone_number && (
+                      <a 
+                        href={`tel:${app.worker.phone_number}`}
+                        className="flex items-center gap-1 text-sm text-primary hover:underline"
+                      >
+                        <Phone className="h-4 w-4" />
+                        {app.worker.phone_number}
+                      </a>
+                    )}
+                    
+                    {app.status === 'pending' && (
+                      <div className="flex gap-2 flex-1 justify-end">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleReviewApplication(app.id, 'rejected')}
+                          disabled={processingApplication === app.id}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          {processingApplication === app.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <>
+                              <XCircle className="h-4 w-4 mr-1" />
+                              Reject
+                            </>
+                          )}
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => handleReviewApplication(app.id, 'accepted')}
+                          disabled={processingApplication === app.id}
+                          className="bg-green-600 hover:bg-green-700"
+                        >
+                          {processingApplication === app.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <>
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              Hire Worker
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Create Job Dialog */}
       <Dialog open={showCreateJob} onOpenChange={setShowCreateJob}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className={isMobile ? 'max-w-[95vw]' : 'max-w-lg'}>
           <DialogHeader>
             <DialogTitle>Post Job to Citizen Worker Registry</DialogTitle>
           </DialogHeader>
@@ -373,7 +700,7 @@ const WorkforceHiringPanel: React.FC<WorkforceHiringPanelProps> = ({
               </div>
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className={isMobile ? 'flex-col gap-2' : ''}>
             <Button variant="outline" onClick={() => setShowCreateJob(false)}>
               Cancel
             </Button>
@@ -387,13 +714,16 @@ const WorkforceHiringPanel: React.FC<WorkforceHiringPanelProps> = ({
 
       {/* Worker Search Dialog */}
       <Dialog open={showWorkerSearch} onOpenChange={setShowWorkerSearch}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-auto">
+        <DialogContent className={cn(
+          "max-h-[80vh] overflow-auto",
+          isMobile ? 'max-w-[95vw]' : 'max-w-2xl'
+        )}>
           <DialogHeader>
             <DialogTitle>Citizen Worker Registry</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search by skill..."
                 value={searchSkill}
@@ -404,7 +734,7 @@ const WorkforceHiringPanel: React.FC<WorkforceHiringPanelProps> = ({
 
             {filteredWorkers.length === 0 ? (
               <div className="text-center py-8">
-                <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <p className="text-muted-foreground">No workers found matching your criteria</p>
               </div>
             ) : (
@@ -412,7 +742,10 @@ const WorkforceHiringPanel: React.FC<WorkforceHiringPanelProps> = ({
                 {filteredWorkers.slice(0, 10).map((worker) => (
                   <div 
                     key={worker.id}
-                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                    className={cn(
+                      "p-4 border rounded-lg hover:bg-muted/50",
+                      isMobile ? 'space-y-3' : 'flex items-center justify-between'
+                    )}
                   >
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
@@ -439,13 +772,13 @@ const WorkforceHiringPanel: React.FC<WorkforceHiringPanelProps> = ({
                         ))}
                       </div>
                     </div>
-                    <div className="text-right">
+                    <div className={isMobile ? 'flex items-center justify-between' : 'text-right'}>
                       {worker.daily_rate && (
                         <div className="font-medium">
                           KES {worker.daily_rate.toLocaleString()}/day
                         </div>
                       )}
-                      <Badge className="mt-1 bg-green-100 text-green-800">
+                      <Badge className="bg-green-100 text-green-800 mt-1">
                         {worker.availability_status}
                       </Badge>
                     </div>
