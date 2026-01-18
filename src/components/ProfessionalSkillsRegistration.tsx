@@ -303,6 +303,46 @@ const ProfessionalSkillsRegistration = () => {
 
       if (error) throw error;
 
+      // ALSO create/update citizen_workers record so worker appears in workforce system
+      // This ensures workers who register skills can apply for jobs and be found by contractors
+      const allSkills = [...formData.selectedSkills, ...formData.customSkills].filter(Boolean);
+      
+      // Check if citizen_workers record exists
+      const { data: existingWorker } = await supabase
+        .from('citizen_workers')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      const citizenWorkerData = {
+        user_id: user.id,
+        phone_number: formData.phoneNumber,
+        county: formData.county,
+        sub_county: formData.subCounty || null,
+        ward: formData.ward || null,
+        skills: allSkills,
+        experience_years: parseInt(formData.yearsExperience) || 0,
+        certifications: formData.certifications ? [formData.certifications] : null,
+        availability_status: formData.availableForWork ? 'available' : 'unavailable',
+        updated_at: new Date().toISOString()
+      };
+
+      if (existingWorker) {
+        // Update existing citizen_workers record
+        await supabase
+          .from('citizen_workers')
+          .update(citizenWorkerData)
+          .eq('user_id', user.id);
+      } else {
+        // Create new citizen_workers record
+        await supabase
+          .from('citizen_workers')
+          .insert({
+            ...citizenWorkerData,
+            created_at: new Date().toISOString()
+          });
+      }
+
       toast.success(existingRegistration 
         ? 'Professional skills profile updated successfully!' 
         : 'Professional skills profile registered successfully!'
