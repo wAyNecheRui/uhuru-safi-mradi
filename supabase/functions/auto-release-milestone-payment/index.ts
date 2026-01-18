@@ -48,27 +48,16 @@ serve(async (req) => {
     )
 
     const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: 'Authorization header required' }),
-        { 
-          status: 401, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      )
-    }
+    let userId: string | null = null
     
-    const token = authHeader.replace('Bearer ', '')
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token)
-    
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { 
-          status: 401, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      )
+    // Authentication is optional - can be called by authenticated user or internally
+    if (authHeader) {
+      const token = authHeader.replace('Bearer ', '')
+      const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token)
+      
+      if (!authError && user) {
+        userId = user.id
+      }
     }
 
     const { milestoneId } = await req.json()
@@ -83,7 +72,7 @@ serve(async (req) => {
       )
     }
 
-    console.log(`[AUTO-RELEASE] Processing auto-release for milestone: ${milestoneId}, triggered by: ${user.id}`)
+    console.log(`[AUTO-RELEASE] Processing auto-release for milestone: ${milestoneId}, triggered by: ${userId || 'system'}`)
 
     // 1. Get all verifications for this milestone
     const { data: verifications, error: verError } = await supabaseAdmin
@@ -245,7 +234,8 @@ serve(async (req) => {
       .update({ 
         status: 'paid',
         verified_at: new Date().toISOString(),
-        verified_by: user.id
+        // verified_by is UUID, only set if we have a user ID
+        ...(userId ? { verified_by: userId } : {})
       })
       .eq('id', milestoneId)
 
@@ -295,14 +285,14 @@ serve(async (req) => {
         project_id: milestone.project_id,
         update_type: 'auto_payment_released',
         message: `💰 Automated payment of KES ${milestoneAmount.toLocaleString()} released for "${milestone.title}" after ${approvedCount} citizen verifications`,
-        created_by: user.id,
+        created_by: userId || project?.contractor_id || milestone.project_id, // Use any available ID
         metadata: {
           milestone_id: milestoneId,
           amount: milestoneAmount,
           reference: paymentRef,
           verifications: approvedCount,
           average_rating: averageRating,
-          triggered_by: user.id,
+          triggered_by: userId || 'system',
           auto_triggered: true
         }
       })
