@@ -102,9 +102,17 @@ const CitizenProjects = () => {
           .eq('project_id', project.id)
           .order('milestone_number', { ascending: true });
 
+        // Deduplicate milestones by ID to prevent showing same milestone twice
+        const uniqueMilestones = (milestonesData || []).reduce((acc, milestone) => {
+          if (!acc.find((m: Milestone) => m.id === milestone.id)) {
+            acc.push(milestone);
+          }
+          return acc;
+        }, [] as Milestone[]);
+
         setMilestones(prev => ({
           ...prev,
-          [project.id]: milestonesData || []
+          [project.id]: uniqueMilestones
         }));
 
         // Fetch escrow info

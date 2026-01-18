@@ -228,16 +228,16 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
         ${isVerified ? 'border-blue-400 bg-blue-50 dark:bg-blue-900/20' : ''}
         ${milestone.status === 'submitted' ? 'border-yellow-400 bg-yellow-50/50 dark:bg-yellow-900/10' : ''}
       `}>
-        <CardContent className="p-4">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <Badge variant="outline" className="font-semibold">
+        <CardContent className="p-3 sm:p-4">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-wrap items-center gap-2 mb-2">
+                <Badge variant="outline" className="font-semibold shrink-0">
                   M{milestone.milestone_number}
                 </Badge>
-                <span className="font-medium">{milestone.title}</span>
+                <span className="font-medium text-sm sm:text-base break-words">{milestone.title}</span>
               </div>
-              <p className="text-sm text-muted-foreground mb-2">{milestone.description}</p>
+              <p className="text-xs sm:text-sm text-muted-foreground mb-2 break-words">{milestone.description}</p>
               
               {milestone.completion_criteria && (
                 <div className="text-sm bg-gray-50 dark:bg-gray-800 p-2 rounded mb-2">
@@ -309,14 +309,15 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
               )}
             </div>
 
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-wrap gap-2 mt-2 sm:mt-0 sm:flex-col sm:shrink-0">
               {milestone.evidence_urls && milestone.evidence_urls.length > 0 && (
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setShowEvidenceDialog(true)}
+                  className="text-xs sm:text-sm"
                 >
-                  <Eye className="h-4 w-4 mr-1" />
+                  <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                   Evidence ({milestone.evidence_urls.length})
                 </Button>
               )}
@@ -324,17 +325,17 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
               {canVerify && (
                 <Button
                   size="sm"
-                  className="bg-green-600 hover:bg-green-700"
+                  className="bg-green-600 hover:bg-green-700 text-xs sm:text-sm"
                   onClick={() => setShowVerifyDialog(true)}
                 >
-                  <CheckCircle className="h-4 w-4 mr-1" />
+                  <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                   Verify Work
                 </Button>
               )}
 
               {hasUserVerified && !isPaid && !isVerified && (
-                <Badge variant="outline" className="text-blue-600">
-                  Awaiting more verifications
+                <Badge variant="outline" className="text-blue-600 text-xs">
+                  Awaiting verifications
                 </Badge>
               )}
             </div>
@@ -526,39 +527,46 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
         </DialogContent>
       </Dialog>
 
-      {/* Evidence Dialog */}
+      {/* Evidence Dialog - Responsive for all devices */}
       <Dialog open={showEvidenceDialog} onOpenChange={setShowEvidenceDialog}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="w-[95vw] max-w-2xl mx-auto">
           <DialogHeader>
-            <DialogTitle>📷 Milestone Evidence - {milestone.title}</DialogTitle>
-            <DialogDescription>
-              Review the contractor's submitted evidence before verifying
+            <DialogTitle className="text-base sm:text-lg">📷 Milestone Evidence</DialogTitle>
+            <DialogDescription className="text-sm">
+              {milestone.title} - Review the contractor's work before verifying
             </DialogDescription>
           </DialogHeader>
-          <div className="grid grid-cols-2 gap-4 py-4 max-h-[60vh] overflow-y-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 py-4 max-h-[50vh] sm:max-h-[60vh] overflow-y-auto">
             {milestone.evidence_urls?.map((url, index) => (
               <a 
                 key={index}
                 href={url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block aspect-video rounded-lg overflow-hidden border hover:shadow-lg hover:border-primary transition-all"
+                className="block aspect-video rounded-lg overflow-hidden border-2 hover:shadow-lg hover:border-primary transition-all bg-muted"
               >
                 <img 
                   src={url} 
                   alt={`Evidence ${index + 1}`}
                   className="w-full h-full object-cover"
+                  loading="lazy"
                 />
               </a>
             ))}
+            {(!milestone.evidence_urls || milestone.evidence_urls.length === 0) && (
+              <div className="col-span-full text-center py-8 text-muted-foreground">
+                <Camera className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                <p>No evidence photos submitted yet</p>
+              </div>
+            )}
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowEvidenceDialog(false)}>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setShowEvidenceDialog(false)} className="w-full sm:w-auto">
               Close
             </Button>
             {canVerify && (
               <Button 
-                className="bg-green-600 hover:bg-green-700"
+                className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
                 onClick={() => {
                   setShowEvidenceDialog(false);
                   setShowVerifyDialog(true);

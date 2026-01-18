@@ -116,11 +116,11 @@ const ProjectProgressViewer: React.FC<ProjectProgressViewerProps> = ({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-4xl max-h-[90vh]">
+        <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] mx-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-primary" />
-              Project Progress: {projectTitle}
+            <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+              <span className="truncate">Progress: {projectTitle}</span>
             </DialogTitle>
           </DialogHeader>
 
@@ -204,24 +204,25 @@ const ProjectProgressViewer: React.FC<ProjectProgressViewerProps> = ({
                             </div>
                           )}
 
-                          {/* Photo Evidence */}
+                          {/* Photo Evidence - Responsive grid */}
                           {update.photo_urls && update.photo_urls.length > 0 && (
                             <div>
-                              <p className="text-sm font-medium mb-2 flex items-center gap-1">
-                                <Camera className="h-4 w-4" />
+                              <p className="text-xs sm:text-sm font-medium mb-2 flex items-center gap-1">
+                                <Camera className="h-3 w-3 sm:h-4 sm:w-4" />
                                 Photo Evidence ({update.photo_urls.length})
                               </p>
-                              <div className="grid grid-cols-3 gap-2">
+                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                                 {update.photo_urls.map((url, idx) => (
                                   <button
                                     key={idx}
                                     onClick={() => setSelectedImage(url)}
-                                    className="aspect-square rounded-lg overflow-hidden border hover:border-primary transition-colors"
+                                    className="aspect-square rounded-lg overflow-hidden border-2 hover:border-primary transition-colors bg-muted"
                                   >
                                     <img
                                       src={url}
                                       alt={`Evidence ${idx + 1}`}
                                       className="w-full h-full object-cover"
+                                      loading="lazy"
                                     />
                                   </button>
                                 ))}
@@ -291,27 +292,28 @@ const ProjectProgressViewer: React.FC<ProjectProgressViewerProps> = ({
                             </div>
                           )}
 
-                          {/* Evidence Photos */}
+                          {/* Evidence Photos - Responsive grid */}
                           {milestone.evidence_urls && milestone.evidence_urls.length > 0 && (
                             <div className="mt-3">
-                              <p className="text-sm font-medium mb-2 flex items-center gap-1">
-                                <Image className="h-4 w-4" />
+                              <p className="text-xs sm:text-sm font-medium mb-2 flex items-center gap-1">
+                                <Image className="h-3 w-3 sm:h-4 sm:w-4" />
                                 Submitted Evidence ({milestone.evidence_urls.length})
                               </p>
-                              <div className="grid grid-cols-4 gap-2">
+                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                                 {milestone.evidence_urls.slice(0, 4).map((url, idx) => (
                                   <button
                                     key={idx}
                                     onClick={() => setSelectedImage(url)}
-                                    className="aspect-square rounded-lg overflow-hidden border hover:border-primary transition-colors relative"
+                                    className="aspect-square rounded-lg overflow-hidden border-2 hover:border-primary transition-colors relative bg-muted"
                                   >
                                     <img
                                       src={url}
                                       alt={`Evidence ${idx + 1}`}
                                       className="w-full h-full object-cover"
+                                      loading="lazy"
                                     />
                                     {idx === 3 && milestone.evidence_urls && milestone.evidence_urls.length > 4 && (
-                                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white font-medium">
+                                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white font-medium text-sm">
                                         +{milestone.evidence_urls.length - 4}
                                       </div>
                                     )}
@@ -344,14 +346,14 @@ const ProjectProgressViewer: React.FC<ProjectProgressViewerProps> = ({
         </DialogContent>
       </Dialog>
 
-      {/* Full Image Viewer */}
+      {/* Full Image Viewer - Responsive */}
       <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
-        <DialogContent className="max-w-4xl p-0">
+        <DialogContent className="w-[95vw] max-w-4xl p-2 sm:p-4">
           {selectedImage && (
             <img
               src={selectedImage}
               alt="Evidence"
-              className="w-full h-auto max-h-[85vh] object-contain"
+              className="w-full h-auto max-h-[80vh] object-contain rounded-lg"
             />
           )}
         </DialogContent>
