@@ -268,12 +268,15 @@ const ProgressUpdateForm: React.FC<ProgressUpdateFormProps> = ({
         {activeMilestones.length > 0 && (
           <div className="space-y-2">
             <Label>Related Milestone (Optional)</Label>
-            <Select value={selectedMilestoneId} onValueChange={setSelectedMilestoneId}>
+            <Select 
+              value={selectedMilestoneId || "none"} 
+              onValueChange={(value) => setSelectedMilestoneId(value === "none" ? "" : value)}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select a milestone" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No specific milestone</SelectItem>
+                <SelectItem value="none">No specific milestone</SelectItem>
                 {activeMilestones.map(milestone => (
                   <SelectItem key={milestone.id} value={milestone.id}>
                     M{milestone.milestone_number}: {milestone.title}
