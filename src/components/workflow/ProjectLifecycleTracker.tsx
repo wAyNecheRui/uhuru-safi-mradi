@@ -44,6 +44,10 @@ const ProjectLifecycleTracker: React.FC<ProjectLifecycleTrackerProps> = ({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Reset state when projectId changes
+    setLifecycle(null);
+    setLoading(true);
+    
     fetchLifecycleState();
     
     // Subscribe to real-time updates
@@ -52,17 +56,34 @@ const ProjectLifecycleTracker: React.FC<ProjectLifecycleTrackerProps> = ({
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'escrow_accounts', filter: `project_id=eq.${projectId}` },
-        () => fetchLifecycleState()
+        () => {
+          console.log('[ProjectLifecycleTracker] Escrow updated, refreshing...');
+          fetchLifecycleState();
+        }
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'project_milestones', filter: `project_id=eq.${projectId}` },
-        () => fetchLifecycleState()
+        () => {
+          console.log('[ProjectLifecycleTracker] Milestone updated, refreshing...');
+          fetchLifecycleState();
+        }
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'payment_transactions' },
-        () => fetchLifecycleState()
+        () => {
+          console.log('[ProjectLifecycleTracker] Payment updated, refreshing...');
+          fetchLifecycleState();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'milestone_verifications' },
+        () => {
+          console.log('[ProjectLifecycleTracker] Verification updated, refreshing...');
+          fetchLifecycleState();
+        }
       )
       .subscribe();
 

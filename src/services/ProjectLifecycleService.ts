@@ -63,11 +63,20 @@ export class ProjectLifecycleService {
       if (projectError || !project) return null;
 
       // Fetch escrow account
-      const { data: escrow } = await supabase
+      const { data: escrow, error: escrowError } = await supabase
         .from('escrow_accounts')
         .select('*')
         .eq('project_id', projectId)
+        .is('deleted_at', null)
         .single();
+      
+      console.log('[ProjectLifecycleService] Escrow fetch for project', projectId, ':', {
+        escrow,
+        error: escrowError,
+        totalAmount: escrow?.total_amount,
+        heldAmount: escrow?.held_amount,
+        releasedAmount: escrow?.released_amount
+      });
 
       // Fetch milestones
       const { data: milestones } = await supabase
@@ -123,8 +132,7 @@ export class ProjectLifecycleService {
 
       const workCanStart = escrowFunded && !!project.contractor_id;
 
-      // Build lifecycle steps
-      const steps = this.buildLifecycleSteps({
+      const stepBuildState = {
         contractorSelected: !!project.contractor_id,
         escrowFunded,
         fundedPercentage: escrowAmount > 0 ? (fundedAmount / escrowAmount) * 100 : 0,
@@ -134,7 +142,12 @@ export class ProjectLifecycleService {
         allMilestonesVerified: milestonesVerified === milestonesTotal && milestonesTotal > 0,
         projectCompleted: project.status === 'completed',
         hasRating: avgRating !== null
-      });
+      };
+
+      console.log('[ProjectLifecycleService] Step build state for project', projectId, ':', stepBuildState);
+
+      // Build lifecycle steps
+      const steps = this.buildLifecycleSteps(stepBuildState);
 
       return {
         projectId,
