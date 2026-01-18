@@ -55,6 +55,38 @@ const QualityRatingModal: React.FC<QualityRatingModalProps> = ({
   const { toast } = useToast();
   const [submitting, setSubmitting] = useState(false);
   const [additionalComments, setAdditionalComments] = useState('');
+  const [hasAlreadyRated, setHasAlreadyRated] = useState(false);
+  const [checkingStatus, setCheckingStatus] = useState(true);
+
+  // Check if user has already rated this project
+  React.useEffect(() => {
+    const checkExistingRating = async () => {
+      if (!user || !isOpen) {
+        setCheckingStatus(false);
+        return;
+      }
+      
+      setCheckingStatus(true);
+      try {
+        const { data } = await supabase
+          .from('quality_checkpoints')
+          .select('id')
+          .eq('project_id', projectId)
+          .eq('inspector_id', user.id)
+          .eq('inspector_type', 'citizen')
+          .eq('checkpoint_name', 'Citizen Quality Review')
+          .maybeSingle();
+        
+        setHasAlreadyRated(!!data);
+      } catch (error) {
+        console.error('Error checking rating status:', error);
+      } finally {
+        setCheckingStatus(false);
+      }
+    };
+
+    checkExistingRating();
+  }, [user, projectId, isOpen]);
   
   const [categories, setCategories] = useState<RatingCategory[]>([
     {
@@ -126,6 +158,16 @@ const QualityRatingModal: React.FC<QualityRatingModalProps> = ({
   const handleSubmit = async () => {
     if (!user || !canSubmit) return;
 
+    // Prevent double submission
+    if (hasAlreadyRated) {
+      toast({
+        title: 'Already Rated',
+        description: 'You have already submitted a quality rating for this project.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     setSubmitting(true);
     try {
       const overallRating = getOverallRating();
@@ -147,7 +189,20 @@ const QualityRatingModal: React.FC<QualityRatingModalProps> = ({
         recommendations: JSON.stringify(ratingsData)
       });
 
-      if (error) throw error;
+      if (error) {
+        // Handle unique constraint violation (citizen already rated)
+        if (error.code === '23505') {
+          setHasAlreadyRated(true);
+          toast({
+            title: 'Already Rated',
+            description: 'You have already submitted a quality rating for this project.',
+            variant: 'destructive'
+          });
+          onClose();
+          return;
+        }
+        throw error;
+      }
 
       // Send live notifications
       await LiveNotificationService.onQualityRated(
@@ -162,6 +217,7 @@ const QualityRatingModal: React.FC<QualityRatingModalProps> = ({
         description: `Overall rating: ${overallRating.toFixed(1)}/5 stars. Thank you for your detailed feedback!`
       });
 
+      setHasAlreadyRated(true);
       onRatingSubmitted?.();
       onClose();
     } catch (error) {
@@ -192,155 +248,174 @@ const QualityRatingModal: React.FC<QualityRatingModalProps> = ({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
-          {/* Progress Indicator */}
-          <div className="bg-muted/50 rounded-lg p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium">Rating Progress</span>
-              <span className="text-sm text-muted-foreground">
-                {completedCategories}/{categories.length} categories rated
-              </span>
-            </div>
-            <Progress value={progress} className="h-2" />
-            <p className="text-xs text-muted-foreground mt-2">
-              Rate at least 3 categories to submit
-            </p>
+        {checkingStatus ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
-
-          {/* Overall Rating Display */}
-          {overallRating > 0 && (
-            <div className="flex items-center justify-center gap-4 p-4 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-lg border">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-yellow-600">
-                  {overallRating.toFixed(1)}
-                </div>
-                <div className="text-sm text-muted-foreground">Overall</div>
-              </div>
-              <div className="flex">
-                {[1, 2, 3, 4, 5].map(star => (
-                  <Star
-                    key={star}
-                    className={`h-6 w-6 ${
-                      star <= Math.round(overallRating)
-                        ? 'fill-yellow-400 text-yellow-400'
-                        : 'text-gray-300'
-                    }`}
-                  />
-                ))}
-              </div>
-              <Badge className={`${ratingColor} bg-transparent border`}>
-                {ratingLabel}
-              </Badge>
+        ) : hasAlreadyRated ? (
+          <div className="py-8 text-center space-y-4">
+            <CheckCircle className="h-16 w-16 mx-auto text-green-600" />
+            <div>
+              <h3 className="text-lg font-semibold text-green-700">Already Rated</h3>
+              <p className="text-muted-foreground mt-2">
+                You have already submitted a quality rating for this project. Each citizen can only rate once to ensure fair and accurate feedback.
+              </p>
             </div>
-          )}
+            <Button onClick={onClose} variant="outline">Close</Button>
+          </div>
+        ) : (
+          <>
+            <div className="space-y-6 py-4">
+              {/* Progress Indicator */}
+              <div className="bg-muted/50 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium">Rating Progress</span>
+                  <span className="text-sm text-muted-foreground">
+                    {completedCategories}/{categories.length} categories rated
+                  </span>
+                </div>
+                <Progress value={progress} className="h-2" />
+                <p className="text-xs text-muted-foreground mt-2">
+                  Rate at least 3 categories to submit
+                </p>
+              </div>
 
-          {/* Rating Categories */}
-          <div className="space-y-4">
-            {categories.map((category) => (
-              <div
-                key={category.id}
-                className={`p-4 rounded-lg border transition-colors ${
-                  category.rating > 0
-                    ? 'border-green-200 bg-green-50/50 dark:border-green-700 dark:bg-green-900/20'
-                    : 'border-gray-200 dark:border-gray-700'
-                }`}
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-start gap-3">
-                    <div className={`p-2 rounded-full ${
-                      category.rating > 0 
-                        ? 'bg-green-100 text-green-600 dark:bg-green-800' 
-                        : 'bg-gray-100 text-gray-600 dark:bg-gray-800'
-                    }`}>
-                      {category.icon}
+              {/* Overall Rating Display */}
+              {overallRating > 0 && (
+                <div className="flex items-center justify-center gap-4 p-4 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-lg border">
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-yellow-600">
+                      {overallRating.toFixed(1)}
                     </div>
-                    <div>
-                      <Label className="font-medium flex items-center gap-2">
-                        {category.label}
-                        {category.rating > 0 && (
-                          <CheckCircle className="h-4 w-4 text-green-600" />
-                        )}
-                      </Label>
-                      <p className="text-sm text-muted-foreground">
-                        {category.description}
-                      </p>
-                    </div>
+                    <div className="text-sm text-muted-foreground">Overall</div>
                   </div>
-                  <div className="flex gap-1">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button
+                  <div className="flex">
+                    {[1, 2, 3, 4, 5].map(star => (
+                      <Star
                         key={star}
-                        type="button"
-                        onClick={() => handleRatingChange(category.id, star)}
-                        onMouseEnter={() => setHoverRatings(prev => ({ ...prev, [category.id]: star }))}
-                        onMouseLeave={() => setHoverRatings(prev => ({ ...prev, [category.id]: 0 }))}
-                        className="p-1 transition-transform hover:scale-110"
-                      >
-                        <Star
-                          className={`h-6 w-6 ${
-                            (hoverRatings[category.id] || category.rating) >= star
-                              ? 'fill-yellow-400 text-yellow-400'
-                              : 'text-gray-300'
-                          }`}
-                        />
-                      </button>
+                        className={`h-6 w-6 ${
+                          star <= Math.round(overallRating)
+                            ? 'fill-yellow-400 text-yellow-400'
+                            : 'text-gray-300'
+                        }`}
+                      />
                     ))}
                   </div>
+                  <Badge className={`${ratingColor} bg-transparent border`}>
+                    {ratingLabel}
+                  </Badge>
                 </div>
-                {category.rating > 0 && (
-                  <div className="mt-2 ml-12 text-sm">
-                    <span className={getRatingLabel(category.rating).color}>
-                      {getRatingLabel(category.rating).label}
-                    </span>
-                    <span className="text-muted-foreground"> ({category.rating}/5)</span>
+              )}
+
+              {/* Rating Categories */}
+              <div className="space-y-4">
+                {categories.map((category) => (
+                  <div
+                    key={category.id}
+                    className={`p-4 rounded-lg border transition-colors ${
+                      category.rating > 0
+                        ? 'border-green-200 bg-green-50/50 dark:border-green-700 dark:bg-green-900/20'
+                        : 'border-gray-200 dark:border-gray-700'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-start gap-3">
+                        <div className={`p-2 rounded-full ${
+                          category.rating > 0 
+                            ? 'bg-green-100 text-green-600 dark:bg-green-800' 
+                            : 'bg-gray-100 text-gray-600 dark:bg-gray-800'
+                        }`}>
+                          {category.icon}
+                        </div>
+                        <div>
+                          <Label className="font-medium flex items-center gap-2">
+                            {category.label}
+                            {category.rating > 0 && (
+                              <CheckCircle className="h-4 w-4 text-green-600" />
+                            )}
+                          </Label>
+                          <p className="text-sm text-muted-foreground">
+                            {category.description}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex gap-1">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            type="button"
+                            onClick={() => handleRatingChange(category.id, star)}
+                            onMouseEnter={() => setHoverRatings(prev => ({ ...prev, [category.id]: star }))}
+                            onMouseLeave={() => setHoverRatings(prev => ({ ...prev, [category.id]: 0 }))}
+                            className="p-1 transition-transform hover:scale-110"
+                          >
+                            <Star
+                              className={`h-6 w-6 ${
+                                (hoverRatings[category.id] || category.rating) >= star
+                                  ? 'fill-yellow-400 text-yellow-400'
+                                  : 'text-gray-300'
+                              }`}
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    {category.rating > 0 && (
+                      <div className="mt-2 ml-12 text-sm">
+                        <span className={getRatingLabel(category.rating).color}>
+                          {getRatingLabel(category.rating).label}
+                        </span>
+                        <span className="text-muted-foreground"> ({category.rating}/5)</span>
+                      </div>
+                    )}
                   </div>
-                )}
+                ))}
               </div>
-            ))}
-          </div>
 
-          {/* Additional Comments */}
-          <div className="space-y-2">
-            <Label htmlFor="comments" className="flex items-center gap-2">
-              <ThumbsUp className="h-4 w-4" />
-              Additional Observations (Optional)
-            </Label>
-            <Textarea
-              id="comments"
-              value={additionalComments}
-              onChange={(e) => setAdditionalComments(e.target.value)}
-              placeholder="Share any specific observations about the work quality, materials used, worker professionalism, or areas needing improvement..."
-              rows={4}
-              className="resize-none"
-            />
-            <p className="text-xs text-muted-foreground">
-              Your detailed feedback helps improve future projects
-            </p>
-          </div>
-        </div>
+              {/* Additional Comments */}
+              <div className="space-y-2">
+                <Label htmlFor="comments" className="flex items-center gap-2">
+                  <ThumbsUp className="h-4 w-4" />
+                  Additional Observations (Optional)
+                </Label>
+                <Textarea
+                  id="comments"
+                  value={additionalComments}
+                  onChange={(e) => setAdditionalComments(e.target.value)}
+                  placeholder="Share any specific observations about the work quality, materials used, worker professionalism, or areas needing improvement..."
+                  rows={4}
+                  className="resize-none"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Your detailed feedback helps improve future projects
+                </p>
+              </div>
+            </div>
 
-        <DialogFooter className="gap-2 sm:gap-0">
-          <Button variant="outline" onClick={onClose} disabled={submitting}>
-            Cancel
-          </Button>
-          <Button 
-            onClick={handleSubmit} 
-            disabled={!canSubmit || submitting}
-            className="bg-green-600 hover:bg-green-700"
-          >
-            {submitting ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Submitting...
-              </>
-            ) : (
-              <>
-                <Star className="h-4 w-4 mr-2" />
-                Submit Rating ({overallRating.toFixed(1)}/5)
-              </>
-            )}
-          </Button>
-        </DialogFooter>
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button variant="outline" onClick={onClose} disabled={submitting}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleSubmit} 
+                disabled={!canSubmit || submitting}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  <>
+                    <Star className="h-4 w-4 mr-2" />
+                    Submit Rating ({overallRating.toFixed(1)}/5)
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );
