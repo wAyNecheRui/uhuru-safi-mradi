@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-
+import LiveNotificationService from './LiveNotificationService';
 export type AppRole = 'citizen' | 'contractor' | 'government' | 'admin';
 
 export interface RoleAssignment {
@@ -183,6 +183,16 @@ export class RoleService {
       return { success: false, error: roleError.message };
     }
 
+    // Send live notification to the user
+    await LiveNotificationService.notify({
+      userId: request.user_id,
+      title: '🎉 Role Verification Approved!',
+      message: `Your ${request.requested_role} role request has been approved. You now have access to ${request.requested_role} features.`,
+      type: 'success',
+      category: 'verification',
+      actionUrl: request.requested_role === 'contractor' ? '/contractor/dashboard' : '/government/dashboard'
+    });
+
     return { success: true };
   }
 
@@ -199,6 +209,13 @@ export class RoleService {
       return { success: false, error: 'User not authenticated' };
     }
 
+    // Get the request to find out the user
+    const { data: request } = await supabase
+      .from('verification_requests')
+      .select('user_id, requested_role')
+      .eq('id', requestId)
+      .single();
+
     const { error } = await supabase
       .from('verification_requests')
       .update({
@@ -211,6 +228,18 @@ export class RoleService {
 
     if (error) {
       return { success: false, error: error.message };
+    }
+
+    // Send live notification to the user if request exists
+    if (request) {
+      await LiveNotificationService.notify({
+        userId: request.user_id,
+        title: '❌ Role Verification Not Approved',
+        message: `Your ${request.requested_role} role request was not approved. Reason: ${reviewNotes}`,
+        type: 'warning',
+        category: 'verification',
+        actionUrl: '/dashboard'
+      });
     }
 
     return { success: true };
