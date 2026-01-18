@@ -137,9 +137,19 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
   const handleSubmitVerification = async () => {
     if (!user || !verificationStatus) return;
 
+    // Prevent double submission
+    if (hasUserVerified) {
+      toast({
+        title: "Already Verified",
+        description: "You have already submitted a verification for this milestone.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setSubmitting(true);
     try {
-      // Insert verification record
+      // Insert verification record (unique constraint prevents duplicates)
       const { error } = await supabase
         .from('milestone_verifications')
         .insert({
@@ -150,7 +160,20 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
           verification_photos: location ? [`GPS: ${location.lat}, ${location.lon}`] : null
         });
 
-      if (error) throw error;
+      if (error) {
+        // Handle unique constraint violation
+        if (error.code === '23505') {
+          setHasUserVerified(true);
+          toast({
+            title: "Already Verified",
+            description: "You have already submitted a verification for this milestone.",
+            variant: "destructive"
+          });
+          setShowVerifyDialog(false);
+          return;
+        }
+        throw error;
+      }
 
       toast({
         title: "Verification Submitted",
