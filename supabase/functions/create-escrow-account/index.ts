@@ -101,30 +101,43 @@ serve(async (req) => {
 
     console.log(`[ESCROW-DEMO] Escrow account created: ${escrowAccount.id}`)
 
-    // Create milestones if provided - use admin client
+    // Check if milestones already exist for this project - prevent duplicates
+    const { data: existingMilestones, error: checkError } = await supabaseAdmin
+      .from('project_milestones')
+      .select('id')
+      .eq('project_id', project_id);
+
     let createdMilestones = [];
-    if (milestones && milestones.length > 0) {
-      const milestonesData = milestones.map((milestone: any, index: number) => ({
-        project_id,
-        title: milestone.title,
-        description: milestone.description || `Milestone ${index + 1}`,
-        payment_percentage: milestone.payment_percentage,
-        milestone_number: index + 1,
-        status: 'pending',
-        target_completion_date: milestone.target_date || null,
-        completion_criteria: milestone.criteria || null
-      }))
+    
+    // Only create milestones if none exist
+    if (!checkError && (!existingMilestones || existingMilestones.length === 0)) {
+      if (milestones && milestones.length > 0) {
+        const milestonesData = milestones.map((milestone: any, index: number) => ({
+          project_id,
+          title: milestone.title || milestone.description || `Milestone ${index + 1}`,
+          description: milestone.description || `Milestone ${index + 1}`,
+          payment_percentage: milestone.payment_percentage,
+          milestone_number: index + 1,
+          status: 'pending',
+          target_completion_date: milestone.target_date || null,
+          completion_criteria: milestone.criteria || null
+        }))
 
-      const { data: milestonesResult, error: milestonesError } = await supabaseAdmin
-        .from('project_milestones')
-        .insert(milestonesData)
-        .select()
+        const { data: milestonesResult, error: milestonesError } = await supabaseAdmin
+          .from('project_milestones')
+          .insert(milestonesData)
+          .select()
 
-      if (milestonesError) {
-        console.error('[ESCROW-DEMO] Milestones creation error:', milestonesError)
-      } else {
-        createdMilestones = milestonesResult || [];
+        if (milestonesError) {
+          console.error('[ESCROW-DEMO] Milestones creation error:', milestonesError)
+        } else {
+          createdMilestones = milestonesResult || [];
+          console.log(`[ESCROW-DEMO] Created ${createdMilestones.length} milestones`)
+        }
       }
+    } else {
+      console.log(`[ESCROW-DEMO] Skipping milestone creation - ${existingMilestones?.length || 0} milestones already exist`)
+      createdMilestones = existingMilestones || [];
     }
 
     // Create notification - use admin client
