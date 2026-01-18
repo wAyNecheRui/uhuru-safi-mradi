@@ -102,10 +102,21 @@ const CitizenProjects = () => {
           .eq('project_id', project.id)
           .order('milestone_number', { ascending: true });
 
-        // Deduplicate milestones by ID to prevent showing same milestone twice
+        // Deduplicate milestones by milestone_number - keep only the first one for each number
+        // This prevents showing duplicates when milestones were accidentally created multiple times
         const uniqueMilestones = (milestonesData || []).reduce((acc, milestone) => {
-          if (!acc.find((m: Milestone) => m.id === milestone.id)) {
+          const existingIndex = acc.findIndex((m: Milestone) => m.milestone_number === milestone.milestone_number);
+          if (existingIndex === -1) {
+            // No milestone with this number yet, add it
             acc.push(milestone);
+          } else {
+            // Keep the one with more recent updates or verified/paid status
+            const existing = acc[existingIndex];
+            const existingPriority = ['paid', 'verified', 'submitted', 'in_progress', 'pending'].indexOf(existing.status);
+            const newPriority = ['paid', 'verified', 'submitted', 'in_progress', 'pending'].indexOf(milestone.status);
+            if (newPriority < existingPriority || (newPriority === existingPriority && milestone.evidence_urls?.length > 0)) {
+              acc[existingIndex] = milestone;
+            }
           }
           return acc;
         }, [] as Milestone[]);
