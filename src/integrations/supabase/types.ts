@@ -2112,32 +2112,23 @@ export type Database = {
         Args: { contractor_user_id: string }
         Returns: {
           budget: number
-          county: string
           created_at: string
-          description: string
-          id: string
-          location: string
-          report_id: string
-          status: string
-          title: string
+          project_id: string
+          project_status: string
+          project_title: string
         }[]
       }
       get_government_problems: {
         Args: { gov_user_id: string }
         Returns: {
           category: string
-          county: string
           created_at: string
           description: string
-          estimated_cost: number
-          id: string
           location: string
-          photo_urls: string[]
           priority: string
-          priority_score: number
+          problem_id: string
           status: string
           title: string
-          total_votes: number
         }[]
       }
       get_problems_with_distance: {
