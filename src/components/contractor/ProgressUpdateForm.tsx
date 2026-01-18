@@ -128,11 +128,11 @@ const ProgressUpdateForm: React.FC<ProgressUpdateFormProps> = ({
   const uploadPhotos = async (): Promise<string[]> => {
     if (photos.length === 0 || !user) return [];
 
-    const uploadedUrls: string[] = [];
-    
-    for (const photo of photos) {
+    // Upload all photos in parallel for faster performance
+    const uploadPromises = photos.map(async (photo, index) => {
       // Path must start with user.id to satisfy RLS policy
-      const fileName = `${user.id}/progress/${projectId}/${Date.now()}_${photo.name}`;
+      // Use index to ensure unique filenames even if uploaded at same millisecond
+      const fileName = `${user.id}/progress/${projectId}/${Date.now()}_${index}_${photo.name}`;
       
       const { data, error } = await supabase.storage
         .from('report-files')
@@ -140,17 +140,18 @@ const ProgressUpdateForm: React.FC<ProgressUpdateFormProps> = ({
 
       if (error) {
         console.error('Upload error:', error);
-        continue;
+        return null;
       }
 
       const { data: { publicUrl } } = supabase.storage
         .from('report-files')
         .getPublicUrl(fileName);
 
-      uploadedUrls.push(publicUrl);
-    }
+      return publicUrl;
+    });
 
-    return uploadedUrls;
+    const results = await Promise.all(uploadPromises);
+    return results.filter((url): url is string => url !== null);
   };
 
   const handleSubmit = async () => {
@@ -230,7 +231,15 @@ const ProgressUpdateForm: React.FC<ProgressUpdateFormProps> = ({
     }
   };
 
-  const activeMilestones = milestones.filter(m => 
+  // Deduplicate milestones by ID to prevent showing same milestone twice
+  const uniqueMilestones = milestones.reduce((acc, milestone) => {
+    if (!acc.find(m => m.id === milestone.id)) {
+      acc.push(milestone);
+    }
+    return acc;
+  }, [] as Milestone[]);
+
+  const activeMilestones = uniqueMilestones.filter(m => 
     m.status === 'pending' || m.status === 'in_progress'
   );
 
