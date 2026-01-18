@@ -9,6 +9,7 @@ import {
   MilestoneVerification,
   EscrowAccount
 } from '@/types/workflow';
+import LiveNotificationService from './LiveNotificationService';
 
 export class WorkflowService {
   // STEP 1: Problem Identification
@@ -37,16 +38,28 @@ export class WorkflowService {
       .single();
 
     if (error) throw error;
+
+    // Send live notification to government officials
+    await LiveNotificationService.onProblemReported(
+      data.id,
+      user.id,
+      reportData.title,
+      reportData.location
+    );
+
     return data;
   }
 
   // STEP 2: Community Validation
   static async submitVote(reportId: string, voteType: 'upvote' | 'downvote', comment?: string) {
+    const user = (await supabase.auth.getUser()).data.user;
+    if (!user) throw new Error('User not authenticated');
+
     const { data, error } = await supabase
       .from('community_votes')
       .upsert({
         report_id: reportId,
-        user_id: (await supabase.auth.getUser()).data.user?.id,
+        user_id: user.id,
         vote_type: voteType,
         comment
       })
@@ -54,6 +67,22 @@ export class WorkflowService {
       .single();
 
     if (error) throw error;
+
+    // Get report title for notification
+    const { data: report } = await supabase
+      .from('problem_reports')
+      .select('title')
+      .eq('id', reportId)
+      .single();
+
+    // Send live notification
+    await LiveNotificationService.onCitizenVote(
+      reportId,
+      user.id,
+      voteType,
+      report?.title || 'Unknown Report'
+    );
+
     return data;
   }
 
@@ -86,6 +115,7 @@ export class WorkflowService {
   // STEP 3: Government Approval & Budget Allocation
   static async approveReport(reportId: string, budgetAmount: number) {
     const user = (await supabase.auth.getUser()).data.user;
+    if (!user) throw new Error('User not authenticated');
     
     const { data, error } = await supabase
       .from('problem_reports')
@@ -93,13 +123,22 @@ export class WorkflowService {
         status: 'approved',
         budget_allocated: budgetAmount,
         approved_at: new Date().toISOString(),
-        approved_by: user?.id
+        approved_by: user.id
       })
       .eq('id', reportId)
       .select()
       .single();
 
     if (error) throw error;
+
+    // Send live notification to reporter
+    await LiveNotificationService.onReportApproved(
+      reportId,
+      user.id,
+      data.title,
+      data.reported_by
+    );
+
     return data;
   }
 
@@ -161,16 +200,37 @@ export class WorkflowService {
     // First reject all other bids for this report
     const { data: bid } = await supabase
       .from('contractor_bids')
-      .select('report_id')
+      .select('report_id, contractor_id, bid_amount')
       .eq('id', bidId)
       .single();
 
     if (bid) {
+      // Get all bids for this report to notify rejected contractors
+      const { data: allBids } = await supabase
+        .from('contractor_bids')
+        .select('id, contractor_id')
+        .eq('report_id', bid.report_id)
+        .neq('id', bidId);
+
       await supabase
         .from('contractor_bids')
         .update({ status: 'rejected' })
         .eq('report_id', bid.report_id)
         .neq('id', bidId);
+
+      // Notify rejected contractors
+      if (allBids) {
+        for (const rejectedBid of allBids) {
+          await LiveNotificationService.notify({
+            userId: rejectedBid.contractor_id,
+            title: '❌ Bid Not Selected',
+            message: 'Your bid was not selected for this project. Keep bidding on other opportunities!',
+            type: 'info',
+            category: 'bid',
+            actionUrl: '/contractor/bidding'
+          });
+        }
+      }
     }
 
     // Select the winning bid
@@ -185,6 +245,35 @@ export class WorkflowService {
       .single();
 
     if (error) throw error;
+
+    // Get report details for notification
+    if (bid) {
+      const { data: report } = await supabase
+        .from('problem_reports')
+        .select('title, location')
+        .eq('id', bid.report_id)
+        .single();
+
+      // Get contractor name
+      const { data: contractorProfile } = await supabase
+        .from('contractor_profiles')
+        .select('company_name')
+        .eq('user_id', bid.contractor_id)
+        .single();
+
+      // Get user who selected
+      const user = (await supabase.auth.getUser()).data.user;
+
+      // Notify winning contractor and stakeholders
+      await LiveNotificationService.onBidSelected(
+        bid.report_id,
+        bid.contractor_id,
+        contractorProfile?.company_name || 'Contractor',
+        bid.bid_amount,
+        user?.id || ''
+      );
+    }
+
     return data;
   }
 

@@ -10,6 +10,7 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import LiveNotificationService from './LiveNotificationService';
 
 export const PROJECT_LIFECYCLE_STATUS = {
   CONTRACTOR_SELECTED: 'contractor_selected',
@@ -398,26 +399,13 @@ export class ProjectLifecycleService {
           .eq('user_id', project.contractor_id);
       }
 
-      // Create notification for contractor
-      await supabase.from('notifications').insert({
-        user_id: project.contractor_id,
-        title: 'Project Completed',
-        message: `Your project "${project.title}" has been marked as complete. You received a ${contractorRating.rating}/5 rating.`,
-        type: 'success',
-        category: 'project'
-      });
-
-      // Create realtime update
-      await supabase.from('realtime_project_updates').insert({
-        project_id: projectId,
-        update_type: 'project_completed',
-        message: `Project completed with contractor rating: ${contractorRating.rating}/5`,
-        created_by: user.id,
-        metadata: {
-          final_rating: contractorRating.rating,
-          budget: project.budget
-        }
-      });
+      // Send live notification for project completion
+      await LiveNotificationService.onProjectCompleted(
+        projectId,
+        project.title,
+        contractorRating.rating,
+        user.id
+      );
 
       return true;
     } catch (error) {
