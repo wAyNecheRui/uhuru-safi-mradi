@@ -169,25 +169,28 @@ const WorkforceHiringPanel: React.FC<WorkforceHiringPanelProps> = ({
       const applicantsWithDetails = await Promise.all(
         (applications || []).map(async (app) => {
           // applicant_id is the user_id, so we query citizen_workers by user_id
+          // Use maybeSingle() to avoid errors when no worker profile exists
           const { data: worker } = await supabase
             .from('citizen_workers')
             .select('id, phone_number, skills, experience_years, rating, county, daily_rate, user_id')
             .eq('user_id', app.applicant_id)
-            .single();
+            .maybeSingle();
 
-          // Fetch user profile for the name
+          // Fetch user profile for the name - use maybeSingle() to handle missing profiles
           const { data: profile } = await supabase
             .from('user_profiles')
             .select('full_name')
             .eq('user_id', app.applicant_id)
-            .single();
+            .maybeSingle();
 
           return {
             ...app,
             worker: worker ? {
               ...worker,
               user_profiles: profile
-            } : null
+            } : null,
+            // Include profile even if no worker record exists
+            profile: profile
           };
         })
       );
