@@ -46,15 +46,19 @@ export class EscrowWorkflowService {
       const totalBudget = project.budget || 0;
       const heldAmount = escrow?.held_amount || 0;
       const releasedAmount = escrow?.released_amount || 0;
-      const fundingPercentage = totalBudget > 0 ? Math.round((heldAmount / totalBudget) * 100) : 0;
+      
+      // Total funded = held + released (money in escrow + money already paid out to contractor)
+      const totalFunded = heldAmount + releasedAmount;
+      const fundingPercentage = totalBudget > 0 ? Math.round((totalFunded / totalBudget) * 100) : 0;
 
       let escrowStatus: ProjectEscrowStatus['escrowStatus'] = 'not_created';
       if (escrow) {
         if (escrow.status === 'completed') {
           escrowStatus = 'completed';
-        } else if (heldAmount >= totalBudget) {
+        } else if (totalFunded >= totalBudget) {
+          // Fully funded if total funded (held + released) equals or exceeds budget
           escrowStatus = 'fully_funded';
-        } else if (heldAmount > 0) {
+        } else if (totalFunded > 0) {
           escrowStatus = 'partially_funded';
         } else {
           escrowStatus = 'pending_funding';
@@ -269,7 +273,11 @@ export class EscrowWorkflowService {
       if (error) throw error;
 
       return (escrows || [])
-        .filter(e => e.held_amount < e.total_amount)
+        .filter(e => {
+          // Project needs funding if total funded (held + released) is less than total
+          const totalFunded = e.held_amount + e.released_amount;
+          return totalFunded < e.total_amount;
+        })
         .map(e => ({
           ...e.project,
           escrow: {
@@ -277,7 +285,8 @@ export class EscrowWorkflowService {
             total_amount: e.total_amount,
             held_amount: e.held_amount,
             released_amount: e.released_amount,
-            status: e.status
+            status: e.status,
+            funding_percentage: Math.round(((e.held_amount + e.released_amount) / e.total_amount) * 100)
           }
         }));
     } catch (error) {

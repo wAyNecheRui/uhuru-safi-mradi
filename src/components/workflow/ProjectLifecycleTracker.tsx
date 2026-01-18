@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -44,6 +45,30 @@ const ProjectLifecycleTracker: React.FC<ProjectLifecycleTrackerProps> = ({
 
   useEffect(() => {
     fetchLifecycleState();
+    
+    // Subscribe to real-time updates
+    const channel = supabase
+      .channel(`lifecycle-${projectId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'escrow_accounts', filter: `project_id=eq.${projectId}` },
+        () => fetchLifecycleState()
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'project_milestones', filter: `project_id=eq.${projectId}` },
+        () => fetchLifecycleState()
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'payment_transactions' },
+        () => fetchLifecycleState()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [projectId]);
 
   const fetchLifecycleState = async () => {

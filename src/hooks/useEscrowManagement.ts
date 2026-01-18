@@ -43,6 +43,47 @@ export const useEscrowManagement = () => {
 
   useEffect(() => {
     fetchEscrowData();
+    
+    // Subscribe to real-time updates for escrow changes
+    const escrowChannel = supabase
+      .channel('escrow-management-updates')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'escrow_accounts' },
+        () => {
+          console.log('Escrow account updated, refreshing...');
+          fetchEscrowData();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'payment_transactions' },
+        () => {
+          console.log('Payment transaction updated, refreshing...');
+          fetchEscrowData();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'project_milestones' },
+        () => {
+          console.log('Milestone updated, refreshing...');
+          fetchEscrowData();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'milestone_verifications' },
+        () => {
+          console.log('Milestone verification updated, refreshing...');
+          fetchEscrowData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(escrowChannel);
+    };
   }, []);
 
   const fetchEscrowData = async () => {

@@ -87,9 +87,11 @@ export class ProjectLifecycleService {
         .select('rating')
         .eq('project_id', projectId);
 
-      // Calculate states
-      const escrowFunded = escrow ? escrow.held_amount >= escrow.total_amount : false;
-      const fundedAmount = escrow?.held_amount || 0;
+      // Calculate states - include released amount in funding calculation
+      // Total funded = held + released (money in escrow + money already paid out)
+      const totalFundedAmount = escrow ? (escrow.held_amount + escrow.released_amount) : 0;
+      const escrowFunded = escrow ? totalFundedAmount >= escrow.total_amount : false;
+      const fundedAmount = totalFundedAmount;
       const escrowAmount = escrow?.total_amount || project.budget || 0;
       
       const milestonesTotal = milestones?.length || 0;

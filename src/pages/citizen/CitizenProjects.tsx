@@ -82,6 +82,39 @@ const CitizenProjects = () => {
 
   useEffect(() => {
     fetchProjects();
+    
+    // Subscribe to real-time updates for escrow accounts and milestones
+    const escrowChannel = supabase
+      .channel('citizen-escrow-updates')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'escrow_accounts' },
+        () => {
+          console.log('Escrow updated, refreshing data...');
+          fetchProjects();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'project_milestones' },
+        () => {
+          console.log('Milestone updated, refreshing data...');
+          fetchProjects();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'payment_transactions' },
+        () => {
+          console.log('Payment transaction updated, refreshing data...');
+          fetchProjects();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(escrowChannel);
+    };
   }, []);
 
   const fetchProjects = async () => {
