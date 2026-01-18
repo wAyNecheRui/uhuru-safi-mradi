@@ -21,6 +21,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { MilestonePaymentService, REQUIRED_CITIZEN_VERIFICATIONS } from '@/services/MilestonePaymentService';
+import { LiveNotificationService } from '@/services/LiveNotificationService';
 
 interface Milestone {
   id: string;
@@ -165,8 +166,16 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
       const newStatus = await MilestonePaymentService.checkVerificationStatus(milestone.id);
       setCurrentVerificationStatus(newStatus);
 
-      // If approved and we have enough verifications, trigger automated payment
-      if (verificationStatus === 'approved' && rating >= 3 && newStatus.canRelease) {
+      // Send live notification about milestone verification
+      await LiveNotificationService.onMilestoneVerified(
+        milestone.id,
+        projectId,
+        user.id,
+        rating,
+        milestone.title,
+        newStatus.approvedCount,
+        newStatus.requiredCount
+      );
         toast({
           title: "🎉 Verification Threshold Reached!",
           description: "Triggering automated payment release..."

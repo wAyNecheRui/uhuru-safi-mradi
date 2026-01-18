@@ -27,6 +27,8 @@ import ProjectMapModal from '@/components/citizen/ProjectMapModal';
 import ProjectProgressViewer from '@/components/citizen/ProjectProgressViewer';
 import ProjectLifecycleTracker from '@/components/workflow/ProjectLifecycleTracker';
 import MilestoneVerificationCard from '@/components/citizen/MilestoneVerificationCard';
+import QualityRatingModal from '@/components/citizen/QualityRatingModal';
+import ProjectIssueReportModal from '@/components/citizen/ProjectIssueReportModal';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -70,6 +72,8 @@ const CitizenProjects = () => {
   const [showMapModal, setShowMapModal] = useState(false);
   const [selectedProjectForProgress, setSelectedProjectForProgress] = useState<Project | null>(null);
   const [selectedProjectForLifecycle, setSelectedProjectForLifecycle] = useState<Project | null>(null);
+  const [selectedProjectForRating, setSelectedProjectForRating] = useState<Project | null>(null);
+  const [selectedProjectForIssue, setSelectedProjectForIssue] = useState<Project | null>(null);
   const breadcrumbItems = [
     { label: 'Home', href: '/' },
     { label: 'Citizen', href: '/citizen' },
@@ -183,13 +187,20 @@ const CitizenProjects = () => {
     }
   };
 
-  const handleRateQuality = async (projectId: string) => {
+  const handleRateQuality = (project: Project) => {
     if (!user) {
       toast.error('Please log in to rate quality');
       return;
     }
-    
-    toast.info('Quality rating submitted. Thank you for your feedback!');
+    setSelectedProjectForRating(project);
+  };
+
+  const handleReportProjectIssue = (project: Project) => {
+    if (!user) {
+      toast.error('Please log in to report issues');
+      return;
+    }
+    setSelectedProjectForIssue(project);
   };
 
   const getStatusColor = (status: string) => {
@@ -426,7 +437,7 @@ const CitizenProjects = () => {
                           variant="outline" 
                           size="sm" 
                           className="text-orange-600"
-                          onClick={() => handleRateQuality(project.id)}
+                          onClick={() => handleRateQuality(project)}
                         >
                           <Star className="h-4 w-4 mr-2" />
                           Rate Quality
@@ -435,7 +446,7 @@ const CitizenProjects = () => {
                           variant="outline" 
                           size="sm" 
                           className="text-red-600"
-                          onClick={() => handleReportIssue(project.id, 'quality')}
+                          onClick={() => handleReportProjectIssue(project)}
                         >
                           <AlertTriangle className="h-4 w-4 mr-2" />
                           Report Issue
@@ -471,6 +482,28 @@ const CitizenProjects = () => {
           projectTitle={selectedProjectForProgress.title}
           isOpen={!!selectedProjectForProgress}
           onClose={() => setSelectedProjectForProgress(null)}
+        />
+      )}
+
+      {/* Quality Rating Modal */}
+      {selectedProjectForRating && (
+        <QualityRatingModal
+          isOpen={!!selectedProjectForRating}
+          onClose={() => setSelectedProjectForRating(null)}
+          projectId={selectedProjectForRating.id}
+          projectTitle={selectedProjectForRating.title}
+          onRatingSubmitted={fetchProjects}
+        />
+      )}
+
+      {/* Project Issue Report Modal */}
+      {selectedProjectForIssue && (
+        <ProjectIssueReportModal
+          isOpen={!!selectedProjectForIssue}
+          onClose={() => setSelectedProjectForIssue(null)}
+          projectId={selectedProjectForIssue.id}
+          projectTitle={selectedProjectForIssue.title}
+          onIssueSubmitted={fetchProjects}
         />
       )}
     </div>
