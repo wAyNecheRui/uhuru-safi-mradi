@@ -189,27 +189,49 @@ const ProgressUpdateForm: React.FC<ProgressUpdateFormProps> = ({
 
       if (error) throw error;
 
-      // If milestone selected, update milestone evidence
-      if (selectedMilestoneId && uploadedPhotoUrls.length > 0) {
+      // If milestone selected, update milestone status and evidence
+      if (selectedMilestoneId) {
         const selectedMilestone = milestones.find(m => m.id === selectedMilestoneId);
-        if (selectedMilestone && selectedMilestone.status === 'in_progress') {
-          await supabase
-            .from('project_milestones')
-            .update({
-              evidence_urls: uploadedPhotoUrls,
-              submitted_at: new Date().toISOString(),
-              status: 'submitted'
-            })
-            .eq('id', selectedMilestoneId);
+        if (selectedMilestone) {
+          // Determine the new status based on current status and whether evidence is provided
+          let newStatus = selectedMilestone.status;
+          
+          if (selectedMilestone.status === 'pending') {
+            // Start working on this milestone
+            newStatus = uploadedPhotoUrls.length > 0 ? 'submitted' : 'in_progress';
+          } else if (selectedMilestone.status === 'in_progress' && uploadedPhotoUrls.length > 0) {
+            // Submit evidence for verification
+            newStatus = 'submitted';
+          }
 
-          // Send live notification for milestone progress
-          await LiveNotificationService.onMilestoneProgressSubmitted(
-            projectId,
-            selectedMilestoneId,
-            selectedMilestone.title,
-            user.id,
-            description
-          );
+          // Only update if status changes or we have new evidence
+          if (newStatus !== selectedMilestone.status || uploadedPhotoUrls.length > 0) {
+            const updateData: any = {
+              status: newStatus
+            };
+
+            // Add evidence URLs if provided
+            if (uploadedPhotoUrls.length > 0) {
+              updateData.evidence_urls = uploadedPhotoUrls;
+              updateData.submitted_at = new Date().toISOString();
+            }
+
+            await supabase
+              .from('project_milestones')
+              .update(updateData)
+              .eq('id', selectedMilestoneId);
+
+            // Send live notification for milestone progress
+            if (newStatus === 'submitted') {
+              await LiveNotificationService.onMilestoneProgressSubmitted(
+                projectId,
+                selectedMilestoneId,
+                selectedMilestone.title,
+                user.id,
+                description
+              );
+            }
+          }
         }
       }
 
