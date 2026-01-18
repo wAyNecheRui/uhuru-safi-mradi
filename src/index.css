@@ -100,4 +100,135 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Responsive typography base */
+  html {
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Touch-friendly tap highlight for mobile */
+  @media (hover: none) and (pointer: coarse) {
+    button, a, [role="button"] {
+      -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+    }
+  }
+}
+
+/* Responsive utility classes */
+@layer utilities {
+  /* Safe area padding for notched devices */
+  .safe-top {
+    padding-top: env(safe-area-inset-top, 0);
+  }
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+  .safe-left {
+    padding-left: env(safe-area-inset-left, 0);
+  }
+  .safe-right {
+    padding-right: env(safe-area-inset-right, 0);
+  }
+  .safe-x {
+    padding-left: env(safe-area-inset-left, 0);
+    padding-right: env(safe-area-inset-right, 0);
+  }
+  .safe-y {
+    padding-top: env(safe-area-inset-top, 0);
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+  .safe-all {
+    padding: env(safe-area-inset-top, 0) env(safe-area-inset-right, 0) env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0);
+  }
+
+  /* Touch target sizing - ensures minimum 44px for accessibility */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Hide scrollbar but keep functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Content visibility for performance */
+  .content-auto {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 500px;
+  }
+
+  /* Adaptive line clamping */
+  .line-clamp-mobile-1 {
+    @apply line-clamp-1;
+  }
+  @screen sm {
+    .line-clamp-mobile-1 {
+      @apply line-clamp-2;
+    }
+  }
+  @screen lg {
+    .line-clamp-mobile-1 {
+      @apply line-clamp-none;
+    }
+  }
+
+  /* Responsive spacing utilities */
+  .section-spacing {
+    @apply py-4 sm:py-6 lg:py-8;
+  }
+  .card-spacing {
+    @apply p-3 sm:p-4 lg:p-6;
+  }
+  .element-spacing {
+    @apply gap-2 sm:gap-3 lg:gap-4;
+  }
+
+  /* Mobile-first grid helpers */
+  .grid-adaptive {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4;
+  }
+  .grid-adaptive-stats {
+    @apply grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6;
+  }
+
+  /* Text scaling utilities */
+  .text-responsive-xs {
+    @apply text-xs sm:text-sm;
+  }
+  .text-responsive-sm {
+    @apply text-sm sm:text-base;
+  }
+  .text-responsive-base {
+    @apply text-sm sm:text-base lg:text-lg;
+  }
+  .text-responsive-lg {
+    @apply text-base sm:text-lg lg:text-xl;
+  }
+  .text-responsive-xl {
+    @apply text-lg sm:text-xl lg:text-2xl;
+  }
+  .text-responsive-2xl {
+    @apply text-xl sm:text-2xl lg:text-3xl;
+  }
+  .text-responsive-3xl {
+    @apply text-2xl sm:text-3xl lg:text-4xl;
+  }
+
+  /* Button sizing for touch */
+  .btn-touch {
+    @apply min-h-[44px] px-4 sm:min-h-[40px] lg:min-h-[36px];
+  }
+
+  /* Flexible spacing that adapts */
+  .flex-gap-adaptive {
+    @apply gap-2 sm:gap-3 lg:gap-4;
+  }
 }
