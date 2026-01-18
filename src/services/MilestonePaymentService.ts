@@ -51,14 +51,18 @@ export class MilestonePaymentService {
 
       const approvedCount = approvedVerifications.length;
       
-      // Calculate average rating from verification notes (format: "... Rating: X/5")
+      // Calculate average rating from verification notes (format: "... Rating: X/5" or "Rating: 3.8/5")
       let totalRating = 0;
       let ratingCount = 0;
       approvedVerifications.forEach(v => {
-        const match = v.verification_notes?.match(/Rating:\s*(\d)/);
+        // Match both integer and decimal ratings
+        const match = v.verification_notes?.match(/Rating:\s*([\d.]+)/);
         if (match) {
-          totalRating += parseInt(match[1]);
-          ratingCount++;
+          const rating = parseFloat(match[1]);
+          if (!isNaN(rating) && rating >= 1 && rating <= 5) {
+            totalRating += rating;
+            ratingCount++;
+          }
         }
       });
       const averageRating = ratingCount > 0 ? totalRating / ratingCount : 0;
