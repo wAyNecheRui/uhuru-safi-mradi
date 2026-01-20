@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { MapPin, DollarSign, Users, Loader2, Save, Award, Building, Briefcase, Heart } from 'lucide-react';
+import { MapPin, DollarSign, Users, Loader2, Save, Award, Building, Briefcase, Heart, Edit, CheckCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -19,6 +19,8 @@ const ContractorLocationSettings = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [hasExistingSettings, setHasExistingSettings] = useState(false);
   const [settings, setSettings] = useState({
     registered_counties: [] as string[],
     max_project_capacity: 5000000,
@@ -55,6 +57,16 @@ const ContractorLocationSettings = () => {
           years_in_business: data.years_in_business || 0,
           number_of_employees: data.number_of_employees || 0,
         });
+        // Check if user has saved settings before (has at least some data configured)
+        const hasSavedData = (data.registered_counties && data.registered_counties.length > 0) ||
+          data.is_agpo ||
+          (data.specialization && data.specialization.length > 0) ||
+          data.years_in_business > 0 ||
+          data.number_of_employees > 0;
+        setHasExistingSettings(hasSavedData);
+        setIsEditMode(!hasSavedData); // Start in edit mode only if no settings saved
+      } else {
+        setIsEditMode(true); // No profile yet, start in edit mode
       }
     } catch (error) {
       console.error('Error fetching settings:', error);
@@ -90,6 +102,8 @@ const ContractorLocationSettings = () => {
 
       if (error) throw error;
       toast.success('Settings saved successfully - Your profile will be visible to government officials during bid evaluation');
+      setHasExistingSettings(true);
+      setIsEditMode(false); // Switch to view mode after save
     } catch (error) {
       console.error('Error saving settings:', error);
       toast.error('Failed to save settings');
@@ -149,13 +163,23 @@ const ContractorLocationSettings = () => {
   return (
     <Card className="shadow-lg">
       <CardHeader>
-        <CardTitle className="flex items-center text-xl">
-          <MapPin className="h-5 w-5 mr-2 text-blue-600" />
-          Service Area & Capacity Settings
-        </CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Configure which counties you can service and your project capacity to see relevant projects.
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center text-xl">
+              <MapPin className="h-5 w-5 mr-2 text-primary" />
+              Service Area & Capacity Settings
+            </CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              Configure which counties you can service and your project capacity to see relevant projects.
+            </p>
+          </div>
+          {hasExistingSettings && !isEditMode && (
+            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+              <CheckCircle className="h-3 w-3 mr-1" />
+              Settings Saved
+            </Badge>
+          )}
+        </div>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Company Info Section */}
@@ -168,36 +192,44 @@ const ContractorLocationSettings = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Years in Business</Label>
-              <Input
-                type="number"
-                min="0"
-                value={settings.years_in_business}
-                onChange={(e) =>
-                  setSettings(prev => ({
-                    ...prev,
-                    years_in_business: parseInt(e.target.value) || 0,
-                  }))
-                }
-                placeholder="e.g., 5"
-              />
+              {isEditMode ? (
+                <Input
+                  type="number"
+                  min="0"
+                  value={settings.years_in_business}
+                  onChange={(e) =>
+                    setSettings(prev => ({
+                      ...prev,
+                      years_in_business: parseInt(e.target.value) || 0,
+                    }))
+                  }
+                  placeholder="e.g., 5"
+                />
+              ) : (
+                <p className="text-lg font-medium">{settings.years_in_business} years</p>
+              )}
               <p className="text-xs text-muted-foreground">
                 More experience = higher score in bid evaluation (+10% max)
               </p>
             </div>
             <div className="space-y-2">
               <Label>Number of Employees</Label>
-              <Input
-                type="number"
-                min="0"
-                value={settings.number_of_employees}
-                onChange={(e) =>
-                  setSettings(prev => ({
-                    ...prev,
-                    number_of_employees: parseInt(e.target.value) || 0,
-                  }))
-                }
-                placeholder="e.g., 25"
-              />
+              {isEditMode ? (
+                <Input
+                  type="number"
+                  min="0"
+                  value={settings.number_of_employees}
+                  onChange={(e) =>
+                    setSettings(prev => ({
+                      ...prev,
+                      number_of_employees: parseInt(e.target.value) || 0,
+                    }))
+                  }
+                  placeholder="e.g., 25"
+                />
+              ) : (
+                <p className="text-lg font-medium">{settings.number_of_employees} employees</p>
+              )}
               <p className="text-xs text-muted-foreground">
                 Indicates capacity to handle larger projects
               </p>
@@ -212,45 +244,52 @@ const ContractorLocationSettings = () => {
             <Label className="font-semibold text-lg">Areas of Specialization</Label>
           </div>
           <p className="text-xs text-muted-foreground">
-            Select all categories of work you can perform. This helps match you with relevant projects.
+            {isEditMode ? 'Select all categories of work you can perform. This helps match you with relevant projects.' : 'Your selected categories of work:'}
           </p>
           <div className="flex flex-wrap gap-2">
             {settings.specialization.map(spec => (
               <Badge key={spec} className="bg-primary/10 text-primary">
                 {spec}
-                <button
-                  onClick={() => toggleSpecialization(spec)}
-                  className="ml-1 hover:text-destructive"
-                >
-                  ×
-                </button>
+                {isEditMode && (
+                  <button
+                    onClick={() => toggleSpecialization(spec)}
+                    className="ml-1 hover:text-destructive"
+                  >
+                    ×
+                  </button>
+                )}
               </Badge>
             ))}
+            {settings.specialization.length === 0 && (
+              <span className="text-sm text-muted-foreground italic">No specializations selected</span>
+            )}
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-40 overflow-y-auto border rounded-lg p-3 bg-background">
-            {SPECIALIZATIONS.map(spec => (
-              <div key={spec} className="flex items-center space-x-2">
-                <Checkbox
-                  id={`spec-${spec}`}
-                  checked={settings.specialization.includes(spec)}
-                  onCheckedChange={() => toggleSpecialization(spec)}
-                />
-                <label
-                  htmlFor={`spec-${spec}`}
-                  className="text-sm cursor-pointer"
-                >
-                  {spec}
-                </label>
-              </div>
-            ))}
-          </div>
+          {isEditMode && (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-40 overflow-y-auto border rounded-lg p-3 bg-background">
+              {SPECIALIZATIONS.map(spec => (
+                <div key={spec} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`spec-${spec}`}
+                    checked={settings.specialization.includes(spec)}
+                    onCheckedChange={() => toggleSpecialization(spec)}
+                  />
+                  <label
+                    htmlFor={`spec-${spec}`}
+                    className="text-sm cursor-pointer"
+                  >
+                    {spec}
+                  </label>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* AGPO Status */}
-        <div className="space-y-4 p-4 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20 rounded-lg border border-purple-200 dark:border-purple-800">
+        <div className="space-y-4 p-4 bg-muted/20 rounded-lg border">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Award className="h-5 w-5 text-purple-600" />
+              <Award className="h-5 w-5 text-primary" />
               <div>
                 <Label className="font-semibold text-lg">AGPO Contractor</Label>
                 <p className="text-xs text-muted-foreground">
@@ -258,65 +297,79 @@ const ContractorLocationSettings = () => {
                 </p>
               </div>
             </div>
-            <Switch
-              checked={settings.is_agpo}
-              onCheckedChange={(checked) =>
-                setSettings(prev => ({ 
-                  ...prev, 
-                  is_agpo: checked,
-                  agpo_category: checked ? prev.agpo_category : null
-                }))
-              }
-            />
+            {isEditMode ? (
+              <Switch
+                checked={settings.is_agpo}
+                onCheckedChange={(checked) =>
+                  setSettings(prev => ({ 
+                    ...prev, 
+                    is_agpo: checked,
+                    agpo_category: checked ? prev.agpo_category : null
+                  }))
+                }
+              />
+            ) : (
+              <Badge variant={settings.is_agpo ? 'default' : 'secondary'}>
+                {settings.is_agpo ? 'Yes' : 'No'}
+              </Badge>
+            )}
           </div>
 
           {settings.is_agpo && (
             <div className="space-y-3 mt-4 p-3 bg-background rounded-lg border">
-              <Label className="font-medium">Select AGPO Category *</Label>
-              <p className="text-xs text-muted-foreground">
-                Government officials will verify this during contractor evaluation
-              </p>
-              <RadioGroup
-                value={settings.agpo_category || ''}
-                onValueChange={(value) =>
-                  setSettings(prev => ({ ...prev, agpo_category: value as AGPOCategory }))
-                }
-                className="grid grid-cols-1 md:grid-cols-3 gap-3"
-              >
-                <div className={`flex items-center space-x-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${settings.agpo_category === 'women' ? 'border-pink-500 bg-pink-50 dark:bg-pink-950/20' : 'border-muted hover:border-pink-300'}`}>
-                  <RadioGroupItem value="women" id="women" />
-                  <label htmlFor="women" className="flex items-center gap-2 cursor-pointer">
-                    <Heart className="h-4 w-4 text-pink-500" />
-                    <div>
-                      <p className="font-medium">Women-Owned</p>
-                      <p className="text-xs text-muted-foreground">30%+ ownership by women</p>
+              <Label className="font-medium">AGPO Category {isEditMode && '*'}</Label>
+              {isEditMode ? (
+                <>
+                  <p className="text-xs text-muted-foreground">
+                    Government officials will verify this during contractor evaluation
+                  </p>
+                  <RadioGroup
+                    value={settings.agpo_category || ''}
+                    onValueChange={(value) =>
+                      setSettings(prev => ({ ...prev, agpo_category: value as AGPOCategory }))
+                    }
+                    className="grid grid-cols-1 md:grid-cols-3 gap-3"
+                  >
+                    <div className={`flex items-center space-x-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${settings.agpo_category === 'women' ? 'border-primary bg-primary/5' : 'border-muted hover:border-primary/50'}`}>
+                      <RadioGroupItem value="women" id="women" />
+                      <label htmlFor="women" className="flex items-center gap-2 cursor-pointer">
+                        <Heart className="h-4 w-4 text-primary" />
+                        <div>
+                          <p className="font-medium">Women-Owned</p>
+                          <p className="text-xs text-muted-foreground">30%+ ownership by women</p>
+                        </div>
+                      </label>
                     </div>
-                  </label>
-                </div>
-                <div className={`flex items-center space-x-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${settings.agpo_category === 'youth' ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20' : 'border-muted hover:border-blue-300'}`}>
-                  <RadioGroupItem value="youth" id="youth" />
-                  <label htmlFor="youth" className="flex items-center gap-2 cursor-pointer">
-                    <Users className="h-4 w-4 text-blue-500" />
-                    <div>
-                      <p className="font-medium">Youth-Owned</p>
-                      <p className="text-xs text-muted-foreground">Owners aged 18-35 years</p>
+                    <div className={`flex items-center space-x-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${settings.agpo_category === 'youth' ? 'border-primary bg-primary/5' : 'border-muted hover:border-primary/50'}`}>
+                      <RadioGroupItem value="youth" id="youth" />
+                      <label htmlFor="youth" className="flex items-center gap-2 cursor-pointer">
+                        <Users className="h-4 w-4 text-primary" />
+                        <div>
+                          <p className="font-medium">Youth-Owned</p>
+                          <p className="text-xs text-muted-foreground">Owners aged 18-35 years</p>
+                        </div>
+                      </label>
                     </div>
-                  </label>
-                </div>
-                <div className={`flex items-center space-x-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${settings.agpo_category === 'pwd' ? 'border-green-500 bg-green-50 dark:bg-green-950/20' : 'border-muted hover:border-green-300'}`}>
-                  <RadioGroupItem value="pwd" id="pwd" />
-                  <label htmlFor="pwd" className="flex items-center gap-2 cursor-pointer">
-                    <Heart className="h-4 w-4 text-green-500" />
-                    <div>
-                      <p className="font-medium">PWD-Owned</p>
-                      <p className="text-xs text-muted-foreground">Persons with disabilities</p>
+                    <div className={`flex items-center space-x-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${settings.agpo_category === 'pwd' ? 'border-primary bg-primary/5' : 'border-muted hover:border-primary/50'}`}>
+                      <RadioGroupItem value="pwd" id="pwd" />
+                      <label htmlFor="pwd" className="flex items-center gap-2 cursor-pointer">
+                        <Heart className="h-4 w-4 text-primary" />
+                        <div>
+                          <p className="font-medium">PWD-Owned</p>
+                          <p className="text-xs text-muted-foreground">Persons with disabilities</p>
+                        </div>
+                      </label>
                     </div>
-                  </label>
-                </div>
-              </RadioGroup>
+                  </RadioGroup>
+                </>
+              ) : (
+                <Badge className="capitalize">
+                  {settings.agpo_category === 'pwd' ? 'PWD-Owned' : `${settings.agpo_category}-Owned`}
+                </Badge>
+              )}
               
-              <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-3 mt-3">
-                <p className="text-sm text-green-800 dark:text-green-200">
+              <div className="bg-accent/30 border rounded-lg p-3 mt-3">
+                <p className="text-sm">
                   <strong>✓ AGPO Benefits:</strong> +5 bonus points in bid scoring, priority access to reserved contracts, and eligibility for 30% government procurement quota.
                 </p>
               </div>
@@ -327,20 +380,24 @@ const ContractorLocationSettings = () => {
         {/* Project Capacity */}
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <DollarSign className="h-4 w-4 text-green-600" />
+            <DollarSign className="h-4 w-4 text-primary" />
             <Label className="font-medium">Maximum Project Capacity</Label>
           </div>
-          <Input
-            type="number"
-            value={settings.max_project_capacity}
-            onChange={(e) =>
-              setSettings(prev => ({
-                ...prev,
-                max_project_capacity: parseInt(e.target.value) || 0,
-              }))
-            }
-            className="max-w-xs"
-          />
+          {isEditMode ? (
+            <Input
+              type="number"
+              value={settings.max_project_capacity}
+              onChange={(e) =>
+                setSettings(prev => ({
+                  ...prev,
+                  max_project_capacity: parseInt(e.target.value) || 0,
+                }))
+              }
+              className="max-w-xs"
+            />
+          ) : (
+            <p className="text-lg font-medium">KES {settings.max_project_capacity.toLocaleString()}</p>
+          )}
           <p className="text-xs text-muted-foreground">
             Category: <Badge variant="outline">{getCapacityLabel(settings.max_project_capacity)}</Badge>
           </p>
@@ -351,19 +408,21 @@ const ContractorLocationSettings = () => {
           <div className="space-y-3">
             <Label className="font-medium">Registered Service Counties</Label>
             <p className="text-xs text-muted-foreground">
-              Select counties where you can provide services. You'll only see projects from these counties.
+              {isEditMode ? "Select counties where you can provide services. You'll only see projects from these counties." : 'Counties where you can provide services:'}
             </p>
             
             <div className="flex flex-wrap gap-2 mb-3">
               {settings.registered_counties.map(county => (
-                <Badge key={county} className="bg-blue-100 text-blue-800">
+                <Badge key={county} variant="secondary">
                   {county}
-                  <button
-                    onClick={() => toggleCounty(county)}
-                    className="ml-1 hover:text-red-600"
-                  >
-                    ×
-                  </button>
+                  {isEditMode && (
+                    <button
+                      onClick={() => toggleCounty(county)}
+                      className="ml-1 hover:text-destructive"
+                    >
+                      ×
+                    </button>
+                  )}
                 </Badge>
               ))}
               {settings.registered_counties.length === 0 && (
@@ -373,44 +432,70 @@ const ContractorLocationSettings = () => {
               )}
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 max-h-60 overflow-y-auto border rounded-lg p-3">
-              {KENYA_COUNTIES.map(county => (
-                <div key={county} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={county}
-                    checked={settings.registered_counties.includes(county)}
-                    onCheckedChange={() => toggleCounty(county)}
-                  />
-                  <label
-                    htmlFor={county}
-                    className="text-sm cursor-pointer"
-                  >
-                    {county}
-                  </label>
-                </div>
-              ))}
-            </div>
+            {isEditMode && (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 max-h-60 overflow-y-auto border rounded-lg p-3">
+                {KENYA_COUNTIES.map(county => (
+                  <div key={county} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={county}
+                      checked={settings.registered_counties.includes(county)}
+                      onCheckedChange={() => toggleCounty(county)}
+                    />
+                    <label
+                      htmlFor={county}
+                      className="text-sm cursor-pointer"
+                    >
+                      {county}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
-        {/* Save Button */}
-        <Button
-          onClick={handleSave}
-          disabled={saving}
-          className="w-full bg-blue-600 hover:bg-blue-700"
-        >
-          {saving ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Saving...
-            </>
-          ) : (
-            <>
-              <Save className="h-4 w-4 mr-2" />
-              Save Settings
-            </>
-          )}
-        </Button>
+        {/* Action Buttons */}
+        {isEditMode ? (
+          <div className="flex gap-3">
+            <Button
+              onClick={handleSave}
+              disabled={saving}
+              className="flex-1"
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Settings
+                </>
+              )}
+            </Button>
+            {hasExistingSettings && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  fetchSettings();
+                  setIsEditMode(false);
+                }}
+              >
+                Cancel
+              </Button>
+            )}
+          </div>
+        ) : (
+          <Button
+            onClick={() => setIsEditMode(true)}
+            variant="outline"
+            className="w-full"
+          >
+            <Edit className="h-4 w-4 mr-2" />
+            Edit Settings
+          </Button>
+        )}
       </CardContent>
     </Card>
   );
