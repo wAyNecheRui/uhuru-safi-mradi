@@ -184,7 +184,8 @@ const EscrowManagement = () => {
           {escrowProjects.map((project: any) => {
             const statusConfig = getStatusConfig(project.status);
             const isProcessing = processingPayment === project.id;
-            const needsFunding = project.held_amount === 0 && project.released_amount === 0;
+            const isFullyFunded = project.held_amount >= project.total_amount;
+            const needsFunding = !isFullyFunded && project.held_amount < project.total_amount;
             
             return (
               <Card key={project.id} className="shadow-lg">
@@ -224,15 +225,30 @@ const EscrowManagement = () => {
                       </div>
                     </div>
 
-                    {/* Fund Escrow Action */}
-                    {needsFunding && (
+                    {/* Fund Escrow Status */}
+                    {isFullyFunded ? (
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <div className="flex items-center gap-3">
+                          <CheckCircle className="h-5 w-5 text-green-600" />
+                          <div>
+                            <p className="font-medium text-green-900">Escrow Fully Funded</p>
+                            <p className="text-sm text-green-700">
+                              This project's escrow is fully funded. Contractor payments will proceed automatically after milestone verification.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ) : needsFunding && (
                       <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <Wallet className="h-5 w-5 text-amber-600" />
                             <div>
                               <p className="font-medium text-amber-900">Escrow Needs Funding</p>
-                              <p className="text-sm text-amber-700">Fund this escrow account via M-Pesa C2B to enable contractor payments.</p>
+                              <p className="text-sm text-amber-700">
+                                Fund this escrow account via M-Pesa C2B to enable contractor payments. 
+                                Remaining: {formatAmount(project.total_amount - project.held_amount)}
+                              </p>
                             </div>
                           </div>
                           <Button 

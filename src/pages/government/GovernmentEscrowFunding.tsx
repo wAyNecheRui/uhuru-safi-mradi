@@ -120,6 +120,11 @@ export default function GovernmentEscrowFunding() {
     return (project.escrow.held_amount / project.budget) * 100;
   };
 
+  const isFullyFunded = (project: Project) => {
+    if (!project.escrow || !project.budget) return false;
+    return project.escrow.held_amount >= project.budget;
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -214,15 +219,25 @@ export default function GovernmentEscrowFunding() {
                 </div>
 
                 <div className="flex gap-2">
-                  <Button
-                    onClick={() => {
-                      setSelectedProject(project);
-                      setFundingAmount(project.budget?.toString() || "");
-                    }}
-                  >
-                    <Wallet className="h-4 w-4 mr-2" />
-                    Fund Escrow
-                  </Button>
+                  {isFullyFunded(project) ? (
+                    <Badge className="bg-green-100 text-green-800 border-green-200 py-2 px-4">
+                      <CheckCircle2 className="h-4 w-4 mr-2" />
+                      Fully Funded
+                    </Badge>
+                  ) : (
+                    <Button
+                      onClick={() => {
+                        setSelectedProject(project);
+                        const remainingAmount = project.budget 
+                          ? project.budget - (project.escrow?.held_amount || 0) 
+                          : 0;
+                        setFundingAmount(remainingAmount.toString());
+                      }}
+                    >
+                      <Wallet className="h-4 w-4 mr-2" />
+                      Fund Escrow
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardContent>
