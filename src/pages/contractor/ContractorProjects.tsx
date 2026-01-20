@@ -8,11 +8,12 @@ import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { 
   Clock, DollarSign, MapPin, Calendar, Award, Loader2, Briefcase, 
-  Camera, CheckCircle, AlertCircle, Target, Upload, Wallet, Lock, Info, Users
+  Camera, CheckCircle, AlertCircle, Target, Upload, Wallet, Lock, Info, Users, Settings
 } from 'lucide-react';
 import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
 import ProgressUpdateForm from '@/components/contractor/ProgressUpdateForm';
+import MilestoneManagement from '@/components/contractor/MilestoneManagement';
 import ProjectLifecycleTracker from '@/components/workflow/ProjectLifecycleTracker';
 import WorkforceHiringPanel from '@/components/contractor/WorkforceHiringPanel';
 import { supabase } from '@/integrations/supabase/client';
@@ -65,6 +66,7 @@ const ContractorProjects = () => {
   const [completedProjects, setCompletedProjects] = useState<ProjectWithExtras[]>([]);
   const [loading, setLoading] = useState(true);
   const [updateModalOpen, setUpdateModalOpen] = useState(false);
+  const [milestoneModalOpen, setMilestoneModalOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<ProjectWithExtras | null>(null);
 
   const breadcrumbItems = [
@@ -177,6 +179,17 @@ const ContractorProjects = () => {
 
   const handleProgressSubmitted = () => {
     setUpdateModalOpen(false);
+    setSelectedProject(null);
+    fetchProjects();
+  };
+
+  const handleConfigureMilestones = (project: ProjectWithExtras) => {
+    setSelectedProject(project);
+    setMilestoneModalOpen(true);
+  };
+
+  const handleMilestonesSaved = () => {
+    setMilestoneModalOpen(false);
     setSelectedProject(null);
     fetchProjects();
   };
@@ -318,10 +331,10 @@ const ContractorProjects = () => {
                     </div>
 
                     {/* Milestones Section */}
-                    {project.milestones && project.milestones.length > 0 && (
+                    {project.milestones && project.milestones.length > 0 ? (
                       <div className="border rounded-lg p-4 bg-slate-50">
                         <h4 className="font-medium mb-3 flex items-center">
-                          <Target className="h-4 w-4 mr-2 text-blue-600" />
+                          <Target className="h-4 w-4 mr-2 text-primary" />
                           Project Milestones
                         </h4>
                         <div className="space-y-3">
@@ -364,6 +377,24 @@ const ContractorProjects = () => {
                           ))}
                         </div>
                       </div>
+                    ) : (
+                      /* No Milestones - Show Configure Button */
+                      <Alert className="border-orange-300 bg-orange-50">
+                        <AlertCircle className="h-4 w-4 text-orange-600" />
+                        <AlertTitle className="text-orange-800">Milestones Required</AlertTitle>
+                        <AlertDescription className="text-orange-700">
+                          Configure your project milestones to define payment schedules and track progress.
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="ml-4 border-orange-400 text-orange-700 hover:bg-orange-100"
+                            onClick={() => handleConfigureMilestones(project)}
+                          >
+                            <Settings className="h-4 w-4 mr-2" />
+                            Configure Milestones
+                          </Button>
+                        </AlertDescription>
+                      </Alert>
                     )}
                     
                     {/* Actions Bar */}
@@ -487,6 +518,22 @@ const ContractorProjects = () => {
             milestones={selectedProject.milestones || []}
             onClose={() => setUpdateModalOpen(false)}
             onSubmitted={handleProgressSubmitted}
+          />
+        )}
+      </Dialog>
+
+      {/* Milestone Configuration Modal */}
+      <Dialog open={milestoneModalOpen} onOpenChange={setMilestoneModalOpen}>
+        {selectedProject && (
+          <MilestoneManagement
+            project={{
+              id: selectedProject.id,
+              title: selectedProject.title,
+              budget: selectedProject.budget,
+              contractor_id: selectedProject.contractor_id
+            }}
+            onClose={() => setMilestoneModalOpen(false)}
+            onSaved={handleMilestonesSaved}
           />
         )}
       </Dialog>
