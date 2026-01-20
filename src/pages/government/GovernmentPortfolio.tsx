@@ -287,10 +287,10 @@ const GovernmentPortfolio = () => {
                       </Button>
                       <Button 
                         size="sm" 
-                        className="bg-primary"
+                        variant="secondary"
                         onClick={() => navigate(`/government/milestones`, { state: { projectId: project.id } })}
                       >
-                        Manage
+                        View Milestones
                       </Button>
                     </div>
                   </CardContent>

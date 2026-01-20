@@ -2,14 +2,22 @@ import React, { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
-import MilestoneManagement from '@/components/government/MilestoneManagement';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Dialog } from '@/components/ui/dialog';
-import { Target, Loader2, Building2, DollarSign, Settings } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { Target, Loader2, Building2, DollarSign, Calendar, CheckCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+
+interface Milestone {
+  id: string;
+  title: string;
+  description: string;
+  milestone_number: number;
+  payment_percentage: number;
+  status: string;
+  target_completion_date: string | null;
+}
 
 interface Project {
   id: string;
@@ -18,20 +26,18 @@ interface Project {
   budget: number | null;
   status: string | null;
   contractor_id: string | null;
-  milestoneCount?: number;
+  milestones?: Milestone[];
 }
 
 const GovernmentMilestones = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [dialogOpen, setDialogOpen] = useState(false);
   const { toast } = useToast();
 
   const breadcrumbItems = [
     { label: 'Home', href: '/' },
     { label: 'Government', href: '/government' },
-    { label: 'Milestone Management' }
+    { label: 'Milestone Overview' }
   ];
 
   useEffect(() => {
@@ -48,19 +54,20 @@ const GovernmentMilestones = () => {
 
       if (error) throw error;
 
-      // Fetch milestone counts for each project
-      const projectsWithCounts = await Promise.all(
+      // Fetch milestones for each project
+      const projectsWithMilestones = await Promise.all(
         (data || []).map(async (project) => {
-          const { count } = await supabase
+          const { data: milestones } = await supabase
             .from('project_milestones')
-            .select('*', { count: 'exact', head: true })
-            .eq('project_id', project.id);
+            .select('*')
+            .eq('project_id', project.id)
+            .order('milestone_number', { ascending: true });
           
-          return { ...project, milestoneCount: count || 0 };
+          return { ...project, milestones: milestones || [] };
         })
       );
 
-      setProjects(projectsWithCounts);
+      setProjects(projectsWithMilestones);
     } catch (error) {
       console.error('Error fetching projects:', error);
       toast({
@@ -73,26 +80,28 @@ const GovernmentMilestones = () => {
     }
   };
 
-  const handleOpenMilestones = (project: Project) => {
-    setSelectedProject(project);
-    setDialogOpen(true);
-  };
-
-  const handleSaved = () => {
-    setDialogOpen(false);
-    fetchProjects();
-    toast({
-      title: "Milestones Updated",
-      description: "Project milestones have been saved successfully."
-    });
-  };
-
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
       style: 'currency',
       currency: 'KES',
       minimumFractionDigits: 0
     }).format(amount);
+  };
+
+  const getMilestoneProgress = (milestones: Milestone[]) => {
+    if (!milestones.length) return 0;
+    const completed = milestones.filter(m => m.status === 'paid' || m.status === 'verified').length;
+    return Math.round((completed / milestones.length) * 100);
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'paid': return 'bg-green-100 text-green-800';
+      case 'verified': return 'bg-blue-100 text-blue-800';
+      case 'submitted': return 'bg-amber-100 text-amber-800';
+      case 'in_progress': return 'bg-purple-100 text-purple-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
   };
 
   return (
@@ -106,9 +115,9 @@ const GovernmentMilestones = () => {
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
               <Target className="h-8 w-8 text-primary" />
-              Milestone Management
+              Milestone Overview
             </h1>
-            <p className="text-gray-600">Configure and manage project milestones and payment schedules.</p>
+            <p className="text-gray-600">View contractor-configured milestones and track project progress.</p>
           </div>
 
           {loading ? (
@@ -123,15 +132,16 @@ const GovernmentMilestones = () => {
               <CardContent className="p-8 text-center">
                 <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold mb-2">No Active Projects</h3>
-                <p className="text-gray-600">There are no active projects to configure milestones for.</p>
+                <p className="text-gray-600">There are no active projects to view milestones for.</p>
               </CardContent>
             </Card>
           ) : (
-            <div className="grid gap-4">
+            <div className="grid gap-6">
               {projects.map((project) => (
-                <Card key={project.id} className="shadow-lg hover:shadow-xl transition-shadow">
+                <Card key={project.id} className="shadow-lg">
                   <CardContent className="p-6">
-                    <div className="flex flex-wrap items-start justify-between gap-4">
+                    {/* Project Header */}
+                    <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
                       <div className="flex-1">
                         <h3 className="text-lg font-semibold mb-2">{project.title}</h3>
                         <p className="text-gray-600 text-sm mb-3">{project.description}</p>
@@ -140,20 +150,75 @@ const GovernmentMilestones = () => {
                             <DollarSign className="h-3 w-3 mr-1" />
                             {formatCurrency(project.budget || 0)}
                           </Badge>
-                          <Badge className={project.milestoneCount ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'}>
-                            <Target className="h-3 w-3 mr-1" />
-                            {project.milestoneCount || 0} Milestones
-                          </Badge>
                           <Badge variant="secondary">
                             {project.status?.replace('_', ' ').toUpperCase()}
                           </Badge>
                         </div>
                       </div>
-                      <Button onClick={() => handleOpenMilestones(project)}>
-                        <Settings className="h-4 w-4 mr-2" />
-                        Configure Milestones
-                      </Button>
+                      <div className="text-right">
+                        <p className="text-sm text-muted-foreground mb-1">Milestone Progress</p>
+                        <p className="text-2xl font-bold text-primary">
+                          {getMilestoneProgress(project.milestones || [])}%
+                        </p>
+                      </div>
                     </div>
+
+                    {/* Milestones Display */}
+                    {project.milestones && project.milestones.length > 0 ? (
+                      <div className="border rounded-lg p-4 bg-slate-50">
+                        <h4 className="font-medium mb-3 flex items-center">
+                          <Target className="h-4 w-4 mr-2 text-primary" />
+                          Contractor-Defined Milestones ({project.milestones.length})
+                        </h4>
+                        <div className="space-y-3">
+                          {project.milestones.map((milestone) => (
+                            <div key={milestone.id} className="flex items-center justify-between p-3 bg-white rounded border">
+                              <div className="flex items-center gap-3">
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${getStatusColor(milestone.status)}`}>
+                                  {milestone.status === 'paid' || milestone.status === 'verified' ? (
+                                    <CheckCircle className="h-4 w-4" />
+                                  ) : (
+                                    milestone.milestone_number
+                                  )}
+                                </div>
+                                <div>
+                                  <p className="font-medium text-sm">{milestone.title}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {milestone.payment_percentage}% of budget = {formatCurrency((project.budget || 0) * milestone.payment_percentage / 100)}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {milestone.target_completion_date && (
+                                  <Badge variant="outline" className="text-xs">
+                                    <Calendar className="h-3 w-3 mr-1" />
+                                    {new Date(milestone.target_completion_date).toLocaleDateString()}
+                                  </Badge>
+                                )}
+                                <Badge className={`text-xs ${getStatusColor(milestone.status)}`}>
+                                  {milestone.status}
+                                </Badge>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        
+                        {/* Progress Bar */}
+                        <div className="mt-4">
+                          <div className="flex justify-between text-sm mb-1">
+                            <span>Overall Progress</span>
+                            <span className="font-medium">{getMilestoneProgress(project.milestones)}%</span>
+                          </div>
+                          <Progress value={getMilestoneProgress(project.milestones)} className="h-2" />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="border rounded-lg p-6 bg-orange-50 border-orange-200 text-center">
+                        <Target className="h-8 w-8 text-orange-400 mx-auto mb-2" />
+                        <p className="text-orange-800 font-medium">Awaiting Milestone Configuration</p>
+                        <p className="text-sm text-orange-600">The contractor has not yet configured milestones for this project.</p>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ))}
@@ -161,17 +226,6 @@ const GovernmentMilestones = () => {
           )}
         </ResponsiveContainer>
       </main>
-
-      {/* Milestone Management Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        {selectedProject && (
-          <MilestoneManagement
-            project={selectedProject}
-            onClose={() => setDialogOpen(false)}
-            onSaved={handleSaved}
-          />
-        )}
-      </Dialog>
     </div>
   );
 };
