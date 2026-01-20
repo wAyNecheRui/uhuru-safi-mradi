@@ -8,6 +8,7 @@ import { Progress } from '@/components/ui/progress';
 import { Target, Loader2, Building2, DollarSign, Calendar, CheckCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { calculateProjectProgress } from '@/utils/progressCalculation';
 
 interface Milestone {
   id: string;
@@ -89,9 +90,7 @@ const GovernmentMilestones = () => {
   };
 
   const getMilestoneProgress = (milestones: Milestone[]) => {
-    if (!milestones.length) return 0;
-    const completed = milestones.filter(m => m.status === 'paid' || m.status === 'verified').length;
-    return Math.round((completed / milestones.length) * 100);
+    return calculateProjectProgress(milestones);
   };
 
   const getStatusColor = (status: string) => {

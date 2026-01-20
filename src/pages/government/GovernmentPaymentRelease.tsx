@@ -11,7 +11,7 @@ import { Progress } from '@/components/ui/progress';
 import { Eye, Loader2, Building2, CheckCircle, Clock, Zap, Camera, Video, FileText, Activity } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-
+import { calculateProjectProgress } from '@/utils/progressCalculation';
 interface ProjectWithProgress {
   id: string;
   title: string;
@@ -90,12 +90,8 @@ const GovernmentPaymentRelease = () => {
           const paidMilestones = milestones?.filter(m => m.status === 'paid').length || 0;
           const totalMilestones = milestones?.length || 0;
 
-          // Calculate overall progress based on milestone statuses
-          let overallProgress = 0;
-          if (totalMilestones > 0) {
-            const completedWeight = (paidMilestones * 100 + verifiedMilestones * 80 + submittedMilestones * 60 + inProgressMilestones * 30) / totalMilestones;
-            overallProgress = Math.round(completedWeight);
-          }
+          // Calculate overall progress using unified utility
+          const overallProgress = calculateProjectProgress(milestones || []);
 
           const latestUpdate = progressUpdates?.[0] ? {
             description: progressUpdates[0].update_description,

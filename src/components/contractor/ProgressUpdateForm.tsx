@@ -28,6 +28,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import LiveNotificationService from '@/services/LiveNotificationService';
+import { calculateProjectProgress } from '@/utils/progressCalculation';
 
 interface Milestone {
   id: string;
@@ -114,31 +115,25 @@ const ProgressUpdateForm: React.FC<ProgressUpdateFormProps> = ({
   // Only show the single next available milestone (enforces sequential workflow)
   const activeMilestones = nextAvailableMilestone ? [nextAvailableMilestone] : [];
 
-  // Calculate progress automatically based on completed/submitted milestones
+  // Calculate progress automatically based on milestone statuses using unified utility
+  // When submitting, simulate the milestone becoming "submitted" for preview
   const calculateProgress = (): number => {
     if (uniqueMilestones.length === 0) return 0;
     
-    const completedMilestones = uniqueMilestones.filter(m => 
-      m.status === 'verified' || m.status === 'completed'
-    ).length;
-    
-    const submittedMilestones = uniqueMilestones.filter(m => 
-      m.status === 'submitted'
-    ).length;
-    
-    // Count the selected milestone as "in progress" for calculation
+    // Create a modified milestone list to simulate current submission
     const selectedMilestone = uniqueMilestones.find(m => m.id === selectedMilestoneId);
     const isNewSubmission = selectedMilestone && 
       (selectedMilestone.status === 'pending' || selectedMilestone.status === 'in_progress');
     
-    // Base progress from completed milestones
-    const baseProgress = (completedMilestones / uniqueMilestones.length) * 100;
+    const simulatedMilestones = uniqueMilestones.map(m => {
+      if (isNewSubmission && m.id === selectedMilestoneId) {
+        // Simulate this milestone becoming 'submitted'
+        return { ...m, status: 'submitted' };
+      }
+      return m;
+    });
     
-    // Add partial progress for submitted milestones (80% credit) and current submission (60% credit)
-    const submittedProgress = (submittedMilestones / uniqueMilestones.length) * 80;
-    const currentProgress = isNewSubmission ? (1 / uniqueMilestones.length) * 60 : 0;
-    
-    return Math.min(100, Math.round(baseProgress + submittedProgress + currentProgress));
+    return calculateProjectProgress(simulatedMilestones);
   };
 
   const progress = calculateProgress();
