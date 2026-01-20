@@ -288,11 +288,11 @@ const GovernmentDashboard = () => {
               </div>
             </div>
             <Button 
-              onClick={() => navigate('/government/escrow')}
+              onClick={() => navigate('/government/payment-release')}
               className="bg-green-600 hover:bg-green-700"
             >
               <CreditCard className="h-4 w-4 mr-2" />
-              Manage Payments
+              View Payment Progress
             </Button>
           </div>
         </CardContent>
