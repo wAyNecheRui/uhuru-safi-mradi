@@ -202,6 +202,60 @@ const ContractorProjects = () => {
     }).format(amount);
   };
 
+  // Check if contractor can update progress based on milestone workflow
+  const canUpdateProgress = (project: ProjectWithExtras): { allowed: boolean; reason?: string } => {
+    // First check if escrow is funded
+    if (!project.canWork) {
+      return { allowed: false, reason: project.workBlockedReason || 'Awaiting escrow funding' };
+    }
+
+    // Check if milestones are configured
+    if (!project.milestones || project.milestones.length === 0) {
+      return { allowed: false, reason: 'Configure milestones first' };
+    }
+
+    // Check milestone statuses - enforce sequential completion
+    const milestones = project.milestones.sort((a, b) => a.milestone_number - b.milestone_number);
+    
+    // Find milestones that are in progress or submitted (awaiting verification/payment)
+    const pendingMilestone = milestones.find(m => 
+      m.status === 'submitted' || m.status === 'verified' || m.status === 'in_progress'
+    );
+
+    if (pendingMilestone) {
+      if (pendingMilestone.status === 'submitted') {
+        return { 
+          allowed: false, 
+          reason: `Milestone "${pendingMilestone.title}" is awaiting citizen verification` 
+        };
+      }
+      if (pendingMilestone.status === 'verified') {
+        return { 
+          allowed: false, 
+          reason: `Milestone "${pendingMilestone.title}" is awaiting payment release` 
+        };
+      }
+      if (pendingMilestone.status === 'in_progress') {
+        // Allow updating the in_progress milestone
+        return { allowed: true };
+      }
+    }
+
+    // Check if all milestones are completed (paid)
+    const allCompleted = milestones.every(m => m.status === 'paid');
+    if (allCompleted) {
+      return { allowed: false, reason: 'All milestones completed' };
+    }
+
+    // Find the next pending milestone to work on
+    const nextPending = milestones.find(m => m.status === 'pending');
+    if (nextPending) {
+      return { allowed: true };
+    }
+
+    return { allowed: true };
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
@@ -397,21 +451,38 @@ const ContractorProjects = () => {
                       </Alert>
                     )}
                     
+                    {/* Milestone Progress Block Alert */}
+                    {(() => {
+                      const progressStatus = canUpdateProgress(project);
+                      if (!progressStatus.allowed && progressStatus.reason && project.canWork && project.milestones && project.milestones.length > 0) {
+                        return (
+                          <Alert className="border-blue-300 bg-blue-50">
+                            <Info className="h-4 w-4 text-blue-600" />
+                            <AlertTitle className="text-blue-800">Progress Update Blocked</AlertTitle>
+                            <AlertDescription className="text-blue-700">
+                              {progressStatus.reason}. Complete the current milestone cycle before updating the next one.
+                            </AlertDescription>
+                          </Alert>
+                        );
+                      }
+                      return null;
+                    })()}
+
                     {/* Actions Bar */}
                     <div className="flex justify-between items-center pt-2">
-                      <div className="flex items-center text-sm text-gray-600">
+                      <div className="flex items-center text-sm text-muted-foreground">
                         <Clock className="h-4 w-4 mr-1" />
                         Last updated: {new Date(project.updated_at).toLocaleDateString()}
                       </div>
                       <div className="flex gap-2">
-                        <Badge className="bg-blue-100 text-blue-800">
+                        <Badge variant="secondary">
                           {project.status}
                         </Badge>
                         <Button 
                           size="sm" 
                           onClick={() => handleUpdateProgress(project)}
                           className="bg-primary"
-                          disabled={!project.canWork}
+                          disabled={!canUpdateProgress(project).allowed}
                         >
                           <Upload className="h-4 w-4 mr-2" />
                           Update Progress
