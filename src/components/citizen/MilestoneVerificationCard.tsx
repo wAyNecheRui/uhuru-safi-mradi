@@ -149,6 +149,12 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
 
     setSubmitting(true);
     try {
+      // Build verification notes - ALWAYS include the rating in a parseable format
+      // Format: "User notes... Rating: X/5" - this is required for auto-payment calculation
+      const formattedNotes = notes 
+        ? `${notes.trim()} - Rating: ${rating}/5` 
+        : `Citizen verification - Rating: ${rating}/5`;
+
       // Insert verification record (unique constraint prevents duplicates)
       const { error } = await supabase
         .from('milestone_verifications')
@@ -156,7 +162,7 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
           milestone_id: milestone.id,
           verifier_id: user.id,
           verification_status: verificationStatus,
-          verification_notes: notes || `Citizen verification - Rating: ${rating}/5`,
+          verification_notes: formattedNotes,
           verification_photos: location ? [`GPS: ${location.lat}, ${location.lon}`] : null
         });
 
