@@ -7,8 +7,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { 
   Camera, Upload, X, Loader2, MapPin, 
-  CheckCircle, AlertCircle
+  CheckCircle, AlertCircle, Clock, Info
 } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   Dialog,
   DialogContent,
@@ -74,9 +75,44 @@ const ProgressUpdateForm: React.FC<ProgressUpdateFormProps> = ({
     return acc;
   }, [] as Milestone[]);
 
-  const activeMilestones = uniqueMilestones.filter(m => 
-    m.status === 'pending' || m.status === 'in_progress'
-  );
+  // Sort milestones by number for sequential processing
+  const sortedMilestones = [...uniqueMilestones].sort((a, b) => a.milestone_number - b.milestone_number);
+
+  // Enforce sequential milestone progression - only allow updating the NEXT available milestone
+  const getNextAvailableMilestone = (): Milestone | null => {
+    // Check if any milestone is currently submitted (awaiting verification) or verified (awaiting payment)
+    const blockedMilestone = sortedMilestones.find(m => 
+      m.status === 'submitted' || m.status === 'verified'
+    );
+    
+    if (blockedMilestone) {
+      // A milestone is in the verification/payment cycle - block all updates
+      return null;
+    }
+
+    // Find a milestone that's in_progress (continue working on it)
+    const inProgressMilestone = sortedMilestones.find(m => m.status === 'in_progress');
+    if (inProgressMilestone) {
+      return inProgressMilestone;
+    }
+
+    // Find the first pending milestone (start new work)
+    const nextPendingMilestone = sortedMilestones.find(m => m.status === 'pending');
+    return nextPendingMilestone || null;
+  };
+
+  // Get the blocking milestone for display purposes
+  const getBlockingMilestone = (): Milestone | null => {
+    return sortedMilestones.find(m => 
+      m.status === 'submitted' || m.status === 'verified'
+    ) || null;
+  };
+
+  const nextAvailableMilestone = getNextAvailableMilestone();
+  const blockingMilestone = getBlockingMilestone();
+  
+  // Only show the single next available milestone (enforces sequential workflow)
+  const activeMilestones = nextAvailableMilestone ? [nextAvailableMilestone] : [];
 
   // Calculate progress automatically based on completed/submitted milestones
   const calculateProgress = (): number => {
@@ -326,10 +362,26 @@ const ProgressUpdateForm: React.FC<ProgressUpdateFormProps> = ({
           </CardContent>
         </Card>
 
-        {/* Milestone Selection */}
-        {activeMilestones.length > 0 && (
+        {/* Milestone Blocked Alert */}
+        {blockingMilestone && (
+          <Alert className="border-amber-300 bg-amber-50">
+            <Clock className="h-4 w-4 text-amber-600" />
+            <AlertTitle className="text-amber-800">Progress Update Blocked</AlertTitle>
+            <AlertDescription className="text-amber-700">
+              {blockingMilestone.status === 'submitted' 
+                ? `Milestone "${blockingMilestone.title}" is awaiting citizen verification.`
+                : `Milestone "${blockingMilestone.title}" is verified but awaiting payment release.`
+              }
+              <br />
+              <span className="text-sm mt-1 block">Complete the current milestone cycle before updating progress on the next one.</span>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Milestone Selection - Only show if not blocked */}
+        {activeMilestones.length > 0 && !blockingMilestone && (
           <div className="space-y-2">
-            <Label>Related Milestone (Optional)</Label>
+            <Label>Related Milestone</Label>
             <Select 
               value={selectedMilestoneId || "none"} 
               onValueChange={(value) => setSelectedMilestoneId(value === "none" ? "" : value)}
@@ -346,6 +398,9 @@ const ProgressUpdateForm: React.FC<ProgressUpdateFormProps> = ({
                 ))}
               </SelectContent>
             </Select>
+            <p className="text-xs text-muted-foreground">
+              Sequential workflow: You can only update the next milestone in order.
+            </p>
           </div>
         )}
 
@@ -515,13 +570,18 @@ const ProgressUpdateForm: React.FC<ProgressUpdateFormProps> = ({
         <Button variant="outline" onClick={onClose}>Cancel</Button>
         <Button
           onClick={handleSubmit}
-          disabled={submitting || !description.trim()}
+          disabled={submitting || !description.trim() || !!blockingMilestone}
           className="bg-primary"
         >
           {submitting ? (
             <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               {uploading ? 'Uploading Photos...' : 'Submitting...'}
+            </>
+          ) : blockingMilestone ? (
+            <>
+              <Clock className="h-4 w-4 mr-2" />
+              Update Blocked
             </>
           ) : (
             <>
