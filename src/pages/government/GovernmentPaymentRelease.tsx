@@ -2,12 +2,12 @@ import React, { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
-import PaymentReleaseManager from '@/components/government/PaymentReleaseManager';
+import MilestonePaymentProgress from '@/components/government/MilestonePaymentProgress';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog } from '@/components/ui/dialog';
-import { DollarSign, Loader2, Building2, Wallet, CheckCircle, Clock } from 'lucide-react';
+import { Eye, Loader2, Building2, Wallet, CheckCircle, Clock, Zap, DollarSign } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -23,6 +23,7 @@ interface ProjectWithEscrow {
     held_amount: number;
     status: string;
   };
+  paidMilestones?: number;
   verifiedMilestones?: number;
   totalMilestones?: number;
 }
@@ -37,7 +38,7 @@ const GovernmentPaymentRelease = () => {
   const breadcrumbItems = [
     { label: 'Home', href: '/' },
     { label: 'Government', href: '/government' },
-    { label: 'Payment Release' }
+    { label: 'Payment Progress' }
   ];
 
   useEffect(() => {
@@ -70,6 +71,7 @@ const GovernmentPaymentRelease = () => {
             .select('status')
             .eq('project_id', project.id);
 
+          const paidMilestones = milestones?.filter(m => m.status === 'paid').length || 0;
           const verifiedMilestones = milestones?.filter(m => m.status === 'verified').length || 0;
           const totalMilestones = milestones?.length || 0;
 
@@ -81,6 +83,7 @@ const GovernmentPaymentRelease = () => {
               held_amount: escrow.held_amount,
               status: escrow.status
             } : undefined,
+            paidMilestones,
             verifiedMilestones,
             totalMilestones
           };
@@ -100,7 +103,7 @@ const GovernmentPaymentRelease = () => {
     }
   };
 
-  const handleOpenPayments = (project: ProjectWithEscrow) => {
+  const handleViewProgress = (project: ProjectWithEscrow) => {
     setSelectedProject(project);
     setDialogOpen(true);
   };
@@ -123,11 +126,30 @@ const GovernmentPaymentRelease = () => {
           
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
-              <DollarSign className="h-8 w-8 text-green-600" />
-              Payment Release Management
+              <Eye className="h-8 w-8 text-blue-600" />
+              Payment Progress Monitoring
             </h1>
-            <p className="text-gray-600">Release milestone payments to contractors from escrow accounts.</p>
+            <p className="text-gray-600">Monitor automated milestone payments from escrow to contractors.</p>
           </div>
+
+          {/* Automated Payment Info */}
+          <Card className="bg-blue-50 border-blue-200 mb-6">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <Zap className="h-5 w-5 text-blue-600 mt-0.5" />
+                <div>
+                  <h4 className="font-semibold text-blue-900">Automated Payment System Active</h4>
+                  <p className="text-sm text-blue-700 mt-1">
+                    Payments are automatically released when milestones receive <strong>2+ citizen verifications</strong> with 
+                    a minimum average rating of <strong>3/5 stars</strong>. This page shows the progress of each project's milestone payments.
+                  </p>
+                  <p className="text-sm text-blue-600 mt-2">
+                    <strong>To fund project escrows:</strong> Visit the <a href="/government/escrow-funding" className="underline hover:text-blue-800">Escrow Funding page</a>
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {loading ? (
             <Card>
@@ -146,13 +168,13 @@ const GovernmentPaymentRelease = () => {
             </Card>
           ) : (
             <div className="grid gap-4">
-            {projects.map((project) => {
+              {projects.map((project) => {
                 const releasePercentage = project.escrow 
                   ? (project.escrow.released_amount / project.escrow.total_amount) * 100 
                   : 0;
                 
-                // Check if any milestones are pending citizen verification
-                const pendingVerification = project.totalMilestones > 0 && project.verifiedMilestones === 0;
+                const hasVerifiedPending = (project.verifiedMilestones || 0) > 0;
+                const isFullyPaid = project.paidMilestones === project.totalMilestones && project.totalMilestones > 0;
 
                 return (
                   <Card key={project.id} className="shadow-lg hover:shadow-xl transition-shadow">
@@ -179,32 +201,27 @@ const GovernmentPaymentRelease = () => {
                                 No Escrow Account
                               </Badge>
                             )}
-                            {project.verifiedMilestones > 0 ? (
-                              <Badge className="bg-green-100 text-green-800">
-                                <CheckCircle className="h-3 w-3 mr-1" />
-                                {project.verifiedMilestones} Citizen-Verified (Ready for Payment)
-                              </Badge>
-                            ) : pendingVerification ? (
-                              <Badge className="bg-amber-100 text-amber-800">
-                                <Clock className="h-3 w-3 mr-1" />
-                                Awaiting Citizen Verification
-                              </Badge>
-                            ) : null}
+                            
+                            {/* Milestone Progress */}
                             <Badge variant="secondary">
                               <Clock className="h-3 w-3 mr-1" />
-                              {project.totalMilestones} Milestones
+                              {project.paidMilestones}/{project.totalMilestones} Paid
                             </Badge>
+
+                            {hasVerifiedPending && (
+                              <Badge className="bg-blue-100 text-blue-800">
+                                <Zap className="h-3 w-3 mr-1" />
+                                {project.verifiedMilestones} Processing
+                              </Badge>
+                            )}
+
+                            {isFullyPaid && (
+                              <Badge className="bg-green-100 text-green-800">
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                                All Payments Complete
+                              </Badge>
+                            )}
                           </div>
-                          
-                          {/* Citizen Verification Requirement Notice */}
-                          {pendingVerification && (
-                            <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 mb-4">
-                              <p className="text-sm text-amber-800">
-                                <strong>⚠️ Citizen Verification Required:</strong> No milestones have been verified by citizens yet. 
-                                Payments cannot be released until citizens verify the completed work on-site.
-                              </p>
-                            </div>
-                          )}
 
                           {/* Progress Bar */}
                           {project.escrow && (
@@ -218,15 +235,12 @@ const GovernmentPaymentRelease = () => {
                         </div>
                         
                         <Button 
-                          onClick={() => handleOpenPayments(project)}
-                          className="bg-green-600 hover:bg-green-700"
-                          disabled={!project.escrow || (pendingVerification && project.verifiedMilestones === 0)}
-                          title={pendingVerification ? 'Waiting for citizen verification' : ''}
+                          onClick={() => handleViewProgress(project)}
+                          variant="outline"
+                          className="border-blue-200 text-blue-700 hover:bg-blue-50"
                         >
-                          <DollarSign className="h-4 w-4 mr-2" />
-                          {pendingVerification && project.verifiedMilestones === 0 
-                            ? 'Awaiting Verification' 
-                            : 'Manage Payments'}
+                          <Eye className="h-4 w-4 mr-2" />
+                          View Progress
                         </Button>
                       </div>
                     </CardContent>
@@ -238,10 +252,10 @@ const GovernmentPaymentRelease = () => {
         </ResponsiveContainer>
       </main>
 
-      {/* Payment Release Dialog */}
+      {/* Payment Progress Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         {selectedProject && (
-          <PaymentReleaseManager
+          <MilestonePaymentProgress
             projectId={selectedProject.id}
             projectTitle={selectedProject.title}
             onClose={() => {
