@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
+import { calculateProjectProgress } from '@/utils/progressCalculation';
 
 interface ProgressUpdate {
   id: string;
@@ -108,9 +109,7 @@ const ProjectProgressViewer: React.FC<ProjectProgressViewerProps> = ({
   };
 
   const calculateOverallProgress = () => {
-    if (milestones.length === 0) return 0;
-    const verified = milestones.filter(m => m.status === 'verified' || m.status === 'paid').length;
-    return Math.round((verified / milestones.length) * 100);
+    return calculateProjectProgress(milestones);
   };
 
   return (

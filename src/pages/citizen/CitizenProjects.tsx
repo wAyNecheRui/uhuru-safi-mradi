@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { calculateProjectProgress } from '@/utils/progressCalculation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -275,9 +276,7 @@ const CitizenProjects = () => {
   };
 
   const calculateProgress = (projectMilestones: Milestone[]) => {
-    if (!projectMilestones || projectMilestones.length === 0) return 0;
-    const completed = projectMilestones.filter(m => m.status === 'verified' || m.status === 'paid').length;
-    return Math.round((completed / projectMilestones.length) * 100);
+    return calculateProjectProgress(projectMilestones);
   };
 
   const filteredProjects = projects.filter(project =>

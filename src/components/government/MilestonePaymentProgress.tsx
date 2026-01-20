@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { calculateProjectProgress } from '@/utils/progressCalculation';
 
 interface Milestone {
   id: string;
@@ -128,10 +129,10 @@ const MilestonePaymentProgress: React.FC<MilestonePaymentProgressProps> = ({
       if (progressError) throw progressError;
       setProgressUpdates(progressData || []);
 
-      // Calculate overall progress from latest updates
-      if (progressData && progressData.length > 0) {
-        const latestProgress = progressData[0]?.progress_percentage || 0;
-        setOverallProgress(latestProgress);
+      // Calculate overall progress from milestone statuses using unified utility
+      if (milestonesData && milestonesData.length > 0) {
+        const calculatedProgress = calculateProjectProgress(milestonesData);
+        setOverallProgress(calculatedProgress);
       }
 
       // Fetch verifications for each milestone
