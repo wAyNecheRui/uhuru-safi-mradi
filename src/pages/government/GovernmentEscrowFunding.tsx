@@ -71,12 +71,27 @@ export default function GovernmentEscrowFunding() {
     }
   };
 
+  const getRemainingAmount = (project: Project) => {
+    if (!project.budget) return 0;
+    const alreadyFunded = project.escrow?.held_amount || 0;
+    return Math.max(0, project.budget - alreadyFunded);
+  };
+
   const handleFundEscrow = async () => {
     if (!selectedProject || !fundingAmount) return;
 
     const amount = parseFloat(fundingAmount);
     if (isNaN(amount) || amount <= 0) {
       toast.error("Please enter a valid amount");
+      return;
+    }
+
+    // Prevent overfunding - amount cannot exceed remaining balance
+    const remainingAmount = getRemainingAmount(selectedProject);
+    if (amount > remainingAmount) {
+      toast.error("Cannot overfund escrow", {
+        description: `Maximum fundable amount is KES ${remainingAmount.toLocaleString()}`
+      });
       return;
     }
 
@@ -196,12 +211,17 @@ export default function GovernmentEscrowFunding() {
                   {project.budget && (
                     <div className="mt-4">
                       <div className="flex justify-between text-sm mb-1">
-                        <span>Budget: {formatCurrency(project.budget)}</span>
+                        <span>Contractor Bid: {formatCurrency(project.budget)}</span>
                         <span>
                           Funded: {formatCurrency(project.escrow?.held_amount || 0)}
                         </span>
                       </div>
                       <Progress value={getEscrowProgress(project)} className="h-2" />
+                      {!isFullyFunded(project) && getRemainingAmount(project) > 0 && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Remaining: {formatCurrency(getRemainingAmount(project))}
+                        </p>
+                      )}
                     </div>
                   )}
 
@@ -269,13 +289,16 @@ export default function GovernmentEscrowFunding() {
               <div className="p-4 bg-muted rounded-lg">
                 <p className="font-medium">{selectedProject.title}</p>
                 <p className="text-sm text-muted-foreground">
-                  Budget: {formatCurrency(selectedProject.budget || 0)}
+                  Contractor Bid Amount: {formatCurrency(selectedProject.budget || 0)}
                 </p>
-                {selectedProject.escrow && (
+                {selectedProject.escrow && selectedProject.escrow.held_amount > 0 && (
                   <p className="text-sm text-green-600">
                     Already funded: {formatCurrency(selectedProject.escrow.held_amount)}
                   </p>
                 )}
+                <p className="text-sm font-medium text-primary mt-1">
+                  Remaining to fund: {formatCurrency(getRemainingAmount(selectedProject))}
+                </p>
               </div>
 
               <div className="space-y-2">
@@ -284,9 +307,22 @@ export default function GovernmentEscrowFunding() {
                   id="amount"
                   type="number"
                   value={fundingAmount}
-                  onChange={(e) => setFundingAmount(e.target.value)}
+                  onChange={(e) => {
+                    const val = parseFloat(e.target.value);
+                    const maxAmount = getRemainingAmount(selectedProject);
+                    // Prevent entering more than remaining amount
+                    if (!isNaN(val) && val > maxAmount) {
+                      setFundingAmount(maxAmount.toString());
+                    } else {
+                      setFundingAmount(e.target.value);
+                    }
+                  }}
+                  max={getRemainingAmount(selectedProject)}
                   placeholder="Enter amount to fund"
                 />
+                <p className="text-xs text-muted-foreground">
+                  Maximum: {formatCurrency(getRemainingAmount(selectedProject))}
+                </p>
               </div>
 
               <div className="space-y-2">
