@@ -6,11 +6,14 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { MapPin, DollarSign, Users, Loader2, Save } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { MapPin, DollarSign, Users, Loader2, Save, Award, Building, Briefcase, Heart } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { KENYA_COUNTIES } from '@/hooks/useLocationFiltering';
+
+type AGPOCategory = 'women' | 'youth' | 'pwd' | null;
 
 const ContractorLocationSettings = () => {
   const { user } = useAuth();
@@ -20,6 +23,10 @@ const ContractorLocationSettings = () => {
     registered_counties: [] as string[],
     max_project_capacity: 5000000,
     is_agpo: false,
+    agpo_category: null as AGPOCategory,
+    specialization: [] as string[],
+    years_in_business: 0,
+    number_of_employees: 0,
   });
 
   useEffect(() => {
@@ -32,7 +39,7 @@ const ContractorLocationSettings = () => {
     try {
       const { data, error } = await supabase
         .from('contractor_profiles')
-        .select('registered_counties, max_project_capacity, is_agpo')
+        .select('registered_counties, max_project_capacity, is_agpo, agpo_category, specialization, years_in_business, number_of_employees')
         .eq('user_id', user?.id)
         .maybeSingle();
 
@@ -43,6 +50,10 @@ const ContractorLocationSettings = () => {
           registered_counties: data.registered_counties || [],
           max_project_capacity: data.max_project_capacity || 5000000,
           is_agpo: data.is_agpo || false,
+          agpo_category: (data.agpo_category as AGPOCategory) || null,
+          specialization: data.specialization || [],
+          years_in_business: data.years_in_business || 0,
+          number_of_employees: data.number_of_employees || 0,
         });
       }
     } catch (error) {
@@ -54,6 +65,13 @@ const ContractorLocationSettings = () => {
 
   const handleSave = async () => {
     if (!user) return;
+    
+    // Validate AGPO category if AGPO is enabled
+    if (settings.is_agpo && !settings.agpo_category) {
+      toast.error('Please select an AGPO category');
+      return;
+    }
+    
     setSaving(true);
 
     try {
@@ -63,11 +81,15 @@ const ContractorLocationSettings = () => {
           registered_counties: settings.registered_counties,
           max_project_capacity: settings.max_project_capacity,
           is_agpo: settings.is_agpo,
+          agpo_category: settings.is_agpo ? settings.agpo_category : null,
+          specialization: settings.specialization,
+          years_in_business: settings.years_in_business,
+          number_of_employees: settings.number_of_employees,
         })
         .eq('user_id', user.id);
 
       if (error) throw error;
-      toast.success('Settings saved successfully');
+      toast.success('Settings saved successfully - Your profile will be visible to government officials during bid evaluation');
     } catch (error) {
       console.error('Error saving settings:', error);
       toast.error('Failed to save settings');
@@ -88,7 +110,30 @@ const ContractorLocationSettings = () => {
   const getCapacityLabel = (capacity: number): string => {
     if (capacity <= 5000000) return 'Small (≤ KES 5M)';
     if (capacity <= 50000000) return 'Medium (KES 5M-50M)';
-    return 'Large (≥ KES 50M)';
+    if (capacity <= 500000000) return 'Large (KES 50M-500M)';
+    return 'Enterprise (≥ KES 500M)';
+  };
+
+  const SPECIALIZATIONS = [
+    'Road Construction',
+    'Building Construction',
+    'Water & Sanitation',
+    'Electrical Works',
+    'Plumbing',
+    'Drainage Systems',
+    'Bridge Construction',
+    'Landscaping',
+    'General Contracting',
+    'Renovation & Repairs',
+  ];
+
+  const toggleSpecialization = (spec: string) => {
+    setSettings(prev => ({
+      ...prev,
+      specialization: prev.specialization.includes(spec)
+        ? prev.specialization.filter(s => s !== spec)
+        : [...prev.specialization, spec],
+    }));
   };
 
   if (loading) {
@@ -113,32 +158,171 @@ const ContractorLocationSettings = () => {
         </p>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* AGPO Status */}
-        <div className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg">
-          <div className="flex items-center gap-3">
-            <Users className="h-5 w-5 text-purple-600" />
-            <div>
-              <Label className="font-medium">AGPO Contractor</Label>
+        {/* Company Info Section */}
+        <div className="space-y-4 p-4 bg-muted/30 rounded-lg border">
+          <div className="flex items-center gap-2 mb-2">
+            <Building className="h-5 w-5 text-primary" />
+            <Label className="font-semibold text-lg">Company Information</Label>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Years in Business</Label>
+              <Input
+                type="number"
+                min="0"
+                value={settings.years_in_business}
+                onChange={(e) =>
+                  setSettings(prev => ({
+                    ...prev,
+                    years_in_business: parseInt(e.target.value) || 0,
+                  }))
+                }
+                placeholder="e.g., 5"
+              />
               <p className="text-xs text-muted-foreground">
-                Access Government Procurement Opportunities (Women/Youth/PWD)
+                More experience = higher score in bid evaluation (+10% max)
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label>Number of Employees</Label>
+              <Input
+                type="number"
+                min="0"
+                value={settings.number_of_employees}
+                onChange={(e) =>
+                  setSettings(prev => ({
+                    ...prev,
+                    number_of_employees: parseInt(e.target.value) || 0,
+                  }))
+                }
+                placeholder="e.g., 25"
+              />
+              <p className="text-xs text-muted-foreground">
+                Indicates capacity to handle larger projects
               </p>
             </div>
           </div>
-          <Switch
-            checked={settings.is_agpo}
-            onCheckedChange={(checked) =>
-              setSettings(prev => ({ ...prev, is_agpo: checked }))
-            }
-          />
         </div>
 
-        {settings.is_agpo && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-            <p className="text-sm text-green-800">
-              ✓ As an AGPO contractor, you'll see all eligible projects across Kenya.
-            </p>
+        {/* Specialization Section */}
+        <div className="space-y-3 p-4 bg-muted/30 rounded-lg border">
+          <div className="flex items-center gap-2 mb-2">
+            <Briefcase className="h-5 w-5 text-primary" />
+            <Label className="font-semibold text-lg">Areas of Specialization</Label>
           </div>
-        )}
+          <p className="text-xs text-muted-foreground">
+            Select all categories of work you can perform. This helps match you with relevant projects.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {settings.specialization.map(spec => (
+              <Badge key={spec} className="bg-primary/10 text-primary">
+                {spec}
+                <button
+                  onClick={() => toggleSpecialization(spec)}
+                  className="ml-1 hover:text-destructive"
+                >
+                  ×
+                </button>
+              </Badge>
+            ))}
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-40 overflow-y-auto border rounded-lg p-3 bg-background">
+            {SPECIALIZATIONS.map(spec => (
+              <div key={spec} className="flex items-center space-x-2">
+                <Checkbox
+                  id={`spec-${spec}`}
+                  checked={settings.specialization.includes(spec)}
+                  onCheckedChange={() => toggleSpecialization(spec)}
+                />
+                <label
+                  htmlFor={`spec-${spec}`}
+                  className="text-sm cursor-pointer"
+                >
+                  {spec}
+                </label>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* AGPO Status */}
+        <div className="space-y-4 p-4 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20 rounded-lg border border-purple-200 dark:border-purple-800">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Award className="h-5 w-5 text-purple-600" />
+              <div>
+                <Label className="font-semibold text-lg">AGPO Contractor</Label>
+                <p className="text-xs text-muted-foreground">
+                  Access to Government Procurement Opportunities (+5 bonus points in bid evaluation)
+                </p>
+              </div>
+            </div>
+            <Switch
+              checked={settings.is_agpo}
+              onCheckedChange={(checked) =>
+                setSettings(prev => ({ 
+                  ...prev, 
+                  is_agpo: checked,
+                  agpo_category: checked ? prev.agpo_category : null
+                }))
+              }
+            />
+          </div>
+
+          {settings.is_agpo && (
+            <div className="space-y-3 mt-4 p-3 bg-background rounded-lg border">
+              <Label className="font-medium">Select AGPO Category *</Label>
+              <p className="text-xs text-muted-foreground">
+                Government officials will verify this during contractor evaluation
+              </p>
+              <RadioGroup
+                value={settings.agpo_category || ''}
+                onValueChange={(value) =>
+                  setSettings(prev => ({ ...prev, agpo_category: value as AGPOCategory }))
+                }
+                className="grid grid-cols-1 md:grid-cols-3 gap-3"
+              >
+                <div className={`flex items-center space-x-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${settings.agpo_category === 'women' ? 'border-pink-500 bg-pink-50 dark:bg-pink-950/20' : 'border-muted hover:border-pink-300'}`}>
+                  <RadioGroupItem value="women" id="women" />
+                  <label htmlFor="women" className="flex items-center gap-2 cursor-pointer">
+                    <Heart className="h-4 w-4 text-pink-500" />
+                    <div>
+                      <p className="font-medium">Women-Owned</p>
+                      <p className="text-xs text-muted-foreground">30%+ ownership by women</p>
+                    </div>
+                  </label>
+                </div>
+                <div className={`flex items-center space-x-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${settings.agpo_category === 'youth' ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20' : 'border-muted hover:border-blue-300'}`}>
+                  <RadioGroupItem value="youth" id="youth" />
+                  <label htmlFor="youth" className="flex items-center gap-2 cursor-pointer">
+                    <Users className="h-4 w-4 text-blue-500" />
+                    <div>
+                      <p className="font-medium">Youth-Owned</p>
+                      <p className="text-xs text-muted-foreground">Owners aged 18-35 years</p>
+                    </div>
+                  </label>
+                </div>
+                <div className={`flex items-center space-x-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${settings.agpo_category === 'pwd' ? 'border-green-500 bg-green-50 dark:bg-green-950/20' : 'border-muted hover:border-green-300'}`}>
+                  <RadioGroupItem value="pwd" id="pwd" />
+                  <label htmlFor="pwd" className="flex items-center gap-2 cursor-pointer">
+                    <Heart className="h-4 w-4 text-green-500" />
+                    <div>
+                      <p className="font-medium">PWD-Owned</p>
+                      <p className="text-xs text-muted-foreground">Persons with disabilities</p>
+                    </div>
+                  </label>
+                </div>
+              </RadioGroup>
+              
+              <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-3 mt-3">
+                <p className="text-sm text-green-800 dark:text-green-200">
+                  <strong>✓ AGPO Benefits:</strong> +5 bonus points in bid scoring, priority access to reserved contracts, and eligibility for 30% government procurement quota.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Project Capacity */}
         <div className="space-y-3">

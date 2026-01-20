@@ -24,6 +24,10 @@ export interface TopBid {
   agpo_bonus: number;
   total_score: number;
   is_agpo: boolean;
+  agpo_category: string | null;
+  years_in_business: number | null;
+  previous_projects_count: number | null;
+  max_project_capacity: number | null;
   rank: number;
 }
 
