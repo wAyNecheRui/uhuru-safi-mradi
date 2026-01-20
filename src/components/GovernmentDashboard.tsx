@@ -283,8 +283,8 @@ const GovernmentDashboard = () => {
                 <Wallet className="h-6 w-6 text-green-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900">M-Pesa Payment Workflow</h3>
-                <p className="text-sm text-gray-600">Step-by-step milestone payments: Fund escrow → Verify work → Release payment</p>
+                <h3 className="font-semibold text-gray-900">Project Progress Monitoring</h3>
+                <p className="text-sm text-gray-600">Track milestone updates, view contractor photos & videos, and monitor citizen verifications</p>
               </div>
             </div>
             <Button 
