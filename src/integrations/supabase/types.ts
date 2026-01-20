@@ -2176,6 +2176,7 @@ export type Database = {
         Args: { p_report_id: string }
         Returns: {
           agpo_bonus: number
+          agpo_category: string
           bid_amount: number
           bid_id: string
           contractor_id: string
@@ -2183,10 +2184,13 @@ export type Database = {
           estimated_duration: number
           experience_score: number
           is_agpo: boolean
+          max_project_capacity: number
+          previous_projects_count: number
           price_score: number
           rank: number
           technical_score: number
           total_score: number
+          years_in_business: number
         }[]
       }
       get_user_roles: {

@@ -7,7 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { 
   Building, CheckCircle, XCircle, Star, 
   Clock, FileText, Award, TrendingUp,
-  Loader2, Search
+  Loader2, Search, MapPin
 } from 'lucide-react';
 import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
@@ -199,8 +199,14 @@ const GovernmentContractorManagement = () => {
                           <p className="text-sm text-gray-500">
                             {contractor.years_in_business} years in business • {contractor.number_of_employees || 0} employees
                           </p>
+                          {contractor.registered_counties && contractor.registered_counties.length > 0 && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              Service Areas: {contractor.registered_counties.slice(0, 3).join(', ')}
+                              {contractor.registered_counties.length > 3 && ` +${contractor.registered_counties.length - 3} more`}
+                            </p>
+                          )}
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           {contractor.verified ? (
                             <Badge className="bg-green-100 text-green-800">
                               <CheckCircle className="h-3 w-3 mr-1" /> Verified
@@ -210,10 +216,21 @@ const GovernmentContractorManagement = () => {
                               <Clock className="h-3 w-3 mr-1" /> Awaiting Verification
                             </Badge>
                           )}
+                          {contractor.is_agpo && (
+                            <Badge className={`${
+                              contractor.agpo_category === 'women' ? 'bg-pink-100 text-pink-800' :
+                              contractor.agpo_category === 'youth' ? 'bg-blue-100 text-blue-800' :
+                              contractor.agpo_category === 'pwd' ? 'bg-green-100 text-green-800' :
+                              'bg-purple-100 text-purple-800'
+                            }`}>
+                              <Award className="h-3 w-3 mr-1" />
+                              AGPO {contractor.agpo_category ? `(${contractor.agpo_category.charAt(0).toUpperCase() + contractor.agpo_category.slice(1)})` : ''}
+                            </Badge>
+                          )}
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
                         <div className="text-center p-3 bg-blue-50 rounded-lg">
                           <div className="flex items-center justify-center mb-1">
                             <Star className="h-5 w-5 text-yellow-500" />
@@ -221,25 +238,31 @@ const GovernmentContractorManagement = () => {
                           <p className="text-xl font-bold text-blue-600">
                             {getAverageRating(contractor.contractor_ratings)}
                           </p>
-                          <p className="text-xs text-blue-700">Average Rating</p>
+                          <p className="text-xs text-blue-700">Rating</p>
                         </div>
                         <div className="text-center p-3 bg-green-50 rounded-lg">
                           <p className="text-xl font-bold text-green-600">
                             {contractor.previous_projects_count || 0}
                           </p>
-                          <p className="text-xs text-green-700">Projects Completed</p>
+                          <p className="text-xs text-green-700">Projects</p>
                         </div>
                         <div className="text-center p-3 bg-purple-50 rounded-lg">
                           <p className="text-xl font-bold text-purple-600">
                             {new Intl.NumberFormat('en-KE', { notation: 'compact' }).format(contractor.total_contract_value || 0)}
                           </p>
-                          <p className="text-xs text-purple-700">Total Contract Value</p>
+                          <p className="text-xs text-purple-700">Contract Value</p>
                         </div>
                         <div className="text-center p-3 bg-orange-50 rounded-lg">
                           <p className="text-xl font-bold text-orange-600">
-                            {contractor.contractor_credentials?.filter((c: any) => c.verification_status === 'verified').length || 0}
+                            {new Intl.NumberFormat('en-KE', { notation: 'compact' }).format(contractor.max_project_capacity || 5000000)}
                           </p>
-                          <p className="text-xs text-orange-700">Verified Credentials</p>
+                          <p className="text-xs text-orange-700">Max Capacity</p>
+                        </div>
+                        <div className="text-center p-3 bg-indigo-50 rounded-lg">
+                          <p className="text-xl font-bold text-indigo-600">
+                            {contractor.is_agpo ? '+5' : '0'}
+                          </p>
+                          <p className="text-xs text-indigo-700">AGPO Bonus</p>
                         </div>
                       </div>
 
@@ -247,6 +270,9 @@ const GovernmentContractorManagement = () => {
                         {contractor.specialization?.map((spec: string, i: number) => (
                           <Badge key={i} variant="outline">{spec}</Badge>
                         ))}
+                        {(!contractor.specialization || contractor.specialization.length === 0) && (
+                          <span className="text-sm text-gray-400 italic">No specializations listed</span>
+                        )}
                       </div>
 
                       <div className="flex justify-end gap-2">

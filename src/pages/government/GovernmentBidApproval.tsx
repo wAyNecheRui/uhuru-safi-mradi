@@ -417,7 +417,7 @@ const GovernmentBidApproval = () => {
                         </div>
                       </div>
 
-                      {/* Top 3 Bids Table */}
+                      {/* Top 3 Bids Table with Enhanced Contractor Info */}
                       {project.topBids && project.topBids.length > 0 && (
                         <div>
                           <h4 className="font-semibold mb-3 flex items-center gap-2">
@@ -432,6 +432,7 @@ const GovernmentBidApproval = () => {
                                   <th className="p-3 text-left">Contractor</th>
                                   <th className="p-3 text-right">Bid Amount</th>
                                   <th className="p-3 text-right">Duration</th>
+                                  <th className="p-3 text-center">Experience</th>
                                   <th className="p-3 text-right">Price (40%)</th>
                                   <th className="p-3 text-right">Tech (30%)</th>
                                   <th className="p-3 text-right">Exp (30%)</th>
@@ -449,21 +450,39 @@ const GovernmentBidApproval = () => {
                                       </Badge>
                                     </td>
                                     <td className="p-3">
-                                      <div className="flex items-center gap-2">
-                                        {bid.contractor_name}
-                                        {bid.is_agpo && (
-                                          <Badge className="bg-purple-100 text-purple-800 text-xs">AGPO</Badge>
-                                        )}
+                                      <div className="flex flex-col gap-1">
+                                        <div className="flex items-center gap-2">
+                                          <span className="font-medium">{bid.contractor_name}</span>
+                                          {bid.is_agpo && (
+                                            <Badge className={`text-xs ${
+                                              bid.agpo_category === 'women' ? 'bg-pink-100 text-pink-800' :
+                                              bid.agpo_category === 'youth' ? 'bg-blue-100 text-blue-800' :
+                                              bid.agpo_category === 'pwd' ? 'bg-green-100 text-green-800' :
+                                              'bg-purple-100 text-purple-800'
+                                            }`}>
+                                              AGPO {bid.agpo_category ? `(${bid.agpo_category.charAt(0).toUpperCase() + bid.agpo_category.slice(1)})` : ''}
+                                            </Badge>
+                                          )}
+                                        </div>
+                                        <span className="text-xs text-gray-500">
+                                          Max Capacity: {bid.max_project_capacity ? formatCurrency(bid.max_project_capacity) : 'N/A'}
+                                        </span>
                                       </div>
                                     </td>
                                     <td className="p-3 text-right font-medium">
                                       {formatCurrency(bid.bid_amount)}
                                     </td>
                                     <td className="p-3 text-right">{bid.estimated_duration} days</td>
+                                    <td className="p-3 text-center">
+                                      <div className="flex flex-col items-center text-xs">
+                                        <span className="font-medium">{bid.years_in_business || 0} yrs</span>
+                                        <span className="text-gray-500">{bid.previous_projects_count || 0} projects</span>
+                                      </div>
+                                    </td>
                                     <td className="p-3 text-right">{bid.price_score?.toFixed(1) || 0}</td>
                                     <td className="p-3 text-right">{bid.technical_score?.toFixed(1) || 0}</td>
                                     <td className="p-3 text-right">{bid.experience_score?.toFixed(1) || 0}</td>
-                                    <td className="p-3 text-right text-purple-600">+{bid.agpo_bonus || 0}</td>
+                                    <td className="p-3 text-right text-purple-600 font-medium">+{bid.agpo_bonus || 0}</td>
                                     <td className="p-3 text-right font-bold text-green-700">
                                       {bid.total_score?.toFixed(1) || 0}
                                     </td>
@@ -483,6 +502,17 @@ const GovernmentBidApproval = () => {
                                 ))}
                               </tbody>
                             </table>
+                          </div>
+                          
+                          {/* Score Legend */}
+                          <div className="mt-3 p-3 bg-gray-50 rounded-lg text-xs text-gray-600">
+                            <p className="font-medium mb-1">Score Breakdown:</p>
+                            <ul className="flex flex-wrap gap-4">
+                              <li>• <strong>Price (40%):</strong> Lower bids score higher</li>
+                              <li>• <strong>Technical (30%):</strong> Based on proposal quality</li>
+                              <li>• <strong>Experience (30%):</strong> Years + past projects</li>
+                              <li>• <strong>AGPO Bonus:</strong> +5 for women/youth/PWD contractors</li>
+                            </ul>
                           </div>
                         </div>
                       )}
