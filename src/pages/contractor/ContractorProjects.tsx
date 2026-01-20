@@ -514,7 +514,6 @@ const ContractorProjects = () => {
           <ProgressUpdateForm
             projectId={selectedProject.id}
             projectTitle={selectedProject.title}
-            currentProgress={selectedProject.progress || 0}
             milestones={selectedProject.milestones || []}
             onClose={() => setUpdateModalOpen(false)}
             onSubmitted={handleProgressSubmitted}

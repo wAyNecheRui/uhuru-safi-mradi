@@ -1,14 +1,13 @@
 import React, { useState, useRef } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import { 
-  Camera, Upload, X, Loader2, MapPin, Cloud, 
-  CheckCircle, AlertCircle, Image as ImageIcon, Send
+  Camera, Upload, X, Loader2, MapPin, 
+  CheckCircle, AlertCircle
 } from 'lucide-react';
 import {
   Dialog,
@@ -39,7 +38,6 @@ interface Milestone {
 interface ProgressUpdateFormProps {
   projectId: string;
   projectTitle: string;
-  currentProgress: number;
   milestones: Milestone[];
   onClose: () => void;
   onSubmitted: () => void;
@@ -48,7 +46,6 @@ interface ProgressUpdateFormProps {
 const ProgressUpdateForm: React.FC<ProgressUpdateFormProps> = ({
   projectId,
   projectTitle,
-  currentProgress,
   milestones,
   onClose,
   onSubmitted
@@ -57,7 +54,6 @@ const ProgressUpdateForm: React.FC<ProgressUpdateFormProps> = ({
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const [progress, setProgress] = useState(currentProgress);
   const [description, setDescription] = useState('');
   const [selectedMilestoneId, setSelectedMilestoneId] = useState<string>('');
   const [photos, setPhotos] = useState<File[]>([]);
@@ -69,6 +65,47 @@ const ProgressUpdateForm: React.FC<ProgressUpdateFormProps> = ({
   const [gettingLocation, setGettingLocation] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  // Deduplicate milestones by ID to prevent showing same milestone twice
+  const uniqueMilestones = milestones.reduce((acc, milestone) => {
+    if (!acc.find(m => m.id === milestone.id)) {
+      acc.push(milestone);
+    }
+    return acc;
+  }, [] as Milestone[]);
+
+  const activeMilestones = uniqueMilestones.filter(m => 
+    m.status === 'pending' || m.status === 'in_progress'
+  );
+
+  // Calculate progress automatically based on completed/submitted milestones
+  const calculateProgress = (): number => {
+    if (uniqueMilestones.length === 0) return 0;
+    
+    const completedMilestones = uniqueMilestones.filter(m => 
+      m.status === 'verified' || m.status === 'completed'
+    ).length;
+    
+    const submittedMilestones = uniqueMilestones.filter(m => 
+      m.status === 'submitted'
+    ).length;
+    
+    // Count the selected milestone as "in progress" for calculation
+    const selectedMilestone = uniqueMilestones.find(m => m.id === selectedMilestoneId);
+    const isNewSubmission = selectedMilestone && 
+      (selectedMilestone.status === 'pending' || selectedMilestone.status === 'in_progress');
+    
+    // Base progress from completed milestones
+    const baseProgress = (completedMilestones / uniqueMilestones.length) * 100;
+    
+    // Add partial progress for submitted milestones (80% credit) and current submission (60% credit)
+    const submittedProgress = (submittedMilestones / uniqueMilestones.length) * 80;
+    const currentProgress = isNewSubmission ? (1 / uniqueMilestones.length) * 60 : 0;
+    
+    return Math.min(100, Math.round(baseProgress + submittedProgress + currentProgress));
+  };
+
+  const progress = calculateProgress();
 
   const handleGetLocation = () => {
     if (!navigator.geolocation) {
@@ -253,18 +290,6 @@ const ProgressUpdateForm: React.FC<ProgressUpdateFormProps> = ({
     }
   };
 
-  // Deduplicate milestones by ID to prevent showing same milestone twice
-  const uniqueMilestones = milestones.reduce((acc, milestone) => {
-    if (!acc.find(m => m.id === milestone.id)) {
-      acc.push(milestone);
-    }
-    return acc;
-  }, [] as Milestone[]);
-
-  const activeMilestones = uniqueMilestones.filter(m => 
-    m.status === 'pending' || m.status === 'in_progress'
-  );
-
   return (
     <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
       <DialogHeader>
@@ -273,27 +298,33 @@ const ProgressUpdateForm: React.FC<ProgressUpdateFormProps> = ({
       </DialogHeader>
 
       <div className="space-y-6 py-4">
-        {/* Progress Slider */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <Label>Overall Progress</Label>
-            <Badge variant="outline" className="text-lg">
-              {progress}%
-            </Badge>
-          </div>
-          <Slider
-            value={[progress]}
-            onValueChange={(value) => setProgress(value[0])}
-            max={100}
-            step={5}
-            className="w-full"
-          />
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>0%</span>
-            <span>50%</span>
-            <span>100%</span>
-          </div>
-        </div>
+        {/* Auto-calculated Progress Display */}
+        <Card className="bg-gradient-to-r from-blue-50 to-green-50 border-blue-200">
+          <CardContent className="pt-4">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <Label className="text-sm font-medium">Overall Progress</Label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Auto-calculated based on {uniqueMilestones.length} milestone{uniqueMilestones.length !== 1 ? 's' : ''}
+                </p>
+              </div>
+              <Badge className="text-lg px-3 py-1 bg-primary text-primary-foreground">
+                {progress}%
+              </Badge>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+              <div 
+                className="bg-gradient-to-r from-blue-500 to-green-500 h-full rounded-full transition-all duration-500"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <div className="flex justify-between text-xs text-muted-foreground mt-2">
+              <span>{uniqueMilestones.filter(m => m.status === 'verified' || m.status === 'completed').length} completed</span>
+              <span>{uniqueMilestones.filter(m => m.status === 'submitted').length} awaiting verification</span>
+              <span>{activeMilestones.length} remaining</span>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Milestone Selection */}
         {activeMilestones.length > 0 && (
