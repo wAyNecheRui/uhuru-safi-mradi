@@ -368,15 +368,15 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
 
       {/* Verification Dialog */}
       <Dialog open={showVerifyDialog} onOpenChange={setShowVerifyDialog}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>Verify Milestone Completion</DialogTitle>
             <DialogDescription>
               {milestone.title} - Your verification helps release payment to the contractor
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-6 py-4">
+          <div className="space-y-4 py-2 overflow-y-auto flex-1 pr-2">
             {/* Important Notice */}
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-3">
               <div className="flex items-start gap-2">
@@ -525,7 +525,7 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
             )}
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0 pt-2 border-t">
             <Button variant="outline" onClick={() => setShowVerifyDialog(false)}>
               Cancel
             </Button>
