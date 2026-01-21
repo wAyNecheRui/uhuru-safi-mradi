@@ -463,240 +463,240 @@ const WorkforceHiringPanel: React.FC<WorkforceHiringPanelProps> = ({
 
       {/* View Applicants Dialog */}
       <Dialog open={showApplicants} onOpenChange={setShowApplicants}>
-        <DialogContent className={cn(
-          "max-h-[85vh] overflow-auto",
-          isMobile ? 'max-w-[95vw]' : 'max-w-2xl'
-        )}>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-primary" />
-              Applicants for: {selectedJob?.title}
+        <DialogContent className="w-[calc(100vw-1rem)] sm:w-full sm:max-w-2xl max-h-[90dvh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle className="flex items-center gap-2 text-base sm:text-lg pr-8">
+              <Users className="h-5 w-5 text-primary flex-shrink-0" />
+              <span className="truncate">Applicants: {selectedJob?.title}</span>
             </DialogTitle>
           </DialogHeader>
           
-          {loadingApplicants ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          ) : applicants.length === 0 ? (
-            <div className="text-center py-8">
-              <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">No applicants yet</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {applicants.map((app) => (
-                <div 
-                  key={app.id}
-                  className="p-4 border rounded-lg space-y-3"
-                >
-                  {/* Applicant Header */}
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h4 className="font-semibold">
-                          {app.worker?.user_profiles?.full_name || 'Anonymous Worker'}
-                        </h4>
-                        {getStatusBadge(app.status)}
-                        {app.worker?.rating && (
-                          <Badge variant="outline" className="text-amber-600">
-                            <Star className="h-3 w-3 mr-1 fill-current" />
-                            {app.worker.rating.toFixed(1)}
+          <div className="flex-1 overflow-y-auto min-h-0 py-2">
+            {loadingApplicants ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : applicants.length === 0 ? (
+              <div className="text-center py-8">
+                <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">No applicants yet</p>
+              </div>
+            ) : (
+              <div className="space-y-3 pr-1">
+                {applicants.map((app) => (
+                  <div 
+                    key={app.id}
+                    className="p-3 sm:p-4 border rounded-lg space-y-2 sm:space-y-3"
+                  >
+                    {/* Applicant Header */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h4 className="font-semibold text-sm sm:text-base truncate">
+                            {app.worker?.user_profiles?.full_name || 'Anonymous Worker'}
+                          </h4>
+                          {getStatusBadge(app.status)}
+                          {app.worker?.rating && (
+                            <Badge variant="outline" className="text-amber-600 text-xs">
+                              <Star className="h-3 w-3 mr-1 fill-current" />
+                              {app.worker.rating.toFixed(1)}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground mt-1 flex-wrap">
+                          <span className="flex items-center gap-1">
+                            <MapPin className="h-3 w-3" />
+                            {app.worker?.county || 'Unknown'}
+                          </span>
+                          {app.worker?.experience_years && (
+                            <span>{app.worker.experience_years}y exp.</span>
+                          )}
+                          {app.worker?.daily_rate && (
+                            <span className="flex items-center gap-1">
+                              <DollarSign className="h-3 w-3" />
+                              {app.worker.daily_rate.toLocaleString()}/day
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">
+                        {formatDate(app.applied_at)}
+                      </span>
+                    </div>
+                    
+                    {/* Skills */}
+                    {app.worker?.skills && app.worker.skills.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {app.worker.skills.slice(0, 4).map((skill, i) => (
+                          <Badge key={i} variant="secondary" className="text-xs">
+                            {skill}
+                          </Badge>
+                        ))}
+                        {app.worker.skills.length > 4 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{app.worker.skills.length - 4}
                           </Badge>
                         )}
                       </div>
-                      <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1 flex-wrap">
-                        <span className="flex items-center gap-1">
-                          <MapPin className="h-3 w-3" />
-                          {app.worker?.county || 'Unknown location'}
-                        </span>
-                        {app.worker?.experience_years && (
-                          <span>{app.worker.experience_years} years exp.</span>
-                        )}
-                        {app.worker?.daily_rate && (
-                          <span className="flex items-center gap-1">
-                            <DollarSign className="h-3 w-3" />
-                            KES {app.worker.daily_rate.toLocaleString()}/day
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <span className="text-xs text-muted-foreground whitespace-nowrap">
-                      Applied {formatDate(app.applied_at)}
-                    </span>
-                  </div>
-                  
-                  {/* Skills */}
-                  {app.worker?.skills && app.worker.skills.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {app.worker.skills.slice(0, 6).map((skill, i) => (
-                        <Badge key={i} variant="secondary" className="text-xs">
-                          {skill}
-                        </Badge>
-                      ))}
-                      {app.worker.skills.length > 6 && (
-                        <Badge variant="outline" className="text-xs">
-                          +{app.worker.skills.length - 6} more
-                        </Badge>
-                      )}
-                    </div>
-                  )}
-                  
-                  {/* Application Message */}
-                  {app.application_message && (
-                    <div className="bg-muted/50 p-3 rounded-lg">
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
-                        <FileText className="h-3 w-3" />
-                        Application Message
-                      </div>
-                      <p className="text-sm">{app.application_message}</p>
-                    </div>
-                  )}
-                  
-                  {/* Contact & Actions */}
-                  <div className={cn(
-                    "flex gap-2 pt-2",
-                    isMobile ? 'flex-col' : 'items-center justify-between'
-                  )}>
-                    {app.worker?.phone_number && (
-                      <a 
-                        href={`tel:${app.worker.phone_number}`}
-                        className="flex items-center gap-1 text-sm text-primary hover:underline"
-                      >
-                        <Phone className="h-4 w-4" />
-                        {app.worker.phone_number}
-                      </a>
                     )}
                     
-                    {app.status === 'pending' && (
-                      <div className="flex gap-2 flex-1 justify-end">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleReviewApplication(app.id, 'rejected')}
-                          disabled={processingApplication === app.id}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          {processingApplication === app.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <>
-                              <XCircle className="h-4 w-4 mr-1" />
-                              Reject
-                            </>
-                          )}
-                        </Button>
-                        <Button
-                          size="sm"
-                          onClick={() => handleReviewApplication(app.id, 'accepted')}
-                          disabled={processingApplication === app.id}
-                          className="bg-green-600 hover:bg-green-700"
-                        >
-                          {processingApplication === app.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <>
-                              <CheckCircle className="h-4 w-4 mr-1" />
-                              Hire Worker
-                            </>
-                          )}
-                        </Button>
+                    {/* Application Message */}
+                    {app.application_message && (
+                      <div className="bg-muted/50 p-2 rounded-lg">
+                        <p className="text-xs sm:text-sm line-clamp-2">{app.application_message}</p>
                       </div>
                     )}
+                    
+                    {/* Contact & Actions */}
+                    <div className="flex flex-col sm:flex-row gap-2 pt-1">
+                      {app.worker?.phone_number && (
+                        <a 
+                          href={`tel:${app.worker.phone_number}`}
+                          className="flex items-center gap-1 text-xs sm:text-sm text-primary hover:underline"
+                        >
+                          <Phone className="h-3 w-3" />
+                          {app.worker.phone_number}
+                        </a>
+                      )}
+                      
+                      {app.status === 'pending' && (
+                        <div className="flex gap-2 sm:ml-auto">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleReviewApplication(app.id, 'rejected')}
+                            disabled={processingApplication === app.id}
+                            className="text-destructive hover:text-destructive flex-1 sm:flex-none h-8 text-xs"
+                          >
+                            {processingApplication === app.id ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <>
+                                <XCircle className="h-3 w-3 mr-1" />
+                                Reject
+                              </>
+                            )}
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() => handleReviewApplication(app.id, 'accepted')}
+                            disabled={processingApplication === app.id}
+                            className="flex-1 sm:flex-none h-8 text-xs"
+                          >
+                            {processingApplication === app.id ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <>
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                                Hire
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 
       {/* Create Job Dialog */}
       <Dialog open={showCreateJob} onOpenChange={setShowCreateJob}>
-        <DialogContent className={isMobile ? 'max-w-[95vw]' : 'max-w-lg'}>
-          <DialogHeader>
-            <DialogTitle>Post Job to Citizen Worker Registry</DialogTitle>
+        <DialogContent className="w-[calc(100vw-1rem)] sm:w-full sm:max-w-lg max-h-[90dvh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle className="text-base sm:text-lg pr-8">Post Job Opening</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium">Job Title</label>
+          <div className="flex-1 overflow-y-auto min-h-0 space-y-3 py-2 pr-1">
+            <div className="space-y-1.5">
+              <label className="text-xs sm:text-sm font-medium">Job Title</label>
               <Input
                 value={newJob.title}
                 onChange={(e) => setNewJob({...newJob, title: e.target.value})}
-                placeholder="e.g., Construction Laborer, Mason, Electrician"
+                placeholder="e.g., Mason, Electrician"
+                className="text-sm"
               />
             </div>
-            <div>
-              <label className="text-sm font-medium">Description</label>
+            <div className="space-y-1.5">
+              <label className="text-xs sm:text-sm font-medium">Description</label>
               <Textarea
                 value={newJob.description}
                 onChange={(e) => setNewJob({...newJob, description: e.target.value})}
-                placeholder="Describe the job requirements and responsibilities..."
-                rows={3}
+                placeholder="Job requirements..."
+                rows={2}
+                className="text-sm resize-none"
               />
             </div>
-            <div>
-              <label className="text-sm font-medium">Location</label>
+            <div className="space-y-1.5">
+              <label className="text-xs sm:text-sm font-medium">Location</label>
               <Input
                 value={newJob.location}
                 onChange={(e) => setNewJob({...newJob, location: e.target.value})}
                 placeholder="Project site location"
+                className="text-sm"
               />
             </div>
-            <div>
-              <label className="text-sm font-medium">Required Skills (comma-separated)</label>
+            <div className="space-y-1.5">
+              <label className="text-xs sm:text-sm font-medium">Required Skills</label>
               <Input
                 value={newJob.required_skills}
                 onChange={(e) => setNewJob({...newJob, required_skills: e.target.value})}
-                placeholder="e.g., masonry, carpentry, plumbing"
+                placeholder="masonry, carpentry (comma-separated)"
+                className="text-sm"
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium">Min Daily Wage (KES)</label>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="text-xs sm:text-sm font-medium">Min Wage/Day</label>
                 <Input
                   type="number"
                   value={newJob.wage_min}
                   onChange={(e) => setNewJob({...newJob, wage_min: e.target.value})}
                   placeholder="1000"
+                  className="text-sm"
                 />
               </div>
-              <div>
-                <label className="text-sm font-medium">Max Daily Wage (KES)</label>
+              <div className="space-y-1.5">
+                <label className="text-xs sm:text-sm font-medium">Max Wage/Day</label>
                 <Input
                   type="number"
                   value={newJob.wage_max}
                   onChange={(e) => setNewJob({...newJob, wage_max: e.target.value})}
                   placeholder="2000"
+                  className="text-sm"
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium">Duration (days)</label>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="text-xs sm:text-sm font-medium">Duration (days)</label>
                 <Input
                   type="number"
                   value={newJob.duration_days}
                   onChange={(e) => setNewJob({...newJob, duration_days: e.target.value})}
                   placeholder="30"
+                  className="text-sm"
                 />
               </div>
-              <div>
-                <label className="text-sm font-medium">Positions Available</label>
+              <div className="space-y-1.5">
+                <label className="text-xs sm:text-sm font-medium">Positions</label>
                 <Input
                   type="number"
                   value={newJob.positions_available}
                   onChange={(e) => setNewJob({...newJob, positions_available: e.target.value})}
                   placeholder="5"
+                  className="text-sm"
                 />
               </div>
             </div>
           </div>
-          <DialogFooter className={isMobile ? 'flex-col gap-2' : ''}>
-            <Button variant="outline" onClick={() => setShowCreateJob(false)}>
+          <DialogFooter className="flex-shrink-0 pt-4 border-t gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setShowCreateJob(false)} size="sm" className="flex-1 sm:flex-none">
               Cancel
             </Button>
-            <Button onClick={handleCreateJob} disabled={creating}>
+            <Button onClick={handleCreateJob} disabled={creating} size="sm" className="flex-1 sm:flex-none">
               {creating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
               Post Job
             </Button>

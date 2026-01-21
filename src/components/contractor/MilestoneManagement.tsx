@@ -189,7 +189,7 @@ const MilestoneManagement: React.FC<MilestoneManagementProps> = ({ project, onCl
 
   if (loading) {
     return (
-      <DialogContent className="max-w-4xl">
+      <DialogContent className="w-[calc(100vw-1rem)] sm:w-full sm:max-w-4xl">
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin" />
         </div>
@@ -201,109 +201,120 @@ const MilestoneManagement: React.FC<MilestoneManagementProps> = ({ project, onCl
   const isValid = totalPercentage === 100;
 
   return (
-    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-      <DialogHeader>
-        <DialogTitle className="flex items-center gap-2">
-          <Target className="h-5 w-5 text-primary" />
-          Configure Project Milestones
+    <DialogContent className="w-[calc(100vw-1rem)] sm:w-full sm:max-w-4xl max-h-[90dvh] flex flex-col">
+      <DialogHeader className="flex-shrink-0">
+        <DialogTitle className="flex items-center gap-2 text-base sm:text-lg pr-8">
+          <Target className="h-5 w-5 text-primary flex-shrink-0" />
+          <span className="truncate">Configure Milestones</span>
         </DialogTitle>
-        <p className="text-sm text-muted-foreground">
-          {project.title} - Budget: {formatCurrency(project.budget || 0)}
+        <p className="text-xs sm:text-sm text-muted-foreground truncate">
+          {project.title} - {formatCurrency(project.budget || 0)}
         </p>
       </DialogHeader>
 
-      <div className="space-y-4 py-4">
+      <div className="flex-1 overflow-y-auto min-h-0 space-y-4 py-2 pr-1">
         {/* Percentage Progress */}
-        <Card className={`${isValid ? 'bg-green-50 border-green-200' : 'bg-orange-50 border-orange-200'}`}>
-          <CardContent className="p-4">
+        <Card className={`${isValid ? 'bg-green-50 border-green-200 dark:bg-green-950/30 dark:border-green-800' : 'bg-orange-50 border-orange-200 dark:bg-orange-950/30 dark:border-orange-800'}`}>
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="font-medium">Total Payment Allocation</span>
-              <span className={`font-bold ${isValid ? 'text-green-700' : 'text-orange-700'}`}>
+              <span className="font-medium text-sm sm:text-base">Total Allocation</span>
+              <span className={`font-bold text-sm sm:text-base ${isValid ? 'text-green-700 dark:text-green-400' : 'text-orange-700 dark:text-orange-400'}`}>
                 {totalPercentage}%
               </span>
             </div>
-            <Progress value={Math.min(totalPercentage, 100)} className="h-3" />
+            <Progress value={Math.min(totalPercentage, 100)} className="h-2 sm:h-3" />
             {!isValid && (
-              <p className="text-sm text-orange-700 mt-2 flex items-center gap-1">
-                <AlertCircle className="h-4 w-4" />
-                Percentages must total exactly 100%
+              <p className="text-xs sm:text-sm text-orange-700 dark:text-orange-400 mt-2 flex items-center gap-1">
+                <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                <span>Must total 100%</span>
               </p>
             )}
           </CardContent>
         </Card>
 
         {/* Milestones List */}
-        <div className="space-y-4">
+        <div className="space-y-3">
           {milestones.map((milestone, index) => (
             <Card key={index} className="shadow-sm">
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between mb-4">
-                  <Badge variant="outline" className="text-primary">
-                    Milestone {milestone.milestone_number}
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex items-center justify-between mb-3 gap-2">
+                  <Badge variant="outline" className="text-primary text-xs">
+                    #{milestone.milestone_number}
                   </Badge>
                   {milestones.length > 1 && (
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => removeMilestone(index)}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   )}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Title</Label>
+                <div className="space-y-3">
+                  {/* Title - Full width */}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs sm:text-sm">Title</Label>
                     <Input
                       value={milestone.title}
                       onChange={(e) => updateMilestone(index, 'title', e.target.value)}
                       placeholder="Milestone title"
+                      className="text-sm"
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <Label>Payment Percentage (%)</Label>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="number"
-                        min="0"
-                        max="100"
-                        value={milestone.payment_percentage}
-                        onChange={(e) => updateMilestone(index, 'payment_percentage', parseInt(e.target.value) || 0)}
-                      />
-                      <div className="text-sm text-muted-foreground whitespace-nowrap">
-                        = {formatCurrency((project.budget || 0) * (milestone.payment_percentage / 100))}
+                  {/* Payment & Date - Two columns on larger screens */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs sm:text-sm">Payment %</Label>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={milestone.payment_percentage}
+                          onChange={(e) => updateMilestone(index, 'payment_percentage', parseInt(e.target.value) || 0)}
+                          className="text-sm w-20"
+                        />
+                        <span className="text-xs text-muted-foreground truncate">
+                          = {formatCurrency((project.budget || 0) * (milestone.payment_percentage / 100))}
+                        </span>
                       </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-xs sm:text-sm">Target Date</Label>
+                      <Input
+                        type="date"
+                        value={milestone.target_completion_date}
+                        onChange={(e) => updateMilestone(index, 'target_completion_date', e.target.value)}
+                        className="text-sm"
+                      />
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label>Target Completion Date</Label>
-                    <Input
-                      type="date"
-                      value={milestone.target_completion_date}
-                      onChange={(e) => updateMilestone(index, 'target_completion_date', e.target.value)}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Description</Label>
+                  {/* Description */}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs sm:text-sm">Description</Label>
                     <Input
                       value={milestone.description}
                       onChange={(e) => updateMilestone(index, 'description', e.target.value)}
                       placeholder="Brief description"
+                      className="text-sm"
                     />
                   </div>
 
-                  <div className="md:col-span-2 space-y-2">
-                    <Label>Completion Criteria</Label>
+                  {/* Criteria */}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs sm:text-sm">Completion Criteria</Label>
                     <Textarea
                       value={milestone.completion_criteria}
                       onChange={(e) => updateMilestone(index, 'completion_criteria', e.target.value)}
-                      placeholder="Define what must be completed for this milestone..."
+                      placeholder="What must be completed..."
                       rows={2}
+                      className="text-sm resize-none"
                     />
                   </div>
                 </div>
@@ -318,14 +329,15 @@ const MilestoneManagement: React.FC<MilestoneManagementProps> = ({ project, onCl
         </Button>
       </div>
 
-      <DialogFooter>
-        <Button variant="outline" onClick={onClose}>
+      <DialogFooter className="flex-shrink-0 pt-4 border-t gap-2 sm:gap-0">
+        <Button variant="outline" onClick={onClose} size="sm" className="flex-1 sm:flex-none">
           Cancel
         </Button>
         <Button 
           onClick={saveMilestones} 
           disabled={saving || !isValid}
-          className="bg-primary"
+          className="bg-primary flex-1 sm:flex-none"
+          size="sm"
         >
           {saving ? (
             <>
@@ -335,7 +347,7 @@ const MilestoneManagement: React.FC<MilestoneManagementProps> = ({ project, onCl
           ) : (
             <>
               <Save className="h-4 w-4 mr-2" />
-              Save Milestones
+              Save
             </>
           )}
         </Button>
