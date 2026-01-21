@@ -17,40 +17,84 @@ const ContractorDatabase = () => {
     selectedLocation: 'all'
   });
 
-  // Fetch contractors using the secure function
+  // Fetch contractors using contractor_profiles for accurate data
   useEffect(() => {
     const fetchContractors = async () => {
       try {
         setLoading(true);
-        // Use a direct query to avoid TypeScript issues with RPC
-        const { data, error } = await supabase
-          .from('skills_profiles')
-          .select('id, user_id, years_experience, available_for_work, location, organization, skills, custom_skills, certifications, portfolio, created_at, updated_at')
-          .eq('available_for_work', true);
         
-        if (error) {
-          console.error('Error fetching contractors:', error);
-          toast.error('Failed to load contractors - access restricted for privacy');
+        // Fetch verified contractor profiles
+        const { data: contractorData, error: contractorError } = await supabase
+          .from('contractor_profiles')
+          .select('*')
+          .eq('verified', true);
+        
+        if (contractorError) {
+          console.error('Error fetching contractors:', contractorError);
+          toast.error('Failed to load contractors');
           return;
         }
 
-        // Transform data to match the expected format
-        const transformedData = (data || []).map((profile: any) => ({
-          id: profile.id,
-          name: profile.organization || 'Independent Contractor',
-          category: profile.skills?.[0] || 'General Construction',
-          location: profile.location || 'Kenya',
-          rating: 0, // Will be calculated from actual reviews
-          reviewCount: 0, // Will come from actual reviews
-          specializations: profile.skills || [],
-          experience: profile.years_experience ? `${profile.years_experience} years` : 'New',
-          isVerified: true, // If in database, assume verified
-          eaccStatus: 'pending' as const,
-          kraStatus: 'pending' as const,
-          ncaStatus: 'pending' as const,
-          portfolio: profile.portfolio,
-          certifications: profile.certifications
-        }));
+        // Fetch real project counts per contractor
+        const { data: projectsData } = await supabase
+          .from('projects')
+          .select('contractor_id, status, budget')
+          .not('contractor_id', 'is', null)
+          .is('deleted_at', null);
+
+        // Fetch ratings
+        const { data: ratingsData } = await supabase
+          .from('contractor_ratings')
+          .select('contractor_id, rating');
+
+        // Build stats maps
+        const projectStats: Record<string, { count: number; completed: number; totalValue: number }> = {};
+        (projectsData || []).forEach(p => {
+          if (!projectStats[p.contractor_id]) {
+            projectStats[p.contractor_id] = { count: 0, completed: 0, totalValue: 0 };
+          }
+          projectStats[p.contractor_id].count += 1;
+          projectStats[p.contractor_id].totalValue += Number(p.budget) || 0;
+          if (p.status === 'completed') {
+            projectStats[p.contractor_id].completed += 1;
+          }
+        });
+
+        const ratingStats: Record<string, { total: number; count: number }> = {};
+        (ratingsData || []).forEach(r => {
+          if (!ratingStats[r.contractor_id]) {
+            ratingStats[r.contractor_id] = { total: 0, count: 0 };
+          }
+          ratingStats[r.contractor_id].total += r.rating || 0;
+          ratingStats[r.contractor_id].count += 1;
+        });
+
+        // Transform data with real stats
+        const transformedData = (contractorData || []).map((profile: any) => {
+          const projectStat = projectStats[profile.user_id] || { count: 0, completed: 0, totalValue: 0 };
+          const ratingStat = ratingStats[profile.user_id] || { total: 0, count: 0 };
+          const avgRating = ratingStat.count > 0 ? ratingStat.total / ratingStat.count : 0;
+
+          return {
+            id: profile.id,
+            name: profile.company_name || 'Contractor',
+            category: profile.specialization?.[0] || 'General Construction',
+            location: profile.registered_counties?.[0] || 'Kenya',
+            rating: avgRating,
+            reviewCount: ratingStat.count,
+            specializations: profile.specialization || [],
+            experience: profile.years_in_business ? `${profile.years_in_business} years` : 'New',
+            isVerified: profile.verified,
+            projectCount: projectStat.count,
+            completedProjects: projectStat.completed,
+            totalContractValue: projectStat.totalValue,
+            eaccStatus: 'pending' as const,
+            kraStatus: profile.kra_pin ? 'valid' as const : 'pending' as const,
+            ncaStatus: 'pending' as const,
+            isAgpo: profile.is_agpo,
+            agpoCategory: profile.agpo_category
+          };
+        });
 
         setContractors(transformedData);
       } catch (error) {
