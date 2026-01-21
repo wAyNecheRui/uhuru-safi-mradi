@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,8 @@ import { useResponsive } from '@/hooks/useResponsive';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import ContractorLocationSettings from '@/components/contractor/ContractorLocationSettings';
-
+import { useRealtimeSubscription, REALTIME_PRESETS } from '@/hooks/useRealtimeSubscription';
+import RealtimeStatusIndicator from '@/components/realtime/RealtimeStatusIndicator';
 interface ProjectWithProgress {
   id: string;
   title: string;
@@ -35,13 +36,10 @@ const ContractorDashboard = () => {
   });
   const [activeProjects, setActiveProjects] = useState<ProjectWithProgress[]>([]);
 
-  useEffect(() => {
-    if (user) {
-      fetchDashboardData();
-    }
-  }, [user]);
-
-  const fetchDashboardData = async () => {
+  // Memoize fetch function for real-time subscription
+  const fetchDashboardData = useCallback(async () => {
+    if (!user) return;
+    
     try {
       setLoading(true);
 
@@ -97,7 +95,22 @@ const ContractorDashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+  // Set up real-time subscriptions for contractor data
+  useRealtimeSubscription({
+    subscriptions: REALTIME_PRESETS.contractorDashboard,
+    onDataChange: fetchDashboardData,
+    channelPrefix: 'contractor-dashboard',
+    enabled: !!user
+  });
+
+  useEffect(() => {
+    if (user) {
+      fetchDashboardData();
+    }
+  }, [user, fetchDashboardData]);
+
 
   const handleCountyChange = (county: string) => {
     setSelectedCounty(county);

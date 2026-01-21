@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,6 +10,7 @@ import ResponsiveContainer from '@/components/ResponsiveContainer';
 import { useResponsive } from '@/hooks/useResponsive';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCitizenData } from '@/hooks/useCitizenData';
+import { useRealtimeSubscription, REALTIME_PRESETS } from '@/hooks/useRealtimeSubscription';
 
 const CitizenDashboard = () => {
   const navigate = useNavigate();

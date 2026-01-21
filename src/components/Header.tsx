@@ -1,9 +1,10 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield, Menu } from 'lucide-react';
+import { Shield } from 'lucide-react';
 import ProfileButton from '@/components/ProfileButton';
 import { useAuth } from '@/contexts/AuthContext';
 import NotificationBell from '@/components/notifications/NotificationBell';
+import RealtimeStatusIndicator from '@/components/realtime/RealtimeStatusIndicator';
 import { useViewport } from '@/hooks/useViewport';
 import { cn } from '@/lib/utils';
 
@@ -88,6 +89,7 @@ const Header = () => {
           )}>
             {isAuthenticated && (
               <>
+                <RealtimeStatusIndicator />
                 <NotificationBell />
                 <ProfileButton />
               </>
