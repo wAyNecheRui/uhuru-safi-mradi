@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { EscrowWorkflowService, ProjectEscrowStatus } from '@/services/EscrowWorkflowService';
+import { useRealtimeSubscription, REALTIME_PRESETS } from '@/hooks/useRealtimeSubscription';
 
 interface Milestone {
   id: string;
@@ -74,14 +75,10 @@ const ContractorProjects = () => {
     { label: 'Contractor', href: '/contractor' },
     { label: 'My Projects' }
   ];
-
-  useEffect(() => {
-    if (user) {
-      fetchProjects();
-    }
-  }, [user]);
-
-  const fetchProjects = async () => {
+  // Memoize fetchProjects for real-time subscription
+  const fetchProjects = useCallback(async () => {
+    if (!user) return;
+    
     try {
       setLoading(true);
       
@@ -170,7 +167,22 @@ const ContractorProjects = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, toast]);
+
+  // Set up real-time subscriptions for live updates
+  useRealtimeSubscription({
+    subscriptions: REALTIME_PRESETS.projectTracking,
+    onDataChange: fetchProjects,
+    channelPrefix: 'contractor-projects',
+    enabled: !!user
+  });
+
+  useEffect(() => {
+    if (user) {
+      fetchProjects();
+    }
+  }, [user, fetchProjects]);
+
 
   const handleUpdateProgress = (project: ProjectWithExtras) => {
     setSelectedProject(project);
