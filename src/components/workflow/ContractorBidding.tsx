@@ -152,14 +152,14 @@ const ContractorBidding: React.FC<ContractorBiddingProps> = ({
                 Submit Your Bid
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Submit Contractor Bid</DialogTitle>
+            <DialogContent className="w-[calc(100vw-1rem)] sm:w-full sm:max-w-2xl max-h-[90dvh] flex flex-col">
+              <DialogHeader className="flex-shrink-0">
+                <DialogTitle className="text-base sm:text-lg pr-8">Submit Contractor Bid</DialogTitle>
               </DialogHeader>
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
+              <div className="flex-1 overflow-y-auto min-h-0 space-y-3 py-2 pr-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <label className="text-xs sm:text-sm font-medium">
                       Bid Amount (KSh) *
                     </label>
                     <Input
@@ -167,49 +167,54 @@ const ContractorBidding: React.FC<ContractorBiddingProps> = ({
                       value={bidForm.bid_amount}
                       onChange={(e) => setBidForm({...bidForm, bid_amount: e.target.value})}
                       placeholder="e.g., 500000"
+                      className="text-sm"
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Estimated Duration (days) *
+                  <div className="space-y-1.5">
+                    <label className="text-xs sm:text-sm font-medium">
+                      Duration (days) *
                     </label>
                     <Input
                       type="number"
                       value={bidForm.estimated_duration}
                       onChange={(e) => setBidForm({...bidForm, estimated_duration: e.target.value})}
                       placeholder="e.g., 30"
+                      className="text-sm"
                     />
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium mb-2">
+                <div className="space-y-1.5">
+                  <label className="text-xs sm:text-sm font-medium">
                     Project Proposal *
                   </label>
                   <Textarea
                     value={bidForm.proposal}
                     onChange={(e) => setBidForm({...bidForm, proposal: e.target.value})}
-                    placeholder="Describe your approach to solving this problem..."
-                    rows={4}
+                    placeholder="Describe your approach..."
+                    rows={3}
+                    className="text-sm resize-none"
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium mb-2">
+                <div className="space-y-1.5">
+                  <label className="text-xs sm:text-sm font-medium">
                     Technical Approach (optional)
                   </label>
                   <Textarea
                     value={bidForm.technical_approach}
                     onChange={(e) => setBidForm({...bidForm, technical_approach: e.target.value})}
-                    placeholder="Detail your technical methodology and implementation plan..."
-                    rows={3}
+                    placeholder="Technical methodology..."
+                    rows={2}
+                    className="text-sm resize-none"
                   />
                 </div>
 
-                <div className="flex gap-3 pt-4">
+                <div className="flex gap-2 pt-3 border-t">
                   <Button 
                     variant="outline" 
                     className="flex-1"
+                    size="sm"
                     onClick={() => setShowBidForm(false)}
                   >
                     Cancel
@@ -218,6 +223,7 @@ const ContractorBidding: React.FC<ContractorBiddingProps> = ({
                     onClick={handleSubmitBid}
                     disabled={isSubmitting}
                     className="flex-1"
+                    size="sm"
                   >
                     {isSubmitting ? 'Submitting...' : 'Submit Bid'}
                   </Button>

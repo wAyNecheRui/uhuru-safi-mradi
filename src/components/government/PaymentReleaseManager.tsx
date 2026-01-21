@@ -174,40 +174,40 @@ const PaymentReleaseManager: React.FC<PaymentReleaseManagerProps> = ({
   const releasePercentage = totalAmount > 0 ? (totalReleased / totalAmount) * 100 : 0;
 
   return (
-    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-      <DialogHeader>
-        <DialogTitle className="flex items-center gap-2">
-          <DollarSign className="h-5 w-5 text-green-600" />
-          Payment Release Manager
+    <DialogContent className="w-[calc(100vw-1rem)] sm:w-full sm:max-w-4xl max-h-[90dvh] flex flex-col">
+      <DialogHeader className="flex-shrink-0">
+        <DialogTitle className="flex items-center gap-2 text-base sm:text-lg pr-8">
+          <DollarSign className="h-5 w-5 text-primary flex-shrink-0" />
+          <span className="truncate">Payment Release Manager</span>
         </DialogTitle>
-        <DialogDescription>{projectTitle}</DialogDescription>
+        <DialogDescription className="truncate">{projectTitle}</DialogDescription>
       </DialogHeader>
 
-      <div className="space-y-6 py-4">
+      <div className="flex-1 overflow-y-auto min-h-0 space-y-4 sm:space-y-6 py-2 pr-1">
         {/* Escrow Summary */}
         {escrow ? (
-          <Card className="bg-gradient-to-r from-green-50 to-blue-50">
-            <CardContent className="p-4">
-              <div className="grid grid-cols-3 gap-4 mb-4">
+          <Card className="bg-gradient-to-r from-primary/5 to-primary/10">
+            <CardContent className="p-3 sm:p-4">
+              <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-3 sm:mb-4">
                 <div className="text-center">
-                  <p className="text-sm text-muted-foreground">Total Budget</p>
-                  <p className="text-xl font-bold text-green-700">{formatCurrency(totalAmount)}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Total</p>
+                  <p className="text-sm sm:text-xl font-bold text-primary">{formatCurrency(totalAmount)}</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-sm text-muted-foreground">Released</p>
-                  <p className="text-xl font-bold text-blue-700">{formatCurrency(totalReleased)}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Released</p>
+                  <p className="text-sm sm:text-xl font-bold text-primary">{formatCurrency(totalReleased)}</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-sm text-muted-foreground">Held in Escrow</p>
-                  <p className="text-xl font-bold text-orange-700">{formatCurrency(escrow.held_amount)}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Held</p>
+                  <p className="text-sm sm:text-xl font-bold text-primary">{formatCurrency(escrow.held_amount)}</p>
                 </div>
               </div>
               <div>
-                <div className="flex justify-between text-sm mb-1">
+                <div className="flex justify-between text-xs sm:text-sm mb-1">
                   <span>Payment Progress</span>
                   <span>{releasePercentage.toFixed(0)}%</span>
                 </div>
-                <Progress value={releasePercentage} className="h-3" />
+                <Progress value={releasePercentage} className="h-2 sm:h-3" />
               </div>
             </CardContent>
           </Card>

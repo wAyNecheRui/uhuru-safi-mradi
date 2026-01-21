@@ -637,18 +637,20 @@ const ContractorBidding = () => {
 
       {/* Bid Submission Dialog */}
       <Dialog open={!!selectedProblem} onOpenChange={() => setSelectedProblem(null)}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Submit Bid for: {selectedProblem?.title}</DialogTitle>
-            <DialogDescription>
+        <DialogContent className="w-[calc(100vw-1rem)] sm:w-full sm:max-w-2xl max-h-[90dvh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle className="text-base sm:text-lg pr-8 truncate">
+              Submit Bid: {selectedProblem?.title}
+            </DialogTitle>
+            <DialogDescription className="text-xs sm:text-sm">
               Provide your proposal details for this project.
             </DialogDescription>
           </DialogHeader>
           
-          <form onSubmit={handleBidSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="amount">Bid Amount (KES) *</Label>
+          <form onSubmit={handleBidSubmit} className="flex-1 overflow-y-auto min-h-0 space-y-3 py-2 pr-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="amount" className="text-xs sm:text-sm">Bid Amount (KES) *</Label>
                 <Input
                   id="amount"
                   type="text"
@@ -656,10 +658,11 @@ const ContractorBidding = () => {
                   onChange={(e) => setBidForm({...bidForm, amount: e.target.value})}
                   placeholder="e.g., 500,000"
                   required
+                  className="text-sm"
                 />
               </div>
-              <div>
-                <Label htmlFor="duration">Estimated Duration (days) *</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="duration" className="text-xs sm:text-sm">Duration (days) *</Label>
                 <Input
                   id="duration"
                   type="number"
@@ -667,38 +670,42 @@ const ContractorBidding = () => {
                   onChange={(e) => setBidForm({...bidForm, duration: e.target.value})}
                   placeholder="e.g., 30"
                   required
+                  className="text-sm"
                 />
               </div>
             </div>
 
-            <div>
-              <Label htmlFor="proposal">Project Proposal *</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="proposal" className="text-xs sm:text-sm">Project Proposal *</Label>
               <Textarea
                 id="proposal"
                 value={bidForm.proposal}
                 onChange={(e) => setBidForm({...bidForm, proposal: e.target.value})}
-                placeholder="Describe your approach to solving this problem..."
-                rows={4}
+                placeholder="Describe your approach..."
+                rows={3}
                 required
+                className="text-sm resize-none"
               />
             </div>
 
-            <div>
-              <Label htmlFor="technicalApproach">Technical Approach (optional)</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="technicalApproach" className="text-xs sm:text-sm">Technical Approach (optional)</Label>
               <Textarea
                 id="technicalApproach"
                 value={bidForm.technicalApproach}
                 onChange={(e) => setBidForm({...bidForm, technicalApproach: e.target.value})}
-                placeholder="Detail your technical methodology and implementation plan..."
-                rows={3}
+                placeholder="Technical methodology..."
+                rows={2}
+                className="text-sm resize-none"
               />
             </div>
 
-            <div className="flex gap-3 pt-4">
+            <div className="flex gap-2 pt-3 border-t">
               <Button 
                 type="button"
                 variant="outline" 
                 className="flex-1"
+                size="sm"
                 onClick={() => setSelectedProblem(null)}
               >
                 Cancel
@@ -707,6 +714,7 @@ const ContractorBidding = () => {
                 type="submit"
                 disabled={submitting}
                 className="flex-1"
+                size="sm"
               >
                 {submitting ? 'Submitting...' : 'Submit Bid'}
               </Button>
@@ -717,7 +725,7 @@ const ContractorBidding = () => {
 
       {/* View Details Dialog */}
       <Dialog open={!!viewingProblem} onOpenChange={() => setViewingProblem(null)}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="w-[calc(100vw-1rem)] sm:w-full sm:max-w-2xl max-h-[90dvh] flex flex-col">
           <DialogHeader>
             <DialogTitle>{viewingProblem?.title}</DialogTitle>
           </DialogHeader>

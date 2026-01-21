@@ -87,28 +87,28 @@ const ContractorProfileModal: React.FC<ContractorProfileModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-3">
-            <Building className="h-6 w-6 text-primary" />
-            {contractor.company_name}
+      <DialogContent className="w-[calc(100vw-1rem)] sm:w-full sm:max-w-2xl max-h-[90dvh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
+          <DialogTitle className="flex items-center gap-2 sm:gap-3 text-base sm:text-lg pr-8">
+            <Building className="h-5 w-5 sm:h-6 sm:w-6 text-primary flex-shrink-0" />
+            <span className="truncate">{contractor.company_name}</span>
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="flex-1 overflow-y-auto min-h-0 space-y-4 sm:space-y-6 py-2 pr-1">
           {/* Status & Quick Stats */}
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2">
             {contractor.verified ? (
-              <Badge className="bg-green-100 text-green-800">
-                <CheckCircle className="h-3 w-3 mr-1" /> Verified Contractor
+              <Badge className="bg-primary/10 text-primary text-xs">
+                <CheckCircle className="h-3 w-3 mr-1" /> Verified
               </Badge>
             ) : (
-              <Badge className="bg-yellow-100 text-yellow-800">
-                <Clock className="h-3 w-3 mr-1" /> Awaiting Verification
+              <Badge variant="secondary" className="text-xs">
+                <Clock className="h-3 w-3 mr-1" /> Pending
               </Badge>
             )}
             {contractor.is_agpo && (
-              <Badge className="bg-purple-100 text-purple-800">
+              <Badge variant="outline" className="text-xs">
                 <Award className="h-3 w-3 mr-1" /> AGPO: {contractor.agpo_category}
               </Badge>
             )}
@@ -117,7 +117,7 @@ const ContractorProfileModal: React.FC<ContractorProfileModalProps> = ({
           <Separator />
 
           {/* Company Details */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div className="space-y-3">
               <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Company Information</h4>
               
