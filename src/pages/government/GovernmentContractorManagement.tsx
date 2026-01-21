@@ -486,6 +486,7 @@ const GovernmentContractorManagement = () => {
             onClose={() => setIsProfileModalOpen(false)}
             contractor={selectedContractor}
             ratings={selectedContractor?.contractor_ratings || []}
+            onVerificationComplete={fetchContractorData}
           />
         </ResponsiveContainer>
       </main>

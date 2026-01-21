@@ -1,26 +1,34 @@
-import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { 
   Building, Star, CheckCircle, Clock, MapPin, 
-  Phone, Mail, Award, TrendingUp, Briefcase
+  Award, TrendingUp, Briefcase, Loader2, XCircle
 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface ContractorProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
   contractor: any;
   ratings: any[];
+  onVerificationComplete?: () => void;
 }
 
 const ContractorProfileModal: React.FC<ContractorProfileModalProps> = ({
   isOpen,
   onClose,
   contractor,
-  ratings
+  ratings,
+  onVerificationComplete
 }) => {
+  const [verifying, setVerifying] = useState(false);
+  const { toast } = useToast();
+
   if (!contractor) return null;
 
   const getAverageRating = () => {
@@ -36,6 +44,46 @@ const ContractorProfileModal: React.FC<ContractorProfileModalProps> = ({
     const sum = validRatings.reduce((acc, r) => acc + (r[field] || 0), 0);
     return (sum / validRatings.length).toFixed(1);
   };
+
+  const handleVerifyContractor = async (verified: boolean) => {
+    setVerifying(true);
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      
+      const { error } = await supabase
+        .from('contractor_profiles')
+        .update({
+          verified,
+          verification_date: verified ? new Date().toISOString() : null
+        })
+        .eq('id', contractor.id);
+
+      if (error) throw error;
+
+      toast({
+        title: verified ? "Contractor Verified" : "Verification Revoked",
+        description: verified 
+          ? `${contractor.company_name} has been verified successfully.`
+          : `Verification for ${contractor.company_name} has been revoked.`
+      });
+
+      onVerificationComplete?.();
+      onClose();
+    } catch (error) {
+      console.error('Error verifying contractor:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update contractor verification status",
+        variant: "destructive"
+      });
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  // Use real calculated values if available, fallback to profile fields
+  const projectCount = contractor.actual_project_count ?? contractor.previous_projects_count ?? 0;
+  const contractValue = contractor.actual_contract_value ?? contractor.total_contract_value ?? 0;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -56,7 +104,7 @@ const ContractorProfileModal: React.FC<ContractorProfileModalProps> = ({
               </Badge>
             ) : (
               <Badge className="bg-yellow-100 text-yellow-800">
-                <Clock className="h-3 w-3 mr-1" /> Pending Verification
+                <Clock className="h-3 w-3 mr-1" /> Awaiting Verification
               </Badge>
             )}
             {contractor.is_agpo && (
@@ -118,7 +166,7 @@ const ContractorProfileModal: React.FC<ContractorProfileModalProps> = ({
 
           <Separator />
 
-          {/* Performance Metrics */}
+          {/* Performance Metrics - Using real calculated data */}
           <div className="space-y-4">
             <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide flex items-center gap-2">
               <TrendingUp className="h-4 w-4" />
@@ -132,14 +180,14 @@ const ContractorProfileModal: React.FC<ContractorProfileModalProps> = ({
                 <p className="text-xs text-yellow-600">Overall Rating</p>
               </div>
               <div className="text-center p-4 bg-green-50 rounded-lg border border-green-200">
-                <p className="text-2xl font-bold text-green-700">{contractor.previous_projects_count || 0}</p>
-                <p className="text-xs text-green-600">Projects Completed</p>
+                <p className="text-2xl font-bold text-green-700">{projectCount}</p>
+                <p className="text-xs text-green-600">Projects</p>
               </div>
               <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
                 <p className="text-2xl font-bold text-blue-700">
-                  {new Intl.NumberFormat('en-KE', { notation: 'compact' }).format(contractor.total_contract_value || 0)}
+                  {new Intl.NumberFormat('en-KE', { notation: 'compact' }).format(contractValue)}
                 </p>
-                <p className="text-xs text-blue-600">Total Contract Value</p>
+                <p className="text-xs text-blue-600">Contract Value</p>
               </div>
               <div className="text-center p-4 bg-purple-50 rounded-lg border border-purple-200">
                 <p className="text-2xl font-bold text-purple-700">{ratings?.length || 0}</p>
@@ -208,6 +256,38 @@ const ContractorProfileModal: React.FC<ContractorProfileModalProps> = ({
             </>
           )}
         </div>
+
+        {/* Verification Actions for Government Officials */}
+        <DialogFooter className="mt-6 flex gap-2">
+          {!contractor.verified ? (
+            <Button 
+              onClick={() => handleVerifyContractor(true)}
+              disabled={verifying}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {verifying ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <CheckCircle className="h-4 w-4 mr-2" />
+              )}
+              Verify Contractor
+            </Button>
+          ) : (
+            <Button 
+              onClick={() => handleVerifyContractor(false)}
+              disabled={verifying}
+              variant="outline"
+              className="border-red-500 text-red-700 hover:bg-red-50"
+            >
+              {verifying ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <XCircle className="h-4 w-4 mr-2" />
+              )}
+              Revoke Verification
+            </Button>
+          )}
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
