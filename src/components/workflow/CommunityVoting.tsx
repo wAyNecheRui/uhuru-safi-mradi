@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { ThumbsUp, ThumbsDown, MessageSquare, Users } from 'lucide-react';
+import { ThumbsUp, ThumbsDown, MessageSquare, Users, Wifi } from 'lucide-react';
 import { WorkflowService } from '@/services/WorkflowService';
 import { CommunityVote } from '@/types/workflow';
 import { toast } from 'sonner';
+import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 
 interface CommunityVotingProps {
   reportId: string;
@@ -20,11 +21,7 @@ const CommunityVoting: React.FC<CommunityVotingProps> = ({ reportId, currentUser
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadVotes();
-  }, [reportId]);
-
-  const loadVotes = async () => {
+  const loadVotes = useCallback(async () => {
     try {
       const votesData = await WorkflowService.getVotesForReport(reportId);
       setVotes(votesData);
@@ -41,7 +38,24 @@ const CommunityVoting: React.FC<CommunityVotingProps> = ({ reportId, currentUser
     } finally {
       setLoading(false);
     }
-  };
+  }, [reportId, currentUserId]);
+
+  // Set up real-time subscription for live vote updates
+  const { isSubscribed } = useRealtimeSubscription({
+    subscriptions: [
+      { 
+        table: 'community_votes', 
+        event: '*',
+        filter: `report_id=eq.${reportId}`
+      }
+    ],
+    onDataChange: loadVotes,
+    channelPrefix: `votes-${reportId}`
+  });
+
+  useEffect(() => {
+    loadVotes();
+  }, [loadVotes]);
 
   const handleVote = async (voteType: 'upvote' | 'downvote') => {
     if (!currentUserId) {
@@ -72,8 +86,8 @@ const CommunityVoting: React.FC<CommunityVotingProps> = ({ reportId, currentUser
       <Card>
         <CardContent className="p-6">
           <div className="animate-pulse space-y-4">
-            <div className="h-6 bg-gray-200 rounded w-1/2"></div>
-            <div className="h-20 bg-gray-200 rounded"></div>
+            <div className="h-6 bg-muted rounded w-1/2"></div>
+            <div className="h-20 bg-muted rounded"></div>
           </div>
         </CardContent>
       </Card>
@@ -87,6 +101,12 @@ const CommunityVoting: React.FC<CommunityVotingProps> = ({ reportId, currentUser
           <div className="flex items-center gap-2">
             <Users className="h-5 w-5" />
             Community Validation
+            {isSubscribed && (
+              <Badge variant="outline" className="text-xs ml-2">
+                <Wifi className="h-3 w-3 mr-1 text-green-500" />
+                Live
+              </Badge>
+            )}
           </div>
           <Badge variant={priorityScore >= 5 ? "default" : "secondary"}>
             Priority Score: {priorityScore >= 0 ? '+' : ''}{priorityScore}
@@ -95,27 +115,27 @@ const CommunityVoting: React.FC<CommunityVotingProps> = ({ reportId, currentUser
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Vote Summary */}
-        <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
+        <div className="grid grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg">
           <div className="text-center">
             <div className="flex items-center justify-center gap-1 text-green-600">
               <ThumbsUp className="h-4 w-4" />
               <span className="font-bold text-lg">{upvotes}</span>
             </div>
-            <p className="text-sm text-gray-600">Upvotes</p>
+            <p className="text-sm text-muted-foreground">Upvotes</p>
           </div>
           <div className="text-center">
             <div className="flex items-center justify-center gap-1 text-red-600">
               <ThumbsDown className="h-4 w-4" />
               <span className="font-bold text-lg">{downvotes}</span>
             </div>
-            <p className="text-sm text-gray-600">Downvotes</p>
+            <p className="text-sm text-muted-foreground">Downvotes</p>
           </div>
           <div className="text-center">
             <div className="flex items-center justify-center gap-1 text-blue-600">
               <MessageSquare className="h-4 w-4" />
               <span className="font-bold text-lg">{totalVotes}</span>
             </div>
-            <p className="text-sm text-gray-600">Total Votes</p>
+            <p className="text-sm text-muted-foreground">Total Votes</p>
           </div>
         </div>
 
@@ -167,14 +187,14 @@ const CommunityVoting: React.FC<CommunityVotingProps> = ({ reportId, currentUser
                 .filter(vote => vote.comment)
                 .slice(0, 3)
                 .map((vote) => (
-                  <div key={vote.id} className="p-3 bg-gray-50 rounded-lg">
+                  <div key={vote.id} className="p-3 bg-muted/50 rounded-lg">
                     <div className="flex items-center gap-2 mb-1">
                       {vote.vote_type === 'upvote' ? (
                         <ThumbsUp className="h-3 w-3 text-green-600" />
                       ) : (
                         <ThumbsDown className="h-3 w-3 text-red-600" />
                       )}
-                      <span className="text-sm text-gray-600">
+                      <span className="text-sm text-muted-foreground">
                         {new Date(vote.created_at).toLocaleDateString()}
                       </span>
                     </div>
@@ -186,8 +206,8 @@ const CommunityVoting: React.FC<CommunityVotingProps> = ({ reportId, currentUser
         )}
 
         {priorityScore >= 5 && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-            <p className="text-green-800 font-medium">
+          <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-4">
+            <p className="text-green-800 dark:text-green-200 font-medium">
               ✅ This problem has received sufficient community support and is ready for government review.
             </p>
           </div>

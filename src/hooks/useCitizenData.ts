@@ -1,8 +1,8 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useGlobalRealtimeRefresh } from '@/contexts/RealtimeContext';
 
 export interface CitizenReport {
   id: string;
@@ -27,6 +27,18 @@ export interface CitizenStats {
 export const useCitizenData = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+
+  // Set up real-time refresh for citizen data
+  useGlobalRealtimeRefresh(
+    ['problem_reports', 'community_votes', 'projects'],
+    () => {
+      if (user?.id) {
+        queryClient.invalidateQueries({ queryKey: ['citizenReports', user.id] });
+        queryClient.invalidateQueries({ queryKey: ['citizenStats', user.id] });
+      }
+    },
+    !!user?.id
+  );
 
   // Fetch citizen's reports
   const {

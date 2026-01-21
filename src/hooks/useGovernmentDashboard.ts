@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { WorkflowGuardService, WORKFLOW_STATUS } from '@/services/WorkflowGuardService';
+import { useRealtimeSubscription, REALTIME_PRESETS } from '@/hooks/useRealtimeSubscription';
 
 export const useGovernmentDashboard = () => {
   const [pendingApprovals, setPendingApprovals] = useState([]);
@@ -17,11 +18,7 @@ export const useGovernmentDashboard = () => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
-
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -118,7 +115,18 @@ export const useGovernmentDashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
+
+  // Set up real-time subscriptions for live updates
+  useRealtimeSubscription({
+    subscriptions: REALTIME_PRESETS.governmentDashboard,
+    onDataChange: fetchDashboardData,
+    channelPrefix: 'gov-dashboard'
+  });
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
 
   const handleApproval = async (projectId: string, action: 'approve' | 'reject' | 'request_more_info') => {
     try {

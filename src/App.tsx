@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { AuthProvider } from "./contexts/AuthContext";
+import { RealtimeProvider } from "./contexts/RealtimeContext";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 // Lazy load all pages for better initial load performance
@@ -97,9 +98,10 @@ const App = () => {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
+          <RealtimeProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
             <BrowserRouter>
               <Suspense fallback={<PageLoader />}>
                 <Routes>
@@ -464,9 +466,10 @@ const App = () => {
               </Suspense>
             </BrowserRouter>
           </TooltipProvider>
-        </AuthProvider>
-      </QueryClientProvider>
-    </ErrorBoundary>
+        </RealtimeProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  </ErrorBoundary>
   );
 };
 
