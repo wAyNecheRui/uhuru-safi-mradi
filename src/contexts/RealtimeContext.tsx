@@ -1,8 +1,9 @@
-import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { RealtimeChannel } from '@supabase/supabase-js';
+import { RealtimeEventService } from '@/services/RealtimeEventService';
 
 interface RealtimeContextType {
   isConnected: boolean;
@@ -30,8 +31,9 @@ export const RealtimeProvider: React.FC<RealtimeProviderProps> = ({ children }) 
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>('disconnected');
   
   // Subscribers who want to be notified when data changes
-  const subscribersRef = React.useRef<Set<(tables: string[]) => void>>(new Set());
-  const channelRef = React.useRef<RealtimeChannel | null>(null);
+  const subscribersRef = useRef<Set<(tables: string[]) => void>>(new Set());
+  const channelRef = useRef<RealtimeChannel | null>(null);
+  const eventCleanupRef = useRef<(() => void) | null>(null);
 
   // Subscribe components to refresh notifications
   const subscribeToRefresh = useCallback((callback: (tables: string[]) => void) => {
@@ -154,8 +156,31 @@ export const RealtimeProvider: React.FC<RealtimeProviderProps> = ({ children }) 
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
+      if (eventCleanupRef.current) {
+        eventCleanupRef.current();
+        eventCleanupRef.current = null;
+      }
     };
   }, [isAuthenticated, user, notifySubscribers]);
+
+  // Set up RealtimeEventService for system alerts
+  useEffect(() => {
+    if (!isAuthenticated || !user) return;
+
+    // Initialize event listeners for system alerts
+    const cleanup = RealtimeEventService.setupEventListeners(
+      user.id,
+      user.user_type || 'citizen'
+    );
+    eventCleanupRef.current = cleanup;
+
+    return () => {
+      if (eventCleanupRef.current) {
+        eventCleanupRef.current();
+        eventCleanupRef.current = null;
+      }
+    };
+  }, [isAuthenticated, user]);
 
   const value: RealtimeContextType = {
     isConnected,

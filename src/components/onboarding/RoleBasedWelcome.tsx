@@ -139,13 +139,7 @@ const RoleBasedWelcome = ({ userType, userId }: RoleBasedWelcomeProps) => {
       </Card>
 
       {showNotifications && (
-        <NotificationCenter
-          notifications={notifications}
-          unreadCount={unreadCount}
-          onMarkAsRead={markAsRead}
-          onMarkAllAsRead={markAllAsRead}
-          onClearAll={clearNotifications}
-        />
+        <NotificationCenter />
       )}
 
       {onboarding && (
