@@ -64,21 +64,62 @@ const GovernmentContractorManagement = () => {
         .from('contractor_ratings')
         .select('contractor_id, rating, work_quality, completion_timeliness');
 
-      // Merge ratings into contractors
-      const contractorsWithRatings = (contractorsData || []).map(contractor => {
+      // Fetch actual project counts and contract values from projects table
+      const { data: projectsData } = await supabase
+        .from('projects')
+        .select('contractor_id, budget, status')
+        .not('contractor_id', 'is', null)
+        .is('deleted_at', null);
+
+      // Fetch selected bids count
+      const { data: bidsData } = await supabase
+        .from('contractor_bids')
+        .select('contractor_id, status')
+        .eq('status', 'selected');
+
+      // Build a map of contractor stats from real data
+      const contractorStats: Record<string, { projectCount: number; totalValue: number; completedProjects: number }> = {};
+      
+      (projectsData || []).forEach(project => {
+        if (!project.contractor_id) return;
+        if (!contractorStats[project.contractor_id]) {
+          contractorStats[project.contractor_id] = { projectCount: 0, totalValue: 0, completedProjects: 0 };
+        }
+        contractorStats[project.contractor_id].projectCount += 1;
+        contractorStats[project.contractor_id].totalValue += Number(project.budget) || 0;
+        if (project.status === 'completed') {
+          contractorStats[project.contractor_id].completedProjects += 1;
+        }
+      });
+
+      // Also count selected bids as potential projects
+      (bidsData || []).forEach(bid => {
+        if (!contractorStats[bid.contractor_id]) {
+          contractorStats[bid.contractor_id] = { projectCount: 0, totalValue: 0, completedProjects: 0 };
+        }
+      });
+
+      // Merge ratings and real stats into contractors
+      const contractorsWithRealData = (contractorsData || []).map(contractor => {
         const contractorRatings = ratingsData?.filter(r => r.contractor_id === contractor.user_id) || [];
+        const stats = contractorStats[contractor.user_id] || { projectCount: 0, totalValue: 0, completedProjects: 0 };
+        
         return {
           ...contractor,
-          contractor_ratings: contractorRatings
+          contractor_ratings: contractorRatings,
+          // Use real calculated values instead of stale profile fields
+          actual_project_count: stats.projectCount,
+          actual_contract_value: stats.totalValue,
+          actual_completed_projects: stats.completedProjects
         };
       });
 
-      setContractors(contractorsWithRatings);
+      setContractors(contractorsWithRealData);
       setCredentials(credentialsData || []);
 
       // Calculate AGPO stats
-      const total = contractorsWithRatings.length || 1;
-      const agpoContractors = contractorsWithRatings.filter(c => c.is_agpo);
+      const total = contractorsWithRealData.length || 1;
+      const agpoContractors = contractorsWithRealData.filter(c => c.is_agpo);
       setAgpoStats({
         womenPercentage: Math.round((agpoContractors.filter(c => c.agpo_category === 'women').length / total) * 100),
         youthPercentage: Math.round((agpoContractors.filter(c => c.agpo_category === 'youth').length / total) * 100),
@@ -242,13 +283,13 @@ const GovernmentContractorManagement = () => {
                         </div>
                         <div className="text-center p-3 bg-green-50 rounded-lg">
                           <p className="text-xl font-bold text-green-600">
-                            {contractor.previous_projects_count || 0}
+                            {contractor.actual_project_count || 0}
                           </p>
                           <p className="text-xs text-green-700">Projects</p>
                         </div>
                         <div className="text-center p-3 bg-purple-50 rounded-lg">
                           <p className="text-xl font-bold text-purple-600">
-                            {new Intl.NumberFormat('en-KE', { notation: 'compact' }).format(contractor.total_contract_value || 0)}
+                            {new Intl.NumberFormat('en-KE', { notation: 'compact' }).format(contractor.actual_contract_value || 0)}
                           </p>
                           <p className="text-xs text-purple-700">Contract Value</p>
                         </div>

@@ -15,6 +15,11 @@ interface ContractorCardProps {
     specializations: string[];
     experience?: string;
     isVerified?: boolean;
+    projectCount?: number;
+    completedProjects?: number;
+    totalContractValue?: number;
+    isAgpo?: boolean;
+    agpoCategory?: string;
     eaccStatus?: string;
     kraStatus?: string;
     ncaStatus?: string;
@@ -85,6 +90,28 @@ const ContractorCard = ({ contractor }: ContractorCardProps) => {
                     <span className="text-sm text-gray-600 ml-2">({contractor.reviewCount} reviews)</span>
                   )}
                 </div>
+
+                {/* Project Stats */}
+                <div className="flex items-center gap-4 text-sm">
+                  <span className="text-gray-600">
+                    <strong className="text-green-600">{contractor.projectCount || 0}</strong> Projects
+                  </span>
+                  {contractor.totalContractValue !== undefined && contractor.totalContractValue > 0 && (
+                    <span className="text-gray-600">
+                      Value: <strong className="text-purple-600">
+                        {new Intl.NumberFormat('en-KE', { notation: 'compact' }).format(contractor.totalContractValue)}
+                      </strong>
+                    </span>
+                  )}
+                </div>
+                
+                {/* AGPO Status */}
+                {contractor.isAgpo && (
+                  <Badge className="bg-green-100 text-green-800">
+                    <Award className="h-3 w-3 mr-1" />
+                    AGPO {contractor.agpoCategory ? `(${contractor.agpoCategory})` : ''}
+                  </Badge>
+                )}
                 
                 {/* Verification Status */}
                 <div className="flex flex-wrap gap-2">
