@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { 
   Shield, CheckCircle, Clock, AlertTriangle, Users, DollarSign, FileText, 
-  Gavel, Loader2, Eye, CreditCard, Wallet, Briefcase, BarChart3, 
+  Gavel, Loader2, Eye, Wallet, Briefcase, BarChart3, 
   ClipboardCheck, UserCog, Building2, Scale, Globe, Lock, FolderOpen, Image,
   PlayCircle, XCircle
 } from 'lucide-react';
@@ -270,30 +270,6 @@ const GovernmentDashboard = () => {
                 <span className="text-xs text-center">{action.label}</span>
               </Button>
             ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* M-Pesa Payment Workflow */}
-      <Card className="shadow-lg border-l-4 border-l-green-600">
-        <CardContent className="p-4">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <Wallet className="h-6 w-6 text-green-600" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900">Project Progress Monitoring</h3>
-                <p className="text-sm text-gray-600">Track milestone updates, view contractor photos & videos, and monitor citizen verifications</p>
-              </div>
-            </div>
-            <Button 
-              onClick={() => navigate('/government/payment-release')}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              <CreditCard className="h-4 w-4 mr-2" />
-              View Payment Progress
-            </Button>
           </div>
         </CardContent>
       </Card>

@@ -63,7 +63,7 @@ const GovernmentCompliance = lazy(() => import("./pages/government/GovernmentCom
 const GovernmentUserManagement = lazy(() => import("./pages/government/GovernmentUserManagement"));
 const GovernmentBidApproval = lazy(() => import("./pages/government/GovernmentBidApproval"));
 const GovernmentMilestones = lazy(() => import("./pages/government/GovernmentMilestones"));
-const GovernmentPaymentRelease = lazy(() => import("./pages/government/GovernmentPaymentRelease"));
+
 const GovernmentEscrowFunding = lazy(() => import("./pages/government/GovernmentEscrowFunding"));
 const GovernmentLPO = lazy(() => import("./pages/government/GovernmentLPO"));
 
@@ -427,14 +427,6 @@ const App = () => {
                     element={
                       <ProtectedRoute allowedRoles={["government", "admin"]}>
                         <GovernmentMilestones />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/government/payment-release"
-                    element={
-                      <ProtectedRoute allowedRoles={["government", "admin"]}>
-                        <GovernmentPaymentRelease />
                       </ProtectedRoute>
                     }
                   />
