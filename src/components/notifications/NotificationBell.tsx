@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bell, Check, CheckCheck, ExternalLink, Wifi, WifiOff, Filter, Trash2, Settings } from 'lucide-react';
+import { Bell, Check, CheckCheck, ExternalLink, Wifi, WifiOff, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -8,14 +8,21 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
 const NotificationBell: React.FC = () => {
-  const { notifications, unreadCount, loading, markAsRead, markAllAsRead } = useRealtimeNotifications();
+  const { 
+    notifications, 
+    unreadCount, 
+    loading, 
+    isConnected,
+    markAsRead, 
+    markAllAsRead,
+    deleteNotification 
+  } = useRealtimeNotifications();
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [isOpen, setIsOpen] = useState(false);
@@ -30,7 +37,6 @@ const NotificationBell: React.FC = () => {
   };
 
   const getTypeIcon = (type: string, category: string) => {
-    // Return emoji based on category for visual distinction
     switch (category) {
       case 'report': return '📋';
       case 'bid': return '💼';
@@ -43,6 +49,7 @@ const NotificationBell: React.FC = () => {
       case 'verification': return '✅';
       case 'issue': return '⚠️';
       case 'rating': return '⭐';
+      case 'system': return '🔔';
       default: return '🔔';
     }
   };
@@ -57,6 +64,11 @@ const NotificationBell: React.FC = () => {
     }
   };
 
+  const handleDelete = (e: React.MouseEvent, notificationId: string) => {
+    e.stopPropagation();
+    deleteNotification(notificationId);
+  };
+
   // Get unique categories
   const categories = ['all', ...Array.from(new Set(notifications.map(n => n.category).filter(Boolean)))];
   
@@ -65,16 +77,17 @@ const NotificationBell: React.FC = () => {
     ? notifications 
     : notifications.filter(n => n.category === selectedCategory);
 
-  const unreadFilteredCount = filteredNotifications.filter(n => !n.read).length;
-
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="icon" className="relative">
-          <Bell className={cn("h-5 w-5 transition-all", unreadCount > 0 && "animate-pulse")} />
+          <Bell className={cn(
+            "h-5 w-5 transition-all", 
+            unreadCount > 0 && "animate-pulse text-primary"
+          )} />
           {unreadCount > 0 && (
             <Badge 
-              className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-red-500 text-white text-xs animate-in zoom-in-50"
+              className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-destructive text-destructive-foreground text-xs animate-in zoom-in-50"
             >
               {unreadCount > 99 ? '99+' : unreadCount}
             </Badge>
@@ -86,8 +99,17 @@ const NotificationBell: React.FC = () => {
           <div className="flex items-center gap-2">
             <h4 className="font-semibold">Notifications</h4>
             <Badge variant="outline" className="text-xs">
-              <Wifi className="h-3 w-3 mr-1 text-green-500" />
-              Live
+              {isConnected ? (
+                <>
+                  <Wifi className="h-3 w-3 mr-1 text-emerald-500" />
+                  Live
+                </>
+              ) : (
+                <>
+                  <WifiOff className="h-3 w-3 mr-1 text-muted-foreground" />
+                  Connecting...
+                </>
+              )}
             </Badge>
           </div>
           {unreadCount > 0 && (
@@ -152,7 +174,7 @@ const NotificationBell: React.FC = () => {
                   key={notification.id}
                   onClick={() => handleNotificationClick(notification)}
                   className={cn(
-                    "p-4 hover:bg-muted/50 cursor-pointer transition-all",
+                    "p-4 hover:bg-muted/50 cursor-pointer transition-all group",
                     !notification.read && "bg-primary/5 border-l-2 border-l-primary"
                   )}
                 >
@@ -168,9 +190,19 @@ const NotificationBell: React.FC = () => {
                         )}>
                           {notification.title}
                         </p>
-                        {!notification.read && (
-                          <div className="w-2 h-2 rounded-full bg-primary shrink-0 animate-pulse" />
-                        )}
+                        <div className="flex items-center gap-1">
+                          {!notification.read && (
+                            <div className="w-2 h-2 rounded-full bg-primary shrink-0 animate-pulse" />
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => handleDelete(e, notification.id)}
+                          >
+                            <Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" />
+                          </Button>
+                        </div>
                       </div>
                       <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
                         {notification.message}
@@ -198,7 +230,7 @@ const NotificationBell: React.FC = () => {
           )}
         </ScrollArea>
 
-        {/* Footer with View All link */}
+        {/* Footer */}
         {filteredNotifications.length > 0 && (
           <div className="p-3 border-t bg-muted/30">
             <Button 

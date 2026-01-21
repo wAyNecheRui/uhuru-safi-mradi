@@ -42,8 +42,10 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ trigger }) => {
   const { 
     notifications: dbNotifications, 
     unreadCount: dbUnreadCount,
+    isConnected,
     markAsRead: markDbAsRead,
     markAllAsRead: markAllDbAsRead,
+    deleteNotification,
   } = useRealtimeNotifications();
 
   const {
@@ -273,8 +275,17 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ trigger }) => {
           </div>
           
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-            Live updates active
+            {isConnected ? (
+              <>
+                <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                Live updates active
+              </>
+            ) : (
+              <>
+                <span className="h-2 w-2 rounded-full bg-muted-foreground" />
+                Connecting...
+              </>
+            )}
             {totalUnread > 0 && (
               <Badge variant="secondary" className="ml-auto">
                 {totalUnread} unread
