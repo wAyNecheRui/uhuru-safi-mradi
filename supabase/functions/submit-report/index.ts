@@ -121,6 +121,14 @@ serve(async (req) => {
       )
     }
 
+    // Create admin client for notifications (service role)
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    )
+
+    // Create user client for auth verification
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
@@ -191,16 +199,35 @@ serve(async (req) => {
       )
     }
 
-    // Create notification for user
-    await supabaseClient
+    // Create notification for user using admin client (RLS bypassed)
+    await supabaseAdmin
       .from('notifications')
       .insert({
         user_id: user.id,
-        title: 'Report Submitted Successfully',
+        title: '✅ Report Submitted Successfully',
         message: `Your report "${sanitizedTitle}" has been submitted for review.`,
         type: 'success',
         category: 'report'
       })
+
+    // Also notify government users about the new report
+    const { data: govUsers } = await supabaseAdmin
+      .from('user_profiles')
+      .select('user_id')
+      .eq('user_type', 'government')
+      .limit(20)
+
+    if (govUsers && govUsers.length > 0) {
+      const govNotifications = govUsers.map(gov => ({
+        user_id: gov.user_id,
+        title: '🆕 New Problem Report',
+        message: `A citizen reported: "${sanitizedTitle}" at ${sanitizedLocation || 'Unknown location'}. Requires review.`,
+        type: 'info',
+        category: 'report',
+        action_url: '/government/reports'
+      }))
+      await supabaseAdmin.from('notifications').insert(govNotifications)
+    }
 
     return new Response(
       JSON.stringify({ 
