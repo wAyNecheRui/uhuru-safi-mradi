@@ -1,11 +1,11 @@
 {
-  "name": "Uhuru Safi Mradi",
+  "name": "Uhuru Safi",
   "short_name": "Uhuru Safi",
-  "description": "Kenya Public Infrastructure Transparency Platform - Report issues, track projects, ensure accountability",
+  "description": "Kenya's Official Government Project Transparency Platform",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#1f2937",
-  "theme_color": "#059669",
+  "background_color": "#1e3a5f",
+  "theme_color": "#1e3a5f",
   "orientation": "portrait-primary",
   "icons": [
     {
