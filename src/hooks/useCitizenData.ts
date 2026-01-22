@@ -100,9 +100,10 @@ export const useCitizenData = () => {
         
         const totalReports = reports?.length || 0;
         const activeReports = reports?.filter(r => 
-          ['pending', 'under_review', 'in_progress'].includes(r.status || '')
+          ['pending', 'under_review', 'in_progress', 'bidding_open', 'contractor_selected'].includes(r.status || '')
         ).length || 0;
-        const completedReports = reports?.filter(r => r.status === 'completed').length || 0;
+        // Count reports where the associated project is completed (all milestones done)
+        const completedReports = reports?.filter(r => r.status === 'completed' || r.status === 'resolved').length || 0;
         
         // Count user's community votes
         const { data: votesData } = await supabase

@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import ContractorLocationSettings from '@/components/contractor/ContractorLocationSettings';
 import { useRealtimeSubscription, REALTIME_PRESETS } from '@/hooks/useRealtimeSubscription';
+import { calculateProjectProgress } from '@/utils/progressCalculation';
 import RealtimeStatusIndicator from '@/components/realtime/RealtimeStatusIndicator';
 interface ProjectWithProgress {
   id: string;
@@ -43,48 +44,79 @@ const ContractorDashboard = () => {
     try {
       setLoading(true);
 
-      // Fetch projects
+      // Fetch projects with milestones to calculate accurate stats
       const { data: projects } = await supabase
         .from('projects')
         .select('*')
         .eq('contractor_id', user?.id);
 
-      const activeRaw = projects?.filter(p => p.status === 'in_progress' || p.status === 'planning' || p.status === 'active') || [];
-      const completed = projects?.filter(p => p.status === 'completed') || [];
+      // Fetch all milestones for this contractor's projects
+      const projectIds = projects?.map(p => p.id) || [];
+      const { data: allMilestones } = projectIds.length > 0 ? await supabase
+        .from('project_milestones')
+        .select('project_id, status, payment_percentage')
+        .in('project_id', projectIds) : { data: [] };
 
-      // Fetch progress for active projects
-      const activeWithProgress: ProjectWithProgress[] = [];
-      for (const project of activeRaw) {
-        const { data: progress } = await supabase
-          .from('project_progress')
-          .select('progress_percentage')
-          .eq('project_id', project.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single();
-        
-        activeWithProgress.push({
+      // Group milestones by project and calculate completion
+      const milestonesByProject = (allMilestones || []).reduce((acc, m) => {
+        if (!acc[m.project_id]) acc[m.project_id] = [];
+        acc[m.project_id].push(m);
+        return acc;
+      }, {} as Record<string, typeof allMilestones>);
+
+      // A project is "completed" if:
+      // 1. status is 'completed' OR
+      // 2. All milestones are in paid/verified/completed status
+      const completedProjects: typeof projects = [];
+      const activeProjectsRaw: typeof projects = [];
+
+      (projects || []).forEach(project => {
+        const milestones = milestonesByProject[project.id] || [];
+        const totalMilestones = milestones.length;
+        const completedMilestones = milestones.filter(m => 
+          ['paid', 'verified', 'completed'].includes(m.status || '')
+        ).length;
+
+        // Check if fully completed (all milestones done or status is completed)
+        const isFullyCompleted = project.status === 'completed' || 
+          (totalMilestones > 0 && completedMilestones === totalMilestones);
+
+        if (isFullyCompleted) {
+          completedProjects.push(project);
+        } else if (['in_progress', 'planning', 'active'].includes(project.status || '')) {
+          activeProjectsRaw.push(project);
+        }
+      });
+
+      // Calculate progress for active projects using unified utility
+      const activeWithProgress: ProjectWithProgress[] = activeProjectsRaw.map(project => {
+        const milestones = milestonesByProject[project.id] || [];
+        const calculatedProgress = calculateProjectProgress(milestones);
+        return {
           ...project,
-          progress: progress?.progress_percentage || 0
-        } as ProjectWithProgress);
-      }
+          progress: calculatedProgress
+        } as ProjectWithProgress;
+      });
 
-      // Calculate total earnings
-      const totalEarnings = completed.reduce((acc, p) => acc + (p.budget || 0), 0);
+      // Calculate total earnings from completed projects
+      const totalEarnings = completedProjects.reduce((acc, p) => acc + (p?.budget || 0), 0);
 
-      // Calculate success rate (completed / total bids)
-      const { count: totalBids } = await supabase
+      // Calculate success rate (accepted bids / total bids)
+      const { data: bidsData } = await supabase
         .from('contractor_bids')
-        .select('*', { count: 'exact', head: true })
+        .select('status')
         .eq('contractor_id', user?.id);
 
-      const successRate = totalBids && totalBids > 0 
-        ? Math.round((completed.length / totalBids) * 100) 
+      const totalBids = bidsData?.length || 0;
+      const acceptedBids = bidsData?.filter(b => b.status === 'accepted' || b.status === 'selected').length || 0;
+
+      const successRate = totalBids > 0 
+        ? Math.round((acceptedBids / totalBids) * 100) 
         : 0;
 
       setStats({
         activeProjects: activeWithProgress.length,
-        completedProjects: completed.length,
+        completedProjects: completedProjects.length,
         totalEarnings: totalEarnings,
         successRate: successRate
       });
