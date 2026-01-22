@@ -386,11 +386,12 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ trigger }) => {
           <>
             <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
               <div className="px-4 pt-2">
-                <TabsList className="w-full grid grid-cols-4">
+                <TabsList className="w-full grid grid-cols-5">
                   <TabsTrigger value="all" className="text-xs">All</TabsTrigger>
                   <TabsTrigger value="project" className="text-xs">Projects</TabsTrigger>
                   <TabsTrigger value="payment" className="text-xs">Payments</TabsTrigger>
                   <TabsTrigger value="bid" className="text-xs">Bids</TabsTrigger>
+                  <TabsTrigger value="report" className="text-xs">Reports</TabsTrigger>
                 </TabsList>
               </div>
 
@@ -431,6 +432,15 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ trigger }) => {
                     </div>
                   ) : (
                     filterNotifications('bid').map(n => renderNotificationItem(n, n.isAlert))
+                  )}
+                </TabsContent>
+                <TabsContent value="report" className="mt-2 space-y-2 pb-4">
+                  {filterNotifications('report').length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p className="text-sm">No report notifications</p>
+                    </div>
+                  ) : (
+                    filterNotifications('report').map(n => renderNotificationItem(n, n.isAlert))
                   )}
                 </TabsContent>
               </ScrollArea>

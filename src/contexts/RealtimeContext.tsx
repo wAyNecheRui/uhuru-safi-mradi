@@ -128,6 +128,11 @@ export const RealtimeProvider: React.FC<RealtimeProviderProps> = ({ children }) 
         console.log('[Global Realtime] role_requests change:', payload.eventType);
         notifySubscribers('role_requests');
       })
+      // Notifications - for real-time notification updates
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, (payload) => {
+        console.log('[Global Realtime] notifications change:', payload.eventType);
+        notifySubscribers('notifications');
+      })
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
           console.log('[Global Realtime] Connected successfully');
