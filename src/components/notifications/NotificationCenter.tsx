@@ -26,6 +26,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 import { useSystemAlerts } from '@/hooks/useSystemAlerts';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
+import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -35,6 +36,7 @@ interface NotificationCenterProps {
 
 const NotificationCenter: React.FC<NotificationCenterProps> = ({ trigger }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
   const [showSettings, setShowSettings] = useState(false);
@@ -452,7 +454,15 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ trigger }) => {
                 className="w-full"
                 onClick={() => {
                   setOpen(false);
-                  navigate('/citizen/notifications');
+                  // Navigate to role-specific notifications page
+                  const userType = user?.user_type || 'citizen';
+                  const routes: Record<string, string> = {
+                    citizen: '/citizen/notifications',
+                    contractor: '/contractor/notifications',
+                    government: '/government/notifications',
+                    admin: '/government/notifications'
+                  };
+                  navigate(routes[userType] || '/citizen/notifications');
                 }}
               >
                 View All Notifications

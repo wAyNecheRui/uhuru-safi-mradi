@@ -44,6 +44,7 @@ const ContractorFinancials = lazy(() => import("./pages/contractor/ContractorFin
 const ContractorQuality = lazy(() => import("./pages/contractor/ContractorQuality"));
 const ContractorPerformance = lazy(() => import("./pages/contractor/ContractorPerformance"));
 const ContractorCommunications = lazy(() => import("./pages/contractor/ContractorCommunications"));
+const ContractorNotifications = lazy(() => import("./pages/contractor/ContractorNotifications"));
 
 // Government Routes
 const GovernmentDashboard = lazy(() => import("./pages/government/GovernmentDashboard"));
@@ -64,7 +65,7 @@ const GovernmentCompliance = lazy(() => import("./pages/government/GovernmentCom
 const GovernmentUserManagement = lazy(() => import("./pages/government/GovernmentUserManagement"));
 const GovernmentBidApproval = lazy(() => import("./pages/government/GovernmentBidApproval"));
 const GovernmentMilestones = lazy(() => import("./pages/government/GovernmentMilestones"));
-
+const GovernmentNotifications = lazy(() => import("./pages/government/GovernmentNotifications"));
 const GovernmentEscrowFunding = lazy(() => import("./pages/government/GovernmentEscrowFunding"));
 const GovernmentLPO = lazy(() => import("./pages/government/GovernmentLPO"));
 
@@ -286,6 +287,14 @@ const App = () => {
                       </ProtectedRoute>
                     }
                   />
+                  <Route
+                    path="/contractor/notifications"
+                    element={
+                      <ProtectedRoute allowedRoles={["contractor"]}>
+                        <ContractorNotifications />
+                      </ProtectedRoute>
+                    }
+                  />
                   
                   {/* Government Routes */}
                   <Route
@@ -437,6 +446,14 @@ const App = () => {
                     element={
                       <ProtectedRoute allowedRoles={["government", "admin"]}>
                         <GovernmentEscrowFunding />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/government/notifications"
+                    element={
+                      <ProtectedRoute allowedRoles={["government", "admin"]}>
+                        <GovernmentNotifications />
                       </ProtectedRoute>
                     }
                   />
