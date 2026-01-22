@@ -21,6 +21,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { EscrowWorkflowService, ProjectEscrowStatus } from '@/services/EscrowWorkflowService';
 import { useRealtimeSubscription, REALTIME_PRESETS } from '@/hooks/useRealtimeSubscription';
+import { calculateProjectProgress } from '@/utils/progressCalculation';
 
 interface Milestone {
   id: string;
@@ -103,14 +104,6 @@ const ContractorProjects = () => {
       // Fetch progress, milestones, and escrow for active projects
       const activeWithProgress: ProjectWithExtras[] = [];
       for (const project of activeRaw) {
-        const { data: progress } = await supabase
-          .from('project_progress')
-          .select('progress_percentage')
-          .eq('project_id', project.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single();
-        
         const { data: milestones } = await supabase
           .from('project_milestones')
           .select('id, title, description, milestone_number, status, payment_percentage, evidence_urls, submitted_at')
@@ -127,9 +120,12 @@ const ContractorProjects = () => {
         // Check if contractor can work
         const workStatus = await EscrowWorkflowService.canContractorWork(project.id);
         
+        // Calculate progress from milestones using the unified utility
+        const calculatedProgress = calculateProjectProgress(milestones || []);
+        
         activeWithProgress.push({
           ...project,
-          progress: progress?.progress_percentage || 0,
+          progress: calculatedProgress,
           milestones: milestones || [],
           escrow: escrow || null,
           canWork: workStatus.allowed,
@@ -495,6 +491,7 @@ const ContractorProjects = () => {
                             size="sm"
                             variant="outline"
                             onClick={() => handleConfigureMilestones(project)}
+                            disabled={!canUpdateProgress(project).allowed}
                           >
                             <Settings className="h-4 w-4 mr-2" />
                             Edit Milestones
