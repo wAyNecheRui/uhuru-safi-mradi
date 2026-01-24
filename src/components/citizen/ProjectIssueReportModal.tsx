@@ -213,11 +213,11 @@ const ProjectIssueReportModal: React.FC<ProjectIssueReportModalProps> = ({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-red-600">
-            <AlertTriangle className="h-5 w-5" />
-            Report Project Issue
+          <DialogTitle className="flex items-center gap-2 text-destructive pr-8">
+            <AlertTriangle className="h-5 w-5 flex-shrink-0" />
+            <span className="truncate">Report Project Issue</span>
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="pr-8">
             Report concerns about "{projectTitle}". Both the contractor and government officials will be immediately notified.
           </DialogDescription>
         </DialogHeader>

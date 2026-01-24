@@ -73,13 +73,13 @@ const ProblemLocationModal = ({ isOpen, onClose, problem }: ProblemLocationModal
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <MapPin className="h-5 w-5 text-primary" />
-            Problem Location
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogHeader className="flex-shrink-0">
+          <DialogTitle className="flex items-center gap-2 pr-8">
+            <MapPin className="h-5 w-5 text-primary flex-shrink-0" />
+            <span className="truncate">Problem Location</span>
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="pr-8">
             View the exact location of this reported problem
           </DialogDescription>
         </DialogHeader>

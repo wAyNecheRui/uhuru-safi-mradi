@@ -38,13 +38,13 @@ const OnboardingModal = ({ isOpen, onClose, onboarding, onCompleteStep }: Onboar
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle className="text-2xl">{getRoleTitle(onboarding.userType)}</DialogTitle>
-          <p className="text-gray-600 mt-2">{getRoleDescription(onboarding.userType)}</p>
+      <DialogContent className="max-w-2xl max-h-[90dvh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
+          <DialogTitle className="text-xl sm:text-2xl pr-8">{getRoleTitle(onboarding.userType)}</DialogTitle>
+          <p className="text-muted-foreground mt-2 pr-8">{getRoleDescription(onboarding.userType)}</p>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="flex-1 overflow-y-auto min-h-0 space-y-6 py-2">
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium">Progress</span>
@@ -62,22 +62,22 @@ const OnboardingModal = ({ isOpen, onClose, onboarding, onCompleteStep }: Onboar
                 key={step.id}
                 className={`flex items-start space-x-3 p-4 rounded-lg border ${
                   step.completed
-                    ? 'bg-green-50 border-green-200'
+                    ? 'bg-green-50 border-green-200 dark:bg-green-950/30 dark:border-green-800'
                     : currentStep?.id === step.id
-                    ? 'bg-blue-50 border-blue-200'
-                    : 'bg-gray-50 border-gray-200'
+                    ? 'bg-primary/5 border-primary/20'
+                    : 'bg-muted/50 border-border'
                 }`}
               >
                 <div className="mt-1">
                   {step.completed ? (
                     <CheckCircle className="h-5 w-5 text-green-600" />
                   ) : (
-                    <Circle className="h-5 w-5 text-gray-400" />
+                    <Circle className="h-5 w-5 text-muted-foreground" />
                   )}
                 </div>
                 <div className="flex-1">
-                  <h4 className="font-medium text-gray-900">{step.title}</h4>
-                  <p className="text-sm text-gray-600 mt-1">{step.description}</p>
+                  <h4 className="font-medium text-foreground">{step.title}</h4>
+                  <p className="text-sm text-muted-foreground mt-1">{step.description}</p>
                   {currentStep?.id === step.id && !step.completed && (
                     <Button
                       size="sm"
@@ -94,25 +94,25 @@ const OnboardingModal = ({ isOpen, onClose, onboarding, onCompleteStep }: Onboar
           </div>
 
           {onboarding.isCompleted && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+            <div className="bg-green-50 border border-green-200 dark:bg-green-950/30 dark:border-green-800 rounded-lg p-4 text-center">
               <CheckCircle className="h-8 w-8 text-green-600 mx-auto mb-2" />
-              <h3 className="font-semibold text-green-900">Onboarding Complete!</h3>
-              <p className="text-sm text-green-700 mt-1">
+              <h3 className="font-semibold text-green-900 dark:text-green-400">Onboarding Complete!</h3>
+              <p className="text-sm text-green-700 dark:text-green-500 mt-1">
                 You're all set up and ready to use the platform.
               </p>
             </div>
           )}
+        </div>
 
-          <div className="flex justify-end space-x-3">
-            <Button variant="outline" onClick={onClose}>
-              {onboarding.isCompleted ? 'Close' : 'Skip for Now'}
+        <div className="flex-shrink-0 flex justify-end gap-2 pt-4 border-t">
+          <Button variant="outline" onClick={onClose}>
+            {onboarding.isCompleted ? 'Close' : 'Skip for Now'}
+          </Button>
+          {!onboarding.isCompleted && currentStep && (
+            <Button onClick={() => onCompleteStep(currentStep.id)}>
+              Complete Current Step
             </Button>
-            {!onboarding.isCompleted && currentStep && (
-              <Button onClick={() => onCompleteStep(currentStep.id)}>
-                Complete Current Step
-              </Button>
-            )}
-          </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

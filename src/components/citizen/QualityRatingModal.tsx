@@ -286,11 +286,11 @@ const QualityRatingModal: React.FC<QualityRatingModalProps> = ({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Star className="h-5 w-5 text-yellow-500" />
-            Rate Project Quality
+          <DialogTitle className="flex items-center gap-2 pr-8">
+            <Star className="h-5 w-5 text-yellow-500 flex-shrink-0" />
+            <span className="truncate">Rate Project Quality</span>
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="pr-8">
             Evaluate the quality of work on "{projectTitle}". Your detailed feedback helps ensure accountability.
           </DialogDescription>
         </DialogHeader>

@@ -248,20 +248,21 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ trigger }) => {
       <SheetTrigger asChild>
         {trigger || defaultTrigger}
       </SheetTrigger>
-      <SheetContent className="w-full sm:max-w-md p-0 flex flex-col">
+      <SheetContent className="w-full sm:max-w-md p-0 flex flex-col" hideCloseButton>
         <SheetHeader className="p-4 pb-2 border-b">
-          <div className="flex items-center justify-between">
-            <SheetTitle className="flex items-center gap-2">
-              <Zap className="h-5 w-5 text-primary" />
-              Notification Center
+          <div className="flex items-center justify-between gap-2">
+            <SheetTitle className="flex items-center gap-2 min-w-0">
+              <Zap className="h-5 w-5 text-primary flex-shrink-0" />
+              <span className="truncate">Notification Center</span>
             </SheetTitle>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 flex-shrink-0">
               <Button
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8"
                 onClick={handleMarkAllAsRead}
                 disabled={totalUnread === 0}
+                title="Mark all as read"
               >
                 <CheckCheck className="h-4 w-4" />
               </Button>
@@ -270,8 +271,18 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ trigger }) => {
                 size="icon"
                 className="h-8 w-8"
                 onClick={() => setShowSettings(!showSettings)}
+                title={showSettings ? "Back to notifications" : "Settings"}
               >
                 <Settings className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setOpen(false)}
+                title="Close"
+              >
+                <X className="h-4 w-4" />
               </Button>
             </div>
           </div>
