@@ -29,6 +29,7 @@ import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
+import { normalizeCategory, getCategoryBadgeColor as getStandardBadgeColor, getCategoryLabel, filterNotificationsByCategory } from '@/utils/notificationCategories';
 import { useState, useEffect } from 'react';
 
 const CitizenNotifications = () => {
@@ -93,20 +94,6 @@ const CitizenNotifications = () => {
     }
   };
 
-  const getCategoryBadgeColor = (category: string) => {
-    const colors: Record<string, string> = {
-      project: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-      payment: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-      bid: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
-      milestone: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
-      verification: 'bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200',
-      report: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200',
-      workflow: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200',
-      system: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
-    };
-    return colors[category] || colors.system;
-  };
-
   const handleNotificationClick = (notification: any) => {
     markAsRead(notification.id);
     if (notification.action_url) {
@@ -115,9 +102,7 @@ const CitizenNotifications = () => {
   };
 
   const filterByCategory = (category: string) => {
-    if (category === 'all') return notifications;
-    if (category === 'unread') return notifications.filter(n => !n.read);
-    return notifications.filter(n => n.category === category);
+    return filterNotificationsByCategory(notifications, category);
   };
 
   const renderNotificationCard = (notification: any) => (
@@ -159,9 +144,9 @@ const CitizenNotifications = () => {
             <div className="flex items-center gap-2">
               <Badge 
                 variant="outline" 
-                className={cn("text-xs capitalize", getCategoryBadgeColor(notification.category))}
+                className={cn("text-xs capitalize", getStandardBadgeColor(notification.category))}
               >
-                {notification.category}
+                {getCategoryLabel(notification.category)}
               </Badge>
               {notification.action_url && (
                 <span className="text-xs text-primary">View details →</span>

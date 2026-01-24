@@ -33,6 +33,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import { normalizeCategory, getCategoryBadgeColor, getCategoryLabel, filterNotificationsByCategory } from '@/utils/notificationCategories';
 
 const GovernmentNotifications = () => {
   const navigate = useNavigate();
@@ -97,21 +98,6 @@ const GovernmentNotifications = () => {
     }
   };
 
-  const getCategoryBadgeColor = (category: string) => {
-    const colors: Record<string, string> = {
-      project: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-      payment: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-      bid: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
-      milestone: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
-      verification: 'bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200',
-      report: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200',
-      compliance: 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200',
-      security: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-      system: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
-    };
-    return colors[category] || colors.system;
-  };
-
   const handleNotificationClick = (notification: any) => {
     markAsRead(notification.id);
     if (notification.action_url) {
@@ -120,18 +106,11 @@ const GovernmentNotifications = () => {
   };
 
   const filterByCategory = (category: string) => {
-    if (category === 'all') return notifications;
-    if (category === 'unread') return notifications.filter(n => !n.read);
-    if (category === 'urgent') {
-      return notifications.filter(n => 
-        n.type === 'error' || n.type === 'warning' || n.category === 'security'
-      );
-    }
-    return notifications.filter(n => n.category === category);
+    return filterNotificationsByCategory(notifications, category);
   };
 
   const urgentCount = notifications.filter(n => 
-    !n.read && (n.type === 'error' || n.type === 'warning' || n.category === 'security')
+    !n.read && (n.type === 'error' || n.type === 'warning' || normalizeCategory(n.category) === 'system')
   ).length;
 
   const renderNotificationCard = (notification: any) => (
@@ -178,7 +157,7 @@ const GovernmentNotifications = () => {
                 variant="outline" 
                 className={cn("text-xs capitalize", getCategoryBadgeColor(notification.category))}
               >
-                {notification.category}
+                {getCategoryLabel(notification.category)}
               </Badge>
               {(notification.type === 'error' || notification.type === 'warning') && (
                 <Badge variant="destructive" className="text-xs">
