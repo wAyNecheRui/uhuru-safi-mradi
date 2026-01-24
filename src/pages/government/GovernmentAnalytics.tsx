@@ -34,60 +34,131 @@ const GovernmentAnalytics = () => {
 
   const fetchAnalyticsData = async () => {
     try {
-      const [projectsRes, reportsRes, milestonesRes, ratingsRes] = await Promise.all([
-        supabase.from('projects').select('*'),
-        supabase.from('problem_reports').select('location, status, priority'),
-        supabase.from('project_milestones').select('status'),
-        supabase.from('contractor_ratings').select('rating')
+      // Fetch all necessary data in parallel for accurate KPIs
+      const [projectsRes, reportsRes, milestonesRes, ratingsRes, votesRes, escrowRes, paymentsRes] = await Promise.all([
+        supabase.from('projects').select('id, status, budget, contractor_id, report_id'),
+        supabase.from('problem_reports').select('id, location, status, priority, created_at'),
+        supabase.from('project_milestones').select('id, status, project_id, payment_percentage'),
+        supabase.from('contractor_ratings').select('rating, project_id'),
+        supabase.from('community_votes').select('id, report_id, vote_type'),
+        supabase.from('escrow_accounts').select('id, project_id, total_amount, released_amount, held_amount'),
+        supabase.from('payment_transactions').select('id, status, amount, created_at')
       ]);
 
       const projects = projectsRes.data || [];
       const reports = reportsRes.data || [];
       const milestones = milestonesRes.data || [];
       const ratings = ratingsRes.data || [];
+      const votes = votesRes.data || [];
+      const escrows = escrowRes.data || [];
+      const payments = paymentsRes.data || [];
 
-      // Calculate KPIs
-      const completedProjects = projects.filter(p => p.status === 'completed').length;
-      const totalProjects = projects.length || 1;
-      const verifiedMilestones = milestones.filter(m => m.status === 'verified').length;
+      // === TRANSPARENCY INDEX ===
+      // Measures: projects with escrow accounts + verified milestones + blockchain records
+      const projectsWithEscrow = new Set(escrows.map(e => e.project_id)).size;
+      const verifiedMilestones = milestones.filter(m => 
+        m.status === 'verified' || m.status === 'paid' || m.status === 'completed'
+      ).length;
       const totalMilestones = milestones.length || 1;
-      const avgRating = ratings.reduce((sum, r) => sum + (r.rating || 0), 0) / (ratings.length || 1);
-
-      // Calculate payment timeliness from actual data
-      const paymentTimeliness = totalMilestones > 0 
-        ? Math.round((verifiedMilestones / totalMilestones) * 100) 
+      const totalProjects = projects.length || 1;
+      const transparencyIndex = totalProjects > 0 
+        ? Math.round(((projectsWithEscrow / totalProjects) * 50) + ((verifiedMilestones / totalMilestones) * 50))
         : 0;
 
-      // Government efficiency based on completed vs total
-      const governmentEfficiency = totalProjects > 0 
-        ? Math.round(((completedProjects + projects.filter(p => p.status === 'in_progress').length) / totalProjects) * 100)
+      // === PAYMENT TIMELINESS ===
+      // Measures: paid milestones vs total milestones that should be paid
+      const paidMilestones = milestones.filter(m => m.status === 'paid').length;
+      const submittedOrPaidMilestones = milestones.filter(m => 
+        m.status === 'submitted' || m.status === 'verified' || m.status === 'paid' || m.status === 'completed'
+      ).length;
+      const paymentTimeliness = submittedOrPaidMilestones > 0 
+        ? Math.round((paidMilestones / submittedOrPaidMilestones) * 100) 
         : 0;
+
+      // === PROJECT SUCCESS RATE ===
+      // Measures: completed projects vs total projects with contractors assigned
+      const completedProjects = projects.filter(p => p.status === 'completed').length;
+      const projectsWithContractors = projects.filter(p => p.contractor_id).length;
+      const projectSuccessRate = projectsWithContractors > 0 
+        ? Math.round((completedProjects / projectsWithContractors) * 100) 
+        : (completedProjects > 0 ? 100 : 0);
+
+      // === CITIZEN ENGAGEMENT ===
+      // Measures: total reports + total votes (actual participation)
+      const citizenEngagement = reports.length + votes.length;
+
+      // === CONTRACTOR SATISFACTION ===
+      // Measures: average rating from contractor_ratings table (scale 1-5 -> percentage)
+      const avgRating = ratings.length > 0 
+        ? ratings.reduce((sum, r) => sum + (r.rating || 0), 0) / ratings.length 
+        : 0;
+      const contractorSatisfaction = Math.round((avgRating / 5) * 100);
+
+      // === GOVERNMENT EFFICIENCY ===
+      // Measures: (approved reports + completed projects + processed payments) / total actions possible
+      const approvedReports = reports.filter(r => 
+        r.status === 'approved' || r.status === 'bidding_open' || r.status === 'contractor_selected' || r.status === 'completed'
+      ).length;
+      const completedPayments = payments.filter(p => p.status === 'completed' || p.status === 'success').length;
+      const totalReports = reports.length || 1;
+      const totalPayments = payments.length || 1;
+      
+      const approvalRate = approvedReports / totalReports;
+      const paymentCompletionRate = completedPayments / totalPayments;
+      const projectCompletionRate = completedProjects / totalProjects;
+      
+      const governmentEfficiency = Math.round(
+        ((approvalRate * 40) + (paymentCompletionRate * 30) + (projectCompletionRate * 30))
+      );
 
       setKpis({
-        transparencyIndex: Math.round((verifiedMilestones / totalMilestones) * 100) || 0,
-        paymentTimeliness,
-        projectSuccessRate: Math.round((completedProjects / totalProjects) * 100) || 0,
-        citizenEngagement: reports.length,
-        contractorSatisfaction: Math.round(avgRating * 20) || 0,
-        governmentEfficiency
+        transparencyIndex: Math.min(transparencyIndex, 100),
+        paymentTimeliness: Math.min(paymentTimeliness, 100),
+        projectSuccessRate: Math.min(projectSuccessRate, 100),
+        citizenEngagement,
+        contractorSatisfaction: Math.min(contractorSatisfaction, 100),
+        governmentEfficiency: Math.min(governmentEfficiency, 100)
       });
 
-      // Calculate regional data
-      const countyStats = reports.reduce((acc: any, report) => {
+      // === REGIONAL DATA ===
+      // Calculate per-county statistics from reports and projects
+      const countyStats: Record<string, { total: number; completed: number; inProgress: number; budget: number }> = {};
+      
+      // Process reports by county
+      reports.forEach(report => {
+        // Parse county from location string (format: "County, Sub-location")
         const county = report.location?.split(',')[0]?.trim() || 'Unknown';
-        if (!acc[county]) {
-          acc[county] = { total: 0, completed: 0, budget: 0 };
+        if (!countyStats[county]) {
+          countyStats[county] = { total: 0, completed: 0, inProgress: 0, budget: 0 };
         }
-        acc[county].total++;
-        if (report.status === 'completed') acc[county].completed++;
-        return acc;
-      }, {});
+        countyStats[county].total++;
+        if (report.status === 'completed' || report.status === 'resolved') {
+          countyStats[county].completed++;
+        }
+        if (report.status === 'in_progress' || report.status === 'contractor_selected') {
+          countyStats[county].inProgress++;
+        }
+      });
 
-      setRegionalData(Object.entries(countyStats).map(([county, stats]: [string, any]) => ({
-        county,
-        ...stats,
-        completionRate: Math.round((stats.completed / stats.total) * 100) || 0
-      })));
+      // Add project budget data per county (via report_id linkage)
+      projects.forEach(project => {
+        const linkedReport = reports.find(r => r.id === project.report_id);
+        if (linkedReport) {
+          const county = linkedReport.location?.split(',')[0]?.trim() || 'Unknown';
+          if (countyStats[county]) {
+            countyStats[county].budget += Number(project.budget) || 0;
+          }
+        }
+      });
+
+      setRegionalData(Object.entries(countyStats)
+        .filter(([county]) => county !== 'Unknown' && county.length > 2)
+        .map(([county, stats]) => ({
+          county,
+          ...stats,
+          completionRate: stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0
+        }))
+        .sort((a, b) => b.total - a.total));
 
     } catch (error) {
       console.error('Error fetching analytics:', error);
