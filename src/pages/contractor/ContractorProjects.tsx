@@ -266,12 +266,12 @@ const ContractorProjects = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 overflow-x-hidden">
         <Header />
-        <main className="container mx-auto px-4 py-8">
+        <main className="w-full max-w-full overflow-x-hidden px-3 sm:px-4 lg:px-8 py-8">
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-            <span className="ml-2">Loading projects...</span>
+            <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-primary" />
+            <span className="ml-2 text-sm sm:text-base">Loading projects...</span>
           </div>
         </main>
       </div>
@@ -279,24 +279,24 @@ const ContractorProjects = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 overflow-x-hidden">
       <Header />
       
-      <main className="container mx-auto px-4 py-8">
+      <main className="w-full max-w-full overflow-x-hidden px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8 mx-auto" style={{ maxWidth: 'min(100%, 80rem)' }}>
         <BreadcrumbNav items={breadcrumbItems} />
         
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">My Projects</h1>
-          <p className="text-gray-600">Track and manage your active and completed government projects.</p>
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">My Projects</h1>
+          <p className="text-sm sm:text-base text-gray-600">Track and manage your active and completed government projects.</p>
         </div>
 
-        <Tabs defaultValue="active" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 bg-white shadow-lg">
-            <TabsTrigger value="active" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
-              Active Projects ({activeProjects.length})
+        <Tabs defaultValue="active" className="space-y-4 sm:space-y-6 w-full max-w-full">
+          <TabsList className="w-full bg-white shadow-lg">
+            <TabsTrigger value="active" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-xs sm:text-sm">
+              Active ({activeProjects.length})
             </TabsTrigger>
-            <TabsTrigger value="completed" className="data-[state=active]:bg-green-600 data-[state=active]:text-white">
-              Completed Projects ({completedProjects.length})
+            <TabsTrigger value="completed" className="data-[state=active]:bg-green-600 data-[state=active]:text-white text-xs sm:text-sm">
+              Completed ({completedProjects.length})
             </TabsTrigger>
           </TabsList>
 
@@ -350,24 +350,24 @@ const ContractorProjects = () => {
                     </div>
                   )}
 
-                  <CardHeader>
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle className="text-xl mb-2">{project.title}</CardTitle>
-                        <p className="text-gray-600">{project.description}</p>
-                        <div className="flex items-center text-sm text-gray-500 mt-2 space-x-4">
-                          <div className="flex items-center">
-                            <MapPin className="h-4 w-4 mr-1" />
-                            {project.problem_reports?.location || 'Location not specified'}
+                  <CardHeader className="p-3 sm:p-4 lg:p-6">
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+                      <div className="min-w-0 flex-1">
+                        <CardTitle className="text-base sm:text-lg lg:text-xl mb-2 break-words">{project.title}</CardTitle>
+                        <p className="text-sm text-gray-600 break-words">{project.description}</p>
+                        <div className="flex flex-col sm:flex-row sm:items-center text-xs sm:text-sm text-gray-500 mt-2 gap-2 sm:gap-4">
+                          <div className="flex items-center min-w-0">
+                            <MapPin className="h-3 w-3 sm:h-4 sm:w-4 mr-1 flex-shrink-0" />
+                            <span className="truncate">{project.problem_reports?.location || 'Location not specified'}</span>
                           </div>
                           <div className="flex items-center">
-                            <Calendar className="h-4 w-4 mr-1" />
-                            Started: {new Date(project.created_at || '').toLocaleDateString()}
+                            <Calendar className="h-3 w-3 sm:h-4 sm:w-4 mr-1 flex-shrink-0" />
+                            <span className="whitespace-nowrap">Started: {new Date(project.created_at || '').toLocaleDateString()}</span>
                           </div>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-green-600 mb-1">
+                      <div className="text-left sm:text-right flex-shrink-0">
+                        <div className="text-lg sm:text-xl lg:text-2xl font-bold text-green-600 mb-1">
                           {formatCurrency(project.budget || 0)}
                         </div>
                         <Badge variant="outline" className="text-xs">
@@ -394,34 +394,34 @@ const ContractorProjects = () => {
 
                     {/* Milestones Section */}
                     {project.milestones && project.milestones.length > 0 ? (
-                      <div className="border rounded-lg p-4 bg-slate-50">
-                        <h4 className="font-medium mb-3 flex items-center">
-                          <Target className="h-4 w-4 mr-2 text-primary" />
+                      <div className="border rounded-lg p-3 sm:p-4 bg-muted/50 overflow-hidden">
+                        <h4 className="font-medium mb-3 flex items-center text-sm sm:text-base">
+                          <Target className="h-4 w-4 mr-2 text-primary flex-shrink-0" />
                           Project Milestones
                         </h4>
-                        <div className="space-y-3">
+                        <div className="space-y-2 sm:space-y-3">
                           {project.milestones.map((milestone) => (
-                            <div key={milestone.id} className="flex items-center justify-between p-3 bg-white rounded border">
-                              <div className="flex items-center gap-3">
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                            <div key={milestone.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-2 sm:p-3 bg-background rounded border">
+                              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                                <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-medium flex-shrink-0 ${
                                   milestone.status === 'paid' ? 'bg-green-100 text-green-700' :
                                   milestone.status === 'verified' ? 'bg-blue-100 text-blue-700' :
                                   milestone.status === 'submitted' ? 'bg-amber-100 text-amber-700' :
                                   milestone.status === 'in_progress' ? 'bg-purple-100 text-purple-700' :
-                                  'bg-gray-100 text-gray-700'
+                                  'bg-muted text-muted-foreground'
                                 }`}>
                                   {milestone.milestone_number}
                                 </div>
-                                <div>
-                                  <p className="font-medium text-sm">{milestone.title}</p>
+                                <div className="min-w-0 flex-1">
+                                  <p className="font-medium text-xs sm:text-sm truncate">{milestone.title}</p>
                                   <p className="text-xs text-muted-foreground">{milestone.payment_percentage}% of budget</p>
                                 </div>
                               </div>
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 flex-wrap pl-8 sm:pl-0">
                                 {milestone.evidence_urls && milestone.evidence_urls.length > 0 && (
                                   <Badge variant="outline" className="text-xs">
                                     <Camera className="h-3 w-3 mr-1" />
-                                    {milestone.evidence_urls.length} photos
+                                    {milestone.evidence_urls.length}
                                   </Badge>
                                 )}
                                 <Badge className={`text-xs ${
@@ -429,7 +429,7 @@ const ContractorProjects = () => {
                                   milestone.status === 'verified' ? 'bg-blue-100 text-blue-800' :
                                   milestone.status === 'submitted' ? 'bg-amber-100 text-amber-800' :
                                   milestone.status === 'in_progress' ? 'bg-purple-100 text-purple-800' :
-                                  'bg-gray-100 text-gray-800'
+                                  'bg-muted text-muted-foreground'
                                 }`}>
                                   {milestone.status === 'paid' && <CheckCircle className="h-3 w-3 mr-1" />}
                                   {milestone.status}
@@ -442,20 +442,22 @@ const ContractorProjects = () => {
                     ) : (
                       /* No Milestones - Show Configure Button */
                       <Alert className="border-orange-300 bg-orange-50">
-                        <AlertCircle className="h-4 w-4 text-orange-600" />
-                        <AlertTitle className="text-orange-800">Milestones Required</AlertTitle>
-                        <AlertDescription className="text-orange-700">
-                          Configure your project milestones to define payment schedules and track progress.
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="ml-4 border-orange-400 text-orange-700 hover:bg-orange-100"
-                            onClick={() => handleConfigureMilestones(project)}
-                          >
-                            <Settings className="h-4 w-4 mr-2" />
-                            Configure Milestones
-                          </Button>
-                        </AlertDescription>
+                        <AlertCircle className="h-4 w-4 text-orange-600 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <AlertTitle className="text-orange-800 text-sm sm:text-base">Milestones Required</AlertTitle>
+                          <AlertDescription className="text-orange-700 text-xs sm:text-sm">
+                            <span className="block mb-2">Configure your project milestones to define payment schedules and track progress.</span>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-orange-400 text-orange-700 hover:bg-orange-100 w-full sm:w-auto text-xs sm:text-sm"
+                              onClick={() => handleConfigureMilestones(project)}
+                            >
+                              <Settings className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                              Configure Milestones
+                            </Button>
+                          </AlertDescription>
+                        </div>
                       </Alert>
                     )}
                     
@@ -476,36 +478,39 @@ const ContractorProjects = () => {
                       return null;
                     })()}
 
-                    {/* Actions Bar */}
-                    <div className="flex justify-between items-center pt-2">
-                      <div className="flex items-center text-sm text-muted-foreground">
-                        <Clock className="h-4 w-4 mr-1" />
-                        Last updated: {new Date(project.updated_at).toLocaleDateString()}
+                    {/* Actions Bar - Mobile Responsive */}
+                    <div className="flex flex-col gap-3 pt-3 border-t">
+                      <div className="flex items-center text-xs sm:text-sm text-muted-foreground">
+                        <Clock className="h-3 w-3 sm:h-4 sm:w-4 mr-1 flex-shrink-0" />
+                        <span>Updated: {new Date(project.updated_at).toLocaleDateString()}</span>
                       </div>
-                      <div className="flex gap-2">
-                        <Badge variant="secondary">
+                      <div className="flex flex-col sm:flex-row gap-2 w-full">
+                        <Badge variant="secondary" className="w-fit">
                           {project.status}
                         </Badge>
-                        {project.milestones && project.milestones.length > 0 && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleConfigureMilestones(project)}
+                        <div className="flex flex-col sm:flex-row gap-2 sm:ml-auto w-full sm:w-auto">
+                          {project.milestones && project.milestones.length > 0 && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleConfigureMilestones(project)}
+                              disabled={!canUpdateProgress(project).allowed}
+                              className="w-full sm:w-auto text-xs sm:text-sm"
+                            >
+                              <Settings className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                              <span className="sm:inline">Edit Milestones</span>
+                            </Button>
+                          )}
+                          <Button 
+                            size="sm" 
+                            onClick={() => handleUpdateProgress(project)}
+                            className="bg-primary w-full sm:w-auto text-xs sm:text-sm"
                             disabled={!canUpdateProgress(project).allowed}
                           >
-                            <Settings className="h-4 w-4 mr-2" />
-                            Edit Milestones
+                            <Upload className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                            <span>Update Progress</span>
                           </Button>
-                        )}
-                        <Button 
-                          size="sm" 
-                          onClick={() => handleUpdateProgress(project)}
-                          className="bg-primary"
-                          disabled={!canUpdateProgress(project).allowed}
-                        >
-                          <Upload className="h-4 w-4 mr-2" />
-                          Update Progress
-                        </Button>
+                        </div>
                       </div>
                     </div>
                   </CardContent>
@@ -523,36 +528,36 @@ const ContractorProjects = () => {
             )}
           </TabsContent>
 
-          <TabsContent value="completed" className="space-y-6">
+          <TabsContent value="completed" className="space-y-4 sm:space-y-6">
             {completedProjects.length === 0 ? (
               <Card className="shadow-lg">
-                <CardContent className="p-8 text-center">
-                  <Award className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No Completed Projects</h3>
-                  <p className="text-gray-600">You haven't completed any projects yet. Keep working on your active projects!</p>
+                <CardContent className="p-6 sm:p-8 text-center">
+                  <Award className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-base sm:text-lg font-semibold text-foreground mb-2">No Completed Projects</h3>
+                  <p className="text-sm sm:text-base text-muted-foreground">You haven't completed any projects yet. Keep working on your active projects!</p>
                 </CardContent>
               </Card>
             ) : (
               completedProjects.map((project) => (
                 <Card key={project.id} className="shadow-lg">
-                  <CardHeader>
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle className="text-xl mb-2">{project.title}</CardTitle>
-                        <p className="text-gray-600">{project.description}</p>
-                        <div className="flex items-center text-sm text-gray-500 mt-2 space-x-4">
-                          <div className="flex items-center">
-                            <MapPin className="h-4 w-4 mr-1" />
-                            {project.problem_reports?.location || 'Location not specified'}
+                  <CardHeader className="p-3 sm:p-4 lg:p-6">
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+                      <div className="min-w-0 flex-1">
+                        <CardTitle className="text-base sm:text-lg lg:text-xl mb-2 break-words">{project.title}</CardTitle>
+                        <p className="text-sm text-muted-foreground break-words">{project.description}</p>
+                        <div className="flex flex-col sm:flex-row sm:items-center text-xs sm:text-sm text-muted-foreground mt-2 gap-2 sm:gap-4">
+                          <div className="flex items-center min-w-0">
+                            <MapPin className="h-3 w-3 sm:h-4 sm:w-4 mr-1 flex-shrink-0" />
+                            <span className="truncate">{project.problem_reports?.location || 'Location not specified'}</span>
                           </div>
                           <div className="flex items-center">
-                            <Calendar className="h-4 w-4 mr-1" />
-                            Completed: {new Date(project.updated_at).toLocaleDateString()}
+                            <Calendar className="h-3 w-3 sm:h-4 sm:w-4 mr-1 flex-shrink-0" />
+                            <span className="whitespace-nowrap">Completed: {new Date(project.updated_at).toLocaleDateString()}</span>
                           </div>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-green-600 mb-1">
+                      <div className="text-left sm:text-right flex-shrink-0">
+                        <div className="text-lg sm:text-xl lg:text-2xl font-bold text-green-600 mb-1">
                           {formatCurrency(project.budget || 0)}
                         </div>
                         <Badge variant="outline" className="text-xs">
@@ -562,20 +567,20 @@ const ContractorProjects = () => {
                     </div>
                   </CardHeader>
                   
-                  <CardContent>
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center">
-                        <Award className="h-5 w-5 text-yellow-500 mr-2" />
-                        <span className="font-medium">Rating: {project.rating?.toFixed(1) || 'N/A'}/5.0</span>
+                  <CardContent className="p-3 sm:p-4 lg:p-6 pt-0">
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                      <div className="flex items-center flex-wrap gap-2">
+                        <Award className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-500 flex-shrink-0" />
+                        <span className="font-medium text-sm sm:text-base">Rating: {project.rating?.toFixed(1) || 'N/A'}/5.0</span>
                         {project.rating > 0 && (
-                          <div className="flex ml-2">
+                          <div className="flex">
                             {[...Array(5)].map((_, i) => (
                               <div
                                 key={i}
-                                className={`w-4 h-4 ${
+                                className={`w-3 h-3 sm:w-4 sm:h-4 ${
                                   i < Math.floor(project.rating)
                                     ? 'text-yellow-400'
-                                    : 'text-gray-300'
+                                    : 'text-muted-foreground/30'
                                 }`}
                               >
                                 ★
@@ -584,11 +589,9 @@ const ContractorProjects = () => {
                           </div>
                         )}
                       </div>
-                      <div className="flex gap-2">
-                        <Badge className="bg-green-100 text-green-800">
-                          Completed
-                        </Badge>
-                      </div>
+                      <Badge className="bg-green-100 text-green-800 w-fit">
+                        Completed
+                      </Badge>
                     </div>
                   </CardContent>
                 </Card>

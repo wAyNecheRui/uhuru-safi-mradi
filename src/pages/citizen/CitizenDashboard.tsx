@@ -203,11 +203,11 @@ const CitizenDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50 overflow-x-hidden">
       <Header />
       
-      <main>
-        <ResponsiveContainer className="py-6 sm:py-8">
+      <main className="w-full max-w-full overflow-x-hidden">
+        <ResponsiveContainer className="py-4 sm:py-6 lg:py-8">
           <BreadcrumbNav />
           
           {/* Welcome Section with User Info */}
