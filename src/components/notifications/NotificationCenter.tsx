@@ -29,6 +29,7 @@ import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
+import { getCategoryLabel } from '@/utils/notificationCategories';
 
 interface NotificationCenterProps {
   trigger?: React.ReactNode;
@@ -137,18 +138,42 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ trigger }) => {
     }
   };
 
+  // Normalize various categories to match our tab filters
+  const normalizeCategory = (category: string): string => {
+    const categoryMap: Record<string, string> = {
+      // Project-related
+      'project': 'project',
+      'milestone': 'project',
+      'issue': 'project',
+      'rating': 'project',
+      'verification': 'project',
+      // Payment-related
+      'payment': 'payment',
+      'escrow': 'payment',
+      // Bid-related
+      'bid': 'bid',
+      'bidding': 'bid',
+      // Report-related
+      'report': 'report',
+      'vote': 'report',
+      // System-related
+      'system': 'system',
+      'security': 'system',
+      'workflow': 'system',
+    };
+    return categoryMap[category] || 'system';
+  };
+
   const getCategoryColor = (category: string) => {
+    const normalizedCategory = normalizeCategory(category);
     const colors: Record<string, string> = {
       project: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
       payment: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
       bid: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
-      milestone: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
-      verification: 'bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200',
-      security: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+      report: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
       system: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
-      workflow: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200',
     };
-    return colors[category] || colors.system;
+    return colors[normalizedCategory] || colors.system;
   };
 
   const renderNotificationItem = (item: any, isAlert: boolean = false) => {
@@ -187,7 +212,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ trigger }) => {
             </p>
             <div className="flex items-center gap-2 mt-2">
               <Badge variant="outline" className={cn('text-xs px-1.5 py-0', getCategoryColor(category))}>
-                {category}
+                {getCategoryLabel(category)}
               </Badge>
               <span className="text-xs text-muted-foreground">
                 {formatDistanceToNow(timestamp, { addSuffix: true })}
@@ -224,9 +249,31 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ trigger }) => {
     return bTime - aTime;
   });
 
+  // Apply user preferences filter - only show notifications for enabled categories
+  const applyPreferencesFilter = (items: typeof allNotifications) => {
+    if (!preferences.inApp) return []; // In-app notifications disabled
+    
+    return items.filter(item => {
+      const normalized = normalizeCategory(item.category || 'system');
+      
+      // Check category preferences
+      if (normalized === 'project' && !preferences.projects) return false;
+      if (normalized === 'payment' && !preferences.payments) return false;
+      if (normalized === 'bid' && !preferences.bids) return false;
+      if (normalized === 'system' && !preferences.system) return false;
+      // Reports are always shown (no specific toggle for reports)
+      
+      return true;
+    });
+  };
+
   const filterNotifications = (category?: string) => {
-    if (!category || category === 'all') return allNotifications;
-    return allNotifications.filter(n => n.category === category);
+    const filtered = applyPreferencesFilter(allNotifications);
+    
+    if (!category || category === 'all') return filtered;
+    
+    // Filter by normalized category
+    return filtered.filter(n => normalizeCategory(n.category || 'system') === category);
   };
 
   const defaultTrigger = (
