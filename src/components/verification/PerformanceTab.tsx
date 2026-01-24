@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { TrendingUp, Clock, Award, DollarSign, Users, Star, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { isProjectEffectivelyCompleted } from '@/utils/progressCalculation';
 
 interface ProjectWithRating {
   id: string;
@@ -59,6 +60,22 @@ const PerformanceTab = () => {
         .select('id, title, status')
         .eq('contractor_id', user.id);
 
+      // Fetch milestones for all projects
+      const projectIds = projects?.map(p => p.id) || [];
+      const { data: milestones } = projectIds.length > 0 ? await supabase
+        .from('project_milestones')
+        .select('project_id, status')
+        .in('project_id', projectIds) : { data: [] };
+
+      // Group milestones by project
+      const milestonesByProject: Record<string, {status: string}[]> = {};
+      (milestones || []).forEach(m => {
+        if (!milestonesByProject[m.project_id]) {
+          milestonesByProject[m.project_id] = [];
+        }
+        milestonesByProject[m.project_id].push({ status: m.status });
+      });
+
       // Fetch bids
       const { data: bids } = await supabase
         .from('contractor_bids')
@@ -66,7 +83,9 @@ const PerformanceTab = () => {
         .eq('contractor_id', user.id);
 
       const totalProjects = projects?.length || 0;
-      const completedProjects = projects?.filter(p => p.status === 'completed').length || 0;
+      const completedProjects = projects?.filter(p => 
+        isProjectEffectivelyCompleted(p.status, milestonesByProject[p.id] || [])
+      ).length || 0;
       
       const avgRating = ratings && ratings.length > 0
         ? ratings.reduce((sum, r) => sum + (r.rating || 0), 0) / ratings.length

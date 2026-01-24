@@ -14,6 +14,7 @@ import BreadcrumbNav from '@/components/BreadcrumbNav';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { isProjectEffectivelyCompleted } from '@/utils/progressCalculation';
 
 const GovernmentAnalytics = () => {
   const [loading, setLoading] = useState(true);
@@ -76,8 +77,20 @@ const GovernmentAnalytics = () => {
         : 0;
 
       // === PROJECT SUCCESS RATE ===
-      // Measures: completed projects vs total projects with contractors assigned
-      const completedProjects = projects.filter(p => p.status === 'completed').length;
+      // Measures: effectively completed projects vs total projects with contractors assigned
+      // Group milestones by project for completion detection
+      const milestonesByProject: Record<string, {status: string}[]> = {};
+      milestones.forEach(m => {
+        if (!milestonesByProject[m.project_id]) {
+          milestonesByProject[m.project_id] = [];
+        }
+        milestonesByProject[m.project_id].push({ status: m.status });
+      });
+      
+      // Count projects that are effectively completed (all milestones done OR status = completed)
+      const completedProjects = projects.filter(p => 
+        isProjectEffectivelyCompleted(p.status, milestonesByProject[p.id] || [])
+      ).length;
       const projectsWithContractors = projects.filter(p => p.contractor_id).length;
       const projectSuccessRate = projectsWithContractors > 0 
         ? Math.round((completedProjects / projectsWithContractors) * 100) 

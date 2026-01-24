@@ -14,6 +14,7 @@ import {
   CheckCircle2, XCircle, AlertCircle, ArrowLeft, Home, BarChart3, Globe
 } from "lucide-react";
 import { format } from "date-fns";
+import { isProjectEffectivelyCompleted, getEffectiveProjectStatus } from "@/utils/progressCalculation";
 
 interface Project {
   id: string;
@@ -110,22 +111,39 @@ export default function PublicTransparencyPortal() {
             contractor = data;
           }
 
+          // Format milestones for the utility function
+          const formattedMilestones = (milestones || []).map(m => ({ status: m.status }));
+          const effectiveStatus = getEffectiveProjectStatus(project.status, formattedMilestones);
+          
           return {
             ...project,
+            status: effectiveStatus, // Use effective status based on milestones
             report,
             escrow,
             contractor,
             milestones_count: milestones?.length || 0,
-            completed_milestones: milestones?.filter(m => m.status === 'paid' || m.status === 'completed').length || 0
+            completed_milestones: milestones?.filter(m => 
+              m.status === 'paid' || m.status === 'completed' || m.status === 'verified'
+            ).length || 0
           };
         })
       );
 
-      // Calculate stats
+      // Calculate stats - now uses milestone-based completion detection
       const totalBudget = enrichedProjects.reduce((sum, p) => sum + (p.budget || 0), 0);
       const totalReleased = enrichedProjects.reduce((sum, p) => sum + (p.escrow?.released_amount || 0), 0);
+      
+      // Count projects that are effectively completed (all milestones done OR status = completed)
       const completedProjects = enrichedProjects.filter(p => p.status === 'completed').length;
       const activeContractors = new Set(enrichedProjects.filter(p => p.contractor_id).map(p => p.contractor_id)).size;
+
+      // Calculate average completion based on milestone progress
+      const projectsWithMilestones = enrichedProjects.filter(p => p.milestones_count! > 0);
+      const averageCompletion = projectsWithMilestones.length > 0 
+        ? projectsWithMilestones.reduce((sum, p) => {
+            return sum + (p.completed_milestones! / p.milestones_count!) * 100;
+          }, 0) / projectsWithMilestones.length
+        : 0;
 
       setStats({
         totalProjects: enrichedProjects.length,
@@ -133,12 +151,7 @@ export default function PublicTransparencyPortal() {
         completedProjects,
         activeContractors,
         totalReleased,
-        averageCompletion: enrichedProjects.length > 0 
-          ? enrichedProjects.reduce((sum, p) => {
-              if (p.milestones_count === 0) return sum;
-              return sum + (p.completed_milestones! / p.milestones_count!) * 100;
-            }, 0) / enrichedProjects.filter(p => p.milestones_count! > 0).length
-          : 0
+        averageCompletion
       });
 
       // Fetch blockchain records

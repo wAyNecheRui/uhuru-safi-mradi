@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { useSystemAnalytics } from '@/hooks/useSystemAnalytics';
 import { supabase } from '@/integrations/supabase/client';
 import { TrendingUp, TrendingDown, Users, FileText, CheckCircle, Clock, AlertTriangle, Eye, Target, Zap } from 'lucide-react';
+import { isProjectEffectivelyCompleted } from '@/utils/progressCalculation';
 
 interface RealTimeKPIs {
   transparencyIndex: number;
@@ -64,8 +65,18 @@ const AnalyticsDashboard = () => {
           ? `${pendingPayments} pending`
           : 'No data';
 
-      // Calculate Project Success Rate
-      const completedProjects = projects.filter(p => p.status === 'completed').length;
+      // Calculate Project Success Rate - using milestone-based completion
+      const milestonesByProject: Record<string, {status: string}[]> = {};
+      milestones.forEach(m => {
+        if (!milestonesByProject[m.project_id]) {
+          milestonesByProject[m.project_id] = [];
+        }
+        milestonesByProject[m.project_id].push({ status: m.status });
+      });
+      
+      const completedProjects = projects.filter(p => 
+        isProjectEffectivelyCompleted(p.status, milestonesByProject[p.id] || [])
+      ).length;
       const projectsWithContractors = projects.filter(p => p.contractor_id).length;
       const projectSuccessRate = projectsWithContractors > 0 
         ? Math.round((completedProjects / projectsWithContractors) * 100) 

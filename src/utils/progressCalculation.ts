@@ -102,3 +102,43 @@ export const calculateCompletedMilestones = (milestones: MilestoneForProgress[])
     percentage: Math.round((completed / milestones.length) * 100)
   };
 };
+
+/**
+ * Determine if a project is effectively completed based on milestone status
+ * A project is complete if:
+ * 1. Its status is 'completed', OR
+ * 2. All its milestones are in a completed state (paid/verified/completed)
+ * 
+ * This handles cases where all milestones are done but project status hasn't been updated
+ */
+export const isProjectEffectivelyCompleted = (
+  projectStatus: string | null | undefined,
+  milestones: MilestoneForProgress[]
+): boolean => {
+  // Check explicit completion status
+  if (projectStatus === 'completed') return true;
+  
+  // If no milestones, rely on project status
+  if (!milestones || milestones.length === 0) return false;
+  
+  // Check if all milestones are in a completed state
+  const completedMilestones = milestones.filter(m => 
+    m.status === 'paid' || m.status === 'completed' || m.status === 'verified'
+  ).length;
+  
+  return completedMilestones === milestones.length;
+};
+
+/**
+ * Get effective project status based on milestones
+ * Returns 'completed' if all milestones are done, otherwise returns original status
+ */
+export const getEffectiveProjectStatus = (
+  originalStatus: string | null | undefined,
+  milestones: MilestoneForProgress[]
+): string => {
+  if (isProjectEffectivelyCompleted(originalStatus, milestones)) {
+    return 'completed';
+  }
+  return originalStatus || 'planning';
+};

@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { isProjectEffectivelyCompleted } from '@/utils/progressCalculation';
 
 interface ProjectStats {
   totalProjects: number;
@@ -12,20 +13,44 @@ interface ProjectStats {
 
 const fetchProjectStats = async (): Promise<ProjectStats> => {
   // Batch all queries in parallel for better performance
-  const [projectsResult, reportsResult, contractorsResult] = await Promise.all([
-    supabase.from('projects').select('status, budget'),
+  const [projectsResult, milestonesResult, reportsResult, contractorsResult] = await Promise.all([
+    supabase.from('projects').select('id, status, budget'),
+    supabase.from('project_milestones').select('project_id, status'),
     supabase.from('problem_reports').select('*', { count: 'exact', head: true }),
     supabase.from('skills_profiles').select('*', { count: 'exact', head: true }).eq('available_for_work', true)
   ]);
 
   if (projectsResult.error) throw projectsResult.error;
+  if (milestonesResult.error) throw milestonesResult.error;
   if (reportsResult.error) throw reportsResult.error;
   if (contractorsResult.error) throw contractorsResult.error;
 
   const projects = projectsResult.data || [];
+  const milestones = milestonesResult.data || [];
+  
+  // Group milestones by project
+  const milestonesByProject: Record<string, {status: string}[]> = {};
+  milestones.forEach(m => {
+    if (!milestonesByProject[m.project_id]) {
+      milestonesByProject[m.project_id] = [];
+    }
+    milestonesByProject[m.project_id].push({ status: m.status });
+  });
+
   const totalProjects = projects.length;
-  const activeProjects = projects.filter(p => p.status === 'in_progress').length;
-  const completedProjects = projects.filter(p => p.status === 'completed').length;
+  
+  // Count active and completed based on milestone-aware logic
+  let activeProjects = 0;
+  let completedProjects = 0;
+  
+  projects.forEach(project => {
+    const projectMilestones = milestonesByProject[project.id] || [];
+    if (isProjectEffectivelyCompleted(project.status, projectMilestones)) {
+      completedProjects++;
+    } else if (project.status === 'in_progress') {
+      activeProjects++;
+    }
+  });
   
   const totalBudget = projects.reduce((sum, project) => {
     return sum + (parseFloat(project.budget?.toString() || '0') || 0);

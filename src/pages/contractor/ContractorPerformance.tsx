@@ -13,6 +13,7 @@ import BreadcrumbNav from '@/components/BreadcrumbNav';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { isProjectEffectivelyCompleted } from '@/utils/progressCalculation';
 
 interface PerformanceMetric {
   name: string;
@@ -76,6 +77,22 @@ const ContractorPerformance = () => {
         .select('id, status, budget, created_at, updated_at')
         .eq('contractor_id', user?.id);
 
+      // Fetch milestones for all projects
+      const projectIds = projects?.map(p => p.id) || [];
+      const { data: milestones } = projectIds.length > 0 ? await supabase
+        .from('project_milestones')
+        .select('project_id, status')
+        .in('project_id', projectIds) : { data: [] };
+
+      // Group milestones by project
+      const milestonesByProject: Record<string, {status: string}[]> = {};
+      (milestones || []).forEach(m => {
+        if (!milestonesByProject[m.project_id]) {
+          milestonesByProject[m.project_id] = [];
+        }
+        milestonesByProject[m.project_id].push({ status: m.status });
+      });
+
       // Calculate bid analytics
       const totalBids = bids?.length || 0;
       const wonBids = bids?.filter(b => b.status === 'selected').length || 0;
@@ -92,8 +109,10 @@ const ContractorPerformance = () => {
         avgBidAmount
       });
 
-      // Calculate performance metrics from actual data
-      const completedProjects = projects?.filter(p => p.status === 'completed') || [];
+      // Calculate performance metrics from actual data - use milestone-based completion
+      const completedProjects = projects?.filter(p => 
+        isProjectEffectivelyCompleted(p.status, milestonesByProject[p.id] || [])
+      ) || [];
       const avgRating = ratingsData?.length ? ratingsData.reduce((sum, r) => sum + (r.rating || 0), 0) / ratingsData.length : 0;
       
       // Use real data where available, show 0 if no data
