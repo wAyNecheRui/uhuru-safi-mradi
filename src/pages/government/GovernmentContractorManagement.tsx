@@ -16,6 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import ContractorProfileModal from '@/components/government/ContractorProfileModal';
+import { isProjectEffectivelyCompleted } from '@/utils/progressCalculation';
 
 const GovernmentContractorManagement = () => {
   const [contractors, setContractors] = useState<any[]>([]);
@@ -67,9 +68,25 @@ const GovernmentContractorManagement = () => {
       // Fetch actual project counts and contract values from projects table
       const { data: projectsData } = await supabase
         .from('projects')
-        .select('contractor_id, budget, status')
+        .select('id, contractor_id, budget, status')
         .not('contractor_id', 'is', null)
         .is('deleted_at', null);
+
+      // Fetch milestones for all projects
+      const projectIds = projectsData?.map(p => p.id) || [];
+      const { data: milestonesData } = projectIds.length > 0 ? await supabase
+        .from('project_milestones')
+        .select('project_id, status')
+        .in('project_id', projectIds) : { data: [] };
+
+      // Group milestones by project
+      const milestonesByProject: Record<string, {status: string}[]> = {};
+      (milestonesData || []).forEach(m => {
+        if (!milestonesByProject[m.project_id]) {
+          milestonesByProject[m.project_id] = [];
+        }
+        milestonesByProject[m.project_id].push({ status: m.status });
+      });
 
       // Fetch selected bids count
       const { data: bidsData } = await supabase
@@ -87,7 +104,9 @@ const GovernmentContractorManagement = () => {
         }
         contractorStats[project.contractor_id].projectCount += 1;
         contractorStats[project.contractor_id].totalValue += Number(project.budget) || 0;
-        if (project.status === 'completed') {
+        
+        // Use milestone-based completion detection
+        if (isProjectEffectivelyCompleted(project.status, milestonesByProject[project.id] || [])) {
           contractorStats[project.contractor_id].completedProjects += 1;
         }
       });

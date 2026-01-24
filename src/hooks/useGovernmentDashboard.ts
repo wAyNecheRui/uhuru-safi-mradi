@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { WorkflowGuardService, WORKFLOW_STATUS } from '@/services/WorkflowGuardService';
 import { useRealtimeSubscription, REALTIME_PRESETS } from '@/hooks/useRealtimeSubscription';
+import { isProjectEffectivelyCompleted } from '@/utils/progressCalculation';
 
 export const useGovernmentDashboard = () => {
   const [pendingApprovals, setPendingApprovals] = useState([]);
@@ -73,18 +74,39 @@ export const useGovernmentDashboard = () => {
 
       const { data: activeData } = await projectQuery;
 
-      // Calculate budget overview from projects and reports
+      // Calculate budget overview from projects with milestone-based completion
       const { data: budgetData } = await supabase
         .from('projects')
-        .select('budget, status');
+        .select('id, budget, status');
 
       if (budgetData) {
+        // Fetch milestones for all projects to determine effective completion
+        const projectIds = budgetData.map(p => p.id);
+        const { data: allMilestones } = await supabase
+          .from('project_milestones')
+          .select('project_id, status')
+          .in('project_id', projectIds);
+
+        // Group milestones by project
+        const milestonesByProject: Record<string, {status: string}[]> = {};
+        (allMilestones || []).forEach(m => {
+          if (!milestonesByProject[m.project_id]) {
+            milestonesByProject[m.project_id] = [];
+          }
+          milestonesByProject[m.project_id].push({ status: m.status });
+        });
+
         const totalAllocated = budgetData.reduce((sum, project) => sum + (project.budget || 0), 0);
+        
+        // Count spent as projects that are effectively completed
         const totalSpent = budgetData
-          .filter(p => p.status === 'completed')
+          .filter(p => isProjectEffectivelyCompleted(p.status, milestonesByProject[p.id] || []))
           .reduce((sum, project) => sum + (project.budget || 0), 0);
+        
+        // Count committed as projects still in progress (not completed)
         const totalCommitted = budgetData
-          .filter(p => ['in_progress', 'planning'].includes(p.status))
+          .filter(p => !isProjectEffectivelyCompleted(p.status, milestonesByProject[p.id] || []) && 
+                       ['in_progress', 'planning'].includes(p.status))
           .reduce((sum, project) => sum + (project.budget || 0), 0);
         
         setBudgetOverview({
