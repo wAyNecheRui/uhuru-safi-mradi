@@ -64,11 +64,8 @@ const ReportDetailsModal = ({ report, isOpen, onClose }: ReportDetailsProps) => 
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
-            <span className="text-xl font-bold">{report.title}</span>
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
+          <DialogTitle className="text-xl font-bold pr-8">
+            {report.title}
           </DialogTitle>
         </DialogHeader>
 

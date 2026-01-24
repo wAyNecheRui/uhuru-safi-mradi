@@ -53,15 +53,15 @@ const JobDetailsModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Briefcase className="h-5 w-5 text-primary" />
-            {job.title}
+      <DialogContent className="max-w-lg max-h-[90dvh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
+          <DialogTitle className="flex items-center gap-2 pr-8">
+            <Briefcase className="h-5 w-5 text-primary flex-shrink-0" />
+            <span className="truncate">{job.title}</span>
           </DialogTitle>
-          <DialogDescription className="flex items-center gap-2">
-            <MapPin className="h-4 w-4" />
-            {job.location}
+          <DialogDescription className="flex items-center gap-2 pr-8">
+            <MapPin className="h-4 w-4 flex-shrink-0" />
+            <span className="truncate">{job.location}</span>
           </DialogDescription>
         </DialogHeader>
 

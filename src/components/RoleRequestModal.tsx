@@ -53,10 +53,10 @@ export const RoleRequestModal = ({ isOpen, onClose, onSuccess }: RoleRequestModa
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px]">
-        <DialogHeader>
-          <DialogTitle>Request Role Upgrade</DialogTitle>
-          <DialogDescription>
+      <DialogContent className="sm:max-w-[600px] max-h-[90dvh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
+          <DialogTitle className="pr-8">Request Role Upgrade</DialogTitle>
+          <DialogDescription className="pr-8">
             Request access to additional roles. Your request will be reviewed by an administrator.
           </DialogDescription>
         </DialogHeader>

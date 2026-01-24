@@ -38,138 +38,140 @@ const ContactModal = ({ isOpen, onClose }: ContactModalProps) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center space-x-3 text-2xl">
-            <MessageSquare className="w-8 h-8 text-blue-600" />
-            <span>Contact Us</span>
+      <DialogContent className="max-w-4xl max-h-[90dvh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
+          <DialogTitle className="flex items-center space-x-3 text-xl sm:text-2xl pr-8">
+            <MessageSquare className="w-6 h-6 sm:w-8 sm:h-8 text-primary flex-shrink-0" />
+            <span className="truncate">Contact Us</span>
           </DialogTitle>
         </DialogHeader>
         
-        <div className="grid md:grid-cols-2 gap-8 mt-6">
-          {/* Contact Information */}
-          <div className="space-y-6">
-            <div className="bg-blue-50 rounded-lg p-6">
-              <h3 className="text-xl font-semibold text-slate-900 mb-4">Get in Touch</h3>
-              <p className="text-slate-700 mb-6">
-                We're here to help you understand how Uhuru Safi can transform government project 
-                delivery in your community. Reach out to us with any questions or feedback.
-              </p>
-              
-              <div className="space-y-4">
-                <div className="flex items-center space-x-3">
-                  <Mail className="w-5 h-5 text-blue-600" />
-                  <div>
-                    <div className="font-semibold text-slate-900">Email</div>
-                    <div className="text-slate-600">info@uhurusafi.org</div>
+        <div className="flex-1 overflow-y-auto min-h-0 py-2 pr-1">
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* Contact Information */}
+            <div className="space-y-6">
+              <div className="bg-primary/5 rounded-lg p-6">
+                <h3 className="text-xl font-semibold text-foreground mb-4">Get in Touch</h3>
+                <p className="text-muted-foreground mb-6">
+                  We're here to help you understand how Uhuru Safi can transform government project 
+                  delivery in your community. Reach out to us with any questions or feedback.
+                </p>
+                
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-3">
+                    <Mail className="w-5 h-5 text-primary flex-shrink-0" />
+                    <div>
+                      <div className="font-semibold text-foreground">Email</div>
+                      <div className="text-muted-foreground">info@uhurusafi.org</div>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <Phone className="w-5 h-5 text-blue-600" />
-                  <div>
-                    <div className="font-semibold text-slate-900">Phone</div>
-                    <div className="text-slate-600">0728 277 587</div>
-                    <div className="text-slate-600">0798 561 854</div>
+                  <div className="flex items-center space-x-3">
+                    <Phone className="w-5 h-5 text-primary flex-shrink-0" />
+                    <div>
+                      <div className="font-semibold text-foreground">Phone</div>
+                      <div className="text-muted-foreground">0728 277 587</div>
+                      <div className="text-muted-foreground">0798 561 854</div>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <MapPin className="w-5 h-5 text-blue-600" />
-                  <div>
-                    <div className="font-semibold text-slate-900">Address</div>
-                    <div className="text-slate-600">Nairobi, Kenya</div>
+                  <div className="flex items-center space-x-3">
+                    <MapPin className="w-5 h-5 text-primary flex-shrink-0" />
+                    <div>
+                      <div className="font-semibold text-foreground">Address</div>
+                      <div className="text-muted-foreground">Nairobi, Kenya</div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Contact Form */}
-          <div>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-slate-700 mb-1">
-                  Full Name *
-                </label>
-                <Input
-                  id="name"
-                  name="name"
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  placeholder="Enter your full name"
-                />
-              </div>
+            {/* Contact Form */}
+            <div>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label htmlFor="name" className="block text-sm font-medium text-foreground mb-1">
+                    Full Name *
+                  </label>
+                  <Input
+                    id="name"
+                    name="name"
+                    type="text"
+                    required
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    placeholder="Enter your full name"
+                  />
+                </div>
 
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1">
-                  Email Address *
-                </label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  required
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  placeholder="Enter your email address"
-                />
-              </div>
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-foreground mb-1">
+                    Email Address *
+                  </label>
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    required
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    placeholder="Enter your email address"
+                  />
+                </div>
 
-              <div>
-                <label htmlFor="userType" className="block text-sm font-medium text-slate-700 mb-1">
-                  I am a...
-                </label>
-                <select
-                  id="userType"
-                  name="userType"
-                  value={formData.userType}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="">Select your role</option>
-                  <option value="citizen">Citizen</option>
-                  <option value="contractor">Contractor</option>
-                  <option value="government">Government Official</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
+                <div>
+                  <label htmlFor="userType" className="block text-sm font-medium text-foreground mb-1">
+                    I am a...
+                  </label>
+                  <select
+                    id="userType"
+                    name="userType"
+                    value={formData.userType}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-input bg-background rounded-md focus:ring-2 focus:ring-ring focus:border-ring"
+                  >
+                    <option value="">Select your role</option>
+                    <option value="citizen">Citizen</option>
+                    <option value="contractor">Contractor</option>
+                    <option value="government">Government Official</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
 
-              <div>
-                <label htmlFor="subject" className="block text-sm font-medium text-slate-700 mb-1">
-                  Subject *
-                </label>
-                <Input
-                  id="subject"
-                  name="subject"
-                  type="text"
-                  required
-                  value={formData.subject}
-                  onChange={handleInputChange}
-                  placeholder="What is this regarding?"
-                />
-              </div>
+                <div>
+                  <label htmlFor="subject" className="block text-sm font-medium text-foreground mb-1">
+                    Subject *
+                  </label>
+                  <Input
+                    id="subject"
+                    name="subject"
+                    type="text"
+                    required
+                    value={formData.subject}
+                    onChange={handleInputChange}
+                    placeholder="What is this regarding?"
+                  />
+                </div>
 
-              <div>
-                <label htmlFor="message" className="block text-sm font-medium text-slate-700 mb-1">
-                  Message *
-                </label>
-                <Textarea
-                  id="message"
-                  name="message"
-                  required
-                  value={formData.message}
-                  onChange={handleInputChange}
-                  placeholder="Tell us how we can help you..."
-                  rows={4}
-                />
-              </div>
+                <div>
+                  <label htmlFor="message" className="block text-sm font-medium text-foreground mb-1">
+                    Message *
+                  </label>
+                  <Textarea
+                    id="message"
+                    name="message"
+                    required
+                    value={formData.message}
+                    onChange={handleInputChange}
+                    placeholder="Tell us how we can help you..."
+                    rows={4}
+                  />
+                </div>
 
-              <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700">
-                <Send className="w-4 h-4 mr-2" />
-                Send Message
-              </Button>
-            </form>
+                <Button type="submit" className="w-full">
+                  <Send className="w-4 h-4 mr-2" />
+                  Send Message
+                </Button>
+              </form>
+            </div>
           </div>
         </div>
       </DialogContent>
