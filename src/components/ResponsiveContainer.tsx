@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { useViewport } from '@/hooks/useViewport';
@@ -58,6 +57,9 @@ const ResponsiveContainer = ({
       paddingClasses,
       widthClass,
       'w-full',
+      // Add overflow protection
+      'overflow-x-hidden',
+      'max-w-[100vw]',
       className
     )}>
       {children}

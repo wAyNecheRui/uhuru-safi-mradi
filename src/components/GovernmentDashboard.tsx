@@ -230,20 +230,20 @@ const GovernmentDashboard = () => {
   ];
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
-      <Card className="shadow-xl border-t-4 border-t-blue-600">
-        <CardHeader className="bg-gradient-to-r from-blue-50 to-green-50">
+    <div className="w-full max-w-full overflow-x-hidden space-y-4 sm:space-y-6">
+      <Card className="shadow-xl border-t-4 border-t-primary">
+        <CardHeader className="bg-gradient-to-r from-blue-50 to-green-50 p-4 sm:p-6">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
-              <CardTitle className="flex items-center text-2xl">
-                <Shield className="h-6 w-6 mr-3 text-blue-600" />
-                Government Administrative Dashboard
+            <div className="min-w-0 flex-1">
+              <CardTitle className="flex items-center text-lg sm:text-xl lg:text-2xl">
+                <Shield className="h-5 w-5 sm:h-6 sm:w-6 mr-2 sm:mr-3 text-primary flex-shrink-0" />
+                <span className="break-words">Government Dashboard</span>
               </CardTitle>
-              <p className="text-gray-600 mt-2">
-                Streamlined project approval, budget oversight, and transparency management.
+              <p className="text-sm text-muted-foreground mt-2">
+                Project approval, budget oversight, and transparency management.
               </p>
             </div>
-            <Badge className="bg-blue-100 text-blue-800">
+            <Badge className="bg-blue-100 text-blue-800 flex-shrink-0">
               Live Dashboard
             </Badge>
           </div>
@@ -252,22 +252,22 @@ const GovernmentDashboard = () => {
 
       {/* Quick Navigation Grid */}
       <Card className="shadow-lg">
-        <CardHeader>
-          <CardTitle className="flex items-center text-lg">
-            <Globe className="h-5 w-5 mr-2 text-blue-600" />
+        <CardHeader className="p-4 sm:p-6">
+          <CardTitle className="flex items-center text-base sm:text-lg">
+            <Globe className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-primary flex-shrink-0" />
             Management Modules
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2 sm:gap-3">
             {quickActions.map((action) => (
               <Button
                 key={action.path}
                 onClick={() => navigate(action.path)}
-                className={`${action.color} text-white h-auto py-4 flex flex-col items-center gap-2`}
+                className={`${action.color} text-white h-auto py-3 sm:py-4 flex flex-col items-center gap-1 sm:gap-2 text-xs`}
               >
-                <action.icon className="h-6 w-6" />
-                <span className="text-xs text-center">{action.label}</span>
+                <action.icon className="h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0" />
+                <span className="text-center leading-tight break-words">{action.label}</span>
               </Button>
             ))}
           </div>
@@ -313,32 +313,36 @@ const GovernmentDashboard = () => {
 
       {/* Jurisdiction settings moved to registration - not displayed here */}
 
-      <Tabs defaultValue="approvals" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4 bg-white shadow-lg">
+      <Tabs defaultValue="approvals" className="space-y-4 sm:space-y-6 w-full max-w-full">
+        <TabsList className="w-full bg-card shadow-lg flex-wrap h-auto p-1">
           <TabsTrigger 
             value="approvals" 
-            className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+            className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm"
           >
-            Ready for Approval ({pendingApprovals.length})
+            <span className="hidden sm:inline">Ready for Approval</span>
+            <span className="sm:hidden">Approvals</span>
+            <span className="ml-1">({pendingApprovals.length})</span>
           </TabsTrigger>
           <TabsTrigger 
             value="active" 
-            className="data-[state=active]:bg-green-600 data-[state=active]:text-white"
+            className="data-[state=active]:bg-green-600 data-[state=active]:text-white text-xs sm:text-sm"
           >
-            Active Projects ({activeProjects.length})
+            <span className="hidden sm:inline">Active Projects</span>
+            <span className="sm:hidden">Active</span>
+            <span className="ml-1">({activeProjects.length})</span>
           </TabsTrigger>
           <TabsTrigger 
             value="security" 
-            className="data-[state=active]:bg-red-600 data-[state=active]:text-white"
+            className="data-[state=active]:bg-red-600 data-[state=active]:text-white text-xs sm:text-sm"
           >
-            <Eye className="h-4 w-4 mr-1" />
-            Security Monitor
+            <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-1 hidden sm:inline" />
+            Security
           </TabsTrigger>
           <TabsTrigger 
             value="analytics" 
-            className="data-[state=active]:bg-purple-600 data-[state=active]:text-white"
+            className="data-[state=active]:bg-purple-600 data-[state=active]:text-white text-xs sm:text-sm"
           >
-            Analytics & Reports
+            Analytics
           </TabsTrigger>
         </TabsList>
 
