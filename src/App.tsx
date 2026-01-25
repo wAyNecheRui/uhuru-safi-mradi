@@ -8,7 +8,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { AuthProvider } from "./contexts/AuthContext";
 import { RealtimeProvider } from "./contexts/RealtimeContext";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
-
+import { AppLayout } from "@/components/layout/AppLayout";
 // Lazy load all pages for better initial load performance
 const Landing = lazy(() => import("./pages/Landing"));
 const About = lazy(() => import("./pages/About"));
@@ -104,6 +104,7 @@ const App = () => {
               <Toaster />
               <Sonner />
             <BrowserRouter>
+              <AppLayout>
               <Suspense fallback={<PageLoader />}>
                 <Routes>
                   <Route path="/" element={<Landing />} />
@@ -481,6 +482,7 @@ const App = () => {
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>
+              </AppLayout>
             </BrowserRouter>
           </TooltipProvider>
         </RealtimeProvider>
