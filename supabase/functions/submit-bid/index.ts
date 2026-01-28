@@ -194,17 +194,74 @@ serve(async (req) => {
       )
     }
 
-    // Create notification
-    const projectTitle = bidData.projectTitle ? sanitizeInput(String(bidData.projectTitle).slice(0, 100)) : 'the project';
-    await supabaseClient
+    // Get report details for notifications
+    const { data: report } = await supabaseAdmin
+      .from('problem_reports')
+      .select('reported_by, title')
+      .eq('id', bidData.reportId)
+      .single()
+
+    // Get contractor company name
+    const { data: contractorProfile } = await supabaseAdmin
+      .from('contractor_profiles')
+      .select('company_name')
+      .eq('user_id', user.id)
+      .single()
+
+    const companyName = contractorProfile?.company_name || 'A contractor'
+    const projectTitle = report?.title ? String(report.title).slice(0, 100) : (bidData.projectTitle ? sanitizeInput(String(bidData.projectTitle).slice(0, 100)) : 'a project')
+    const bidAmountFormatted = Number(bidData.bidAmount).toLocaleString()
+
+    // Notification for the contractor (confirmation)
+    await supabaseAdmin
       .from('notifications')
       .insert({
         user_id: user.id,
-        title: 'Bid Submitted Successfully',
-        message: `Your bid for "${projectTitle}" has been submitted.`,
+        title: '✅ Bid Submitted Successfully',
+        message: `Your bid of KES ${bidAmountFormatted} for "${projectTitle}" has been submitted.`,
         type: 'success',
-        category: 'project'
+        category: 'bid'
       })
+
+    // Notify the citizen who reported the issue
+    if (report?.reported_by) {
+      await supabaseAdmin
+        .from('notifications')
+        .insert({
+          user_id: report.reported_by,
+          title: '📋 New Bid on Your Report',
+          message: `${companyName} submitted a bid of KES ${bidAmountFormatted} for "${projectTitle}"`,
+          type: 'info',
+          category: 'bid',
+          action_url: '/citizen/track-reports'
+        })
+    }
+
+    // Notify government officials
+    const { data: govUsers } = await supabaseAdmin
+      .from('user_profiles')
+      .select('user_id')
+      .eq('user_type', 'government')
+      .limit(10)
+
+    if (govUsers && govUsers.length > 0) {
+      const govNotifications = govUsers.map(gov => ({
+        user_id: gov.user_id,
+        title: '📋 New Contractor Bid',
+        message: `${companyName} bid KES ${bidAmountFormatted} for "${projectTitle}"`,
+        type: 'info',
+        category: 'bid',
+        action_url: '/government/bid-approval',
+        read: false
+      }))
+      
+      await supabaseAdmin
+        .from('notifications')
+        .insert(govNotifications)
+    }
+
+    console.log(`Bid submitted: ${bid.id} by ${companyName} for report ${bidData.reportId}`)
+
 
     return new Response(
       JSON.stringify({ 

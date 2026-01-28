@@ -92,6 +92,25 @@ export class LiveNotificationService {
   }
 
   /**
+   * Get government user IDs (from user_profiles, not government_profiles which may be empty)
+   */
+  static async getGovernmentUserIds(): Promise<string[]> {
+    try {
+      // Query user_profiles for government users (more reliable than government_profiles)
+      const { data: govUsers } = await supabase
+        .from('user_profiles')
+        .select('user_id')
+        .eq('user_type', 'government')
+        .limit(50);
+
+      return govUsers?.map(g => g.user_id) || [];
+    } catch (error) {
+      console.error('Error fetching government users:', error);
+      return [];
+    }
+  }
+
+  /**
    * Get all stakeholders for a project (reporter, contractor, government officials)
    */
   static async getProjectStakeholders(projectId: string): Promise<ProjectStakeholders> {
@@ -122,16 +141,8 @@ export class LiveNotificationService {
         }
       }
 
-      // Get government officials (verified government users)
-      const { data: govUsers } = await supabase
-        .from('government_profiles')
-        .select('user_id')
-        .eq('verified', true)
-        .limit(50);
-
-      if (govUsers) {
-        stakeholders.governmentIds = govUsers.map(g => g.user_id);
-      }
+      // Get government officials from user_profiles (more reliable)
+      stakeholders.governmentIds = await this.getGovernmentUserIds();
     } catch (error) {
       console.error('Error fetching stakeholders:', error);
     }
@@ -150,15 +161,12 @@ export class LiveNotificationService {
     title: string,
     location: string
   ): Promise<void> {
-    // Notify government officials
-    const { data: govUsers } = await supabase
-      .from('government_profiles')
-      .select('user_id')
-      .eq('verified', true);
+    // Notify government officials using user_profiles (more reliable)
+    const govUserIds = await this.getGovernmentUserIds();
 
-    if (govUsers && govUsers.length > 0) {
-      const notifications = govUsers.map(gov => ({
-        userId: gov.user_id,
+    if (govUserIds.length > 0) {
+      const notifications = govUserIds.map(userId => ({
+        userId,
         title: '🆕 New Problem Report',
         message: `A citizen reported: "${title}" at ${location}. Requires review.`,
         type: 'info' as NotificationType,
@@ -169,14 +177,8 @@ export class LiveNotificationService {
       await this.notifyMany(notifications);
     }
 
-    // Create realtime update
-    await supabase.from('realtime_project_updates').insert({
-      project_id: reportId, // Using report_id temporarily
-      update_type: 'problem_reported',
-      message: `New infrastructure issue reported: "${title}"`,
-      created_by: reporterId,
-      metadata: { location, reportId }
-    });
+    // Note: realtime_project_updates requires a valid project_id, 
+    // so we skip this for reports (they become projects after approval)
   }
 
   /**
@@ -396,24 +398,18 @@ export class LiveNotificationService {
       actionUrl: '/citizen/track-reports'
     });
 
-    // Notify government officials
-    const { data: govUsers } = await supabase
-      .from('government_profiles')
-      .select('user_id')
-      .eq('verified', true);
-
-    if (govUsers) {
-      govUsers.slice(0, 10).forEach(gov => {
-        notifications.push({
-          userId: gov.user_id,
-          title: '📋 New Contractor Bid',
-          message: `${companyName} bid KES ${bidAmount.toLocaleString()} for "${report.title}"`,
-          type: 'info',
-          category: 'bid',
-          actionUrl: '/government/bid-approval'
-        });
+    // Notify government officials using user_profiles (more reliable)
+    const govUserIds = await this.getGovernmentUserIds();
+    govUserIds.slice(0, 10).forEach(userId => {
+      notifications.push({
+        userId,
+        title: '📋 New Contractor Bid',
+        message: `${companyName} bid KES ${bidAmount.toLocaleString()} for "${report.title}"`,
+        type: 'info',
+        category: 'bid',
+        actionUrl: '/government/bid-approval'
       });
-    }
+    });
 
     await this.notifyMany(notifications);
   }
