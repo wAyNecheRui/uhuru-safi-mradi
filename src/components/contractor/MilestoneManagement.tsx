@@ -76,12 +76,9 @@ const MilestoneManagement: React.FC<MilestoneManagementProps> = ({ project, onCl
           status: m.status
         })));
       } else {
-        // Initialize with default milestone structure
+        // Initialize with empty milestone - contractor fills in details
         setMilestones([
-          { title: 'Mobilization & Site Preparation', description: 'Initial setup and preparation', payment_percentage: 20, milestone_number: 1, target_completion_date: '', completion_criteria: 'Site cleared and secured, materials delivered' },
-          { title: 'Foundation & Structure', description: 'Core construction work', payment_percentage: 30, milestone_number: 2, target_completion_date: '', completion_criteria: 'Foundation complete, structural work done' },
-          { title: 'Main Works Completion', description: 'Primary construction completed', payment_percentage: 30, milestone_number: 3, target_completion_date: '', completion_criteria: 'All main construction work finished' },
-          { title: 'Final Inspection & Handover', description: 'Final quality check and handover', payment_percentage: 20, milestone_number: 4, target_completion_date: '', completion_criteria: 'All quality checks passed, documentation complete' }
+          { title: '', description: '', payment_percentage: 0, milestone_number: 1, target_completion_date: '', completion_criteria: '' }
         ]);
       }
     } catch (error) {
@@ -260,7 +257,7 @@ const MilestoneManagement: React.FC<MilestoneManagementProps> = ({ project, onCl
                     <Input
                       value={milestone.title}
                       onChange={(e) => updateMilestone(index, 'title', e.target.value)}
-                      placeholder="Milestone title"
+                      placeholder="e.g., Site Preparation & Mobilization"
                       className="text-sm"
                     />
                   </div>
@@ -301,7 +298,7 @@ const MilestoneManagement: React.FC<MilestoneManagementProps> = ({ project, onCl
                     <Input
                       value={milestone.description}
                       onChange={(e) => updateMilestone(index, 'description', e.target.value)}
-                      placeholder="Brief description"
+                      placeholder="e.g., Initial setup, material delivery, and groundwork"
                       className="text-sm"
                     />
                   </div>
@@ -312,7 +309,7 @@ const MilestoneManagement: React.FC<MilestoneManagementProps> = ({ project, onCl
                     <Textarea
                       value={milestone.completion_criteria}
                       onChange={(e) => updateMilestone(index, 'completion_criteria', e.target.value)}
-                      placeholder="What must be completed..."
+                      placeholder="e.g., Site cleared and secured, all materials delivered and verified, foundation excavation complete"
                       rows={2}
                       className="text-sm resize-none"
                     />
