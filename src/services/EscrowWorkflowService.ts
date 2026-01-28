@@ -49,11 +49,17 @@ export class EscrowWorkflowService {
       
       // Total funded = held + released (money in escrow + money already paid out to contractor)
       const totalFunded = heldAmount + releasedAmount;
-      const fundingPercentage = totalBudget > 0 ? Math.round((totalFunded / totalBudget) * 100) : 0;
+      // Cap funding percentage at 100% for display, but track if overfunded
+      const rawFundingPercentage = totalBudget > 0 ? Math.round((totalFunded / totalBudget) * 100) : 0;
+      const fundingPercentage = Math.min(rawFundingPercentage, 100);
+      const isOverfunded = totalFunded > totalBudget;
 
       let escrowStatus: ProjectEscrowStatus['escrowStatus'] = 'not_created';
       if (escrow) {
         if (escrow.status === 'completed') {
+          escrowStatus = 'completed';
+        } else if (heldAmount === 0 && releasedAmount >= totalBudget) {
+          // All funds have been released to contractor - project is effectively completed
           escrowStatus = 'completed';
         } else if (totalFunded >= totalBudget) {
           // Fully funded if total funded (held + released) equals or exceeds budget
@@ -259,6 +265,7 @@ export class EscrowWorkflowService {
 
   /**
    * Get projects awaiting funding
+   * Only returns projects that genuinely need more funding (not completed/overfunded)
    */
   static async getProjectsAwaitingFunding(): Promise<any[]> {
     try {
@@ -274,9 +281,19 @@ export class EscrowWorkflowService {
 
       return (escrows || [])
         .filter(e => {
-          // Project needs funding if total funded (held + released) is less than total
+          // Skip if project was deleted
+          if (!e.project || e.project.deleted_at) return false;
+          
           const totalFunded = e.held_amount + e.released_amount;
-          return totalFunded < e.total_amount;
+          
+          // Project needs funding ONLY if:
+          // 1. Total funded is less than total amount required
+          // 2. There's still money to be held (not all released already)
+          // 3. Not overfunded
+          const needsFunding = totalFunded < e.total_amount;
+          const notFullyReleased = e.held_amount > 0 || e.released_amount < e.total_amount;
+          
+          return needsFunding && notFullyReleased;
         })
         .map(e => ({
           ...e.project,
@@ -286,11 +303,73 @@ export class EscrowWorkflowService {
             held_amount: e.held_amount,
             released_amount: e.released_amount,
             status: e.status,
-            funding_percentage: Math.round(((e.held_amount + e.released_amount) / e.total_amount) * 100)
+            // Cap at 100% to avoid confusing UI
+            funding_percentage: Math.min(
+              Math.round(((e.held_amount + e.released_amount) / e.total_amount) * 100),
+              100
+            )
           }
         }));
     } catch (error) {
       console.error('Error fetching projects:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get projects with data integrity issues (overfunded, incorrect status, etc.)
+   */
+  static async getProjectsWithIntegrityIssues(): Promise<any[]> {
+    try {
+      const { data: escrows, error } = await supabase
+        .from('escrow_accounts')
+        .select(`
+          *,
+          project:projects(*)
+        `)
+        .is('deleted_at', null);
+
+      if (error) throw error;
+
+      return (escrows || [])
+        .filter(e => {
+          if (!e.project) return false;
+          
+          const totalFunded = e.held_amount + e.released_amount;
+          const isOverfunded = totalFunded > e.total_amount;
+          const shouldBeCompleted = e.held_amount === 0 && e.released_amount >= e.total_amount && e.status !== 'completed';
+          const statusMismatch = e.project.status === 'completed' && e.status !== 'completed';
+          
+          return isOverfunded || shouldBeCompleted || statusMismatch;
+        })
+        .map(e => {
+          const totalFunded = e.held_amount + e.released_amount;
+          const issues: string[] = [];
+          
+          if (totalFunded > e.total_amount) {
+            issues.push(`Overfunded by KES ${(totalFunded - e.total_amount).toLocaleString()}`);
+          }
+          if (e.held_amount === 0 && e.released_amount >= e.total_amount && e.status !== 'completed') {
+            issues.push('All funds released but escrow not marked as completed');
+          }
+          if (e.project.status === 'completed' && e.status !== 'completed') {
+            issues.push('Project completed but escrow still active');
+          }
+          
+          return {
+            ...e.project,
+            escrow: {
+              id: e.id,
+              total_amount: e.total_amount,
+              held_amount: e.held_amount,
+              released_amount: e.released_amount,
+              status: e.status
+            },
+            issues
+          };
+        });
+    } catch (error) {
+      console.error('Error fetching integrity issues:', error);
       return [];
     }
   }
