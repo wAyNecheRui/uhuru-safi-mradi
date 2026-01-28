@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { NotificationService } from './NotificationService';
 
 export interface BidRequirements {
   meets_requirements: boolean;
@@ -260,16 +261,22 @@ export class BiddingWorkflowService {
           agpo_compliant: true
         });
 
-      // Create notification for the contractor
-      await supabase
-        .from('notifications')
-        .insert({
-          user_id: selectedBidData.contractor_id,
-          title: 'Bid Selected!',
-          message: `Congratulations! Your bid for "${reportData.title}" has been selected. You can now start working on the project.`,
-          type: 'success',
-          category: 'bidding'
-        });
+      // Create notifications using NotificationService (via edge function to bypass RLS)
+      await NotificationService.onBidSelected(
+        selectedBidData.contractor_id,
+        reportData.reported_by,
+        reportData.title
+      );
+
+      // Also notify government officials that contractor was selected
+      await NotificationService.notifyRole(
+        'government',
+        '✅ Contractor Assigned',
+        `A contractor has been assigned to "${reportData.title}". Project is now in progress.`,
+        'success',
+        'project',
+        '/government/projects'
+      );
 
       return true;
     } catch (error) {
