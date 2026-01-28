@@ -291,46 +291,41 @@ const ContractorPerformance = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <Clock className="h-6 w-6 text-blue-600" />
-                        <div>
-                          <p className="font-semibold">Timeliness (40%)</p>
-                          <p className="text-sm text-gray-500">On-time project completion rate</p>
+                    {metrics.map((metric, index) => {
+                      const weights = [40, 30, 20, 10];
+                      const weight = weights[index] || 10;
+                      const actualScore = Math.round((metric.value / 100) * weight);
+                      const icons = [Clock, Star, DollarSign, ThumbsUp];
+                      const colors = ['blue', 'green', 'yellow', 'purple'];
+                      const Icon = icons[index] || ThumbsUp;
+                      const color = colors[index] || 'gray';
+                      
+                      return (
+                        <div key={metric.name} className={`flex items-center justify-between p-4 bg-${color}-50 rounded-lg`}>
+                          <div className="flex items-center gap-3">
+                            <Icon className={`h-6 w-6 text-${color}-600`} />
+                            <div>
+                              <p className="font-semibold">{metric.name} ({weight}%)</p>
+                              <p className="text-sm text-gray-500">
+                                {index === 0 && 'On-time project completion rate'}
+                                {index === 1 && 'Work quality and standards compliance'}
+                                {index === 2 && 'Budget adherence and efficiency'}
+                                {index === 3 && 'Citizen feedback and ratings'}
+                              </p>
+                            </div>
+                          </div>
+                          <span className={`text-2xl font-bold text-${color}-600`}>
+                            {actualScore}/{weight}
+                          </span>
                         </div>
+                      );
+                    })}
+                    {metrics.length === 0 && (
+                      <div className="text-center py-8 text-gray-500">
+                        <Target className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p>Complete projects to see your score breakdown</p>
                       </div>
-                      <span className="text-2xl font-bold text-blue-600">34/40</span>
-                    </div>
-                    <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <Star className="h-6 w-6 text-green-600" />
-                        <div>
-                          <p className="font-semibold">Quality (30%)</p>
-                          <p className="text-sm text-gray-500">Work quality and standards compliance</p>
-                        </div>
-                      </div>
-                      <span className="text-2xl font-bold text-green-600">28/30</span>
-                    </div>
-                    <div className="flex items-center justify-between p-4 bg-yellow-50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <DollarSign className="h-6 w-6 text-yellow-600" />
-                        <div>
-                          <p className="font-semibold">Cost Control (20%)</p>
-                          <p className="text-sm text-gray-500">Budget adherence and efficiency</p>
-                        </div>
-                      </div>
-                      <span className="text-2xl font-bold text-yellow-600">16/20</span>
-                    </div>
-                    <div className="flex items-center justify-between p-4 bg-purple-50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <ThumbsUp className="h-6 w-6 text-purple-600" />
-                        <div>
-                          <p className="font-semibold">Community Satisfaction (10%)</p>
-                          <p className="text-sm text-gray-500">Citizen feedback and ratings</p>
-                        </div>
-                      </div>
-                      <span className="text-2xl font-bold text-purple-600">8/10</span>
-                    </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
