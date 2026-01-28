@@ -24,17 +24,19 @@ export interface ProjectStakeholders {
  */
 export class LiveNotificationService {
   /**
-   * Send notification to a single user
+   * Send notification to a single user via edge function (bypasses RLS)
    */
   static async notify(payload: NotificationPayload): Promise<boolean> {
     try {
-      const { error } = await supabase.from('notifications').insert({
-        user_id: payload.userId,
-        title: payload.title,
-        message: payload.message,
-        type: payload.type,
-        category: payload.category,
-        action_url: payload.actionUrl || null
+      const { error } = await supabase.functions.invoke('create-notification', {
+        body: {
+          userId: payload.userId,
+          title: payload.title,
+          message: payload.message,
+          type: payload.type,
+          category: payload.category,
+          actionUrl: payload.actionUrl
+        }
       });
 
       if (error) {
@@ -49,20 +51,41 @@ export class LiveNotificationService {
   }
 
   /**
-   * Send notifications to multiple users
+   * Send notifications to multiple users via edge function (bypasses RLS)
+   * Groups notifications with identical content for efficient bulk sends
    */
   static async notifyMany(payloads: NotificationPayload[]): Promise<void> {
-    const notifications = payloads.map(p => ({
-      user_id: p.userId,
-      title: p.title,
-      message: p.message,
-      type: p.type,
-      category: p.category,
-      action_url: p.actionUrl || null
-    }));
+    if (payloads.length === 0) return;
 
     try {
-      await supabase.from('notifications').insert(notifications);
+      // Group by unique content key
+      const groups = new Map<string, { userIds: string[]; payload: NotificationPayload }>();
+      
+      for (const payload of payloads) {
+        const key = `${payload.title}|${payload.message}|${payload.type}|${payload.category}|${payload.actionUrl || ''}`;
+        
+        if (groups.has(key)) {
+          groups.get(key)!.userIds.push(payload.userId);
+        } else {
+          groups.set(key, { userIds: [payload.userId], payload });
+        }
+      }
+
+      // Send each group as a bulk notification
+      const promises = Array.from(groups.values()).map(group =>
+        supabase.functions.invoke('create-notification', {
+          body: {
+            userIds: group.userIds,
+            title: group.payload.title,
+            message: group.payload.message,
+            type: group.payload.type,
+            category: group.payload.category,
+            actionUrl: group.payload.actionUrl
+          }
+        })
+      );
+
+      await Promise.all(promises);
     } catch (error) {
       console.error('Failed to create bulk notifications:', error);
     }
