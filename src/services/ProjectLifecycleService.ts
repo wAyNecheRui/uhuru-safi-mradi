@@ -396,11 +396,18 @@ export class ProjectLifecycleService {
 
       if (ratingError) throw ratingError;
 
-      // Update contractor profile average rating
+      // Update contractor profile average rating and actual project count
       const { data: allRatings } = await supabase
         .from('contractor_ratings')
         .select('rating')
         .eq('contractor_id', project.contractor_id);
+
+      // Count actual completed projects for this contractor
+      const { count: actualProjectCount } = await supabase
+        .from('projects')
+        .select('*', { count: 'exact', head: true })
+        .eq('contractor_id', project.contractor_id)
+        .is('deleted_at', null);
 
       if (allRatings && allRatings.length > 0) {
         const avgRating = allRatings.reduce((acc, r) => acc + (r.rating || 0), 0) / allRatings.length;
@@ -409,7 +416,15 @@ export class ProjectLifecycleService {
           .from('contractor_profiles')
           .update({ 
             average_rating: avgRating,
-            previous_projects_count: allRatings.length
+            previous_projects_count: actualProjectCount || 0
+          })
+          .eq('user_id', project.contractor_id);
+      } else {
+        // Update project count even if no ratings exist
+        await supabase
+          .from('contractor_profiles')
+          .update({ 
+            previous_projects_count: actualProjectCount || 0
           })
           .eq('user_id', project.contractor_id);
       }

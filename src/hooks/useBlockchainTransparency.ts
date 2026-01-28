@@ -41,32 +41,63 @@ export const useBlockchainTransparency = () => {
         .order('created_at', { ascending: false })
         .limit(20);
 
-      // Transform transaction data for blockchain view
-      const transformedTransactions = transactionData?.map(tx => ({
-        id: `TX-${tx.id.slice(-8)}`,
-        projectTitle: tx.escrow_accounts?.projects?.title || 'Unknown Project',
-        blockHash: `0x${tx.id.replace(/-/g, '').slice(0, 64)}`,
-        transactionHash: `0x${tx.id.replace(/-/g, '').slice(0, 64)}`,
-        timestamp: tx.created_at,
-        amount: tx.amount,
-        milestone: tx.project_milestones?.title || 'Payment Release',
-        signatures: [
-          { role: 'County Engineer', address: '0x742d35Cc...8C4f', status: 'signed', timestamp: tx.created_at },
-          { role: 'Treasury Officer', address: '0x8ba1f109...7A3e', status: 'signed', timestamp: tx.created_at },
-          { role: 'Citizen Oversight', address: '0x4f9c2e8d...6D1b', status: 'signed', timestamp: tx.created_at }
-        ],
-        verification: {
-          citizenConfirmations: Math.floor(Math.random() * 50) + 30,
-          requiredConfirmations: 30,
-          gpsCoordinates: '-1.0232, 37.0913',
-          photoHashes: ['0xa7b4f9c2...', '0xe8d6a1b5...'],
-          workCompletionScore: Math.floor(Math.random() * 20) + 80
-        },
-        explorerUrl: `https://blockchain.uhurusafi.go.ke/tx/${tx.id}`,
-        gasUsed: '21,000',
-        blockNumber: Math.floor(Math.random() * 1000000) + 15000000,
-        networkStatus: 'confirmed'
-      })) || [];
+      // Fetch milestone verifications for actual confirmation counts
+      const { data: verificationCounts } = await supabase
+        .from('milestone_verifications')
+        .select('milestone_id, verification_notes')
+        .limit(100);
+
+      // Calculate actual verification stats per milestone
+      const verificationsByMilestone: Record<string, { count: number; totalRating: number }> = {};
+      verificationCounts?.forEach(v => {
+        if (!verificationsByMilestone[v.milestone_id]) {
+          verificationsByMilestone[v.milestone_id] = { count: 0, totalRating: 0 };
+        }
+        verificationsByMilestone[v.milestone_id].count++;
+        
+        const ratingMatch = v.verification_notes?.match(/Rating:\s*(\d+)/);
+        if (ratingMatch) {
+          verificationsByMilestone[v.milestone_id].totalRating += parseInt(ratingMatch[1], 10);
+        }
+      });
+
+      // Transform transaction data for blockchain view with actual verification data
+      const transformedTransactions = transactionData?.map(tx => {
+        const milestoneVerifications = tx.milestone_id 
+          ? verificationsByMilestone[tx.milestone_id] 
+          : { count: 0, totalRating: 0 };
+        
+        const citizenConfirmations = milestoneVerifications?.count || 0;
+        const avgRating = milestoneVerifications?.count > 0 
+          ? Math.round((milestoneVerifications.totalRating / milestoneVerifications.count) * 20) 
+          : 0;
+
+        return {
+          id: `TX-${tx.id.slice(-8)}`,
+          projectTitle: tx.escrow_accounts?.projects?.title || 'Unknown Project',
+          blockHash: `0x${tx.id.replace(/-/g, '').slice(0, 64)}`,
+          transactionHash: `0x${tx.id.replace(/-/g, '').slice(0, 64)}`,
+          timestamp: tx.created_at,
+          amount: tx.amount,
+          milestone: tx.project_milestones?.title || 'Payment Release',
+          signatures: [
+            { role: 'County Engineer', address: '0x742d35Cc...8C4f', status: 'signed', timestamp: tx.created_at },
+            { role: 'Treasury Officer', address: '0x8ba1f109...7A3e', status: 'signed', timestamp: tx.created_at },
+            { role: 'Citizen Oversight', address: '0x4f9c2e8d...6D1b', status: citizenConfirmations >= 2 ? 'signed' : 'pending', timestamp: tx.created_at }
+          ],
+          verification: {
+            citizenConfirmations,
+            requiredConfirmations: 2,
+            gpsCoordinates: 'From project location',
+            photoHashes: ['Evidence on file'],
+            workCompletionScore: avgRating
+          },
+          explorerUrl: `https://blockchain.uhurusafi.go.ke/tx/${tx.id}`,
+          gasUsed: '21,000',
+          blockNumber: parseInt(tx.id.slice(-8), 16) % 1000000 + 15000000,
+          networkStatus: 'confirmed'
+        };
+      }) || [];
 
       // Transform audit data
       const transformedAudit = auditData?.map(audit => ({
@@ -77,12 +108,15 @@ export const useBlockchainTransparency = () => {
         details: audit.message
       })) || [];
 
-      // Mock network stats (these would come from blockchain network)
+      // Calculate actual network stats from real data
+      const totalCompletedTransactions = transactionData?.length || 0;
+      const totalVerifications = Object.values(verificationsByMilestone).reduce((sum, v) => sum + v.count, 0);
+      
       const statsData = [
-        { metric: 'Total Transactions', value: String(transactionData?.length || 0), change: '+0%' },
-        { metric: 'Active Nodes', value: '47', change: 'Stable' },
-        { metric: 'Average Block Time', value: '2.3s', change: '-5%' },
-        { metric: 'Network Integrity', value: '99.97%', change: '+0.02%' }
+        { metric: 'Total Transactions', value: String(totalCompletedTransactions), change: 'Live' },
+        { metric: 'Citizen Verifications', value: String(totalVerifications), change: 'Live' },
+        { metric: 'Audit Trail Entries', value: String(auditData?.length || 0), change: 'Live' },
+        { metric: 'Network Status', value: 'Active', change: 'Online' }
       ];
 
       setBlockchainTransactions(transformedTransactions);
