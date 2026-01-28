@@ -1,9 +1,8 @@
-
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
+import { AlertTriangle, RefreshCw, Home, WifiOff, RotateCcw } from 'lucide-react';
 
 interface Props {
   children: ReactNode;
@@ -14,16 +13,47 @@ interface State {
   hasError: boolean;
   error?: Error;
   errorInfo?: ErrorInfo;
+  errorType: 'module' | 'network' | 'general';
 }
+
+// Detect if this is a module loading error (happens when app is updated)
+const isModuleLoadError = (error: Error): boolean => {
+  const message = error.message?.toLowerCase() || '';
+  return (
+    message.includes('failed to fetch dynamically imported module') ||
+    message.includes('loading chunk') ||
+    message.includes('loading css chunk') ||
+    message.includes('dynamically imported module')
+  );
+};
+
+// Detect network-related errors
+const isNetworkError = (error: Error): boolean => {
+  const message = error.message?.toLowerCase() || '';
+  return (
+    message.includes('network') ||
+    message.includes('fetch') ||
+    message.includes('offline') ||
+    message.includes('connection')
+  );
+};
 
 class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false };
+    this.state = { hasError: false, errorType: 'general' };
   }
 
-  static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error };
+  static getDerivedStateFromError(error: Error): Partial<State> {
+    let errorType: 'module' | 'network' | 'general' = 'general';
+    
+    if (isModuleLoadError(error)) {
+      errorType = 'module';
+    } else if (isNetworkError(error)) {
+      errorType = 'network';
+    }
+    
+    return { hasError: true, error, errorType };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
@@ -31,12 +61,56 @@ class ErrorBoundary extends Component<Props, State> {
     this.setState({ error, errorInfo });
   }
 
+  // Soft retry - just reset state
   handleRetry = () => {
-    this.setState({ hasError: false, error: undefined, errorInfo: undefined });
+    this.setState({ hasError: false, error: undefined, errorInfo: undefined, errorType: 'general' });
+  };
+
+  // Hard refresh - clear cache and reload
+  handleHardRefresh = () => {
+    // Clear any cached data
+    if ('caches' in window) {
+      caches.keys().then((names) => {
+        names.forEach((name) => caches.delete(name));
+      });
+    }
+    // Force reload from server
+    window.location.reload();
   };
 
   handleGoHome = () => {
     window.location.href = '/';
+  };
+
+  getUserFriendlyMessage = () => {
+    const { errorType } = this.state;
+    
+    switch (errorType) {
+      case 'module':
+        return {
+          title: 'Page Update Required',
+          description: 'The app has been updated since you last visited. Please refresh to get the latest version.',
+          icon: RotateCcw,
+          primaryAction: 'Refresh Now',
+          primaryHandler: this.handleHardRefresh
+        };
+      case 'network':
+        return {
+          title: 'Connection Problem',
+          description: 'We couldn\'t load part of the page. Please check your internet connection and try again.',
+          icon: WifiOff,
+          primaryAction: 'Try Again',
+          primaryHandler: this.handleRetry
+        };
+      default:
+        return {
+          title: 'Something Went Wrong',
+          description: 'An unexpected error occurred. You can try refreshing the page or go back to the home page.',
+          icon: AlertTriangle,
+          primaryAction: 'Try Again',
+          primaryHandler: this.handleRetry
+        };
+    }
   };
 
   render() {
@@ -45,31 +119,29 @@ class ErrorBoundary extends Component<Props, State> {
         return this.props.fallback;
       }
 
+      const { title, description, icon: Icon, primaryAction, primaryHandler } = this.getUserFriendlyMessage();
+
       return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-          <Card className="max-w-md w-full shadow-lg">
+        <div className="min-h-screen flex items-center justify-center bg-background p-4">
+          <Card className="max-w-md w-full shadow-lg border-border">
             <CardHeader className="text-center">
-              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <AlertTriangle className="h-8 w-8 text-red-600" />
+              <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Icon className="h-8 w-8 text-destructive" />
               </div>
-              <CardTitle className="text-xl text-gray-900">Oops! Something went wrong</CardTitle>
+              <CardTitle className="text-xl text-foreground">{title}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Alert variant="destructive">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>Error Details</AlertTitle>
-                <AlertDescription className="text-sm">
-                  {this.state.error?.message || 'An unexpected error occurred'}
-                </AlertDescription>
-              </Alert>
+              <p className="text-center text-muted-foreground">
+                {description}
+              </p>
               
               <div className="flex flex-col sm:flex-row gap-3">
                 <Button 
-                  onClick={this.handleRetry}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700"
+                  onClick={primaryHandler}
+                  className="flex-1"
                 >
                   <RefreshCw className="h-4 w-4 mr-2" />
-                  Try Again
+                  {primaryAction}
                 </Button>
                 <Button 
                   variant="outline"
@@ -80,12 +152,19 @@ class ErrorBoundary extends Component<Props, State> {
                   Go Home
                 </Button>
               </div>
+
+              {this.state.errorType === 'module' && (
+                <p className="text-xs text-center text-muted-foreground mt-2">
+                  This happens when we release updates. Refreshing will fix it!
+                </p>
+              )}
               
-              {process.env.NODE_ENV === 'development' && this.state.errorInfo && (
-                <details className="mt-4 p-3 bg-gray-100 rounded text-xs">
-                  <summary className="cursor-pointer font-medium">Technical Details</summary>
-                  <pre className="mt-2 whitespace-pre-wrap text-gray-700">
-                    {this.state.errorInfo.componentStack}
+              {process.env.NODE_ENV === 'development' && this.state.error && (
+                <details className="mt-4 p-3 bg-muted rounded text-xs">
+                  <summary className="cursor-pointer font-medium text-muted-foreground">Technical Details (Dev Only)</summary>
+                  <pre className="mt-2 whitespace-pre-wrap text-muted-foreground overflow-auto max-h-40">
+                    {this.state.error.message}
+                    {this.state.errorInfo?.componentStack}
                   </pre>
                 </details>
               )}
