@@ -68,6 +68,17 @@ serve(async (req) => {
       )
     }
 
+    // Allowed notification categories in the database
+    const allowedCategories = [
+      'report', 'project', 'payment', 'verification', 'system',
+      'bid', 'bidding', 'milestone', 'escrow', 'vote', 'issue', 'rating', 'general'
+    ];
+
+    // Validate category is allowed
+    const category = allowedCategories.includes(payload.category) 
+      ? payload.category 
+      : 'general'; // Fallback to 'general' if unknown category
+
     // Determine target users
     let targetUserIds: string[] = []
 
@@ -106,7 +117,7 @@ serve(async (req) => {
       title: payload.title,
       message: payload.message,
       type: payload.type,
-      category: payload.category,
+      category: category, // Use validated category
       action_url: payload.actionUrl || null,
       read: false
     }))
