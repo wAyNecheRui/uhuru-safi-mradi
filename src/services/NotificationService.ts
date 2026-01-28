@@ -157,7 +157,7 @@ class NotificationServiceClass {
       '🆕 New Bidding Opportunity',
       `"${reportTitle}" is now open for bids. Submit your proposal!`,
       'info',
-      'bidding',
+      'bid', // Changed from 'bidding' to 'bid' for consistency
       '/contractor/bidding'
     );
   }
@@ -232,16 +232,17 @@ class NotificationServiceClass {
   ): Promise<void> {
     await this.notifyUser(
       contractorId,
-      '💰 Project Funded!',
-      `KES ${amount.toLocaleString()} deposited to escrow for "${projectTitle}". You can begin work!`,
+      '💰 Project Funded - Begin Work!',
+      `KES ${amount.toLocaleString()} deposited to escrow for "${projectTitle}". You can now begin work!`,
       'success',
-      'escrow',
+      'payment', // Changed from 'escrow' to 'payment' for UI consistency
       '/contractor/projects'
     );
   }
 
   /**
    * When milestone is submitted for verification
+   * Enhanced: Notifies nearby citizens (not just stakeholders) for community verification
    */
   async onMilestoneSubmitted(
     citizenIds: string[],
@@ -249,24 +250,24 @@ class NotificationServiceClass {
     milestoneName: string,
     projectTitle: string
   ): Promise<void> {
-    // Notify citizens near the project
+    // Notify all citizens near the project for community verification
     if (citizenIds.length > 0) {
       await this.notifyUsers(
-        citizenIds.slice(0, 50),
-        '📸 Milestone Ready for Verification',
-        `"${milestoneName}" on "${projectTitle}" needs citizen verification. Help verify!`,
+        citizenIds.slice(0, 100), // Increased limit for community verification
+        '🔔 Community Verification Needed!',
+        `"${milestoneName}" on "${projectTitle}" needs verification by at least 2 citizens. Help ensure quality work!`,
         'info',
         'milestone',
         '/citizen/projects'
       );
     }
 
-    // Notify government
+    // Notify government officials
     if (governmentIds.length > 0) {
       await this.notifyUsers(
         governmentIds.slice(0, 10),
-        '📋 Milestone Awaiting Verification',
-        `"${milestoneName}" submitted with evidence. Citizens can now verify.`,
+        '📋 Milestone Awaiting Citizen Verification',
+        `"${milestoneName}" submitted with evidence. ${citizenIds.length} citizens notified for verification.`,
         'info',
         'milestone',
         '/government/milestones'

@@ -415,7 +415,66 @@ export class LiveNotificationService {
   }
 
   /**
+   * Get citizen user IDs, optionally filtered by county
+   */
+  static async getCitizenUserIds(county?: string): Promise<string[]> {
+    try {
+      let query = supabase
+        .from('user_profiles')
+        .select('user_id')
+        .eq('user_type', 'citizen')
+        .limit(100);
+
+      if (county) {
+        query = query.eq('county', county);
+      }
+
+      const { data: citizens } = await query;
+      return citizens?.map(c => c.user_id) || [];
+    } catch (error) {
+      console.error('Error fetching citizen users:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get project location/county for targeted notifications
+   */
+  static async getProjectLocation(projectId: string): Promise<string | null> {
+    try {
+      // Get location from the linked problem report
+      const { data: project } = await supabase
+        .from('projects')
+        .select('report_id')
+        .eq('id', projectId)
+        .single();
+
+      if (project?.report_id) {
+        const { data: report } = await supabase
+          .from('problem_reports')
+          .select('location, ward, constituency')
+          .eq('id', project.report_id)
+          .single();
+
+        // Try to extract county from location
+        if (report?.location) {
+          // Extract county name if present (common format: "Location, County")
+          const parts = report.location.split(',').map(s => s.trim());
+          if (parts.length > 0) {
+            return parts[parts.length - 1]; // Last part is usually county
+          }
+        }
+      }
+      return null;
+    } catch (error) {
+      console.error('Error getting project location:', error);
+      return null;
+    }
+  }
+
+  /**
    * When contractor submits milestone progress
+   * Notifies: Reporter, nearby citizens (same county), government officials
    */
   static async onMilestoneProgressSubmitted(
     projectId: string,
@@ -433,25 +492,49 @@ export class LiveNotificationService {
       .eq('id', projectId)
       .single();
 
-    // Notify reporter
+    const projectTitle = project?.title || 'Unknown Project';
+
+    // Get project location to notify nearby citizens
+    const projectCounty = await this.getProjectLocation(projectId);
+
+    // === PRIORITY 1: Notify the original reporter ===
     if (stakeholders.reporterId) {
       notifications.push({
         userId: stakeholders.reporterId,
-        title: '📸 Milestone Submitted for Verification',
-        message: `"${milestoneName}" on "${project?.title}" needs citizen verification. View evidence and verify!`,
+        title: '📸 Milestone Ready for Your Verification!',
+        message: `"${milestoneName}" on "${projectTitle}" needs verification. You reported this issue - your verification helps!`,
         type: 'info',
         category: 'milestone',
         actionUrl: '/citizen/projects'
       });
     }
 
-    // Notify government
+    // === PRIORITY 2: Notify ALL citizens in the same county (for verification) ===
+    // This ensures multiple citizens can verify (minimum 2 required)
+    const citizenIds = await this.getCitizenUserIds(projectCounty || undefined);
+    
+    // Filter out the reporter (already notified separately with priority message)
+    const otherCitizens = citizenIds.filter(id => id !== stakeholders.reporterId);
+    
+    // Notify up to 50 nearby citizens
+    otherCitizens.slice(0, 50).forEach(citizenId => {
+      notifications.push({
+        userId: citizenId,
+        title: '🔔 Community Verification Needed',
+        message: `"${milestoneName}" on "${projectTitle}" needs citizen verification. Help ensure quality work in your area!`,
+        type: 'info',
+        category: 'milestone',
+        actionUrl: '/citizen/projects'
+      });
+    });
+
+    // === PRIORITY 3: Notify government officials ===
     if (stakeholders.governmentIds) {
-      stakeholders.governmentIds.slice(0, 5).forEach(govId => {
+      stakeholders.governmentIds.slice(0, 10).forEach(govId => {
         notifications.push({
           userId: govId,
-          title: '📋 Milestone Awaiting Verification',
-          message: `"${milestoneName}" submitted with evidence. Citizens can now verify.`,
+          title: '📋 Milestone Submitted - Awaiting Citizen Verification',
+          message: `"${milestoneName}" on "${projectTitle}" submitted with evidence. ${citizenIds.length} citizens notified for verification.`,
           type: 'info',
           category: 'milestone',
           actionUrl: '/government/milestones'
@@ -459,15 +542,17 @@ export class LiveNotificationService {
       });
     }
 
+    console.log(`[Notifications] Milestone "${milestoneName}" - notifying ${notifications.length} users (${citizenIds.length} citizens in ${projectCounty || 'all areas'})`);
+
     await this.notifyMany(notifications);
 
     // Create realtime update
     await supabase.from('realtime_project_updates').insert({
       project_id: projectId,
       update_type: 'milestone_submitted',
-      message: `📸 Milestone "${milestoneName}" submitted with evidence - ready for citizen verification`,
+      message: `📸 Milestone "${milestoneName}" submitted - ${citizenIds.length} citizens notified for verification`,
       created_by: contractorId,
-      metadata: { milestoneId, progressDescription }
+      metadata: { milestoneId, progressDescription, citizensNotified: citizenIds.length }
     });
   }
 
