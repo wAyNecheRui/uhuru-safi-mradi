@@ -32,6 +32,7 @@ const categoryMap: Record<string, StandardCategory> = {
   'security': 'system',
   'workflow': 'system',
   'compliance': 'system',
+  'general': 'system',
 };
 
 /**

@@ -167,18 +167,35 @@ export class WorkflowService {
     technical_approach?: string;
   }): Promise<ContractorBid> {
     const user = (await supabase.auth.getUser()).data.user;
+    if (!user) throw new Error('User not authenticated');
     
     const { data, error } = await supabase
       .from('contractor_bids')
       .insert({
         ...bidData,
-        contractor_id: user?.id,
+        contractor_id: user.id,
         status: 'submitted'
       })
       .select()
       .single();
 
     if (error) throw error;
+
+    // Get contractor company name for notification
+    const { data: contractorProfile } = await supabase
+      .from('contractor_profiles')
+      .select('company_name')
+      .eq('user_id', user.id)
+      .single();
+
+    // Send notification to reporter and government
+    await LiveNotificationService.onBidSubmitted(
+      bidData.report_id,
+      user.id,
+      contractorProfile?.company_name || 'Contractor',
+      bidData.bid_amount
+    );
+
     return data as ContractorBid;
   }
 

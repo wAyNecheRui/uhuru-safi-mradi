@@ -160,6 +160,8 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ trigger }) => {
       'system': 'system',
       'security': 'system',
       'workflow': 'system',
+      'general': 'system',
+      'compliance': 'system',
     };
     return categoryMap[category] || 'system';
   };
