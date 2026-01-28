@@ -119,11 +119,19 @@ const CitizenDashboard = () => {
   ];
 
   const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
+    const normalizedStatus = status?.toLowerCase().replace(/_/g, ' ') || 'pending';
+    switch (normalizedStatus) {
       case 'completed': return 'bg-green-100 text-green-800';
+      case 'in progress': 
       case 'in_progress': return 'bg-blue-100 text-blue-800';
+      case 'contractor selected':
+      case 'contractor_selected': return 'bg-purple-100 text-purple-800';
+      case 'bidding open':
+      case 'bidding_open': return 'bg-orange-100 text-orange-800';
+      case 'under review':
       case 'under_review': return 'bg-yellow-100 text-yellow-800';
       case 'pending': return 'bg-gray-100 text-gray-800';
+      case 'rejected': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -373,12 +381,17 @@ const CitizenDashboard = () => {
                           </Badge>
                         </div>
                         <div className="flex flex-wrap gap-2">
-                          <Badge className={`text-xs ${getStatusColor(report.status || 'pending')}`}>
-                            {(report.status || 'pending').replace('_', ' ').toUpperCase()}
+                          <Badge className={`text-xs ${getStatusColor((report as any).effective_status || report.status || 'pending')}`}>
+                            {((report as any).effective_status || report.status || 'pending').replace(/_/g, ' ').toUpperCase()}
                           </Badge>
                           <Badge className={`text-xs ${getPriorityColor(report.priority || 'medium')}`}>
                             {(report.priority || 'medium').toUpperCase()} Priority
                           </Badge>
+                          {(report as any).project_id && (
+                            <Badge variant="outline" className="text-xs text-green-600">
+                              Project Active
+                            </Badge>
+                          )}
                         </div>
                       </div>
                     ))}

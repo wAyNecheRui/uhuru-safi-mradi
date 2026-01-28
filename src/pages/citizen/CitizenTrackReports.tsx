@@ -37,22 +37,36 @@ const CitizenTrackReports = () => {
   );
 
   const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
+    const normalizedStatus = status?.toLowerCase().replace(/_/g, ' ') || '';
+    switch (normalizedStatus) {
       case 'completed': return 'bg-green-100 text-green-800 border-green-200';
-      case 'in progress': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'pending assignment': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'in progress': 
+      case 'in_progress': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'contractor selected':
+      case 'contractor_selected': return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'bidding open':
+      case 'bidding_open': return 'bg-orange-100 text-orange-800 border-orange-200';
+      case 'approved': return 'bg-teal-100 text-teal-800 border-teal-200';
+      case 'under review':
+      case 'under_review': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'pending': return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'rejected': return 'bg-red-100 text-red-800 border-red-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
   const getPriorityColor = (priority: string) => {
-    switch (priority.toLowerCase()) {
+    switch (priority?.toLowerCase()) {
       case 'urgent': return 'bg-red-100 text-red-800 border-red-200';
       case 'high': return 'bg-orange-100 text-orange-800 border-orange-200';
       case 'medium': return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'low': return 'bg-green-100 text-green-800 border-green-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
+  };
+
+  const formatStatus = (status: string) => {
+    return status?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Unknown';
   };
 
   return (
@@ -130,15 +144,17 @@ const CitizenTrackReports = () => {
                 
                 <CardContent>
                   <div className="flex flex-wrap gap-2 mb-4">
-                    <Badge className={getStatusColor(report.status)}>
-                      {report.status}
+                    <Badge className={getStatusColor((report as any).effective_status || report.status)}>
+                      {formatStatus((report as any).effective_status || report.status)}
                     </Badge>
                     <Badge className={getPriorityColor(report.priority)}>
-                      {report.priority}
+                      {report.priority?.toUpperCase()} Priority
                     </Badge>
-                    <Badge variant="outline" className="text-blue-600">
-                      Status: {report.status}
-                    </Badge>
+                    {(report as any).project_id && (
+                      <Badge variant="outline" className="text-green-600 border-green-200">
+                        Project Active
+                      </Badge>
+                    )}
                   </div>
 
                   <div className="mb-3">

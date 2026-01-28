@@ -14,6 +14,14 @@ export interface CitizenReport {
   created_at: string;
   updated_at: string;
   reported_by: string;
+  // Enriched project data
+  project_id?: string;
+  project_status?: string;
+  effective_status?: string;
+  photo_urls?: string[];
+  category?: string;
+  estimated_cost?: number;
+  affected_population?: number;
 }
 
 export interface CitizenStats {
@@ -40,7 +48,7 @@ export const useCitizenData = () => {
     !!user?.id
   );
 
-  // Fetch citizen's reports
+  // Fetch citizen's reports with linked project data
   const {
     data: reports = [],
     isLoading: reportsLoading,
@@ -50,25 +58,65 @@ export const useCitizenData = () => {
     queryFn: async () => {
       if (!user?.id) return [];
       
-      const { data, error } = await supabase
+      // Fetch reports
+      const { data: reportsData, error } = await supabase
         .from('problem_reports')
         .select('*')
         .eq('reported_by', user.id)
+        .is('deleted_at', null)
         .order('created_at', { ascending: false });
       
       if (error) {
         console.error('Error fetching citizen reports:', error);
         throw error;
       }
-      
-      return data || [];
+
+      if (!reportsData || reportsData.length === 0) return [];
+
+      // Fetch linked projects for these reports
+      const reportIds = reportsData.map(r => r.id);
+      const { data: projectsData } = await supabase
+        .from('projects')
+        .select('id, report_id, status')
+        .in('report_id', reportIds)
+        .is('deleted_at', null);
+
+      // Create a map of report_id to project data
+      const projectMap = new Map<string, { id: string; status: string }>();
+      projectsData?.forEach(p => {
+        if (p.report_id) {
+          projectMap.set(p.report_id, { id: p.id, status: p.status || 'planning' });
+        }
+      });
+
+      // Enrich reports with project status
+      return reportsData.map(report => {
+        const project = projectMap.get(report.id);
+        let effectiveStatus = report.status;
+        
+        // Use project status if available and more advanced
+        if (project) {
+          if (project.status === 'completed') {
+            effectiveStatus = 'completed';
+          } else if (project.status === 'in_progress' && report.status !== 'completed') {
+            effectiveStatus = 'in_progress';
+          }
+        }
+
+        return {
+          ...report,
+          project_id: project?.id,
+          project_status: project?.status,
+          effective_status: effectiveStatus
+        } as CitizenReport;
+      });
     },
     enabled: !!user?.id,
     refetchOnWindowFocus: false,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  // Fetch citizen statistics
+  // Fetch citizen statistics with accurate project-based completion counting
   const {
     data: stats,
     isLoading: statsLoading,
@@ -85,11 +133,27 @@ export const useCitizenData = () => {
       };
       
       try {
-        // Get report counts
-        const { data: reports } = await supabase
+        // Get reports with their IDs and statuses
+        const { data: reportsData } = await supabase
           .from('problem_reports')
-          .select('status')
-          .eq('reported_by', user.id);
+          .select('id, status')
+          .eq('reported_by', user.id)
+          .is('deleted_at', null);
+        
+        const reportIds = reportsData?.map(r => r.id) || [];
+        
+        // Get linked projects to check actual completion status
+        let completedFromProjects = 0;
+        if (reportIds.length > 0) {
+          const { data: projectsData } = await supabase
+            .from('projects')
+            .select('report_id, status')
+            .in('report_id', reportIds)
+            .is('deleted_at', null);
+          
+          // Count projects that are completed
+          completedFromProjects = projectsData?.filter(p => p.status === 'completed').length || 0;
+        }
         
         // Get verification status from user_verifications table
         const { data: verifications } = await supabase
@@ -98,12 +162,19 @@ export const useCitizenData = () => {
           .eq('user_id', user.id)
           .eq('verification_type', 'citizen_id');
         
-        const totalReports = reports?.length || 0;
-        const activeReports = reports?.filter(r => 
-          ['pending', 'under_review', 'in_progress', 'bidding_open', 'contractor_selected'].includes(r.status || '')
-        ).length || 0;
-        // Count reports where the associated project is completed (all milestones done)
-        const completedReports = reports?.filter(r => r.status === 'completed' || r.status === 'resolved').length || 0;
+        const totalReports = reportsData?.length || 0;
+        
+        // Active = has a project that's not completed OR report status indicates active workflow
+        const activeStatuses = ['pending', 'under_review', 'approved', 'bidding_open', 'contractor_selected', 'in_progress'];
+        const completedStatuses = ['completed', 'resolved'];
+        
+        // Count completed as: report status is completed OR linked project is completed
+        const directlyCompleted = reportsData?.filter(r => completedStatuses.includes(r.status || '')).length || 0;
+        const completedReports = Math.max(directlyCompleted, completedFromProjects);
+        
+        // Active = total - completed - rejected
+        const rejectedReports = reportsData?.filter(r => r.status === 'rejected').length || 0;
+        const activeReports = totalReports - completedReports - rejectedReports;
         
         // Count user's community votes
         const { data: votesData } = await supabase
@@ -121,7 +192,7 @@ export const useCitizenData = () => {
         
         return {
           totalReports,
-          activeReports,
+          activeReports: Math.max(0, activeReports),
           completedReports,
           communityVotes,
           verificationStatus
