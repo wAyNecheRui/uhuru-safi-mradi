@@ -405,22 +405,22 @@ const ContractorQuality = () => {
                     <div className="border-l-4 border-green-500 pl-4 py-2">
                       <p className="font-medium text-gray-900">Quality Inspection Passed</p>
                       <p className="text-sm text-gray-500">Road construction checkpoint - Phase 2</p>
-                      <p className="text-xs text-gray-400 mt-1">{new Date().toLocaleString()}</p>
+                      <p className="text-xs text-gray-400 mt-1">{new Date().toLocaleString('en-KE', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })}</p>
                     </div>
                     <div className="border-l-4 border-blue-500 pl-4 py-2">
                       <p className="font-medium text-gray-900">Document Uploaded</p>
                       <p className="text-sm text-gray-500">NCA License renewal certificate</p>
-                      <p className="text-xs text-gray-400 mt-1">{new Date(Date.now() - 86400000).toLocaleString()}</p>
+                      <p className="text-xs text-gray-400 mt-1">{new Date(Date.now() - 86400000).toLocaleString('en-KE', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })}</p>
                     </div>
                     <div className="border-l-4 border-yellow-500 pl-4 py-2">
                       <p className="font-medium text-gray-900">Compliance Review Initiated</p>
                       <p className="text-sm text-gray-500">Annual safety compliance check</p>
-                      <p className="text-xs text-gray-400 mt-1">{new Date(Date.now() - 172800000).toLocaleString()}</p>
+                      <p className="text-xs text-gray-400 mt-1">{new Date(Date.now() - 172800000).toLocaleString('en-KE', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })}</p>
                     </div>
                     <div className="border-l-4 border-purple-500 pl-4 py-2">
                       <p className="font-medium text-gray-900">AGPO Report Submitted</p>
                       <p className="text-sm text-gray-500">Quarterly women/youth employment report</p>
-                      <p className="text-xs text-gray-400 mt-1">{new Date(Date.now() - 259200000).toLocaleString()}</p>
+                      <p className="text-xs text-gray-400 mt-1">{new Date(Date.now() - 259200000).toLocaleString('en-KE', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })}</p>
                     </div>
                   </div>
                 </CardContent>

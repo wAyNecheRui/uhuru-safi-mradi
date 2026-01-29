@@ -5,9 +5,9 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { 
-  BarChart3, TrendingUp, Users, DollarSign, Clock, 
+  BarChart3, TrendingUp, TrendingDown, Users, DollarSign, Clock, 
   CheckCircle, MapPin, Calendar, Download, Loader2,
-  Eye, Star, Zap, Target
+  Eye, Star, Zap, Target, RefreshCw
 } from 'lucide-react';
 import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
@@ -15,16 +15,29 @@ import ResponsiveContainer from '@/components/ResponsiveContainer';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { isProjectEffectivelyCompleted } from '@/utils/progressCalculation';
+import { formatDateTime, getCurrentDateTime } from '@/lib/dateUtils';
 
 const GovernmentAnalytics = () => {
   const [loading, setLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState<string>('');
   const [kpis, setKpis] = useState({
     transparencyIndex: 0,
     paymentTimeliness: 0,
     projectSuccessRate: 0,
     citizenEngagement: 0,
+    citizenEngagementTrend: 0,
     contractorSatisfaction: 0,
-    governmentEfficiency: 0
+    governmentEfficiency: 0,
+    // Raw counts for transparency
+    totalProjects: 0,
+    projectsWithEscrow: 0,
+    totalMilestones: 0,
+    verifiedMilestones: 0,
+    paidMilestones: 0,
+    totalReports: 0,
+    totalVotes: 0,
+    totalRatings: 0,
+    avgRating: 0
   });
   const [regionalData, setRegionalData] = useState<any[]>([]);
   const { toast } = useToast();
@@ -98,7 +111,22 @@ const GovernmentAnalytics = () => {
 
       // === CITIZEN ENGAGEMENT ===
       // Measures: total reports + total votes (actual participation)
-      const citizenEngagement = reports.length + votes.length;
+      const currentCitizenEngagement = reports.length + votes.length;
+      
+      // Calculate trend by comparing to reports from last 30 days vs previous 30 days
+      const now = new Date();
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+      
+      const recentReports = reports.filter(r => new Date(r.created_at) >= thirtyDaysAgo).length;
+      const previousReports = reports.filter(r => {
+        const date = new Date(r.created_at);
+        return date >= sixtyDaysAgo && date < thirtyDaysAgo;
+      }).length;
+      
+      const citizenEngagementTrend = previousReports > 0 
+        ? Math.round(((recentReports - previousReports) / previousReports) * 100)
+        : (recentReports > 0 ? 100 : 0);
 
       // === CONTRACTOR SATISFACTION ===
       // Measures: average rating from contractor_ratings table (scale 1-5 -> percentage)
@@ -110,14 +138,14 @@ const GovernmentAnalytics = () => {
       // === GOVERNMENT EFFICIENCY ===
       // Measures: (approved reports + completed projects + processed payments) / total actions possible
       const approvedReports = reports.filter(r => 
-        r.status === 'approved' || r.status === 'bidding_open' || r.status === 'contractor_selected' || r.status === 'completed'
+        r.status === 'approved' || r.status === 'bidding_open' || r.status === 'contractor_selected' || r.status === 'completed' || r.status === 'in_progress'
       ).length;
       const completedPayments = payments.filter(p => p.status === 'completed' || p.status === 'success').length;
-      const totalReports = reports.length || 1;
-      const totalPayments = payments.length || 1;
+      const totalReportsCount = reports.length || 1;
+      const totalPaymentsCount = payments.length || 1;
       
-      const approvalRate = approvedReports / totalReports;
-      const paymentCompletionRate = completedPayments / totalPayments;
+      const approvalRate = approvedReports / totalReportsCount;
+      const paymentCompletionRate = completedPayments / totalPaymentsCount;
       const projectCompletionRate = completedProjects / totalProjects;
       
       const governmentEfficiency = Math.round(
@@ -128,10 +156,23 @@ const GovernmentAnalytics = () => {
         transparencyIndex: Math.min(transparencyIndex, 100),
         paymentTimeliness: Math.min(paymentTimeliness, 100),
         projectSuccessRate: Math.min(projectSuccessRate, 100),
-        citizenEngagement,
+        citizenEngagement: currentCitizenEngagement,
+        citizenEngagementTrend,
         contractorSatisfaction: Math.min(contractorSatisfaction, 100),
-        governmentEfficiency: Math.min(governmentEfficiency, 100)
+        governmentEfficiency: Math.min(governmentEfficiency, 100),
+        // Raw counts for transparency
+        totalProjects,
+        projectsWithEscrow,
+        totalMilestones,
+        verifiedMilestones,
+        paidMilestones,
+        totalReports: reports.length,
+        totalVotes: votes.length,
+        totalRatings: ratings.length,
+        avgRating: Math.round(avgRating * 10) / 10
       });
+      
+      setLastUpdated(getCurrentDateTime());
 
       // === REGIONAL DATA ===
       // Calculate per-county statistics from reports and projects
@@ -212,27 +253,38 @@ const GovernmentAnalytics = () => {
           
           <div className="flex flex-wrap justify-between items-start gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Analytics & Reporting</h1>
-              <p className="text-gray-600">Performance metrics and regional development insights</p>
+              <h1 className="text-3xl font-bold text-foreground mb-2">Analytics & Reporting</h1>
+              <p className="text-muted-foreground">Performance metrics and regional development insights</p>
+              {lastUpdated && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Last updated: {lastUpdated}
+                </p>
+              )}
             </div>
-            <Button onClick={() => {
-              toast({
-                title: "Generating Report",
-                description: "Your analytics report is being generated. Download will start shortly."
-              });
-              // Generate CSV data
-              const csvContent = `Analytics Report - ${new Date().toLocaleDateString()}\n\nKPI,Value\nTransparency Index,${kpis.transparencyIndex}%\nPayment Timeliness,${kpis.paymentTimeliness}%\nProject Success Rate,${kpis.projectSuccessRate}%\nCitizen Engagement,${kpis.citizenEngagement}\nContractor Satisfaction,${kpis.contractorSatisfaction}%\nGovernment Efficiency,${kpis.governmentEfficiency}%`;
-              const blob = new Blob([csvContent], { type: 'text/csv' });
-              const url = window.URL.createObjectURL(blob);
-              const a = document.createElement('a');
-              a.href = url;
-              a.download = `analytics-report-${new Date().toISOString().split('T')[0]}.csv`;
-              a.click();
-              window.URL.revokeObjectURL(url);
-            }}>
-              <Download className="h-4 w-4 mr-2" />
-              Export Report
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => fetchAnalyticsData()} disabled={loading}>
+                <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+              <Button onClick={() => {
+                toast({
+                  title: "Generating Report",
+                  description: "Your analytics report is being generated. Download will start shortly."
+                });
+                // Generate comprehensive CSV data
+                const csvContent = `Analytics Report - ${getCurrentDateTime()}\n\nKPI,Value,Details\nTransparency Index,${kpis.transparencyIndex}%,"${kpis.projectsWithEscrow}/${kpis.totalProjects} projects with escrow, ${kpis.verifiedMilestones}/${kpis.totalMilestones} milestones verified"\nPayment Timeliness,${kpis.paymentTimeliness}%,"${kpis.paidMilestones}/${kpis.totalMilestones} milestones paid"\nProject Success Rate,${kpis.projectSuccessRate}%,"Projects completed on time/budget"\nCitizen Engagement,${kpis.citizenEngagement},"${kpis.totalReports} reports + ${kpis.totalVotes} votes"\nContractor Satisfaction,${kpis.contractorSatisfaction}%,"${kpis.totalRatings} ratings, avg ${kpis.avgRating}/5"\nGovernment Efficiency,${kpis.governmentEfficiency}%,"Composite: approvals, payments, completions"`;
+                const blob = new Blob([csvContent], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `analytics-report-${new Date().toISOString().split('T')[0]}.csv`;
+                a.click();
+                window.URL.revokeObjectURL(url);
+              }}>
+                <Download className="h-4 w-4 mr-2" />
+                Export Report
+              </Button>
+            </div>
           </div>
 
           <Tabs defaultValue="kpis" className="space-y-6">
@@ -254,7 +306,9 @@ const GovernmentAnalytics = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="text-3xl font-bold text-blue-600">{kpis.transparencyIndex}%</div>
-                    <p className="text-xs text-gray-500 mt-1">Projects with full visibility</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {kpis.projectsWithEscrow}/{kpis.totalProjects} with escrow, {kpis.verifiedMilestones}/{kpis.totalMilestones} verified
+                    </p>
                     <Progress value={kpis.transparencyIndex} className="mt-3 h-2" />
                   </CardContent>
                 </Card>
@@ -269,7 +323,9 @@ const GovernmentAnalytics = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="text-3xl font-bold text-green-600">{kpis.paymentTimeliness}%</div>
-                    <p className="text-xs text-gray-500 mt-1">Payments made on time</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {kpis.paidMilestones}/{kpis.totalMilestones} milestones paid
+                    </p>
                     <Progress value={kpis.paymentTimeliness} className="mt-3 h-2" />
                   </CardContent>
                 </Card>
@@ -284,7 +340,7 @@ const GovernmentAnalytics = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="text-3xl font-bold text-purple-600">{kpis.projectSuccessRate}%</div>
-                    <p className="text-xs text-gray-500 mt-1">Completed on time/budget</p>
+                    <p className="text-xs text-muted-foreground mt-1">Completed on time/budget</p>
                     <Progress value={kpis.projectSuccessRate} className="mt-3 h-2" />
                   </CardContent>
                 </Card>
@@ -299,11 +355,19 @@ const GovernmentAnalytics = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="text-3xl font-bold text-orange-600">{kpis.citizenEngagement}</div>
-                    <p className="text-xs text-gray-500 mt-1">Active reports this period</p>
-                    <div className="flex items-center gap-1 mt-2 text-green-600 text-xs">
-                      <TrendingUp className="h-3 w-3" />
-                      +12% from last month
-                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {kpis.totalReports} reports + {kpis.totalVotes} votes
+                    </p>
+                    {kpis.citizenEngagementTrend !== 0 && (
+                      <div className={`flex items-center gap-1 mt-2 text-xs ${kpis.citizenEngagementTrend > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {kpis.citizenEngagementTrend > 0 ? (
+                          <TrendingUp className="h-3 w-3" />
+                        ) : (
+                          <TrendingDown className="h-3 w-3" />
+                        )}
+                        {kpis.citizenEngagementTrend > 0 ? '+' : ''}{kpis.citizenEngagementTrend}% from last 30 days
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
 
@@ -317,7 +381,11 @@ const GovernmentAnalytics = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="text-3xl font-bold text-yellow-600">{kpis.contractorSatisfaction}%</div>
-                    <p className="text-xs text-gray-500 mt-1">Based on ratings</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {kpis.totalRatings > 0 
+                        ? `${kpis.totalRatings} ratings (avg ${kpis.avgRating}/5)` 
+                        : 'No ratings submitted yet'}
+                    </p>
                     <Progress value={kpis.contractorSatisfaction} className="mt-3 h-2" />
                   </CardContent>
                 </Card>
@@ -332,7 +400,9 @@ const GovernmentAnalytics = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="text-3xl font-bold text-teal-600">{kpis.governmentEfficiency}%</div>
-                    <p className="text-xs text-gray-500 mt-1">Admin cost reduction</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Approvals, payments & completions
+                    </p>
                     <Progress value={kpis.governmentEfficiency} className="mt-3 h-2" />
                   </CardContent>
                 </Card>

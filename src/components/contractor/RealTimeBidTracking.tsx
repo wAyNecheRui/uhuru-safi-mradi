@@ -62,7 +62,7 @@ const RealTimeBidTracking = () => {
           bidAmount: `KES ${(parseFloat(bid.bid_amount?.toString() || '0') / 1000000).toFixed(1)}M`,
           status: bid.status as BidStatus['status'],
           submittedDate: new Date(bid.submitted_at).toISOString().split('T')[0],
-          lastUpdate: new Date().toLocaleString(),
+          lastUpdate: new Date().toLocaleString('en-KE', { hour: 'numeric', minute: '2-digit', hour12: true }),
           totalBids: Math.floor(Math.random() * 15) + 3, // Placeholder - would need aggregate query
           currentRanking: Math.floor(Math.random() * 5) + 1, // Placeholder - would need ranking logic
           evaluationProgress: getProgressFromStatus(bid.status),
@@ -131,30 +131,34 @@ const RealTimeBidTracking = () => {
   };
 
   const generateStatusNotifications = (status: string, projectTitle: string): Notification[] => {
+    const formatTimestamp = () => new Date().toLocaleString('en-KE', { 
+      month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true 
+    });
+    
     const baseNotifications = [
-      { id: '1', message: `Bid submitted for ${projectTitle}`, timestamp: new Date().toLocaleString(), type: 'info' as const }
+      { id: '1', message: `Bid submitted for ${projectTitle}`, timestamp: formatTimestamp(), type: 'info' as const }
     ];
 
     switch (status) {
       case 'under_review':
         return [
           ...baseNotifications,
-          { id: '2', message: 'Your bid is under technical review', timestamp: new Date().toLocaleString(), type: 'info' as const }
+          { id: '2', message: 'Your bid is under technical review', timestamp: formatTimestamp(), type: 'info' as const }
         ];
       case 'shortlisted':
         return [
           ...baseNotifications,
-          { id: '3', message: 'Congratulations! You have been shortlisted', timestamp: new Date().toLocaleString(), type: 'success' as const }
+          { id: '3', message: 'Congratulations! You have been shortlisted', timestamp: formatTimestamp(), type: 'success' as const }
         ];
       case 'selected':
         return [
           ...baseNotifications,
-          { id: '4', message: 'Congratulations! Your bid has been selected', timestamp: new Date().toLocaleString(), type: 'success' as const }
+          { id: '4', message: 'Congratulations! Your bid has been selected', timestamp: formatTimestamp(), type: 'success' as const }
         ];
       case 'rejected':
         return [
           ...baseNotifications,
-          { id: '5', message: 'Your bid was not selected this time', timestamp: new Date().toLocaleString(), type: 'error' as const }
+          { id: '5', message: 'Your bid was not selected this time', timestamp: formatTimestamp(), type: 'error' as const }
         ];
       default:
         return baseNotifications;
@@ -262,7 +266,7 @@ const RealTimeBidTracking = () => {
                   </div>
                   <div className="text-center">
                     <Clock className="h-5 w-5 mx-auto mb-1 text-orange-600" />
-                    <div className="font-semibold text-orange-600">{new Date(bid.lastUpdate).toLocaleTimeString()}</div>
+                    <div className="font-semibold text-orange-600">{bid.lastUpdate}</div>
                     <div className="text-xs text-gray-600">Last Update</div>
                   </div>
                 </div>
@@ -282,7 +286,7 @@ const RealTimeBidTracking = () => {
                         <div className="flex justify-between items-start">
                           <p className="flex-1">{notification.message}</p>
                           <span className="text-xs opacity-75 ml-2">
-                            {new Date(notification.timestamp).toLocaleTimeString()}
+                            {notification.timestamp}
                           </span>
                         </div>
                       </div>

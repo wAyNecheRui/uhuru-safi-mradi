@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { useSystemAnalytics } from '@/hooks/useSystemAnalytics';
 import { supabase } from '@/integrations/supabase/client';
-import { TrendingUp, TrendingDown, Users, FileText, CheckCircle, Clock, AlertTriangle, Eye, Target, Zap } from 'lucide-react';
+import { TrendingUp, TrendingDown, Users, FileText, CheckCircle, Clock, AlertTriangle, Eye, Target, Zap, RefreshCw } from 'lucide-react';
 import { isProjectEffectivelyCompleted } from '@/utils/progressCalculation';
+import { formatDateTime, getCurrentDateTime } from '@/lib/dateUtils';
 
 interface RealTimeKPIs {
   transparencyIndex: number;
@@ -21,6 +23,7 @@ const AnalyticsDashboard = () => {
   const { analytics, loading: analyticsLoading, getLatestMetric, calculateTrend } = useSystemAnalytics();
   const [realTimeKPIs, setRealTimeKPIs] = useState<RealTimeKPIs | null>(null);
   const [loading, setLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState<string>('');
 
   useEffect(() => {
     fetchRealTimeKPIs();
@@ -113,6 +116,7 @@ const AnalyticsDashboard = () => {
         activeContractors,
         pendingPayments
       });
+      setLastUpdated(getCurrentDateTime());
     } catch (error) {
       console.error('Error fetching real-time KPIs:', error);
     } finally {
@@ -171,11 +175,20 @@ const AnalyticsDashboard = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Government Analytics Dashboard</h1>
-        <p className="text-muted-foreground">
-          Real-time performance indicators calculated from actual system data
-        </p>
+      <div className="mb-8 flex flex-wrap justify-between items-start gap-4">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Government Analytics Dashboard</h1>
+          <p className="text-muted-foreground">
+            Real-time performance indicators calculated from actual system data
+          </p>
+          {lastUpdated && (
+            <p className="text-xs text-muted-foreground mt-1">Last updated: {lastUpdated}</p>
+          )}
+        </div>
+        <Button variant="outline" onClick={() => { setLoading(true); fetchRealTimeKPIs(); }} disabled={loading}>
+          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
