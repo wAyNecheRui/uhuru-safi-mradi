@@ -84,7 +84,7 @@ const RealtimeStatusIndicator: React.FC<RealtimeStatusIndicatorProps> = ({
         <p>{config.tooltip}</p>
         {lastUpdate && connectionStatus === 'connected' && (
           <p className="text-xs text-muted-foreground mt-1">
-            Last update: {lastUpdate.toLocaleTimeString()}
+            Last update: {lastUpdate.toLocaleTimeString('en-KE', { hour: 'numeric', minute: '2-digit', hour12: true })}
           </p>
         )}
       </TooltipContent>
