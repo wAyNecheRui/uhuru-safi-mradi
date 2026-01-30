@@ -47,8 +47,13 @@ interface ProblemReport {
 
 const CommunityValidation = () => {
   const { user } = useAuth();
-  const [reports, setReports] = useState<ProblemReport[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Split data sources:
+  // - allReports: reports this citizen has already voted on ("validated") anywhere
+  // - countyReports: reports near the citizen (requires GPS)
+  const [allReports, setAllReports] = useState<ProblemReport[]>([]);
+  const [countyReports, setCountyReports] = useState<ProblemReport[]>([]);
+  const [loadingAll, setLoadingAll] = useState(true);
+  const [loadingCounty, setLoadingCounty] = useState(false);
   const [votingState, setVotingState] = useState<{ [key: string]: boolean }>({});
   const [activeTab, setActiveTab] = useState('all');
   
@@ -64,10 +69,21 @@ const CommunityValidation = () => {
     formatDistance,
   } = useLocationFiltering();
 
+  // Auto-detect location on page load (no manual "Enable Location" button)
+  useEffect(() => {
+    void (async () => {
+      try {
+        await getCurrentLocation();
+      } catch {
+        // Location is optional; failure should not block "All Reports"
+      }
+    })();
+  }, [getCurrentLocation]);
+
   // Fetch reports with distance using location
   const fetchReportsWithDistance = useCallback(async () => {
     if (!userLocation) return;
-    setLoading(true);
+    setLoadingCounty(true);
     try {
       const problemsWithDistance = await fetchProblemsWithDistance(
         userLocation.latitude,
@@ -128,12 +144,12 @@ const CommunityValidation = () => {
         };
       }));
 
-      setReports(enrichedReports);
+      setCountyReports(enrichedReports);
     } catch (error) {
       console.error('Error fetching reports with distance:', error);
       toast.error('Failed to load community reports');
     } finally {
-      setLoading(false);
+      setLoadingCounty(false);
     }
   }, [userLocation, user, fetchProblemsWithDistance, canVote, canVerify]);
 
@@ -144,16 +160,40 @@ const CommunityValidation = () => {
     }
   }, [userLocation, fetchReportsWithDistance]);
 
-  // Fallback fetch without distance - only fetch pending reports for voting
-  const fetchReportsWithoutDistance = useCallback(async () => {
-    setLoading(true);
+  // Fetch "validated" reports (reports the current citizen has voted on)
+  const fetchAllValidatedReports = useCallback(async () => {
+    setLoadingAll(true);
     try {
-      // Only fetch reports that are pending (awaiting community votes)
+      if (!user) {
+        setAllReports([]);
+        return;
+      }
+
+      const { data: votes, error: votesError } = await supabase
+        .from('community_votes')
+        .select('report_id, vote_type, created_at')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (votesError) throw votesError;
+
+      const reportIds = (votes || []).map(v => v.report_id).filter(Boolean);
+      if (reportIds.length === 0) {
+        setAllReports([]);
+        return;
+      }
+
+      const userVoteMap = new Map<string, 'upvote' | 'downvote'>();
+      const voteOrderMap = new Map<string, number>();
+      (votes || []).forEach((v, idx) => {
+        userVoteMap.set(v.report_id, v.vote_type as 'upvote' | 'downvote');
+        voteOrderMap.set(v.report_id, idx);
+      });
+
       const { data, error } = await supabase
         .from('problem_reports')
         .select('*')
-        .eq('status', WORKFLOW_STATUS.PENDING)
-        .order('priority_score', { ascending: false })
+        .in('id', reportIds)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -167,16 +207,7 @@ const CommunityValidation = () => {
         const upvotes = voteCounts?.filter(v => v.vote_type === 'upvote').length || 0;
         const downvotes = voteCounts?.filter(v => v.vote_type === 'downvote').length || 0;
 
-        let userVote = null;
-        if (user) {
-          const { data: userVoteData } = await supabase
-            .from('community_votes')
-            .select('vote_type')
-            .eq('report_id', report.id)
-            .eq('user_id', user.id)
-            .maybeSingle();
-          userVote = userVoteData?.vote_type || null;
-        }
+        const userVote = userVoteMap.get(report.id) ?? null;
 
         const { data: reporterData } = await supabase
           .from('user_profiles')
@@ -198,12 +229,17 @@ const CommunityValidation = () => {
         };
       }));
 
-      setReports(reportsWithVotes);
+      // Keep "All Reports" ordered by the user's vote time (most recent first)
+      reportsWithVotes.sort((a, b) => {
+        return (voteOrderMap.get(a.id) ?? 0) - (voteOrderMap.get(b.id) ?? 0);
+      });
+
+      setAllReports(reportsWithVotes);
     } catch (error: any) {
       console.error('Error fetching reports:', error);
       toast.error('Failed to load community reports');
     } finally {
-      setLoading(false);
+      setLoadingAll(false);
     }
   }, [user]);
 
@@ -230,35 +266,32 @@ const CommunityValidation = () => {
       if (error) throw error;
 
       // Update local state immediately for better UX
-      let newTotalVotes = 0;
-      setReports(prev => prev.map(report => {
-        if (report.id === reportId) {
-          const wasUpvote = report.user_vote === 'upvote';
-          const wasDownvote = report.user_vote === 'downvote';
-          
-          let newUpvotes = report.upvotes;
-          let newDownvotes = report.downvotes;
-          
-          // Remove previous vote
-          if (wasUpvote) newUpvotes--;
-          if (wasDownvote) newDownvotes--;
-          
-          // Add new vote
-          if (voteType === 'upvote') newUpvotes++;
-          if (voteType === 'downvote') newDownvotes++;
-          
-          newTotalVotes = newUpvotes + newDownvotes;
-          
-          return { 
-            ...report, 
-            user_vote: voteType,
-            upvotes: newUpvotes,
-            downvotes: newDownvotes,
-            priority_score: newUpvotes - newDownvotes
-          };
-        }
-        return report;
-      }));
+      const applyVoteUpdate = (report: ProblemReport): ProblemReport => {
+        const wasUpvote = report.user_vote === 'upvote';
+        const wasDownvote = report.user_vote === 'downvote';
+
+        let newUpvotes = report.upvotes;
+        let newDownvotes = report.downvotes;
+
+        // Remove previous vote
+        if (wasUpvote) newUpvotes--;
+        if (wasDownvote) newDownvotes--;
+
+        // Add new vote
+        if (voteType === 'upvote') newUpvotes++;
+        if (voteType === 'downvote') newDownvotes++;
+
+        return {
+          ...report,
+          user_vote: voteType,
+          upvotes: newUpvotes,
+          downvotes: newDownvotes,
+          priority_score: newUpvotes - newDownvotes,
+        };
+      };
+
+      setCountyReports(prev => prev.map(r => (r.id === reportId ? applyVoteUpdate(r) : r)));
+      setAllReports(prev => prev.map(r => (r.id === reportId ? applyVoteUpdate(r) : r)));
 
       // Check if this vote triggers a status change (reaches 50 votes threshold)
       const statusResult = await WorkflowGuardService.checkAndUpdateStatusAfterVote(reportId);
@@ -267,11 +300,14 @@ const CommunityValidation = () => {
         toast.success('Vote submitted! This report has reached the review threshold and will now be reviewed by government officials.', {
           duration: 5000
         });
-        // Remove this report from the list as it's now under_review
-        setReports(prev => prev.filter(r => r.id !== reportId));
+        // Remove from the *local feed* (My County) once it's no longer pending
+        setCountyReports(prev => prev.filter(r => r.id !== reportId));
       } else {
         toast.success(`Vote submitted successfully`);
       }
+
+      // Refresh the citizen's "validated" list so the vote immediately appears in All Reports
+      fetchAllValidatedReports();
     } catch (error: any) {
       console.error('Voting error:', error);
       toast.error('Failed to submit vote');
@@ -298,22 +334,19 @@ const CommunityValidation = () => {
       if (error) throw error;
 
       toast.success(`Report ${action === 'verify' ? 'verified' : 'flagged'} successfully`);
-      // Refresh the list
-      if (userLocation) {
-        fetchReportsWithDistance();
-      } else {
-        fetchReportsWithoutDistance();
-      }
+      // Refresh lists
+      if (userLocation) fetchReportsWithDistance();
+      fetchAllValidatedReports();
     } catch (error: any) {
       console.error('Verification error:', error);
       toast.error(`Failed to ${action} report`);
     }
   };
 
-  // Fetch reports on mount - always show reports, location is optional enhancement
+  // Fetch "All Reports" on mount (vote history / validated reports)
   useEffect(() => {
-    fetchReportsWithoutDistance();
-  }, [fetchReportsWithoutDistance]);
+    fetchAllValidatedReports();
+  }, [fetchAllValidatedReports]);
 
   const getPriorityColor = (priority: string) => {
     switch (priority.toLowerCase()) {
@@ -337,27 +370,9 @@ const CommunityValidation = () => {
     });
   };
 
-  if (loading) {
-    return (
-      <div className="max-w-6xl mx-auto space-y-6">
-        <Card>
-          <CardContent className="p-6 text-center">
-            <div className="animate-pulse">Loading community reports...</div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // Filter reports by distance category - only 'all' and 'county' categories
-  const filteredReports = activeTab === 'all' 
-    ? reports 
-    : reports.filter(r => r.distance_category === 'county' || r.distance_category === 'nearby' || r.distance_category === 'urgent');
-
-  // Count for county tab (includes all location-based reports)
-  const countyCount = reports.filter(r => 
-    r.distance_category === 'county' || r.distance_category === 'nearby' || r.distance_category === 'urgent'
-  ).length;
+  const activeReports = activeTab === 'all' ? allReports : countyReports;
+  const activeLoading = activeTab === 'all' ? loadingAll : loadingCounty;
+  const countyCount = countyReports.length;
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
@@ -384,15 +399,10 @@ const CommunityValidation = () => {
                 Location: {userLocation.county || `${userLocation.latitude.toFixed(2)}°, ${userLocation.longitude.toFixed(2)}°`}
               </Badge>
             ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => getCurrentLocation()}
-                className="text-blue-600"
-              >
-                <MapPin className="h-4 w-4 mr-1" />
-                Enable Location
-              </Button>
+              <Badge variant="outline">
+                <Info className="h-3 w-3 mr-1" />
+                Location not available
+              </Badge>
             )}
             {locationError && (
               <span className="text-sm text-amber-600">{locationError}</span>
@@ -405,7 +415,7 @@ const CommunityValidation = () => {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2 bg-white shadow">
           <TabsTrigger value="all" className="data-[state=active]:bg-gray-900 data-[state=active]:text-white">
-            All Reports ({reports.length})
+            All Reports ({allReports.length})
           </TabsTrigger>
           <TabsTrigger 
             value="county" 
@@ -418,21 +428,27 @@ const CommunityValidation = () => {
         </TabsList>
       </Tabs>
 
-      {filteredReports.length === 0 ? (
+      {activeLoading && activeReports.length === 0 ? (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <div className="animate-pulse">Loading reports...</div>
+          </CardContent>
+        </Card>
+      ) : activeReports.length === 0 ? (
         <Card>
           <CardContent className="p-8 text-center">
             <CheckCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 mb-2">No Reports in This Category</h3>
             <p className="text-gray-600">
               {activeTab === 'all' 
-                ? 'All community reports have been reviewed and validated.'
-                : `No reports in the ${activeTab} category within your area.`}
+                ? "You haven't validated any reports yet. Vote on a report in 'My County' to see it here."
+                : `No reports found near you yet.`}
             </p>
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-6">
-          {filteredReports.map((report) => (
+          {activeReports.map((report) => (
             <Card key={report.id} className="hover:shadow-lg transition-shadow">
               <CardContent className="p-6">
                 <div className="flex flex-col lg:flex-row gap-6">
