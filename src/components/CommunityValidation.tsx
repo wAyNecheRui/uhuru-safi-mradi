@@ -310,12 +310,10 @@ const CommunityValidation = () => {
     }
   };
 
-  // Effect for fallback fetch when no location
+  // Fetch reports on mount - always show reports, location is optional enhancement
   useEffect(() => {
-    if (!userLocation && !isLocating) {
-      fetchReportsWithoutDistance();
-    }
-  }, [userLocation, isLocating, fetchReportsWithoutDistance]);
+    fetchReportsWithoutDistance();
+  }, [fetchReportsWithoutDistance]);
 
   const getPriorityColor = (priority: string) => {
     switch (priority.toLowerCase()) {
@@ -351,15 +349,15 @@ const CommunityValidation = () => {
     );
   }
 
-  // Filter reports by distance category
+  // Filter reports by distance category - only 'all' and 'county' categories
   const filteredReports = activeTab === 'all' 
     ? reports 
-    : reports.filter(r => r.distance_category === activeTab);
+    : reports.filter(r => r.distance_category === 'county' || r.distance_category === 'nearby' || r.distance_category === 'urgent');
 
-  // Group reports by distance category for counts
-  const urgentCount = reports.filter(r => r.distance_category === 'urgent').length;
-  const nearbyCount = reports.filter(r => r.distance_category === 'nearby').length;
-  const countyCount = reports.filter(r => r.distance_category === 'county').length;
+  // Count for county tab (includes all location-based reports)
+  const countyCount = reports.filter(r => 
+    r.distance_category === 'county' || r.distance_category === 'nearby' || r.distance_category === 'urgent'
+  ).length;
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
@@ -403,25 +401,22 @@ const CommunityValidation = () => {
         </CardHeader>
       </Card>
 
-      {/* Distance-based Tabs */}
-      {userLocation && (
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 bg-white shadow">
-            <TabsTrigger value="all" className="data-[state=active]:bg-gray-900 data-[state=active]:text-white">
-              All ({reports.length})
-            </TabsTrigger>
-            <TabsTrigger value="urgent" className="data-[state=active]:bg-red-600 data-[state=active]:text-white">
-              🔴 Urgent ({urgentCount})
-            </TabsTrigger>
-            <TabsTrigger value="nearby" className="data-[state=active]:bg-yellow-500 data-[state=active]:text-white">
-              🟡 Nearby ({nearbyCount})
-            </TabsTrigger>
-            <TabsTrigger value="county" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
-              🔵 County ({countyCount})
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-      )}
+      {/* Category Tabs - Always visible */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2 bg-white shadow">
+          <TabsTrigger value="all" className="data-[state=active]:bg-gray-900 data-[state=active]:text-white">
+            All Reports ({reports.length})
+          </TabsTrigger>
+          <TabsTrigger 
+            value="county" 
+            className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+            disabled={!userLocation}
+          >
+            <MapPin className="h-4 w-4 mr-1" />
+            My County ({userLocation ? countyCount : '-'})
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       {filteredReports.length === 0 ? (
         <Card>
