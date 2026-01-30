@@ -167,7 +167,7 @@ const ContractorPerformance = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
         <Header />
         <main className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-center py-12">
@@ -180,7 +180,7 @@ const ContractorPerformance = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
       <Header />
       
       <main>
