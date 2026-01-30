@@ -190,7 +190,7 @@ const CitizenDashboard = () => {
 
   if (hasError) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
         <Header />
         <main>
           <ResponsiveContainer className="py-6 sm:py-8">
@@ -211,7 +211,7 @@ const CitizenDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50 overflow-x-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 overflow-x-hidden">
       <Header />
       
       <main className="w-full max-w-full overflow-x-hidden">
