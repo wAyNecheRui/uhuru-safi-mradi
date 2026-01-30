@@ -1,12 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
-import { Lightbulb, FileText, Copy } from 'lucide-react';
+import { Label } from '@/components/ui/label';
 import { ReportData } from '@/types/problemReporting';
-import { getTemplateByCategory, DESCRIPTION_TEMPLATES } from '@/constants/descriptionTemplates';
-import { toast } from 'sonner';
+import { getTemplateByCategory, DESCRIPTION_TEMPLATES, getCategoryGuidance } from '@/constants/descriptionTemplates';
+import { AlertCircle, HelpCircle } from 'lucide-react';
 
 interface DescriptionTemplateSectionProps {
   reportData: ReportData;
@@ -14,130 +11,71 @@ interface DescriptionTemplateSectionProps {
 }
 
 const DescriptionTemplateSection = ({ reportData, onInputChange }: DescriptionTemplateSectionProps) => {
-  const [showTemplate, setShowTemplate] = useState(false);
-  const [templateApplied, setTemplateApplied] = useState(false);
-  
-  // Always show a template - use category-specific or fall back to 'other'
   const template = getTemplateByCategory(reportData.category) || DESCRIPTION_TEMPLATES.find(t => t.category === 'other');
+  const guidance = getCategoryGuidance(reportData.category);
   
-  const useTemplate = () => {
-    if (template) {
-      // Insert the template structure (labels only)
-      onInputChange('description', template.template);
-      setTemplateApplied(true);
-      setShowTemplate(false);
-      toast.success('Template applied! Fill in the details after each label.');
-    }
-  };
-
-  const copyExample = () => {
-    if (template) {
-      navigator.clipboard.writeText(template.example);
-      toast.success('Example copied to clipboard');
-    }
-  };
-  
-  // Get placeholder hints based on template - only show when template is applied and description matches template
-  const getPlaceholderText = () => {
-    if (!template) return "Provide detailed description of the problem, its impact, and any relevant background information...";
-    
-    // If template was applied and user hasn't modified much, show the example as guidance
-    if (templateApplied && reportData.description === template.template) {
-      return template.placeholder;
-    }
-    
-    return "Provide detailed description of the problem, its impact, and any relevant background information...";
+  // Dynamic placeholder based on category
+  const getPlaceholder = () => {
+    if (!template) return "Describe the problem in detail...";
+    return template.placeholder;
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <label className="block text-sm font-medium text-gray-700">
-          Problem Description *
-        </label>
-        <div className="flex gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setShowTemplate(!showTemplate)}
-            className="text-blue-600 border-blue-300 hover:bg-blue-50"
-          >
-            <Lightbulb className="h-4 w-4 mr-1" />
-            {showTemplate ? 'Hide' : 'Show'} Template
-          </Button>
-        </div>
+    <div className="space-y-3">
+      {/* Label with helper text */}
+      <div className="space-y-1">
+        <Label 
+          htmlFor="problem-description" 
+          className="text-sm font-medium text-foreground flex items-center gap-1.5"
+        >
+          Problem Description
+          <span className="text-destructive">*</span>
+        </Label>
+        <p className="text-sm text-muted-foreground">
+          {guidance.instruction}
+        </p>
       </div>
 
-      {showTemplate && template && (
-        <Card className="border-blue-200 bg-blue-50">
-          <CardContent className="p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <Badge className="bg-blue-100 text-blue-800">
-                <FileText className="h-3 w-3 mr-1" />
-                {template.title}
-              </Badge>
-            </div>
-            
-            <div className="space-y-3">
-              <div>
-                <h4 className="text-sm font-semibold text-blue-900 mb-2">Template Format (click to use):</h4>
-                <div className="bg-white p-3 rounded border text-sm font-mono whitespace-pre-line text-gray-700">
-                  {template.template}
-                </div>
-                <p className="text-xs text-blue-700 mt-1">Click "Use Template" to insert this format, then fill in your details after each colon.</p>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={useTemplate}
-                  className="mt-2 text-blue-600 border-blue-300 hover:bg-blue-100"
-                >
-                  Use This Template
-                </Button>
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-sm font-semibold text-blue-900">Completed Example:</h4>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={copyExample}
-                    className="text-blue-600 hover:bg-blue-100"
-                  >
-                    <Copy className="h-3 w-3 mr-1" />
-                    Copy
-                  </Button>
-                </div>
-                <div className="bg-white p-3 rounded border text-sm whitespace-pre-line text-gray-700">
-                  {template.example}
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      <Textarea
-        placeholder={getPlaceholderText()}
-        rows={showTemplate ? 6 : 8}
-        value={reportData.description}
-        onChange={(e) => {
-          onInputChange('description', e.target.value);
-          // Reset templateApplied if user clears the field
-          if (e.target.value === '') setTemplateApplied(false);
-        }}
-        className="min-h-[120px] placeholder:whitespace-pre-line"
-      />
-      
-      {reportData.description.length > 0 && (
-        <div className="text-xs text-gray-500">
-          {reportData.description.length} characters • 
-          {reportData.description.split(/\s+/).filter(word => word.length > 0).length} words
+      {/* Guidance tips based on category */}
+      {reportData.category && (
+        <div className="flex items-start gap-2 p-3 bg-primary/5 border border-primary/20 rounded-lg">
+          <HelpCircle className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+          <div className="text-sm text-muted-foreground space-y-1">
+            <p className="font-medium text-foreground">{guidance.title}</p>
+            <p>{guidance.tips}</p>
+          </div>
         </div>
       )}
+
+      {/* Main textarea with dynamic placeholder */}
+      <Textarea
+        id="problem-description"
+        placeholder={getPlaceholder()}
+        rows={8}
+        value={reportData.description}
+        onChange={(e) => onInputChange('description', e.target.value)}
+        className="min-h-[180px] resize-y placeholder:text-muted-foreground/60 placeholder:leading-relaxed"
+        aria-describedby="description-help"
+      />
+
+      {/* Character/word count and validation */}
+      <div className="flex items-center justify-between text-xs text-muted-foreground">
+        <div id="description-help" className="flex items-center gap-1">
+          {reportData.description.length < 50 && reportData.description.length > 0 && (
+            <>
+              <AlertCircle className="h-3 w-3 text-warning" />
+              <span className="text-warning">Minimum 50 characters recommended for clarity</span>
+            </>
+          )}
+          {reportData.description.length >= 50 && (
+            <span className="text-primary">✓ Good description length</span>
+          )}
+        </div>
+        <div>
+          {reportData.description.length} characters •
+          {' '}{reportData.description.split(/\s+/).filter(word => word.length > 0).length} words
+        </div>
+      </div>
     </div>
   );
 };
