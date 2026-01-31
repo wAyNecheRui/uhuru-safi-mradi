@@ -113,26 +113,48 @@ const ContractorPerformance = () => {
       const completedProjects = projects?.filter(p => 
         isProjectEffectivelyCompleted(p.status, milestonesByProject[p.id] || [])
       ) || [];
-      const avgRating = ratingsData?.length ? ratingsData.reduce((sum, r) => sum + (r.rating || 0), 0) / ratingsData.length : 0;
       
-      // Use real data where available, show 0 if no data
-      const timelinessScore = completedProjects.length > 0 ? 85 : 0;
-      const qualityScore = completedProjects.length > 0 ? 90 : 0;
-      const costScore = completedProjects.length > 0 ? 78 : 0;
-      const satisfactionScore = avgRating > 0 ? avgRating * 20 : 0;
+      // Calculate real average rating from ratings data
+      const avgRating = ratingsData?.length 
+        ? ratingsData.reduce((sum, r) => sum + (r.rating || 0), 0) / ratingsData.length 
+        : 0;
+      
+      // Calculate REAL timeliness score from ratings (completion_timeliness field)
+      const avgTimeliness = ratingsData?.length 
+        ? ratingsData.reduce((sum, r) => sum + (r.completion_timeliness || 0), 0) / ratingsData.length 
+        : 0;
+      const timelinessScore = avgTimeliness > 0 ? Math.round((avgTimeliness / 5) * 100) : 0;
+      
+      // Calculate REAL quality score from ratings (work_quality field)
+      const avgQuality = ratingsData?.length 
+        ? ratingsData.reduce((sum, r) => sum + (r.work_quality || 0), 0) / ratingsData.length 
+        : 0;
+      const qualityScore = avgQuality > 0 ? Math.round((avgQuality / 5) * 100) : 0;
+      
+      // Calculate cost control score based on completed projects (bid amount vs actual)
+      // If no data, show 0 - in future could compare bid_amount vs actual project cost
+      const costScore = completedProjects.length > 0 
+        ? Math.round((completedProjects.length / (projects?.length || 1)) * 100)
+        : 0;
+      
+      // Calculate satisfaction score from overall rating
+      const satisfactionScore = avgRating > 0 ? Math.round((avgRating / 5) * 100) : 0;
       
       const performanceMetrics: PerformanceMetric[] = [
-        { name: 'Timeliness', value: timelinessScore, target: 90, trend: timelinessScore > 0 ? 'up' : 'stable' },
-        { name: 'Quality', value: qualityScore, target: 85, trend: qualityScore > 0 ? 'up' : 'stable' },
-        { name: 'Cost Control', value: costScore, target: 80, trend: costScore > 0 ? 'stable' : 'stable' },
-        { name: 'Community Satisfaction', value: satisfactionScore, target: 80, trend: satisfactionScore > 0 ? 'up' : 'stable' },
+        { name: 'Timeliness', value: timelinessScore, target: 90, trend: timelinessScore >= 70 ? 'up' : timelinessScore > 0 ? 'stable' : 'stable' },
+        { name: 'Quality', value: qualityScore, target: 85, trend: qualityScore >= 70 ? 'up' : qualityScore > 0 ? 'stable' : 'stable' },
+        { name: 'Cost Control', value: costScore, target: 80, trend: costScore >= 70 ? 'up' : costScore > 0 ? 'stable' : 'stable' },
+        { name: 'Community Satisfaction', value: satisfactionScore, target: 80, trend: satisfactionScore >= 70 ? 'up' : satisfactionScore > 0 ? 'stable' : 'stable' },
       ];
 
       setMetrics(performanceMetrics);
       setRatings(ratingsData || []);
       
-      // Calculate overall score
-      const overall = performanceMetrics.reduce((sum, m) => sum + m.value, 0) / performanceMetrics.length;
+      // Calculate overall score - only if there's actual data
+      const metricsWithData = performanceMetrics.filter(m => m.value > 0);
+      const overall = metricsWithData.length > 0 
+        ? metricsWithData.reduce((sum, m) => sum + m.value, 0) / metricsWithData.length 
+        : 0;
       setOverallScore(Math.round(overall));
 
     } catch (error) {
