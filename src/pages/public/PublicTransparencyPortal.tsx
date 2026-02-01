@@ -221,11 +221,11 @@ export default function PublicTransparencyPortal() {
         <div className="container mx-auto px-6 py-3">
           <Button
             variant="ghost"
-            onClick={() => navigate('/')}
+            onClick={() => navigate(-1)}
             className="flex items-center gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Home
+            Back
           </Button>
         </div>
       </div>
