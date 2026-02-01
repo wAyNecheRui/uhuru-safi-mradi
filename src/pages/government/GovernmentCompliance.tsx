@@ -423,13 +423,13 @@ This report is auto-generated based on real system data.
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Open Data Portal Export</CardTitle>
+                  <CardTitle>Open Data Integration</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-gray-600 mb-4">
-                    Export compliance data for publication on the Kenya Open Data Portal
+                    View performance benchmarks and export compliance data for transparency reporting
                   </p>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <Button variant="outline" onClick={exportAsCSV}>
                       Export as CSV
                     </Button>
@@ -437,10 +437,11 @@ This report is auto-generated based on real system data.
                       Export as JSON
                     </Button>
                     <Button onClick={() => {
-                      window.open('https://opendata.go.ke', '_blank');
-                      toast({ title: "Opening Portal", description: "Kenya Open Data Portal opened in new tab" });
+                      navigate('/government/benchmarks');
+                      toast({ title: "Opening Benchmarks", description: "Viewing performance benchmarks data" });
                     }}>
-                      Visit Open Data Portal
+                      <Database className="h-4 w-4 mr-2" />
+                      View Performance Benchmarks
                     </Button>
                   </div>
                 </CardContent>

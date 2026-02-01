@@ -1,119 +1,202 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
-import { Database, TrendingUp, MapPin, DollarSign, Users, Calendar, BarChart3, PieChart as PieChartIcon, Shield } from 'lucide-react';
+import { Database, TrendingUp, MapPin, DollarSign, Users, Calendar, BarChart3, PieChart as PieChartIcon, Shield, Loader2, AlertCircle } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { getContractorSatisfactionMetrics } from '@/utils/contractorRatingCalculation';
+
+interface CountyData {
+  county: string;
+  projectCount: number;
+  completedCount: number;
+  totalBudget: number;
+  releasedAmount: number;
+  completionRate: number;
+}
+
+interface CategoryData {
+  name: string;
+  count: number;
+  budget: number;
+}
 
 const KenyaOpenDataIntegration = () => {
-  const [selectedCounty, setSelectedCounty] = useState('Nairobi');
-  const [selectedYear, setSelectedYear] = useState('2024');
+  const [loading, setLoading] = useState(true);
+  const [countyData, setCountyData] = useState<CountyData[]>([]);
+  const [categoryData, setCategoryData] = useState<CategoryData[]>([]);
+  const [platformStats, setPlatformStats] = useState({
+    totalProjects: 0,
+    completedProjects: 0,
+    totalBudget: 0,
+    releasedAmount: 0,
+    totalContractors: 0,
+    verifiedContractors: 0,
+    citizenSatisfaction: 0,
+    averageCompletionRate: 0
+  });
 
-  // Kenya Open Data benchmarking data
-  const countyBenchmarks = [
-    {
-      county: 'Nairobi',
-      population: 4397073,
-      projectsCompleted: 89,
-      budgetUtilization: 87,
-      averageProjectCost: 2800000,
-      citizenSatisfaction: 78,
-      corruptionIndex: 23,
-      developmentIndex: 0.82
-    },
-    {
-      county: 'Kiambu',
-      population: 2417735,
-      projectsCompleted: 67,
-      budgetUtilization: 92,
-      averageProjectCost: 1900000,
-      citizenSatisfaction: 84,
-      corruptionIndex: 18,
-      developmentIndex: 0.78
-    },
-    {
-      county: 'Machakos',
-      population: 1421932,
-      projectsCompleted: 45,
-      budgetUtilization: 89,
-      averageProjectCost: 1500000,
-      citizenSatisfaction: 81,
-      corruptionIndex: 21,
-      developmentIndex: 0.71
-    },
-    {
-      county: 'Mombasa',
-      population: 1208333,
-      projectsCompleted: 52,
-      budgetUtilization: 85,
-      averageProjectCost: 2200000,
-      citizenSatisfaction: 76,
-      corruptionIndex: 28,
-      developmentIndex: 0.69
-    },
-    {
-      county: 'Turkana',
-      population: 926976,
-      projectsCompleted: 23,
-      budgetUtilization: 76,
-      averageProjectCost: 1800000,
-      citizenSatisfaction: 69,
-      corruptionIndex: 34,
-      developmentIndex: 0.45
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82ca9d'];
+
+  useEffect(() => {
+    fetchPlatformData();
+  }, []);
+
+  const fetchPlatformData = async () => {
+    try {
+      setLoading(true);
+
+      // Fetch all projects with their reports and escrow data
+      const { data: projects } = await supabase
+        .from('projects')
+        .select(`
+          id, status, budget,
+          report_id
+        `);
+
+      // Fetch report details for location data
+      const { data: reports } = await supabase
+        .from('problem_reports')
+        .select('id, location, category');
+
+      // Fetch escrow data
+      const { data: escrows } = await supabase
+        .from('escrow_accounts')
+        .select('project_id, total_amount, released_amount');
+
+      // Fetch milestone data for completion calculation
+      const { data: milestones } = await supabase
+        .from('project_milestones')
+        .select('project_id, status');
+
+      // Fetch contractor data
+      const { data: contractors } = await supabase
+        .from('contractor_profiles')
+        .select('id, verified');
+
+      // Get real satisfaction metrics
+      const satisfactionMetrics = await getContractorSatisfactionMetrics();
+
+      // Build report location map
+      const reportMap = new Map((reports || []).map(r => [r.id, r]));
+      
+      // Build escrow map
+      const escrowMap = new Map((escrows || []).map(e => [e.project_id, e]));
+      
+      // Build milestone map for completion calculation
+      const milestonesByProject = new Map<string, { total: number; completed: number }>();
+      (milestones || []).forEach(m => {
+        const current = milestonesByProject.get(m.project_id) || { total: 0, completed: 0 };
+        current.total++;
+        if (['verified', 'completed', 'paid'].includes(m.status)) {
+          current.completed++;
+        }
+        milestonesByProject.set(m.project_id, current);
+      });
+
+      // Calculate county-level statistics from REAL data
+      const countyStats = new Map<string, CountyData>();
+      const categoryStats = new Map<string, CategoryData>();
+
+      (projects || []).forEach(project => {
+        const report = reportMap.get(project.report_id);
+        const escrow = escrowMap.get(project.id);
+        const milestonesInfo = milestonesByProject.get(project.id);
+        
+        // Extract county from location (format: "Ward, Constituency, County")
+        const location = report?.location || 'Unknown';
+        const parts = location.split(',').map((p: string) => p.trim());
+        const county = parts[parts.length - 1] || 'Unknown';
+        
+        // Calculate if project is completed
+        const isCompleted = project.status === 'completed' || 
+          (milestonesInfo && milestonesInfo.total > 0 && milestonesInfo.completed === milestonesInfo.total);
+
+        // Aggregate county data
+        const existing = countyStats.get(county) || {
+          county,
+          projectCount: 0,
+          completedCount: 0,
+          totalBudget: 0,
+          releasedAmount: 0,
+          completionRate: 0
+        };
+        
+        existing.projectCount++;
+        if (isCompleted) existing.completedCount++;
+        existing.totalBudget += project.budget || 0;
+        existing.releasedAmount += escrow?.released_amount || 0;
+        
+        countyStats.set(county, existing);
+
+        // Aggregate category data
+        const category = report?.category || 'Other';
+        const categoryExisting = categoryStats.get(category) || {
+          name: category,
+          count: 0,
+          budget: 0
+        };
+        categoryExisting.count++;
+        categoryExisting.budget += project.budget || 0;
+        categoryStats.set(category, categoryExisting);
+      });
+
+      // Calculate completion rates
+      countyStats.forEach((data, county) => {
+        data.completionRate = data.projectCount > 0 
+          ? Math.round((data.completedCount / data.projectCount) * 100)
+          : 0;
+        countyStats.set(county, data);
+      });
+
+      // Sort county data by project count
+      const sortedCountyData = Array.from(countyStats.values())
+        .filter(c => c.county !== 'Unknown')
+        .sort((a, b) => b.projectCount - a.projectCount)
+        .slice(0, 10);
+
+      // Sort category data
+      const sortedCategoryData = Array.from(categoryStats.values())
+        .sort((a, b) => b.count - a.count);
+
+      // Calculate platform-wide stats
+      const totalProjects = (projects || []).length;
+      const completedProjects = (projects || []).filter(p => {
+        const milestonesInfo = milestonesByProject.get(p.id);
+        return p.status === 'completed' || 
+          (milestonesInfo && milestonesInfo.total > 0 && milestonesInfo.completed === milestonesInfo.total);
+      }).length;
+      const totalBudget = (projects || []).reduce((sum, p) => sum + (p.budget || 0), 0);
+      const releasedAmount = (escrows || []).reduce((sum, e) => sum + (e.released_amount || 0), 0);
+      const totalContractors = (contractors || []).length;
+      const verifiedContractors = (contractors || []).filter(c => c.verified).length;
+
+      setPlatformStats({
+        totalProjects,
+        completedProjects,
+        totalBudget,
+        releasedAmount,
+        totalContractors,
+        verifiedContractors,
+        citizenSatisfaction: satisfactionMetrics.totalRatings > 0 
+          ? Math.round((satisfactionMetrics.averageRating / 5) * 100) 
+          : 0,
+        averageCompletionRate: totalProjects > 0 
+          ? Math.round((completedProjects / totalProjects) * 100)
+          : 0
+      });
+
+      setCountyData(sortedCountyData);
+      setCategoryData(sortedCategoryData);
+    } catch (error) {
+      console.error('Error fetching platform data:', error);
+    } finally {
+      setLoading(false);
     }
-  ];
-
-  const nationalTrends = [
-    { year: '2020', projectsCompleted: 1204, budgetAllocated: 156.8, budgetUtilized: 134.2 },
-    { year: '2021', projectsCompleted: 1356, budgetAllocated: 187.3, budgetUtilized: 165.1 },
-    { year: '2022', projectsCompleted: 1489, budgetAllocated: 203.7, budgetUtilized: 189.4 },
-    { year: '2023', projectsCompleted: 1642, budgetAllocated: 234.9, budgetUtilized: 218.7 },
-    { year: '2024', projectsCompleted: 1789, budgetAllocated: 267.2, budgetUtilized: 245.3 }
-  ];
-
-  const sectorDistribution = [
-    { name: 'Roads & Infrastructure', value: 34, amount: 89.2 },
-    { name: 'Water & Sanitation', value: 23, amount: 61.7 },
-    { name: 'Healthcare', value: 18, amount: 48.3 },
-    { name: 'Education', value: 15, amount: 38.9 },
-    { name: 'Agriculture', value: 10, amount: 29.1 }
-  ];
-
-  const performanceMetrics = [
-    {
-      metric: 'National Average Completion Rate',
-      value: '78.4%',
-      benchmark: '85%',
-      trend: '+2.3%',
-      status: 'improving'
-    },
-    {
-      metric: 'Average Project Cost Overrun',
-      value: '23.7%',
-      benchmark: '15%',
-      trend: '-1.8%',
-      status: 'concerning'
-    },
-    {
-      metric: 'Citizen Satisfaction Index',
-      value: '76.2',
-      benchmark: '80',
-      trend: '+4.1',
-      status: 'improving'
-    },
-    {
-      metric: 'Corruption Perception Index',
-      value: '24.8',
-      benchmark: '20',
-      trend: '-2.3',
-      status: 'improving'
-    }
-  ];
-
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
+  };
 
   const formatAmount = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
@@ -121,367 +204,325 @@ const KenyaOpenDataIntegration = () => {
       currency: 'KES',
       notation: 'compact',
       maximumFractionDigits: 1
-    }).format(amount * 1000000);
+    }).format(amount);
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'improving': return 'bg-green-100 text-green-800';
-      case 'concerning': return 'bg-red-100 text-red-800';
-      case 'stable': return 'bg-blue-100 text-blue-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const selectedCountyData = countyBenchmarks.find(c => c.county === selectedCounty) || countyBenchmarks[0];
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+          <p className="mt-2 text-muted-foreground">Loading platform benchmarks...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
-      <Card className="shadow-xl border-t-4 border-t-blue-600">
-        <CardHeader className="bg-gradient-to-r from-blue-50 to-green-50">
+      <Card className="shadow-xl border-t-4 border-t-primary">
+        <CardHeader className="bg-gradient-to-r from-primary/5 to-secondary/5">
           <CardTitle className="flex items-center text-2xl">
-            <Database className="h-6 w-6 mr-3 text-blue-600" />
-            Kenya Open Data Integration & Performance Benchmarking
+            <Database className="h-6 w-6 mr-3 text-primary" />
+            Platform Performance Benchmarks
           </CardTitle>
-          <p className="text-gray-600 mt-2">
-            Real-time integration with Kenya Open Data Portal for transparent benchmarking and performance analysis.
+          <p className="text-muted-foreground mt-2">
+            Real-time performance metrics from the Infrastructure Transparency Platform
           </p>
         </CardHeader>
       </Card>
 
-      {/* Controls */}
-      <div className="flex flex-wrap gap-4 items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">County</label>
-            <select
-              value={selectedCounty}
-              onChange={(e) => setSelectedCounty(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
-            >
-              {countyBenchmarks.map(county => (
-                <option key={county.county} value={county.county}>{county.county}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Year</label>
-            <select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="2024">2024</option>
-              <option value="2023">2023</option>
-              <option value="2022">2022</option>
-            </select>
-          </div>
-        </div>
-        <Button className="bg-blue-600 hover:bg-blue-700">
-          <Database className="h-4 w-4 mr-2" />
-          Sync with KODI
-        </Button>
+      {/* Platform Overview Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card className="shadow-lg">
+          <CardContent className="p-4 text-center">
+            <BarChart3 className="h-6 w-6 mx-auto mb-2 text-primary" />
+            <div className="text-2xl font-bold">{platformStats.totalProjects}</div>
+            <div className="text-sm text-muted-foreground">Total Projects</div>
+          </CardContent>
+        </Card>
+        <Card className="shadow-lg">
+          <CardContent className="p-4 text-center">
+            <TrendingUp className="h-6 w-6 mx-auto mb-2 text-green-600" />
+            <div className="text-2xl font-bold">{platformStats.averageCompletionRate}%</div>
+            <div className="text-sm text-muted-foreground">Completion Rate</div>
+          </CardContent>
+        </Card>
+        <Card className="shadow-lg">
+          <CardContent className="p-4 text-center">
+            <DollarSign className="h-6 w-6 mx-auto mb-2 text-purple-600" />
+            <div className="text-2xl font-bold">{formatAmount(platformStats.totalBudget)}</div>
+            <div className="text-sm text-muted-foreground">Total Budget</div>
+          </CardContent>
+        </Card>
+        <Card className="shadow-lg">
+          <CardContent className="p-4 text-center">
+            <Users className="h-6 w-6 mx-auto mb-2 text-orange-600" />
+            <div className="text-2xl font-bold">
+              {platformStats.citizenSatisfaction > 0 
+                ? `${platformStats.citizenSatisfaction}%` 
+                : 'N/A'}
+            </div>
+            <div className="text-sm text-muted-foreground">Citizen Satisfaction</div>
+          </CardContent>
+        </Card>
       </div>
 
-      <Tabs defaultValue="benchmarks" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4 bg-white shadow-lg">
-          <TabsTrigger value="benchmarks">County Benchmarks</TabsTrigger>
-          <TabsTrigger value="trends">National Trends</TabsTrigger>
-          <TabsTrigger value="sectors">Sector Analysis</TabsTrigger>
-          <TabsTrigger value="performance">Performance Metrics</TabsTrigger>
+      <Tabs defaultValue="counties" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-3 bg-card shadow-lg">
+          <TabsTrigger value="counties">County Performance</TabsTrigger>
+          <TabsTrigger value="categories">Sector Analysis</TabsTrigger>
+          <TabsTrigger value="metrics">Key Metrics</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="benchmarks" className="space-y-6">
-          {/* County Overview Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Card className="shadow-lg">
-              <CardContent className="p-4 text-center">
-                <Users className="h-6 w-6 mx-auto mb-2 text-blue-600" />
-                <div className="text-2xl font-bold text-gray-900">
-                  {selectedCountyData.population.toLocaleString()}
-                </div>
-                <div className="text-sm text-gray-600">Population</div>
+        <TabsContent value="counties" className="space-y-6">
+          {countyData.length === 0 ? (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+                <p className="text-muted-foreground">No county data available yet</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  County benchmarks will appear as projects are created with location data
+                </p>
               </CardContent>
             </Card>
-            <Card className="shadow-lg">
-              <CardContent className="p-4 text-center">
-                <BarChart3 className="h-6 w-6 mx-auto mb-2 text-green-600" />
-                <div className="text-2xl font-bold text-gray-900">
-                  {selectedCountyData.projectsCompleted}
-                </div>
-                <div className="text-sm text-gray-600">Projects Completed</div>
-              </CardContent>
-            </Card>
-            <Card className="shadow-lg">
-              <CardContent className="p-4 text-center">
-                <DollarSign className="h-6 w-6 mx-auto mb-2 text-purple-600" />
-                <div className="text-2xl font-bold text-gray-900">
-                  {selectedCountyData.budgetUtilization}%
-                </div>
-                <div className="text-sm text-gray-600">Budget Utilization</div>
-              </CardContent>
-            </Card>
-            <Card className="shadow-lg">
-              <CardContent className="p-4 text-center">
-                <TrendingUp className="h-6 w-6 mx-auto mb-2 text-orange-600" />
-                <div className="text-2xl font-bold text-gray-900">
-                  {selectedCountyData.developmentIndex}
-                </div>
-                <div className="text-sm text-gray-600">Development Index</div>
-              </CardContent>
-            </Card>
-          </div>
+          ) : (
+            <>
+              <Card className="shadow-lg">
+                <CardHeader>
+                  <CardTitle>Projects by County</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={400}>
+                    <BarChart data={countyData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="county" angle={-45} textAnchor="end" height={80} />
+                      <YAxis />
+                      <Tooltip 
+                        formatter={(value, name) => [
+                          name === 'totalBudget' ? formatAmount(Number(value)) : value,
+                          name === 'projectCount' ? 'Projects' :
+                          name === 'completedCount' ? 'Completed' :
+                          name === 'completionRate' ? 'Completion Rate %' :
+                          name
+                        ]}
+                      />
+                      <Bar dataKey="projectCount" fill="hsl(var(--primary))" name="projectCount" />
+                      <Bar dataKey="completedCount" fill="hsl(var(--chart-2))" name="completedCount" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
 
-          {/* Comparative Analysis */}
-          <Card className="shadow-lg">
-            <CardHeader>
-              <CardTitle>County Performance Comparison</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={400}>
-                <BarChart data={countyBenchmarks}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="county" />
-                  <YAxis />
-                  <Tooltip 
-                    formatter={(value, name) => [
-                      typeof name === 'string' && name.includes('Utilization') ? `${value}%` : value,
-                      name === 'budgetUtilization' ? 'Budget Utilization' : 
-                      name === 'citizenSatisfaction' ? 'Citizen Satisfaction' :
-                      name === 'projectsCompleted' ? 'Projects Completed' : name
-                    ]}
-                  />
-                  <Bar dataKey="budgetUtilization" fill="#8884d8" name="budgetUtilization" />
-                  <Bar dataKey="citizenSatisfaction" fill="#82ca9d" name="citizenSatisfaction" />
-                  <Bar dataKey="projectsCompleted" fill="#ffc658" name="projectsCompleted" />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          {/* Detailed County Analysis */}
-          <Card className="shadow-lg">
-            <CardHeader>
-              <CardTitle>{selectedCounty} County - Detailed Analysis</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex justify-between text-sm mb-2">
-                      <span>Citizen Satisfaction</span>
-                      <span>{selectedCountyData.citizenSatisfaction}% (Target: 80%)</span>
-                    </div>
-                    <Progress value={selectedCountyData.citizenSatisfaction} className="h-3" />
-                  </div>
-                  <div>
-                    <div className="flex justify-between text-sm mb-2">
-                      <span>Budget Utilization</span>
-                      <span>{selectedCountyData.budgetUtilization}% (Target: 90%)</span>
-                    </div>
-                    <Progress value={selectedCountyData.budgetUtilization} className="h-3" />
-                  </div>
-                  <div>
-                    <div className="flex justify-between text-sm mb-2">
-                      <span>Corruption Index (Lower is Better)</span>
-                      <span>{selectedCountyData.corruptionIndex} (Target: &lt;20)</span>
-                    </div>
-                    <Progress value={Math.max(0, 100 - selectedCountyData.corruptionIndex)} className="h-3" />
-                  </div>
-                </div>
-                <div className="space-y-4">
-                  <div className="text-center p-4 bg-blue-50 rounded-lg">
-                    <div className="text-2xl font-bold text-blue-600">
-                      {formatAmount(selectedCountyData.averageProjectCost)}
-                    </div>
-                    <div className="text-sm text-gray-600">Average Project Cost</div>
-                  </div>
-                  <div className="text-center p-4 bg-green-50 rounded-lg">
-                    <div className="text-2xl font-bold text-green-600">
-                      {selectedCountyData.developmentIndex}
-                    </div>
-                    <div className="text-sm text-gray-600">Development Index</div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="trends" className="space-y-6">
-          <Card className="shadow-lg">
-            <CardHeader>
-              <CardTitle>National Project Completion Trends</CardTitle>
-              <p className="text-sm text-gray-600">5-year historical data from Kenya Open Data Portal</p>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={400}>
-                <LineChart data={nationalTrends}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="year" />
-                  <YAxis />
-                  <Tooltip 
-                    formatter={(value, name) => [
-                      typeof name === 'string' && name.includes('budget') ? `KES ${value}B` : value,
-                      name === 'projectsCompleted' ? 'Projects Completed' :
-                      name === 'budgetAllocated' ? 'Budget Allocated' :
-                      'Budget Utilized'
-                    ]}
-                  />
-                  <Line type="monotone" dataKey="projectsCompleted" stroke="#8884d8" strokeWidth={3} />
-                  <Line type="monotone" dataKey="budgetAllocated" stroke="#82ca9d" strokeWidth={3} />
-                  <Line type="monotone" dataKey="budgetUtilized" stroke="#ffc658" strokeWidth={3} />
-                </LineChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="shadow-lg">
-              <CardContent className="p-6 text-center">
-                <Calendar className="h-8 w-8 mx-auto mb-4 text-blue-600" />
-                <div className="text-2xl font-bold text-gray-900 mb-2">5 Years</div>
-                <div className="text-sm text-gray-600">Historical Data Available</div>
-              </CardContent>
-            </Card>
-            <Card className="shadow-lg">
-              <CardContent className="p-6 text-center">
-                <TrendingUp className="h-8 w-8 mx-auto mb-4 text-green-600" />
-                <div className="text-2xl font-bold text-green-600 mb-2">+48.6%</div>
-                <div className="text-sm text-gray-600">Project Completion Growth</div>
-              </CardContent>
-            </Card>
-            <Card className="shadow-lg">
-              <CardContent className="p-6 text-center">
-                <DollarSign className="h-8 w-8 mx-auto mb-4 text-purple-600" />
-                <div className="text-2xl font-bold text-purple-600 mb-2">+70.3%</div>
-                <div className="text-sm text-gray-600">Budget Allocation Growth</div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="sectors" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="shadow-lg">
-              <CardHeader>
-                <CardTitle>Project Distribution by Sector</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={sectorDistribution}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {sectorDistribution.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-
-            <Card className="shadow-lg">
-              <CardHeader>
-                <CardTitle>Budget Allocation by Sector</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {sectorDistribution.map((sector, index) => (
-                    <div key={sector.name} className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span>{sector.name}</span>
-                        <span>{formatAmount(sector.amount)}</span>
-                      </div>
-                      <Progress value={sector.value * 2} className="h-2" />
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card className="shadow-lg">
-            <CardHeader>
-              <CardTitle>Sector Performance Analysis</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={sectorDistribution}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} />
-                  <YAxis />
-                  <Tooltip formatter={(value) => [formatAmount(Number(value)), 'Budget Allocation']} />
-                  <Bar dataKey="amount" fill="#8884d8" />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="performance" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {performanceMetrics.map((metric, index) => (
-              <Card key={index} className="shadow-lg">
-                <CardContent className="p-6">
+              <Card className="shadow-lg">
+                <CardHeader>
+                  <CardTitle>County Completion Rates</CardTitle>
+                </CardHeader>
+                <CardContent>
                   <div className="space-y-4">
-                    <div className="flex justify-between items-start">
-                      <h3 className="font-semibold text-gray-900">{metric.metric}</h3>
-                      <Badge className={getStatusColor(metric.status)}>
-                        {metric.status}
-                      </Badge>
-                    </div>
-                    <div className="grid grid-cols-3 gap-4 text-center">
-                      <div>
-                        <div className="text-2xl font-bold text-blue-600">{metric.value}</div>
-                        <div className="text-xs text-gray-600">Current</div>
-                      </div>
-                      <div>
-                        <div className="text-2xl font-bold text-gray-900">{metric.benchmark}</div>
-                        <div className="text-xs text-gray-600">Benchmark</div>
-                      </div>
-                      <div>
-                        <div className={`text-2xl font-bold ${metric.trend.includes('+') ? 'text-green-600' : 'text-red-600'}`}>
-                          {metric.trend}
+                    {countyData.map((county) => (
+                      <div key={county.county} className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="font-medium">{county.county}</span>
+                          <span>
+                            {county.completedCount}/{county.projectCount} projects ({county.completionRate}%)
+                          </span>
                         </div>
-                        <div className="text-xs text-gray-600">Trend</div>
+                        <Progress value={county.completionRate} className="h-2" />
                       </div>
-                    </div>
+                    ))}
                   </div>
                 </CardContent>
               </Card>
-            ))}
+            </>
+          )}
+        </TabsContent>
+
+        <TabsContent value="categories" className="space-y-6">
+          {categoryData.length === 0 ? (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+                <p className="text-muted-foreground">No category data available yet</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card className="shadow-lg">
+                <CardHeader>
+                  <CardTitle>Project Distribution by Category</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={categoryData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="count"
+                      >
+                        {categoryData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              <Card className="shadow-lg">
+                <CardHeader>
+                  <CardTitle>Budget by Category</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {categoryData.map((category, index) => (
+                      <div key={category.name} className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <div className="flex items-center gap-2">
+                            <div 
+                              className="w-3 h-3 rounded-full" 
+                              style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                            />
+                            <span>{category.name}</span>
+                          </div>
+                          <span className="font-medium">{formatAmount(category.budget)}</span>
+                        </div>
+                        <Progress 
+                          value={(category.budget / Math.max(...categoryData.map(c => c.budget))) * 100} 
+                          className="h-2" 
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="metrics" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card className="shadow-lg">
+              <CardContent className="p-6">
+                <div className="space-y-4">
+                  <div className="flex justify-between items-start">
+                    <h3 className="font-semibold">Project Completion Rate</h3>
+                    <Badge variant={platformStats.averageCompletionRate >= 70 ? 'default' : 'secondary'}>
+                      {platformStats.averageCompletionRate >= 70 ? 'On Track' : 'Needs Attention'}
+                    </Badge>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 text-center">
+                    <div>
+                      <div className="text-2xl font-bold text-primary">{platformStats.averageCompletionRate}%</div>
+                      <div className="text-xs text-muted-foreground">Current</div>
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold">70%</div>
+                      <div className="text-xs text-muted-foreground">Target</div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-lg">
+              <CardContent className="p-6">
+                <div className="space-y-4">
+                  <div className="flex justify-between items-start">
+                    <h3 className="font-semibold">Budget Utilization</h3>
+                    <Badge variant="default">Active</Badge>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 text-center">
+                    <div>
+                      <div className="text-2xl font-bold text-green-600">{formatAmount(platformStats.releasedAmount)}</div>
+                      <div className="text-xs text-muted-foreground">Released</div>
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold">{formatAmount(platformStats.totalBudget)}</div>
+                      <div className="text-xs text-muted-foreground">Total Budget</div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-lg">
+              <CardContent className="p-6">
+                <div className="space-y-4">
+                  <div className="flex justify-between items-start">
+                    <h3 className="font-semibold">Contractor Verification</h3>
+                    <Badge variant={platformStats.verifiedContractors > 0 ? 'default' : 'secondary'}>
+                      {platformStats.totalContractors > 0 
+                        ? `${Math.round((platformStats.verifiedContractors / platformStats.totalContractors) * 100)}%`
+                        : 'N/A'}
+                    </Badge>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 text-center">
+                    <div>
+                      <div className="text-2xl font-bold text-primary">{platformStats.verifiedContractors}</div>
+                      <div className="text-xs text-muted-foreground">Verified</div>
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold">{platformStats.totalContractors}</div>
+                      <div className="text-xs text-muted-foreground">Total Registered</div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-lg">
+              <CardContent className="p-6">
+                <div className="space-y-4">
+                  <div className="flex justify-between items-start">
+                    <h3 className="font-semibold">Citizen Satisfaction</h3>
+                    <Badge variant={platformStats.citizenSatisfaction >= 70 ? 'default' : 'secondary'}>
+                      {platformStats.citizenSatisfaction > 0 
+                        ? (platformStats.citizenSatisfaction >= 70 ? 'Good' : 'Needs Improvement')
+                        : 'No Data'}
+                    </Badge>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-primary">
+                      {platformStats.citizenSatisfaction > 0 
+                        ? `${platformStats.citizenSatisfaction}%` 
+                        : 'N/A'}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      Based on citizen milestone verifications
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           <Card className="shadow-lg">
             <CardHeader>
-              <CardTitle>Data Sources & Compliance</CardTitle>
+              <CardTitle>Data Sources</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="text-center p-4 bg-blue-50 rounded-lg">
-                  <Database className="h-8 w-8 mx-auto mb-2 text-blue-600" />
-                  <div className="font-semibold">Kenya Open Data</div>
-                  <div className="text-sm text-gray-600">National statistics and benchmarks</div>
+                <div className="text-center p-4 bg-primary/5 rounded-lg">
+                  <Database className="h-8 w-8 mx-auto mb-2 text-primary" />
+                  <div className="font-semibold">Platform Database</div>
+                  <div className="text-sm text-muted-foreground">Real-time project and transaction data</div>
                 </div>
-                <div className="text-center p-4 bg-green-50 rounded-lg">
+                <div className="text-center p-4 bg-green-500/5 rounded-lg">
                   <Shield className="h-8 w-8 mx-auto mb-2 text-green-600" />
-                  <div className="font-semibold">KNBS Integration</div>
-                  <div className="text-sm text-gray-600">Verified demographic data</div>
+                  <div className="font-semibold">Milestone Verifications</div>
+                  <div className="text-sm text-muted-foreground">Citizen-verified progress data</div>
                 </div>
-                <div className="text-center p-4 bg-purple-50 rounded-lg">
+                <div className="text-center p-4 bg-purple-500/5 rounded-lg">
                   <TrendingUp className="h-8 w-8 mx-auto mb-2 text-purple-600" />
-                  <div className="font-semibold">Real-time Sync</div>
-                  <div className="text-sm text-gray-600">Updated every 24 hours</div>
+                  <div className="font-semibold">Live Metrics</div>
+                  <div className="text-sm text-muted-foreground">Updated on each page load</div>
                 </div>
               </div>
             </CardContent>
