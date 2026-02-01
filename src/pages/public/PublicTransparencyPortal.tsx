@@ -11,10 +11,11 @@ import RegionalDevelopmentStats from "@/components/cycles/RegionalDevelopmentSta
 import { 
   Loader2, Search, Building2, MapPin, Calendar, DollarSign, 
   Users, TrendingUp, Eye, ExternalLink, Shield, Clock,
-  CheckCircle2, XCircle, AlertCircle, ArrowLeft, Home, BarChart3, Globe
+  CheckCircle2, XCircle, AlertCircle, ArrowLeft, Home, BarChart3, Globe, Star
 } from "lucide-react";
 import { format } from "date-fns";
 import { isProjectEffectivelyCompleted, getEffectiveProjectStatus } from "@/utils/progressCalculation";
+import { fetchContractorRatingsFromVerifications } from "@/utils/contractorRatingCalculation";
 
 interface Project {
   id: string;
@@ -23,6 +24,7 @@ interface Project {
   budget: number | null;
   status: string;
   created_at: string;
+  contractor_id?: string;
   report?: {
     location: string;
     category: string;
@@ -58,6 +60,7 @@ export default function PublicTransparencyPortal() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [blockchainRecords, setBlockchainRecords] = useState<any[]>([]);
+  const [contractorRatings, setContractorRatings] = useState<Record<string, { averageRating: number; totalRatings: number }>>({});
 
   useEffect(() => {
     fetchPublicData();
@@ -100,15 +103,15 @@ export default function PublicTransparencyPortal() {
             .select('id, status')
             .eq('project_id', project.id);
 
-          // Get contractor
+          // Get contractor basic info (NOT using stale average_rating)
           let contractor = null;
           if (project.contractor_id) {
             const { data } = await supabase
               .from('contractor_profiles')
-              .select('company_name, average_rating')
+              .select('company_name')
               .eq('user_id', project.contractor_id)
               .maybeSingle();
-            contractor = data;
+            contractor = data ? { ...data, average_rating: 0 } : null;
           }
 
           // Format milestones for the utility function
@@ -128,6 +131,10 @@ export default function PublicTransparencyPortal() {
           };
         })
       );
+
+      // Fetch REAL contractor ratings from milestone verifications
+      const realRatings = await fetchContractorRatingsFromVerifications();
+      setContractorRatings(realRatings);
 
       // Calculate stats - now uses milestone-based completion detection
       const totalBudget = enrichedProjects.reduce((sum, p) => sum + (p.budget || 0), 0);
@@ -349,6 +356,13 @@ export default function PublicTransparencyPortal() {
                             <span className="flex items-center gap-1">
                               <Building2 className="h-4 w-4 text-muted-foreground" />
                               {project.contractor.company_name}
+                              {/* Show REAL rating from verifications */}
+                              {contractorRatings[project.contractor_id || '']?.totalRatings > 0 && (
+                                <span className="flex items-center gap-0.5 ml-1 text-amber-600">
+                                  <Star className="h-3 w-3 fill-current" />
+                                  {contractorRatings[project.contractor_id || ''].averageRating.toFixed(1)}
+                                </span>
+                              )}
                             </span>
                           )}
                         </div>
