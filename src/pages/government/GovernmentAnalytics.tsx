@@ -16,6 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { isProjectEffectivelyCompleted } from '@/utils/progressCalculation';
 import { formatDateTime, getCurrentDateTime } from '@/lib/dateUtils';
+import { getContractorSatisfactionMetrics } from '@/utils/contractorRatingCalculation';
 
 const GovernmentAnalytics = () => {
   const [loading, setLoading] = useState(true);
@@ -49,20 +50,19 @@ const GovernmentAnalytics = () => {
   const fetchAnalyticsData = async () => {
     try {
       // Fetch all necessary data in parallel for accurate KPIs
-      const [projectsRes, reportsRes, milestonesRes, ratingsRes, votesRes, escrowRes, paymentsRes] = await Promise.all([
+      const [projectsRes, reportsRes, milestonesRes, votesRes, escrowRes, paymentsRes, satisfactionMetrics] = await Promise.all([
         supabase.from('projects').select('id, status, budget, contractor_id, report_id'),
         supabase.from('problem_reports').select('id, location, status, priority, created_at'),
         supabase.from('project_milestones').select('id, status, project_id, payment_percentage'),
-        supabase.from('contractor_ratings').select('rating, project_id'),
         supabase.from('community_votes').select('id, report_id, vote_type'),
         supabase.from('escrow_accounts').select('id, project_id, total_amount, released_amount, held_amount'),
-        supabase.from('payment_transactions').select('id, status, amount, created_at')
+        supabase.from('payment_transactions').select('id, status, amount, created_at'),
+        getContractorSatisfactionMetrics() // Get REAL ratings from verifications
       ]);
 
       const projects = projectsRes.data || [];
       const reports = reportsRes.data || [];
       const milestones = milestonesRes.data || [];
-      const ratings = ratingsRes.data || [];
       const votes = votesRes.data || [];
       const escrows = escrowRes.data || [];
       const payments = paymentsRes.data || [];
@@ -129,10 +129,9 @@ const GovernmentAnalytics = () => {
         : (recentReports > 0 ? 100 : 0);
 
       // === CONTRACTOR SATISFACTION ===
-      // Measures: average rating from contractor_ratings table (scale 1-5 -> percentage)
-      const avgRating = ratings.length > 0 
-        ? ratings.reduce((sum, r) => sum + (r.rating || 0), 0) / ratings.length 
-        : 0;
+      // REAL ratings from milestone_verifications & quality_checkpoints (not empty contractor_ratings table)
+      const avgRating = satisfactionMetrics.averageRating;
+      const totalRatings = satisfactionMetrics.totalRatings;
       const contractorSatisfaction = Math.round((avgRating / 5) * 100);
 
       // === GOVERNMENT EFFICIENCY ===
@@ -168,7 +167,7 @@ const GovernmentAnalytics = () => {
         paidMilestones,
         totalReports: reports.length,
         totalVotes: votes.length,
-        totalRatings: ratings.length,
+        totalRatings: totalRatings,
         avgRating: Math.round(avgRating * 10) / 10
       });
       

@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import ContractorProfileModal from '@/components/government/ContractorProfileModal';
 import { isProjectEffectivelyCompleted } from '@/utils/progressCalculation';
+import { fetchContractorRatingsFromVerifications } from '@/utils/contractorRatingCalculation';
 
 const GovernmentContractorManagement = () => {
   const [contractors, setContractors] = useState<any[]>([]);
@@ -60,11 +61,9 @@ const GovernmentContractorManagement = () => {
         console.error('Credentials error:', credentialsError);
       }
 
-      // Fetch ratings separately
-      const { data: ratingsData } = await supabase
-        .from('contractor_ratings')
-        .select('contractor_id, rating, work_quality, completion_timeliness');
-
+      // Fetch REAL ratings from milestone verifications and quality checkpoints
+      // (contractor_ratings table is empty - ratings come from citizen verifications)
+      const realRatingsData = await fetchContractorRatingsFromVerifications();
       // Fetch actual project counts and contract values from projects table
       const { data: projectsData } = await supabase
         .from('projects')
@@ -118,14 +117,16 @@ const GovernmentContractorManagement = () => {
         }
       });
 
-      // Merge ratings and real stats into contractors
+      // Merge REAL ratings from verifications and real stats into contractors
       const contractorsWithRealData = (contractorsData || []).map(contractor => {
-        const contractorRatings = ratingsData?.filter(r => r.contractor_id === contractor.user_id) || [];
+        const realRating = realRatingsData[contractor.user_id];
         const stats = contractorStats[contractor.user_id] || { projectCount: 0, totalValue: 0, completedProjects: 0 };
         
         return {
           ...contractor,
-          contractor_ratings: contractorRatings,
+          // Use real ratings from milestone verifications & quality checkpoints
+          real_average_rating: realRating?.averageRating || 0,
+          real_rating_count: realRating?.totalRatings || 0,
           // Use real calculated values instead of stale profile fields
           actual_project_count: stats.projectCount,
           actual_contract_value: stats.totalValue,
@@ -315,10 +316,10 @@ const GovernmentContractorManagement = () => {
                             <Star className="h-5 w-5 text-yellow-500" />
                           </div>
                           <p className="text-xl font-bold text-blue-600">
-                            {getAverageRating(contractor.contractor_ratings)}
+                            {contractor.real_average_rating || 0}
                           </p>
                           <p className="text-xs text-blue-700">
-                            {contractor.contractor_ratings?.length || 0} {contractor.contractor_ratings?.length === 1 ? 'rating' : 'ratings'}
+                            {contractor.real_rating_count || 0} {contractor.real_rating_count === 1 ? 'verification' : 'verifications'}
                           </p>
                         </div>
                         <div className="text-center p-3 bg-green-50 rounded-lg">

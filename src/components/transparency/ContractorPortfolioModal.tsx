@@ -24,6 +24,7 @@ import {
   XCircle
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { fetchContractorRatingsFromVerifications } from '@/utils/contractorRatingCalculation';
 
 interface Project {
   id: string;
@@ -115,45 +116,35 @@ const ContractorPortfolioModal: React.FC<ContractorPortfolioModalProps> = ({
         ).length || 0;
         const totalValue = projectsData?.reduce((sum, p) => sum + (p.budget || 0), 0) || 0;
 
-        // Fetch ratings for this contractor
-        const { data: ratingsData } = await supabase
-          .from('contractor_ratings')
-          .select(`
-            rating,
-            review,
-            work_quality,
-            communication,
-            completion_timeliness,
-            created_at,
-            project_id
-          `)
-          .eq('contractor_id', contractorData.user_id)
-          .order('created_at', { ascending: false });
+        // Fetch REAL ratings from milestone_verifications & quality_checkpoints
+        // (contractor_ratings table is empty - ratings come from citizen verifications)
+        const realRatingsData = await fetchContractorRatingsFromVerifications([contractorData.user_id]);
+        const contractorRealRatings = realRatingsData[contractorData.user_id];
 
-        // Get project titles for ratings
+        // Transform real ratings into display format
         const ratingsWithTitles: Rating[] = [];
-        if (ratingsData && ratingsData.length > 0) {
-          for (const rating of ratingsData) {
-            const project = projectsData?.find(p => p.id === rating.project_id);
+        if (contractorRealRatings?.ratings) {
+          for (const rating of contractorRealRatings.ratings) {
+            const project = projectsData?.find(p => p.id === rating.projectId);
             ratingsWithTitles.push({
-              ...rating,
-              project_title: project?.title || 'Unknown Project'
+              rating: rating.rating,
+              review: null,
+              work_quality: null,
+              communication: null,
+              completion_timeliness: null,
+              project_title: project?.title || 'Project Milestone',
+              created_at: rating.date
             });
           }
         }
 
         setRatings(ratingsWithTitles);
 
-        // Calculate average rating
-        const avgRating = ratingsData && ratingsData.length > 0
-          ? ratingsData.reduce((sum, r) => sum + (r.rating || 0), 0) / ratingsData.length
-          : 0;
-
         setStats({
           totalProjects,
           completedProjects,
           totalValue,
-          averageRating: avgRating
+          averageRating: contractorRealRatings?.averageRating || 0
         });
       }
     } catch (error) {

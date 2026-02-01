@@ -14,6 +14,7 @@ import ResponsiveContainer from '@/components/ResponsiveContainer';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { isProjectEffectivelyCompleted } from '@/utils/progressCalculation';
+import { fetchContractorRatingsFromVerifications } from '@/utils/contractorRatingCalculation';
 
 interface PerformanceMetric {
   name: string;
@@ -63,13 +64,10 @@ const ContractorPerformance = () => {
         .select('id, bid_amount, status')
         .eq('contractor_id', user?.id);
 
-      // Fetch ratings
-      const { data: ratingsData } = await supabase
-        .from('contractor_ratings')
-        .select('*')
-        .eq('contractor_id', user?.id)
-        .order('created_at', { ascending: false })
-        .limit(10);
+      // Fetch REAL ratings from milestone_verifications & quality_checkpoints
+      // (contractor_ratings table is empty - ratings come from citizen verifications)
+      const realRatingsData = await fetchContractorRatingsFromVerifications([user?.id || '']);
+      const myRealRatings = realRatingsData[user?.id || ''];
 
       // Fetch completed projects
       const { data: projects } = await supabase
@@ -114,31 +112,32 @@ const ContractorPerformance = () => {
         isProjectEffectivelyCompleted(p.status, milestonesByProject[p.id] || [])
       ) || [];
       
-      // Calculate real average rating from ratings data
-      const avgRating = ratingsData?.length 
-        ? ratingsData.reduce((sum, r) => sum + (r.rating || 0), 0) / ratingsData.length 
-        : 0;
+      // Use REAL ratings from citizen verifications
+      const avgRating = myRealRatings?.averageRating || 0;
+      const totalRatingCount = myRealRatings?.totalRatings || 0;
       
-      // Calculate REAL timeliness score from ratings (completion_timeliness field)
-      const avgTimeliness = ratingsData?.length 
-        ? ratingsData.reduce((sum, r) => sum + (r.completion_timeliness || 0), 0) / ratingsData.length 
-        : 0;
-      const timelinessScore = avgTimeliness > 0 ? Math.round((avgTimeliness / 5) * 100) : 0;
-      
-      // Calculate REAL quality score from ratings (work_quality field)
-      const avgQuality = ratingsData?.length 
-        ? ratingsData.reduce((sum, r) => sum + (r.work_quality || 0), 0) / ratingsData.length 
-        : 0;
-      const qualityScore = avgQuality > 0 ? Math.round((avgQuality / 5) * 100) : 0;
-      
-      // Calculate cost control score based on completed projects (bid amount vs actual)
-      // If no data, show 0 - in future could compare bid_amount vs actual project cost
-      const costScore = completedProjects.length > 0 
-        ? Math.round((completedProjects.length / (projects?.length || 1)) * 100)
-        : 0;
-      
-      // Calculate satisfaction score from overall rating
+      // Calculate scores from real ratings
+      // Since quality checkpoints have detailed category scores, we use the overall rating
+      // and calculate reasonable estimates for individual categories
       const satisfactionScore = avgRating > 0 ? Math.round((avgRating / 5) * 100) : 0;
+      
+      // For timeliness, quality, cost - use milestone completion rates and satisfaction as proxy
+      const projectCompletionRate = projects?.length 
+        ? (completedProjects.length / projects.length) * 100 
+        : 0;
+      
+      // Timeliness: based on milestone completion and rating
+      const timelinessScore = totalRatingCount > 0 
+        ? Math.round((satisfactionScore * 0.7) + (projectCompletionRate * 0.3))
+        : 0;
+      
+      // Quality: heavily based on ratings
+      const qualityScore = satisfactionScore;
+      
+      // Cost control: based on project completion (delivered within budget implied by completion)
+      const costScore = completedProjects.length > 0 
+        ? Math.round(projectCompletionRate)
+        : 0;
       
       const performanceMetrics: PerformanceMetric[] = [
         { name: 'Timeliness', value: timelinessScore, target: 90, trend: timelinessScore >= 70 ? 'up' : timelinessScore > 0 ? 'stable' : 'stable' },
@@ -148,7 +147,15 @@ const ContractorPerformance = () => {
       ];
 
       setMetrics(performanceMetrics);
-      setRatings(ratingsData || []);
+      
+      // Transform real ratings for display
+      const displayRatings = myRealRatings?.ratings?.map(r => ({
+        rating: r.rating,
+        source: r.source === 'milestone_verification' ? 'Milestone Verification' : 'Quality Review',
+        date: r.date,
+        projectId: r.projectId
+      })) || [];
+      setRatings(displayRatings);
       
       // Calculate overall score - only if there's actual data
       const metricsWithData = performanceMetrics.filter(m => m.value > 0);
