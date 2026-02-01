@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, FileText, Users, MapPin, Clock, Shield, CheckCircle, Wallet, Loader2, Wrench, Eye, Bell, BookOpen, Briefcase, Search, Map } from 'lucide-react';
+import { AlertTriangle, FileText, Users, MapPin, Clock, Shield, CheckCircle, Wallet, Loader2, Wrench, Eye, BookOpen, Briefcase, Map } from 'lucide-react';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
 import Header from '@/components/Header';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
@@ -90,15 +90,6 @@ const CitizenDashboard = () => {
       badge: 'Data'
     },
     {
-      title: 'Notifications',
-      description: 'Project updates and community alerts',
-      icon: Bell,
-      href: '/citizen/notifications',
-      color: 'bg-pink-500 hover:bg-pink-600',
-      iconColor: 'text-pink-600',
-      badge: 'Alerts'
-    },
-    {
       title: 'Citizen Guide',
       description: 'Learn how to use the platform effectively',
       icon: BookOpen,
@@ -106,15 +97,6 @@ const CitizenDashboard = () => {
       color: 'bg-cyan-500 hover:bg-cyan-600',
       iconColor: 'text-cyan-600',
       badge: 'Learn'
-    },
-    {
-      title: 'USSD Access',
-      description: 'Access services via *483# for basic phones',
-      icon: Search,
-      href: '/citizen/ussd',
-      color: 'bg-gray-500 hover:bg-gray-600',
-      iconColor: 'text-gray-600',
-      badge: 'SMS'
     }
   ];
 

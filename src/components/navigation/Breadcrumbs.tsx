@@ -24,7 +24,7 @@ const routeLabels: Record<string, string> = {
   'community-voting': 'Community Voting',
   'skills-registration': 'Skills Registration',
   'workforce': 'Workforce',
-  'ussd': 'USSD Access',
+  
   'projects': 'Projects',
   'transparency': 'Transparency',
   'notifications': 'Notifications',

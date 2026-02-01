@@ -27,7 +27,6 @@ const CitizenTrackReports = lazy(() => import("./pages/citizen/CitizenTrackRepor
 const CitizenCommunityVoting = lazy(() => import("./pages/citizen/CitizenCommunityVoting"));
 const CitizenSkillsRegistration = lazy(() => import("./pages/citizen/CitizenSkillsRegistration"));
 const CitizenWorkforce = lazy(() => import("./pages/citizen/CitizenWorkforce"));
-const CitizenUSSD = lazy(() => import("./pages/citizen/CitizenUSSD"));
 const CitizenProjects = lazy(() => import("./pages/citizen/CitizenProjects"));
 const CitizenTransparency = lazy(() => import("./pages/citizen/CitizenTransparency"));
 const CitizenNotifications = lazy(() => import("./pages/citizen/CitizenNotifications"));
@@ -163,14 +162,6 @@ const App = () => {
                     element={
                       <ProtectedRoute allowedRoles={["citizen"]}>
                         <CitizenWorkforce />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/citizen/ussd"
-                    element={
-                      <ProtectedRoute allowedRoles={["citizen"]}>
-                        <CitizenUSSD />
                       </ProtectedRoute>
                     }
                   />

@@ -8,7 +8,6 @@ import GovernmentDashboard from '@/components/GovernmentDashboard';
 import CommunityVoting from '@/components/CommunityVoting';
 import EscrowManagement from '@/components/EscrowManagement';
 import SimplifiedReporting from '@/components/SimplifiedReporting';
-import SMSIntegration from '@/components/SMSIntegration';
 import OfflineSupport from '@/components/OfflineSupport';
 import Header from '@/components/Header';
 import StatsCards from '@/components/StatsCards';
@@ -86,12 +85,12 @@ const Dashboard = () => {
               <SimplifiedReporting />
             </TabsContent>
 
-            <TabsContent value="sms">
-              <SMSIntegration />
-            </TabsContent>
-
             <TabsContent value="offline">
               <OfflineSupport />
+            </TabsContent>
+
+            <TabsContent value="voting">
+              <CommunityVoting />
             </TabsContent>
 
             <TabsContent value="voting">
