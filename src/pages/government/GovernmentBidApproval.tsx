@@ -596,10 +596,26 @@ const GovernmentBidApproval = () => {
                             </p>
                           </div>
                           <div>
-                            <p className="text-gray-600">Days Remaining</p>
-                            <p className="text-lg font-bold">
-                              {project.requirements?.days_remaining || 0} days
-                            </p>
+                            <p className="text-gray-600">Time Status</p>
+                            {(() => {
+                              const daysRemaining = project.requirements?.days_remaining || 0;
+                              const biddingEndDate = project.bidding_end_date ? new Date(project.bidding_end_date) : null;
+                              const now = new Date();
+                              const isExpired = biddingEndDate && biddingEndDate < now;
+                              
+                              if (isExpired) {
+                                return (
+                                  <p className="text-lg font-bold text-red-600">
+                                    Expired
+                                  </p>
+                                );
+                              }
+                              return (
+                                <p className="text-lg font-bold text-green-600">
+                                  {daysRemaining} days left
+                                </p>
+                              );
+                            })()}
                           </div>
                           <div>
                             <p className="text-gray-600">Budget</p>

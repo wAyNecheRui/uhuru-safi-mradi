@@ -235,6 +235,25 @@ const GovernmentContractorManagement = () => {
 
             {/* Contractor Evaluation Tab */}
             <TabsContent value="evaluation" className="space-y-6">
+              {/* Rating Explanation Card */}
+              <Card className="bg-blue-50 border-blue-200">
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-3">
+                    <Star className="h-5 w-5 text-yellow-500 mt-0.5" />
+                    <div>
+                      <h4 className="font-semibold text-blue-900">How Contractor Ratings Work</h4>
+                      <p className="text-sm text-blue-700 mt-1">
+                        Contractor ratings come from <strong>citizen milestone verifications</strong>. When contractors complete project milestones, 
+                        citizens verify the work quality and provide ratings (1-5 stars). These ratings are aggregated to show overall contractor performance.
+                        <span className="block mt-2 text-blue-600 font-medium">
+                          💡 Contractors with no ratings have not yet had any milestones verified by citizens.
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
               <div className="flex gap-4">
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -298,7 +317,9 @@ const GovernmentContractorManagement = () => {
                           <p className="text-xl font-bold text-blue-600">
                             {getAverageRating(contractor.contractor_ratings)}
                           </p>
-                          <p className="text-xs text-blue-700">Rating</p>
+                          <p className="text-xs text-blue-700">
+                            {contractor.contractor_ratings?.length || 0} {contractor.contractor_ratings?.length === 1 ? 'rating' : 'ratings'}
+                          </p>
                         </div>
                         <div className="text-center p-3 bg-green-50 rounded-lg">
                           <p className="text-xl font-bold text-green-600">

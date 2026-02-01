@@ -383,10 +383,15 @@ const GovernmentAnalytics = () => {
                     <div className="text-3xl font-bold text-yellow-600">{kpis.contractorSatisfaction}%</div>
                     <p className="text-xs text-muted-foreground mt-1">
                       {kpis.totalRatings > 0 
-                        ? `${kpis.totalRatings} ratings (avg ${kpis.avgRating}/5)` 
-                        : 'No ratings submitted yet'}
+                        ? `${kpis.totalRatings} citizen ratings (avg ${kpis.avgRating}/5)` 
+                        : 'No milestone verifications yet'}
                     </p>
                     <Progress value={kpis.contractorSatisfaction} className="mt-3 h-2" />
+                    {kpis.totalRatings === 0 && (
+                      <p className="text-xs text-yellow-700 mt-2 bg-yellow-50 p-2 rounded">
+                        ⚠️ Ratings appear after citizens verify completed milestones
+                      </p>
+                    )}
                   </CardContent>
                 </Card>
 
@@ -411,47 +416,156 @@ const GovernmentAnalytics = () => {
 
             {/* Regional Insights Tab */}
             <TabsContent value="regional" className="space-y-6">
+              {/* County Comparison Summary */}
+              {regionalData.length > 1 && (
+                <Card className="border-t-4 border-t-primary">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <BarChart3 className="h-5 w-5 text-primary" />
+                      County Performance Comparison
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead className="bg-muted">
+                          <tr>
+                            <th className="p-3 text-left font-semibold">County</th>
+                            <th className="p-3 text-center font-semibold">Total Projects</th>
+                            <th className="p-3 text-center font-semibold">Completed</th>
+                            <th className="p-3 text-center font-semibold">Completion %</th>
+                            <th className="p-3 text-right font-semibold">Budget</th>
+                            <th className="p-3 text-center font-semibold">Performance</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y">
+                          {regionalData.slice(0, 10).map((region, index) => {
+                            // Calculate performance score relative to average
+                            const avgCompletion = regionalData.reduce((s, r) => s + r.completionRate, 0) / regionalData.length;
+                            const performanceVsAvg = region.completionRate - avgCompletion;
+                            const isTopPerformer = performanceVsAvg > 10;
+                            const isUnderperformer = performanceVsAvg < -10;
+                            
+                            return (
+                              <tr key={index} className="hover:bg-muted/50">
+                                <td className="p-3 font-medium flex items-center gap-2">
+                                  <MapPin className="h-4 w-4 text-muted-foreground" />
+                                  {region.county}
+                                  {index === 0 && <Badge className="bg-yellow-100 text-yellow-800 text-xs">Top</Badge>}
+                                </td>
+                                <td className="p-3 text-center">{region.total}</td>
+                                <td className="p-3 text-center text-green-600 font-semibold">{region.completed}</td>
+                                <td className="p-3 text-center">
+                                  <div className="flex items-center justify-center gap-2">
+                                    <Progress value={region.completionRate} className="h-2 w-16" />
+                                    <span className="font-semibold">{region.completionRate}%</span>
+                                  </div>
+                                </td>
+                                <td className="p-3 text-right font-mono text-sm">
+                                  {new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES', notation: 'compact' }).format(region.budget || 0)}
+                                </td>
+                                <td className="p-3 text-center">
+                                  <Badge className={`text-xs ${
+                                    isTopPerformer ? 'bg-green-100 text-green-800' :
+                                    isUnderperformer ? 'bg-red-100 text-red-800' :
+                                    'bg-gray-100 text-gray-800'
+                                  }`}>
+                                    {isTopPerformer && <TrendingUp className="h-3 w-3 inline mr-1" />}
+                                    {isUnderperformer && <TrendingDown className="h-3 w-3 inline mr-1" />}
+                                    {isTopPerformer ? 'Above Avg' : isUnderperformer ? 'Below Avg' : 'Average'}
+                                  </Badge>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                    
+                    {/* Summary Stats */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-4 border-t">
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-primary">{regionalData.length}</p>
+                        <p className="text-xs text-muted-foreground">Counties with Projects</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-green-600">
+                          {regionalData.reduce((s, r) => s + r.total, 0)}
+                        </p>
+                        <p className="text-xs text-muted-foreground">Total Projects</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-blue-600">
+                          {Math.round(regionalData.reduce((s, r) => s + r.completionRate, 0) / regionalData.length)}%
+                        </p>
+                        <p className="text-xs text-muted-foreground">Avg Completion Rate</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-purple-600">
+                          {new Intl.NumberFormat('en-KE', { notation: 'compact' }).format(
+                            regionalData.reduce((s, r) => s + (r.budget || 0), 0)
+                          )}
+                        </p>
+                        <p className="text-xs text-muted-foreground">Total Budget</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Individual County Cards */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <MapPin className="h-5 w-5 text-primary" />
-                    County Performance Comparison
+                    Detailed County Breakdown
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {regionalData.length === 0 ? (
                     <p className="text-center text-gray-500 py-8">No regional data available</p>
                   ) : (
-                    <div className="space-y-4">
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                       {regionalData.map((region, index) => (
-                        <div key={index} className="p-4 border rounded-lg">
-                          <div className="flex justify-between items-center mb-2">
-                            <span className="font-semibold">{region.county}</span>
+                        <div key={index} className="p-4 border rounded-lg hover:shadow-md transition-shadow">
+                          <div className="flex justify-between items-center mb-3">
+                            <span className="font-semibold flex items-center gap-2">
+                              <MapPin className="h-4 w-4 text-muted-foreground" />
+                              {region.county}
+                            </span>
                             <Badge variant="outline">{region.total} projects</Badge>
                           </div>
-                          <div className="space-y-2">
-                            <div className="flex justify-between text-sm">
-                              <span className="text-gray-600">Completion Rate</span>
-                              <span>{region.completionRate}%</span>
+                          <div className="space-y-3">
+                            <div>
+                              <div className="flex justify-between text-sm mb-1">
+                                <span className="text-muted-foreground">Completion</span>
+                                <span className="font-semibold">{region.completionRate}%</span>
+                              </div>
+                              <Progress value={region.completionRate} className="h-2" />
                             </div>
-                            <Progress value={region.completionRate} className="h-2" />
+                            <div className="grid grid-cols-2 gap-2 text-xs">
+                              <div className="bg-muted/50 p-2 rounded">
+                                <p className="text-muted-foreground">Completed</p>
+                                <p className="font-bold text-green-600">{region.completed}</p>
+                              </div>
+                              <div className="bg-muted/50 p-2 rounded">
+                                <p className="text-muted-foreground">In Progress</p>
+                                <p className="font-bold text-blue-600">{region.inProgress}</p>
+                              </div>
+                            </div>
+                            {region.budget > 0 && (
+                              <div className="text-xs text-center bg-muted/30 p-2 rounded">
+                                <span className="text-muted-foreground">Budget: </span>
+                                <span className="font-semibold">
+                                  {new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES', notation: 'compact' }).format(region.budget)}
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </div>
                       ))}
                     </div>
                   )}
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Data Summary</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-gray-600 text-center py-4">
-                    Regional analytics are calculated from actual project and report data in the system.
-                    As more data is collected, detailed category breakdowns will appear here.
-                  </p>
                 </CardContent>
               </Card>
             </TabsContent>
