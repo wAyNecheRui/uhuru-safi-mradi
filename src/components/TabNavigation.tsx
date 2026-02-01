@@ -1,6 +1,6 @@
 import React from 'react';
 import { TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { TrendingUp, MapPin, Phone, Wifi, Users, Briefcase, Shield } from 'lucide-react';
+import { TrendingUp, MapPin, Wifi, Users, Briefcase, Shield } from 'lucide-react';
 import { useViewport } from '@/hooks/useViewport';
 import { cn } from '@/lib/utils';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
@@ -15,7 +15,6 @@ const TabNavigation = ({ getText }: TabNavigationProps) => {
   const tabs = [
     { value: 'overview', icon: TrendingUp, en: 'Overview', sw: 'Muhtasari' },
     { value: 'simple-report', icon: MapPin, en: 'Quick Report', sw: 'Ripoti Haraka' },
-    { value: 'sms', icon: Phone, en: 'SMS/USSD', sw: 'SMS/USSD' },
     { value: 'offline', icon: Wifi, en: 'Offline', sw: 'Bila Mtandao' },
     { value: 'voting', icon: Users, en: 'Community', sw: 'Jamii' },
     { value: 'bidding', icon: Briefcase, en: 'Contractors', sw: 'Wakandarasi' },
@@ -85,7 +84,7 @@ const TabNavigation = ({ getText }: TabNavigationProps) => {
   // Desktop: Full row
   return (
     <TabsList 
-      className="grid w-full grid-cols-7 h-auto p-1 bg-card shadow-lg rounded-lg"
+      className="grid w-full grid-cols-6 h-auto p-1 bg-card shadow-lg rounded-lg"
       role="tablist"
       aria-label={getText('Main navigation tabs', 'Vikundi vya urambazaji mkuu')}
     >
