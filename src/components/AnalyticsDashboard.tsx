@@ -4,9 +4,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useSystemAnalytics } from '@/hooks/useSystemAnalytics';
 import { supabase } from '@/integrations/supabase/client';
-import { TrendingUp, TrendingDown, Users, FileText, CheckCircle, Clock, AlertTriangle, Eye, Target, Zap, RefreshCw } from 'lucide-react';
+import { TrendingUp, TrendingDown, Users, FileText, CheckCircle, Clock, AlertTriangle, Eye, Target, Zap, RefreshCw, Star } from 'lucide-react';
 import { isProjectEffectivelyCompleted } from '@/utils/progressCalculation';
 import { formatDateTime, getCurrentDateTime } from '@/lib/dateUtils';
+import { getContractorSatisfactionMetrics } from '@/utils/contractorRatingCalculation';
 
 interface RealTimeKPIs {
   transparencyIndex: number;
@@ -17,6 +18,9 @@ interface RealTimeKPIs {
   approvedProjects: number;
   activeContractors: number;
   pendingPayments: number;
+  contractorSatisfaction: number;
+  avgRating: number;
+  totalRatings: number;
 }
 
 const AnalyticsDashboard = () => {
@@ -32,13 +36,14 @@ const AnalyticsDashboard = () => {
   const fetchRealTimeKPIs = async () => {
     try {
       // Fetch all data in parallel for accurate real-time KPIs
-      const [projectsRes, reportsRes, milestonesRes, escrowsRes, paymentsRes, contractorsRes] = await Promise.all([
+      const [projectsRes, reportsRes, milestonesRes, escrowsRes, paymentsRes, contractorsRes, satisfactionMetrics] = await Promise.all([
         supabase.from('projects').select('id, status, contractor_id'),
         supabase.from('problem_reports').select('id, status'),
         supabase.from('project_milestones').select('id, status, project_id'),
         supabase.from('escrow_accounts').select('id, project_id'),
         supabase.from('payment_transactions').select('id, status, created_at'),
-        supabase.from('skills_profiles').select('id, available_for_work')
+        supabase.from('skills_profiles').select('id, available_for_work'),
+        getContractorSatisfactionMetrics() // Get REAL ratings from verifications, not empty table
       ]);
 
       const projects = projectsRes.data || [];
@@ -106,6 +111,11 @@ const AnalyticsDashboard = () => {
         r.status === 'contractor_selected' || r.status === 'completed'
       ).length;
 
+      // Calculate contractor satisfaction from REAL verification ratings
+      const contractorSatisfaction = satisfactionMetrics.totalRatings > 0
+        ? Math.round((satisfactionMetrics.averageRating / 5) * 100)
+        : 0;
+
       setRealTimeKPIs({
         transparencyIndex: Math.min(transparencyIndex, 100),
         avgPaymentTime,
@@ -114,7 +124,10 @@ const AnalyticsDashboard = () => {
         totalReports: reports.length,
         approvedProjects,
         activeContractors,
-        pendingPayments
+        pendingPayments,
+        contractorSatisfaction,
+        avgRating: Math.round(satisfactionMetrics.averageRating * 10) / 10,
+        totalRatings: satisfactionMetrics.totalRatings
       });
       setLastUpdated(getCurrentDateTime());
     } catch (error) {
@@ -252,6 +265,22 @@ const AnalyticsDashboard = () => {
               <div className="flex justify-between items-center">
                 <span className="text-sm font-medium">Citizen Engagement</span>
                 <Badge variant="outline">{realTimeKPIs?.citizenEngagement || 'Low'}</Badge>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium flex items-center gap-1">
+                  <Star className="h-3 w-3" />
+                  Contractor Satisfaction
+                </span>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline">
+                    {realTimeKPIs?.contractorSatisfaction || 0}%
+                  </Badge>
+                  {(realTimeKPIs?.totalRatings || 0) > 0 && (
+                    <span className="text-xs text-muted-foreground">
+                      ({realTimeKPIs?.avgRating}/5 from {realTimeKPIs?.totalRatings} ratings)
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           </CardContent>
