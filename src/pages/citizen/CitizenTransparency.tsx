@@ -23,6 +23,7 @@ import ResponsiveContainer from '@/components/ResponsiveContainer';
 import ContractorPortfolioModal from '@/components/transparency/ContractorPortfolioModal';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { fetchContractorRatingsFromVerifications } from '@/utils/contractorRatingCalculation';
 
 interface ContractorProfile {
   id: string;
@@ -93,11 +94,9 @@ const CitizenTransparency = () => {
         .in('contractor_id', contractorIds)
         .is('deleted_at', null);
 
-      // Fetch all ratings for these contractors
-      const { data: ratingsData } = await supabase
-        .from('contractor_ratings')
-        .select('contractor_id, rating')
-        .in('contractor_id', contractorIds);
+      // Fetch REAL ratings from milestone_verifications & quality_checkpoints
+      // (contractor_ratings table is empty - ratings come from citizen verifications)
+      const realRatingsData = await fetchContractorRatingsFromVerifications(contractorIds);
 
       // Build stats maps
       const projectStats: Record<string, { count: number; totalValue: number }> = {};
@@ -110,21 +109,11 @@ const CitizenTransparency = () => {
         projectStats[p.contractor_id].totalValue += Number(p.budget) || 0;
       });
 
-      const ratingStats: Record<string, { total: number; count: number }> = {};
-      (ratingsData || []).forEach(r => {
-        if (!r.contractor_id) return;
-        if (!ratingStats[r.contractor_id]) {
-          ratingStats[r.contractor_id] = { total: 0, count: 0 };
-        }
-        ratingStats[r.contractor_id].total += r.rating || 0;
-        ratingStats[r.contractor_id].count += 1;
-      });
-
-      // Transform with dynamic calculations
+      // Transform with dynamic calculations using REAL ratings
       const transformedContractors: ContractorProfile[] = (contractorsData || []).map(c => {
         const projectStat = projectStats[c.user_id] || { count: 0, totalValue: 0 };
-        const ratingStat = ratingStats[c.user_id] || { total: 0, count: 0 };
-        const avgRating = ratingStat.count > 0 ? ratingStat.total / ratingStat.count : 0;
+        const realRating = realRatingsData[c.user_id];
+        const avgRating = realRating?.averageRating || 0;
 
         return {
           id: c.id,

@@ -7,6 +7,7 @@ import SearchFilters from '@/components/contractor-database/SearchFilters';
 import ContractorCard from '@/components/contractor-database/ContractorCard';
 import EmptyState from '@/components/contractor-database/EmptyState';
 import { CATEGORIES, LOCATIONS } from '@/constants/contractorDatabase';
+import { fetchContractorRatingsFromVerifications } from '@/utils/contractorRatingCalculation';
 
 const ContractorDatabase = () => {
   const [contractors, setContractors] = useState<any[]>([]);
@@ -42,10 +43,10 @@ const ContractorDatabase = () => {
           .not('contractor_id', 'is', null)
           .is('deleted_at', null);
 
-        // Fetch ratings
-        const { data: ratingsData } = await supabase
-          .from('contractor_ratings')
-          .select('contractor_id, rating');
+        // Fetch REAL ratings from milestone_verifications & quality_checkpoints
+        // (contractor_ratings table is empty - ratings come from citizen verifications)
+        const contractorIds = (contractorData || []).map(c => c.user_id);
+        const realRatingsData = await fetchContractorRatingsFromVerifications(contractorIds);
 
         // Build stats maps
         const projectStats: Record<string, { count: number; completed: number; totalValue: number }> = {};
@@ -60,20 +61,11 @@ const ContractorDatabase = () => {
           }
         });
 
-        const ratingStats: Record<string, { total: number; count: number }> = {};
-        (ratingsData || []).forEach(r => {
-          if (!ratingStats[r.contractor_id]) {
-            ratingStats[r.contractor_id] = { total: 0, count: 0 };
-          }
-          ratingStats[r.contractor_id].total += r.rating || 0;
-          ratingStats[r.contractor_id].count += 1;
-        });
-
         // Transform data with real stats
         const transformedData = (contractorData || []).map((profile: any) => {
           const projectStat = projectStats[profile.user_id] || { count: 0, completed: 0, totalValue: 0 };
-          const ratingStat = ratingStats[profile.user_id] || { total: 0, count: 0 };
-          const avgRating = ratingStat.count > 0 ? ratingStat.total / ratingStat.count : 0;
+          const realRating = realRatingsData[profile.user_id];
+          const avgRating = realRating?.averageRating || 0;
 
           return {
             id: profile.id,
@@ -81,7 +73,7 @@ const ContractorDatabase = () => {
             category: profile.specialization?.[0] || 'General Construction',
             location: profile.registered_counties?.[0] || 'Kenya',
             rating: avgRating,
-            reviewCount: ratingStat.count,
+            reviewCount: realRating?.totalRatings || 0,
             specializations: profile.specialization || [],
             experience: profile.years_in_business ? `${profile.years_in_business} years` : 'New',
             isVerified: profile.verified,
