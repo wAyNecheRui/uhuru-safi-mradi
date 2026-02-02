@@ -1782,7 +1782,7 @@ export type Database = {
           government_user_id: string
           id: string
           ip_address: unknown
-          justification: string | null
+          justification: string
           session_id: string | null
           user_agent: string | null
           worker_id: string
@@ -1795,7 +1795,7 @@ export type Database = {
           government_user_id: string
           id?: string
           ip_address?: unknown
-          justification?: string | null
+          justification: string
           session_id?: string | null
           user_agent?: string | null
           worker_id: string
@@ -1808,7 +1808,7 @@ export type Database = {
           government_user_id?: string
           id?: string
           ip_address?: unknown
-          justification?: string | null
+          justification?: string
           session_id?: string | null
           user_agent?: string | null
           worker_id?: string
@@ -1909,6 +1909,13 @@ export type Database = {
             referencedRelation: "citizen_workers"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "workforce_applications_worker_id_fkey"
+            columns: ["worker_id"]
+            isOneToOne: false
+            referencedRelation: "citizen_workers_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       workforce_jobs: {
@@ -1972,6 +1979,75 @@ export type Database = {
       }
     }
     Views: {
+      citizen_workers_public: {
+        Row: {
+          availability_status: string | null
+          certifications: string[] | null
+          county: string | null
+          created_at: string | null
+          daily_rate_rounded: number | null
+          education_level: string | null
+          experience_years: number | null
+          hourly_rate_rounded: number | null
+          id: string | null
+          languages: string[] | null
+          max_travel_distance: number | null
+          rating: number | null
+          skills: string[] | null
+          sub_county: string | null
+          total_jobs_completed: number | null
+          transport_means: string[] | null
+          user_id: string | null
+          verification_status: string | null
+          ward: string | null
+          willing_to_travel: boolean | null
+        }
+        Insert: {
+          availability_status?: string | null
+          certifications?: string[] | null
+          county?: string | null
+          created_at?: string | null
+          daily_rate_rounded?: never
+          education_level?: string | null
+          experience_years?: number | null
+          hourly_rate_rounded?: never
+          id?: string | null
+          languages?: string[] | null
+          max_travel_distance?: number | null
+          rating?: number | null
+          skills?: string[] | null
+          sub_county?: string | null
+          total_jobs_completed?: number | null
+          transport_means?: string[] | null
+          user_id?: string | null
+          verification_status?: string | null
+          ward?: string | null
+          willing_to_travel?: boolean | null
+        }
+        Update: {
+          availability_status?: string | null
+          certifications?: string[] | null
+          county?: string | null
+          created_at?: string | null
+          daily_rate_rounded?: never
+          education_level?: string | null
+          experience_years?: number | null
+          hourly_rate_rounded?: never
+          id?: string | null
+          languages?: string[] | null
+          max_travel_distance?: number | null
+          rating?: number | null
+          skills?: string[] | null
+          sub_county?: string | null
+          total_jobs_completed?: number | null
+          transport_means?: string[] | null
+          user_id?: string | null
+          verification_status?: string | null
+          ward?: string | null
+          willing_to_travel?: boolean | null
+        }
+        Relationships: []
+      }
       contractor_profiles_public: {
         Row: {
           agpo_category: string | null
@@ -2037,18 +2113,30 @@ export type Database = {
       }
     }
     Functions: {
-      calculate_distance_km: {
-        Args: { lat1: number; lat2: number; lon1: number; lon2: number }
-        Returns: number
-      }
-      can_user_verify: {
-        Args: { report_id: string; user_lat: number; user_lon: number }
-        Returns: boolean
-      }
-      can_user_vote: {
-        Args: { report_id: string; user_lat: number; user_lon: number }
-        Returns: boolean
-      }
+      calculate_distance_km:
+        | {
+            Args: { lat1: number; lat2: number; lon1: number; lon2: number }
+            Returns: number
+          }
+        | {
+            Args: { lat1: number; lat2: number; lon1: number; lon2: number }
+            Returns: number
+          }
+      can_user_verify:
+        | {
+            Args: { _milestone_id: string; _user_id: string }
+            Returns: boolean
+          }
+        | {
+            Args: { report_id: string; user_lat: number; user_lon: number }
+            Returns: boolean
+          }
+      can_user_vote:
+        | { Args: { _report_id: string; _user_id: string }; Returns: boolean }
+        | {
+            Args: { report_id: string; user_lat: number; user_lon: number }
+            Returns: boolean
+          }
       check_bid_requirements: {
         Args: { p_report_id: string }
         Returns: {
@@ -2079,7 +2167,12 @@ export type Database = {
           total_score: number
         }[]
       }
-      extend_bidding_window: { Args: { p_report_id: string }; Returns: boolean }
+      extend_bidding_window:
+        | {
+            Args: { _additional_days?: number; _report_id: string }
+            Returns: undefined
+          }
+        | { Args: { p_report_id: string }; Returns: boolean }
       get_available_workers: {
         Args: never
         Returns: {
@@ -2257,9 +2350,7 @@ export type Database = {
       }
       get_user_roles: {
         Args: { _user_id: string }
-        Returns: {
-          role: Database["public"]["Enums"]["app_role"]
-        }[]
+        Returns: Database["public"]["Enums"]["app_role"][]
       }
       get_worker_contact_info: {
         Args: { worker_id: string }
@@ -2275,19 +2366,24 @@ export type Database = {
         }
         Returns: boolean
       }
-      is_verified_government_user: {
-        Args: { user_uuid?: string }
-        Returns: boolean
-      }
-      open_bidding_for_project: {
-        Args: { p_report_id: string }
-        Returns: undefined
-      }
+      is_verified_government_user:
+        | { Args: never; Returns: boolean }
+        | { Args: { user_uuid?: string }; Returns: boolean }
+      open_bidding_for_project:
+        | {
+            Args: { _duration_days?: number; _report_id: string }
+            Returns: undefined
+          }
+        | { Args: { p_report_id: string }; Returns: undefined }
       soft_delete_record: {
         Args: { p_record_id: string; p_table_name: string }
         Returns: boolean
       }
       update_system_analytics: { Args: never; Returns: undefined }
+      validate_escrow_funding: {
+        Args: { _amount: number; _project_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "citizen" | "contractor" | "government" | "admin"
