@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 import type { AuthUser, AuthContextType } from '@/types/auth';
 import type { AppRole } from '@/services/RoleService';
 
@@ -50,6 +51,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const mountedRef = useRef(true);
   const initDoneRef = useRef(false);
+  const prevUserIdRef = useRef<string | null>(null);
+  
+  // Get query client for cache clearing - wrapped in try/catch for safety
+  let queryClient: ReturnType<typeof useQueryClient> | null = null;
+  try {
+    queryClient = useQueryClient();
+  } catch {
+    // QueryClient not available (component mounted outside provider)
+  }
+
+  // SECURITY: Clear all cached data when user changes to prevent data leakage
+  const clearDataCache = useCallback(() => {
+    if (queryClient) {
+      console.log('[AuthContext Security] Clearing all cached query data');
+      queryClient.clear();
+      queryClient.resetQueries();
+    }
+  }, [queryClient]);
 
   const forceSignOut = useCallback(async () => {
     try {
@@ -58,13 +77,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // signOut can fail when the session is already invalid; still clear local storage
     } finally {
       clearSupabaseAuthStorage();
+      clearDataCache(); // SECURITY: Clear cache on sign out
       if (mountedRef.current) {
         setUser(null);
         setRoles([]);
         setLoading(false);
       }
     }
-  }, []);
+  }, [clearDataCache]);
 
   // Fast user data loader with cache
   const loadUserData = useCallback(async (userId: string, email: string): Promise<{ user: AuthUser; roles: AppRole[] } | null> => {
@@ -154,12 +174,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // ignore
     } finally {
       clearSupabaseAuthStorage();
+      clearDataCache(); // SECURITY: Clear cache on sign out
       if (mountedRef.current) {
         setUser(null);
         setRoles([]);
       }
     }
-  }, [user?.id]);
+  }, [user?.id, clearDataCache]);
+
+  // SECURITY: Watch for user changes and clear cache
+  useEffect(() => {
+    const currentUserId = user?.id ?? null;
+    const prevUserId = prevUserIdRef.current;
+    
+    // If user changed (including from one user to another), clear cache
+    if (prevUserId !== null && currentUserId !== prevUserId) {
+      clearDataCache();
+    }
+    
+    prevUserIdRef.current = currentUserId;
+  }, [user?.id, clearDataCache]);
 
   useEffect(() => {
     mountedRef.current = true;
