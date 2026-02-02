@@ -26,7 +26,7 @@ interface ProjectWithProgress {
 
 const ContractorDashboard = () => {
   const { isMobile, isTablet } = useResponsive();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [selectedCounty, setSelectedCounty] = useState('Nairobi');
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -37,18 +37,23 @@ const ContractorDashboard = () => {
   });
   const [activeProjects, setActiveProjects] = useState<ProjectWithProgress[]>([]);
 
+  // SECURITY: Only use stable user ID after auth is complete
+  const stableUserId = !authLoading && user?.id ? user.id : null;
+
   // Memoize fetch function for real-time subscription
   const fetchDashboardData = useCallback(async () => {
-    if (!user) return;
+    // SECURITY: Don't fetch if user not stable
+    if (!stableUserId) return;
     
     try {
       setLoading(true);
 
       // Fetch projects with milestones to calculate accurate stats
+      // SECURITY: Always filter by the authenticated user's ID
       const { data: projects } = await supabase
         .from('projects')
         .select('*')
-        .eq('contractor_id', user?.id);
+        .eq('contractor_id', stableUserId);
 
       // Fetch all milestones for this contractor's projects
       const projectIds = projects?.map(p => p.id) || [];
@@ -102,10 +107,11 @@ const ContractorDashboard = () => {
       const totalEarnings = completedProjects.reduce((acc, p) => acc + (p?.budget || 0), 0);
 
       // Calculate success rate (accepted bids / total bids)
+      // SECURITY: Always filter by authenticated user's ID
       const { data: bidsData } = await supabase
         .from('contractor_bids')
         .select('status')
-        .eq('contractor_id', user?.id);
+        .eq('contractor_id', stableUserId);
 
       const totalBids = bidsData?.length || 0;
       const acceptedBids = bidsData?.filter(b => b.status === 'accepted' || b.status === 'selected').length || 0;
@@ -127,21 +133,21 @@ const ContractorDashboard = () => {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [stableUserId]); // SECURITY: Depend on stableUserId
 
   // Set up real-time subscriptions for contractor data
   useRealtimeSubscription({
     subscriptions: REALTIME_PRESETS.contractorDashboard,
     onDataChange: fetchDashboardData,
     channelPrefix: 'contractor-dashboard',
-    enabled: !!user
+    enabled: !!stableUserId // SECURITY: Only enable when user is stable
   });
 
   useEffect(() => {
-    if (user) {
+    if (stableUserId) {
       fetchDashboardData();
     }
-  }, [user, fetchDashboardData]);
+  }, [stableUserId, fetchDashboardData]);
 
 
   const handleCountyChange = (county: string) => {
@@ -240,7 +246,8 @@ const ContractorDashboard = () => {
     { label: 'Success Rate', value: `${stats.successRate}%`, icon: TrendingUp, color: 'text-orange-600' }
   ];
 
-  if (loading) {
+  // SECURITY: Show loading if auth is still resolving or data is loading
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
         <Header />
@@ -252,6 +259,11 @@ const ContractorDashboard = () => {
         </main>
       </div>
     );
+  }
+
+  // SECURITY: Don't render if user is not authenticated
+  if (!stableUserId) {
+    return null;
   }
 
   return (

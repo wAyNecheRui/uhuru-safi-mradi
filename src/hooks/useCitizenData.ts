@@ -33,36 +33,41 @@ export interface CitizenStats {
 }
 
 export const useCitizenData = () => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const queryClient = useQueryClient();
+
+  // SECURITY: Only use stable user ID after auth is complete
+  const stableUserId = !authLoading && user?.id ? user.id : null;
 
   // Set up real-time refresh for citizen data
   useGlobalRealtimeRefresh(
     ['problem_reports', 'community_votes', 'projects'],
     () => {
-      if (user?.id) {
-        queryClient.invalidateQueries({ queryKey: ['citizenReports', user.id] });
-        queryClient.invalidateQueries({ queryKey: ['citizenStats', user.id] });
+      if (stableUserId) {
+        queryClient.invalidateQueries({ queryKey: ['citizenReports', stableUserId] });
+        queryClient.invalidateQueries({ queryKey: ['citizenStats', stableUserId] });
       }
     },
-    !!user?.id
+    !!stableUserId
   );
 
   // Fetch citizen's reports with linked project data
+  // SECURITY: Use stableUserId to prevent fetching with stale/wrong user
   const {
     data: reports = [],
     isLoading: reportsLoading,
     error: reportsError
   } = useQuery({
-    queryKey: ['citizenReports', user?.id],
+    queryKey: ['citizenReports', stableUserId],
     queryFn: async () => {
-      if (!user?.id) return [];
+      // SECURITY: Double-check user ID is valid before fetching
+      if (!stableUserId) return [];
       
-      // Fetch reports
+      // Fetch reports - ALWAYS filter by the authenticated user's ID
       const { data: reportsData, error } = await supabase
         .from('problem_reports')
         .select('*')
-        .eq('reported_by', user.id)
+        .eq('reported_by', stableUserId)
         .is('deleted_at', null)
         .order('created_at', { ascending: false });
       
@@ -111,20 +116,22 @@ export const useCitizenData = () => {
         } as CitizenReport;
       });
     },
-    enabled: !!user?.id,
+    enabled: !!stableUserId, // SECURITY: Only enable when user is stable
     refetchOnWindowFocus: false,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   // Fetch citizen statistics with accurate project-based completion counting
+  // SECURITY: Use stableUserId to prevent fetching with stale/wrong user
   const {
     data: stats,
     isLoading: statsLoading,
     error: statsError
   } = useQuery({
-    queryKey: ['citizenStats', user?.id],
+    queryKey: ['citizenStats', stableUserId],
     queryFn: async () => {
-      if (!user?.id) return {
+      // SECURITY: Double-check user ID is valid
+      if (!stableUserId) return {
         totalReports: 0,
         activeReports: 0,
         completedReports: 0,
@@ -133,11 +140,11 @@ export const useCitizenData = () => {
       };
       
       try {
-        // Get reports with their IDs and statuses
+        // Get reports with their IDs and statuses - ALWAYS filter by user ID
         const { data: reportsData } = await supabase
           .from('problem_reports')
           .select('id, status')
-          .eq('reported_by', user.id)
+          .eq('reported_by', stableUserId)
           .is('deleted_at', null);
         
         const reportIds = reportsData?.map(r => r.id) || [];
@@ -159,7 +166,7 @@ export const useCitizenData = () => {
         const { data: verifications } = await supabase
           .from('user_verifications')
           .select('status')
-          .eq('user_id', user.id)
+          .eq('user_id', stableUserId)
           .eq('verification_type', 'citizen_id');
         
         const totalReports = reportsData?.length || 0;
@@ -176,11 +183,11 @@ export const useCitizenData = () => {
         const rejectedReports = reportsData?.filter(r => r.status === 'rejected').length || 0;
         const activeReports = totalReports - completedReports - rejectedReports;
         
-        // Count user's community votes
+        // Count user's community votes - SECURITY: filter by user ID
         const { data: votesData } = await supabase
           .from('community_votes')
           .select('id')
-          .eq('user_id', user.id);
+          .eq('user_id', stableUserId);
         
         const communityVotes = votesData?.length || 0;
         
@@ -202,7 +209,7 @@ export const useCitizenData = () => {
         throw error;
       }
     },
-    enabled: !!user?.id,
+    enabled: !!stableUserId, // SECURITY: Only enable when user is stable
     refetchOnWindowFocus: false,
     staleTime: 10 * 60 * 1000, // 10 minutes
   });
@@ -210,15 +217,15 @@ export const useCitizenData = () => {
   // Submit a vote on a report (placeholder functionality)
   const submitVote = useMutation({
     mutationFn: async ({ reportId, voteType }: { reportId: string; voteType: 'upvote' | 'downvote' }) => {
-      if (!user?.id) throw new Error('User not authenticated');
+      if (!stableUserId) throw new Error('User not authenticated');
       
       // For now, just simulate the vote since we don't have community_votes table
-      console.log('Vote submitted:', { reportId, voteType, userId: user.id });
+      console.log('Vote submitted:', { reportId, voteType, userId: stableUserId });
       return { success: true };
     },
     onSuccess: () => {
       toast.success('Vote submitted successfully');
-      queryClient.invalidateQueries({ queryKey: ['citizenStats', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['citizenStats', stableUserId] });
     },
     onError: (error: any) => {
       toast.error(`Failed to submit vote: ${error.message}`);
@@ -228,7 +235,7 @@ export const useCitizenData = () => {
   // Soft delete a report (uses soft_delete_record function)
   const deleteReport = useMutation({
     mutationFn: async (reportId: string) => {
-      if (!user?.id) throw new Error('User not authenticated');
+      if (!stableUserId) throw new Error('User not authenticated');
       
       // Use soft delete instead of hard delete
       const { data, error } = await supabase
@@ -242,8 +249,8 @@ export const useCitizenData = () => {
     },
     onSuccess: () => {
       toast.success('Report deleted successfully');
-      queryClient.invalidateQueries({ queryKey: ['citizenReports', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['citizenStats', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['citizenReports', stableUserId] });
+      queryClient.invalidateQueries({ queryKey: ['citizenStats', stableUserId] });
     },
     onError: (error: any) => {
       toast.error(`Failed to delete report: ${error.message}`);
@@ -255,10 +262,10 @@ export const useCitizenData = () => {
     reports,
     stats,
     
-    // Loading states
-    reportsLoading,
-    statsLoading,
-    isLoading: reportsLoading || statsLoading,
+    // Loading states - SECURITY: Include authLoading to prevent showing stale data
+    reportsLoading: reportsLoading || authLoading,
+    statsLoading: statsLoading || authLoading,
+    isLoading: reportsLoading || statsLoading || authLoading,
     
     // Errors
     reportsError,
@@ -273,7 +280,7 @@ export const useCitizenData = () => {
     isDeletingReport: deleteReport.isPending,
     
     // Utilities
-    refetchReports: () => queryClient.invalidateQueries({ queryKey: ['citizenReports', user?.id] }),
-    refetchStats: () => queryClient.invalidateQueries({ queryKey: ['citizenStats', user?.id] }),
+    refetchReports: () => queryClient.invalidateQueries({ queryKey: ['citizenReports', stableUserId] }),
+    refetchStats: () => queryClient.invalidateQueries({ queryKey: ['citizenStats', stableUserId] }),
   };
 };
