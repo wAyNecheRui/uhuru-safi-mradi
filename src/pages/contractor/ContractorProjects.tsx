@@ -22,6 +22,7 @@ import { useToast } from '@/hooks/use-toast';
 import { EscrowWorkflowService, ProjectEscrowStatus } from '@/services/EscrowWorkflowService';
 import { useRealtimeSubscription, REALTIME_PRESETS } from '@/hooks/useRealtimeSubscription';
 import { calculateProjectProgress } from '@/utils/progressCalculation';
+import { fetchContractorRatingsFromVerifications } from '@/utils/contractorRatingCalculation';
 
 interface Milestone {
   id: string;
@@ -133,23 +134,23 @@ const ContractorProjects = () => {
         } as ProjectWithExtras);
       }
 
-      // Fetch ratings for completed projects and build typed array
-      const completedWithRating: ProjectWithExtras[] = [];
-      for (const project of completedRaw) {
-        const { data: ratings } = await supabase
-          .from('contractor_ratings')
-          .select('rating')
-          .eq('project_id', project.id);
-        
-        const avgRating = ratings && ratings.length > 0 
-          ? ratings.reduce((acc, r) => acc + (r.rating || 0), 0) / ratings.length 
+      // Fetch REAL ratings from milestone verifications (not the empty contractor_ratings table)
+      const contractorRatings = user?.id ? await fetchContractorRatingsFromVerifications([user.id]) : {};
+      const myRatings = user?.id ? contractorRatings[user.id] : null;
+      
+      // Build completed projects with per-project ratings from milestone verifications
+      const completedWithRating: ProjectWithExtras[] = completedRaw.map(project => {
+        // Filter ratings for this specific project
+        const projectRatings = myRatings?.ratings.filter(r => r.projectId === project.id) || [];
+        const avgRating = projectRatings.length > 0
+          ? projectRatings.reduce((acc, r) => acc + r.rating, 0) / projectRatings.length
           : 0;
         
-        completedWithRating.push({
+        return {
           ...project,
-          rating: avgRating
-        } as ProjectWithExtras);
-      }
+          rating: Math.round(avgRating * 10) / 10 // Round to 1 decimal
+        } as ProjectWithExtras;
+      });
 
       setActiveProjects(activeWithProgress);
       setCompletedProjects(completedWithRating);
