@@ -27,65 +27,12 @@ const PaymentTransparency = () => {
   // Show demo data message if no real data
   const hasRealData = paymentTrails.length > 0 || upcomingMilestones.length > 0;
   
-  const demoPaymentTrails = hasRealData ? [] : [
-    {
-      id: 'TX-2024-001',
-      projectTitle: 'Machakos Market Road Rehabilitation',
-      amount: 1200000,
-      milestone: 'Foundation & Drainage Complete',
-      paymentMethod: 'M-Pesa Business',
-      mpesaReference: 'QJK8H3M2P1',
-      contractorPhone: '+254 722 123 456',
-      releaseDate: '2024-02-01T14:30:00Z',
-      verificationStatus: 'citizen_verified',
-      citizenVerifications: 38,
-      holdingBank: 'Kenya Commercial Bank',
-      escrowAccount: 'KCB-ESC-2024-045',
-      blockchainHash: '0x1a2b3c4d5e6f7g8h9i0j',
-      ncaVerification: 'verified',
-      eaccClearance: 'cleared'
-    },
-    {
-      id: 'TX-2024-002',
-      projectTitle: 'Kibera Water Pipeline Extension',
-      amount: 1260000,
-      milestone: 'Planning & Permits Approved',
-      paymentMethod: 'M-Pesa Business',
-      mpesaReference: 'PLM9K4N7R2',
-      contractorPhone: '+254 733 987 654',
-      releaseDate: '2024-01-18T09:45:00Z',
-      verificationStatus: 'government_verified',
-      citizenVerifications: 67,
-      holdingBank: 'Equity Bank',
-      escrowAccount: 'EQB-ESC-2024-023',
-      blockchainHash: '0x5f6g7h8i9j0k1l2m3n4o',
-      ncaVerification: 'verified',
-      eaccClearance: 'cleared'
-    }
-  ];
+  // SECURITY: Removed hardcoded demo data with fake phone numbers and transaction IDs
+  // Demo data should never contain realistic PII patterns that could be confused with real data
+  const demoPaymentTrails: typeof paymentTrails = [];
 
-  const demoUpcomingMilestones = hasRealData ? [] : [
-    {
-      projectTitle: 'Machakos Market Road Rehabilitation',
-      milestone: 'Surface Laying',
-      expectedAmount: 1440000,
-      expectedDate: '2024-03-15',
-      progressRequired: 75,
-      currentProgress: 68,
-      citizenVerificationsNeeded: 30,
-      currentVerifications: 23
-    },
-    {
-      projectTitle: 'Nairobi School Roof Repair',
-      milestone: 'Material Procurement',
-      expectedAmount: 630000,
-      expectedDate: '2024-02-28',
-      progressRequired: 25,
-      currentProgress: 15,
-      citizenVerificationsNeeded: 25,
-      currentVerifications: 8
-    }
-  ];
+  // SECURITY: Removed hardcoded demo milestone data
+  const demoUpcomingMilestones: typeof upcomingMilestones = [];
 
   // Use real data if available, otherwise demo data
   const displayPaymentTrails = hasRealData ? paymentTrails : demoPaymentTrails;
@@ -209,8 +156,11 @@ const PaymentTransparency = () => {
                     </div>
 
                     <div className="space-y-1">
-                      <div className="text-xs font-medium text-gray-500 uppercase">Contractor</div>
-                      <div className="text-sm font-medium">{payment.contractorPhone}</div>
+                      <div className="text-xs font-medium text-gray-500 uppercase">Contractor Status</div>
+                      <div className="flex items-center space-x-2">
+                        <Building2 className="h-4 w-4 text-blue-600" />
+                        <span className="text-sm font-medium">Verified Contractor</span>
+                      </div>
                       <Badge className="text-xs bg-green-100 text-green-800">Payment Confirmed</Badge>
                     </div>
 
@@ -352,12 +302,14 @@ const PaymentTransparency = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Summary Statistics */}
+      {/* Summary Statistics - calculated from real data */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="shadow-lg">
           <CardContent className="p-6 text-center">
             <DollarSign className="h-8 w-8 text-green-600 mx-auto mb-2" />
-            <div className="text-2xl font-bold text-gray-900">KES 156.8M</div>
+            <div className="text-2xl font-bold text-gray-900">
+              {formatAmount(paymentTrails.reduce((sum: number, p: any) => sum + (p.amount || 0), 0))}
+            </div>
             <div className="text-sm text-gray-600">Total Funds Tracked</div>
           </CardContent>
         </Card>
@@ -365,7 +317,7 @@ const PaymentTransparency = () => {
         <Card className="shadow-lg">
           <CardContent className="p-6 text-center">
             <CheckCircle className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-            <div className="text-2xl font-bold text-gray-900">247</div>
+            <div className="text-2xl font-bold text-gray-900">{paymentTrails.length}</div>
             <div className="text-sm text-gray-600">Verified Transactions</div>
           </CardContent>
         </Card>
@@ -373,7 +325,9 @@ const PaymentTransparency = () => {
         <Card className="shadow-lg">
           <CardContent className="p-6 text-center">
             <Shield className="h-8 w-8 text-purple-600 mx-auto mb-2" />
-            <div className="text-2xl font-bold text-gray-900">100%</div>
+            <div className="text-2xl font-bold text-gray-900">
+              {paymentTrails.length > 0 ? '100%' : '—'}
+            </div>
             <div className="text-sm text-gray-600">Blockchain Verified</div>
           </CardContent>
         </Card>

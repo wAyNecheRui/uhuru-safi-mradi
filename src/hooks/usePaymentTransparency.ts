@@ -54,16 +54,12 @@ export const usePaymentTransparency = () => {
         .order('target_completion_date', { ascending: true })
         .limit(5);
 
-      // Get contractor details for payments
-      const contractorIds = paymentData?.map(p => p.escrow_accounts?.projects?.contractor_id).filter(Boolean) || [];
-      const { data: contractorProfiles } = await supabase
-        .from('user_profiles')
-        .select('user_id, phone_number')
-        .in('user_id', contractorIds);
+      // SECURITY: Removed query for contractor phone numbers - this is PII
+      // Phone numbers should never be exposed in public transparency views
 
       // Transform payment data with real blockchain integration
+      // SECURITY: Do NOT expose contractor phone numbers publicly - mask sensitive data
       const transformedPayments = paymentData?.map(payment => {
-        const contractorProfile = contractorProfiles?.find(c => c.user_id === payment.escrow_accounts?.projects?.contractor_id);
         const blockchainTx = payment.blockchain_transactions?.[0];
         
         return {
@@ -73,7 +69,8 @@ export const usePaymentTransparency = () => {
           milestone: payment.project_milestones?.title || 'Milestone Payment',
           paymentMethod: payment.payment_method || 'M-Pesa Business',
           mpesaReference: payment.stripe_transaction_id || `MP${payment.id.slice(-8)}`,
-          contractorPhone: contractorProfile?.phone_number || '+254 XXX XXX XXX',
+          // SECURITY: Phone numbers are PII - never expose in public transparency views
+          contractorPhone: '(Verified Contractor)',
           releaseDate: payment.created_at,
           verificationStatus: 'government_verified',
           citizenVerifications: (blockchainTx?.verification_data as any)?.citizen_confirmations || 0,
