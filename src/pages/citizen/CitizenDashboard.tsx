@@ -15,7 +15,7 @@ import { useRealtimeSubscription, REALTIME_PRESETS } from '@/hooks/useRealtimeSu
 const CitizenDashboard = () => {
   const navigate = useNavigate();
   const { isMobile, isTablet } = useResponsive();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, signOut } = useAuth();
   const { reports, stats, isLoading, hasError } = useCitizenData();
 
   const quickActions = [
@@ -182,9 +182,20 @@ const CitizenDashboard = () => {
               <p className="text-gray-600 mb-4">
                 We're having trouble loading your dashboard data. Please try refreshing the page.
               </p>
-              <Button onClick={() => window.location.reload()}>
-                Refresh Page
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Button onClick={() => window.location.reload()}>
+                  Refresh Page
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={async () => {
+                    await signOut();
+                    navigate('/auth', { replace: true });
+                  }}
+                >
+                  Sign in again
+                </Button>
+              </div>
             </Card>
           </ResponsiveContainer>
         </main>

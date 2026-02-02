@@ -15,12 +15,56 @@ const AuthContext = createContext<EnhancedAuthContextType | undefined>(undefined
 const userCache = new Map<string, { user: AuthUser; roles: AppRole[]; timestamp: number }>();
 const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 
+const SUPABASE_STORAGE_PREFIX = 'sb-vncyydrizdexkojfnonu-';
+
+const clearSupabaseAuthStorage = () => {
+  try {
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(SUPABASE_STORAGE_PREFIX)) {
+        localStorage.removeItem(key);
+      }
+    }
+  } catch {
+    // ignore
+  }
+};
+
+const isInvalidJwtError = (err: unknown): boolean => {
+  if (!err) return false;
+  const anyErr = err as any;
+  const msg = String(anyErr?.message || '').toLowerCase();
+  const status = Number(anyErr?.status || anyErr?.code || 0);
+  return (
+    msg.includes('jwt') ||
+    msg.includes('token is expired') ||
+    msg.includes('invalid jwt') ||
+    status === 401 ||
+    status === 403
+  );
+};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [loading, setLoading] = useState(true);
   const mountedRef = useRef(true);
   const initDoneRef = useRef(false);
+
+  const forceSignOut = useCallback(async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      // signOut can fail when the session is already invalid; still clear local storage
+    } finally {
+      clearSupabaseAuthStorage();
+      if (mountedRef.current) {
+        setUser(null);
+        setRoles([]);
+        setLoading(false);
+      }
+    }
+  }, []);
 
   // Fast user data loader with cache
   const loadUserData = useCallback(async (userId: string, email: string): Promise<{ user: AuthUser; roles: AppRole[] } | null> => {
@@ -104,10 +148,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = useCallback(async () => {
     if (user?.id) userCache.delete(user.id);
-    await supabase.auth.signOut();
-    if (mountedRef.current) {
-      setUser(null);
-      setRoles([]);
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      // ignore
+    } finally {
+      clearSupabaseAuthStorage();
+      if (mountedRef.current) {
+        setUser(null);
+        setRoles([]);
+      }
     }
   }, [user?.id]);
 
@@ -120,15 +170,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       initDoneRef.current = true;
 
       const { data: { session } } = await supabase.auth.getSession();
-      
+
+      // Validate session token. If it's expired/invalid, clear it and send user back to /auth.
       if (session?.user && mountedRef.current) {
+        const { data: { user: verifiedUser }, error: userError } = await supabase.auth.getUser();
+        if (userError || !verifiedUser) {
+          if (isInvalidJwtError(userError)) {
+            await forceSignOut();
+            return;
+          }
+          // If we can't verify user for any other reason, treat as signed out.
+          await forceSignOut();
+          return;
+        }
+
         const userData = await loadUserData(session.user.id, session.user.email || '');
         if (mountedRef.current && userData) {
           setUser(userData.user);
           setRoles(userData.roles);
         }
       }
-      
+
       if (mountedRef.current) setLoading(false);
     };
 
@@ -136,13 +198,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Listen for auth changes (sign in/out)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!mountedRef.current || event === 'INITIAL_SESSION') return;
+      // Supabase's AuthChangeEvent union differs across versions; treat as string for compatibility.
+      const eventName = event as unknown as string;
+      if (!mountedRef.current || eventName === 'INITIAL_SESSION') return;
 
-      if (event === 'SIGNED_OUT' || !session?.user) {
+      if (eventName === 'SIGNED_OUT' || eventName === 'TOKEN_REFRESH_FAILED' || !session?.user) {
         setUser(null);
         setRoles([]);
+        clearSupabaseAuthStorage();
         setLoading(false);
-      } else if (event === 'SIGNED_IN' && session?.user) {
+      } else if (eventName === 'SIGNED_IN' && session?.user) {
         // Defer to avoid deadlock
         setTimeout(async () => {
           const userData = await loadUserData(session.user.id, session.user.email || '');
@@ -159,7 +224,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       mountedRef.current = false;
       subscription.unsubscribe();
     };
-  }, [loadUserData]);
+  }, [loadUserData, forceSignOut]);
 
   const value = useMemo<EnhancedAuthContextType>(() => ({
     user,
