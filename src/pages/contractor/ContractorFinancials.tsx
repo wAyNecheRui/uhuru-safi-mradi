@@ -52,17 +52,34 @@ const ContractorFinancials = () => {
     { label: 'Financial Management' }
   ];
 
-  useEffect(() => {
-    if (user) {
-      fetchFinancialData();
-    }
-  }, [user]);
+  // SECURITY: Use stable user ID to prevent cross-user data leakage
+  const [stableUserId, setStableUserId] = useState<string | null>(null);
 
-  const fetchFinancialData = async () => {
+  useEffect(() => {
+    // Only set stable user ID when auth is fully loaded and user exists
+    if (user?.id && !stableUserId) {
+      setStableUserId(user.id);
+    }
+    // Clear stable ID if user logs out
+    if (!user && stableUserId) {
+      setStableUserId(null);
+      setEscrowAccounts([]);
+      setTransactions([]);
+      setStats({ totalEscrow: 0, pendingPayments: 0, releasedPayments: 0, expectedThisMonth: 0 });
+    }
+  }, [user?.id, stableUserId]);
+
+  useEffect(() => {
+    if (stableUserId) {
+      fetchFinancialData(stableUserId);
+    }
+  }, [stableUserId]);
+
+  const fetchFinancialData = async (contractorId: string) => {
     try {
       setLoading(true);
       
-      // Fetch projects with escrow accounts
+      // SECURITY: Fetch ONLY projects belonging to THIS contractor
       const { data: projects } = await supabase
         .from('projects')
         .select(`
@@ -70,45 +87,56 @@ const ContractorFinancials = () => {
           escrow_accounts(id, total_amount, held_amount, released_amount, status),
           project_milestones(id, title, payment_percentage, status)
         `)
-        .eq('contractor_id', user?.id);
+        .eq('contractor_id', contractorId);
 
-      // Fetch payment transactions
-      const { data: payments } = await supabase
-        .from('payment_transactions')
-        .select(`
-          id, amount, status, transaction_type, created_at, payment_method,
-          escrow_accounts(projects(title))
-        `)
-        .order('created_at', { ascending: false })
-        .limit(20);
+      // Get escrow account IDs for this contractor's projects only
+      const contractorEscrowIds = projects
+        ?.filter(p => p.escrow_accounts && p.escrow_accounts.length > 0)
+        ?.flatMap(p => (p.escrow_accounts as any[])?.map(e => e.id) || []) || [];
+
+      // SECURITY: Fetch payment transactions ONLY for this contractor's escrow accounts
+      let transactionData: PaymentTransaction[] = [];
+      if (contractorEscrowIds.length > 0) {
+        const { data: payments } = await supabase
+          .from('payment_transactions')
+          .select(`
+            id, amount, status, transaction_type, created_at, payment_method,
+            escrow_accounts(projects(title, contractor_id))
+          `)
+          .in('escrow_account_id', contractorEscrowIds)
+          .order('created_at', { ascending: false })
+          .limit(20);
+
+        // Double-check: Only include transactions for this contractor's projects
+        transactionData = (payments || [])
+          .filter(p => (p.escrow_accounts as any)?.projects?.contractor_id === contractorId)
+          .map(p => ({
+            id: p.id,
+            projectName: (p.escrow_accounts as any)?.projects?.title || 'Unknown Project',
+            amount: p.amount,
+            type: p.transaction_type === 'release' ? 'release' as const : 'pending' as const,
+            date: p.created_at,
+            status: p.status,
+            paymentMethod: p.payment_method || 'Bank Transfer'
+          }));
+      }
 
       // Transform escrow data
       const escrowData: EscrowAccount[] = projects?.filter(p => p.escrow_accounts && p.escrow_accounts.length > 0).map(p => ({
-        id: p.escrow_accounts[0]?.id || p.id,
+        id: (p.escrow_accounts as any[])[0]?.id || p.id,
         projectName: p.title,
-        totalAmount: p.escrow_accounts[0]?.total_amount || p.budget || 0,
-        heldAmount: p.escrow_accounts[0]?.held_amount || 0,
-        releasedAmount: p.escrow_accounts[0]?.released_amount || 0,
-        status: p.escrow_accounts[0]?.status || 'pending',
-        milestones: p.project_milestones?.map(m => ({
+        totalAmount: (p.escrow_accounts as any[])[0]?.total_amount || p.budget || 0,
+        heldAmount: (p.escrow_accounts as any[])[0]?.held_amount || 0,
+        releasedAmount: (p.escrow_accounts as any[])[0]?.released_amount || 0,
+        status: (p.escrow_accounts as any[])[0]?.status || 'pending',
+        milestones: (p.project_milestones as any[])?.map(m => ({
           name: m.title,
           amount: (p.budget || 0) * (m.payment_percentage / 100),
           status: m.status
         })) || []
       })) || [];
 
-      // Transform transaction data
-      const transactionData: PaymentTransaction[] = payments?.map(p => ({
-        id: p.id,
-        projectName: p.escrow_accounts?.projects?.title || 'Unknown Project',
-        amount: p.amount,
-        type: p.transaction_type === 'release' ? 'release' : 'pending',
-        date: p.created_at,
-        status: p.status,
-        paymentMethod: p.payment_method || 'Bank Transfer'
-      })) || [];
-
-      // Calculate stats
+      // Calculate stats from contractor's own data only
       const totalEscrow = escrowData.reduce((sum, e) => sum + e.totalAmount, 0);
       const pendingPayments = escrowData.reduce((sum, e) => sum + e.heldAmount, 0);
       const releasedPayments = escrowData.reduce((sum, e) => sum + e.releasedAmount, 0);

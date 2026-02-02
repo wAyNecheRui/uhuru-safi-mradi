@@ -1972,7 +1972,69 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      contractor_profiles_public: {
+        Row: {
+          agpo_category: string | null
+          agpo_verified: boolean | null
+          average_rating: number | null
+          company_name: string | null
+          created_at: string | null
+          id: string | null
+          is_agpo: boolean | null
+          max_project_capacity: number | null
+          number_of_employees: number | null
+          previous_projects_count: number | null
+          registered_counties: string[] | null
+          specialization: string[] | null
+          total_contract_value: number | null
+          updated_at: string | null
+          user_id: string | null
+          verification_date: string | null
+          verified: boolean | null
+          years_in_business: number | null
+        }
+        Insert: {
+          agpo_category?: string | null
+          agpo_verified?: boolean | null
+          average_rating?: number | null
+          company_name?: string | null
+          created_at?: string | null
+          id?: string | null
+          is_agpo?: boolean | null
+          max_project_capacity?: number | null
+          number_of_employees?: number | null
+          previous_projects_count?: number | null
+          registered_counties?: string[] | null
+          specialization?: string[] | null
+          total_contract_value?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+          verification_date?: string | null
+          verified?: boolean | null
+          years_in_business?: number | null
+        }
+        Update: {
+          agpo_category?: string | null
+          agpo_verified?: boolean | null
+          average_rating?: number | null
+          company_name?: string | null
+          created_at?: string | null
+          id?: string | null
+          is_agpo?: boolean | null
+          max_project_capacity?: number | null
+          number_of_employees?: number | null
+          previous_projects_count?: number | null
+          registered_counties?: string[] | null
+          specialization?: string[] | null
+          total_contract_value?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+          verification_date?: string | null
+          verified?: boolean | null
+          years_in_business?: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       calculate_distance_km: {
