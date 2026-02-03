@@ -26,6 +26,7 @@ export interface VerificationData {
   yearsInBusiness: number;
   verificationStatus: 'verified' | 'pending' | 'expired';
   overallRating: number;
+  totalRatings?: number;
   totalProjects: number;
   completedProjects: number;
   activeProjects: number;

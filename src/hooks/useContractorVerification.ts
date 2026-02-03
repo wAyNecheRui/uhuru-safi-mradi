@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { isProjectEffectivelyCompleted } from '@/utils/progressCalculation';
+import { fetchContractorRatingsFromVerifications } from '@/utils/contractorRatingCalculation';
 
 export const useContractorVerification = () => {
   const [verificationData, setVerificationData] = useState<any>(null);
@@ -32,8 +33,9 @@ export const useContractorVerification = () => {
         verificationsResult,
         bidsResult,
         projectsResult,
-        ratingsResult,
-        milestonesResult
+        milestonesResult,
+        // Fetch REAL ratings from milestone_verifications (not empty contractor_ratings table)
+        realRatingsData
       ] = await Promise.all([
         supabase.from('contractor_profiles').select('*').eq('user_id', user.id).maybeSingle(),
         supabase.from('skills_profiles').select('*').eq('user_id', user.id).maybeSingle(),
@@ -41,8 +43,8 @@ export const useContractorVerification = () => {
         supabase.from('user_verifications').select('*').eq('user_id', user.id).limit(10),
         supabase.from('contractor_bids').select('id').eq('contractor_id', user.id),
         supabase.from('projects').select('*').eq('contractor_id', user.id).limit(20),
-        supabase.from('contractor_ratings').select('rating').eq('contractor_id', user.id).limit(50),
-        supabase.from('project_milestones').select('project_id, status')
+        supabase.from('project_milestones').select('project_id, status'),
+        fetchContractorRatingsFromVerifications([user.id])
       ]);
 
       const contractorProfile = contractorProfileResult.data;
@@ -51,8 +53,12 @@ export const useContractorVerification = () => {
       const verifications = verificationsResult.data || [];
       const bids = bidsResult.data || [];
       const projects = projectsResult.data || [];
-      const ratings = ratingsResult.data || [];
       const milestones = milestonesResult.data || [];
+      
+      // Get real rating from milestone verifications
+      const realRating = realRatingsData[user.id];
+      const avgRating = realRating?.averageRating || 0;
+      const totalRatings = realRating?.totalRatings || 0;
       
       // Group milestones by project
       const milestonesByProject: Record<string, {status: string}[]> = {};
@@ -62,10 +68,6 @@ export const useContractorVerification = () => {
         }
         milestonesByProject[m.project_id].push({ status: m.status });
       });
-
-      const avgRating = ratings.length > 0 
-        ? ratings.reduce((acc, r) => acc + (r.rating || 0), 0) / ratings.length 
-        : 0;
       
       setVerificationData({
         companyName: contractorProfile?.company_name || skillsProfile?.organization || 'Not specified',
@@ -75,6 +77,7 @@ export const useContractorVerification = () => {
         yearsInBusiness: contractorProfile?.years_in_business || skillsProfile?.years_experience || 0,
         verificationStatus: contractorProfile?.verified ? 'verified' : (verifications.some(v => v.status === 'verified') ? 'verified' : 'pending'),
         overallRating: avgRating,
+        totalRatings: totalRatings,
         totalProjects: bids.length + projects.length,
         completedProjects: projects.filter(p => isProjectEffectivelyCompleted(p.status, milestonesByProject[p.id] || [])).length,
         activeProjects: projects.filter(p => !isProjectEffectivelyCompleted(p.status, milestonesByProject[p.id] || []) && (p.status === 'in_progress' || p.status === 'active')).length,
@@ -89,7 +92,7 @@ export const useContractorVerification = () => {
           title: p.title,
           value: p.budget || 0,
           status: p.status,
-          rating: avgRating,
+          rating: avgRating, // Use real calculated rating
           completionDate: p.updated_at
         }))
       });

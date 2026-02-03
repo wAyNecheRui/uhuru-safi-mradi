@@ -6,6 +6,7 @@ import { TrendingUp, Clock, Award, DollarSign, Users, Star, AlertCircle } from '
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { isProjectEffectivelyCompleted } from '@/utils/progressCalculation';
+import { fetchContractorRatingsFromVerifications } from '@/utils/contractorRatingCalculation';
 
 interface ProjectWithRating {
   id: string;
@@ -22,6 +23,7 @@ interface PerformanceData {
   totalBids: number;
   acceptedBids: number;
   projectsWithRatings: ProjectWithRating[];
+  totalRatings: number;
 }
 
 const PerformanceTab = () => {
@@ -33,7 +35,8 @@ const PerformanceTab = () => {
     averageRating: 0,
     totalBids: 0,
     acceptedBids: 0,
-    projectsWithRatings: []
+    projectsWithRatings: [],
+    totalRatings: 0
   });
 
   useEffect(() => {
@@ -48,11 +51,9 @@ const PerformanceTab = () => {
     try {
       setLoading(true);
 
-      // Fetch contractor ratings
-      const { data: ratings } = await supabase
-        .from('contractor_ratings')
-        .select('rating, review, project_id')
-        .eq('contractor_id', user.id);
+      // Fetch REAL ratings from milestone_verifications (not empty contractor_ratings table)
+      const realRatingsData = await fetchContractorRatingsFromVerifications([user.id]);
+      const userRatings = realRatingsData[user.id];
 
       // Fetch projects where contractor is assigned
       const { data: projects } = await supabase
@@ -87,24 +88,40 @@ const PerformanceTab = () => {
         isProjectEffectivelyCompleted(p.status, milestonesByProject[p.id] || [])
       ).length || 0;
       
-      const avgRating = ratings && ratings.length > 0
-        ? ratings.reduce((sum, r) => sum + (r.rating || 0), 0) / ratings.length
-        : 0;
+      // Use REAL ratings from milestone verifications
+      const avgRating = userRatings?.averageRating || 0;
+      const totalRatings = userRatings?.totalRatings || 0;
 
       const totalBids = bids?.length || 0;
       const acceptedBids = bids?.filter(b => b.status === 'accepted' || b.status === 'selected').length || 0;
 
-      // Map projects with their ratings
-      const projectsWithRatings: ProjectWithRating[] = (projects || []).map(project => {
-        const projectRating = ratings?.find(r => r.project_id === project.id);
-        return {
-          id: project.id,
-          title: project.title,
-          rating: projectRating?.rating || null,
-          review: projectRating?.review || null,
-          votes: projectRating ? 1 : 0
-        };
-      }).filter(p => p.rating !== null);
+      // Map projects with their ratings from milestone verifications
+      const projectsWithRatings: ProjectWithRating[] = [];
+      if (userRatings?.ratings) {
+        // Group ratings by project
+        const ratingsByProject: Record<string, { sum: number; count: number }> = {};
+        userRatings.ratings.forEach(r => {
+          if (!ratingsByProject[r.projectId]) {
+            ratingsByProject[r.projectId] = { sum: 0, count: 0 };
+          }
+          ratingsByProject[r.projectId].sum += r.rating;
+          ratingsByProject[r.projectId].count += 1;
+        });
+
+        // Match with project titles
+        (projects || []).forEach(project => {
+          const projectRating = ratingsByProject[project.id];
+          if (projectRating && projectRating.count > 0) {
+            projectsWithRatings.push({
+              id: project.id,
+              title: project.title,
+              rating: projectRating.sum / projectRating.count,
+              review: null,
+              votes: projectRating.count
+            });
+          }
+        });
+      }
 
       setPerformanceData({
         totalProjects,
@@ -112,7 +129,8 @@ const PerformanceTab = () => {
         averageRating: avgRating,
         totalBids,
         acceptedBids,
-        projectsWithRatings
+        projectsWithRatings,
+        totalRatings
       });
     } catch (error) {
       console.error('Error fetching performance data:', error);
@@ -196,7 +214,7 @@ const PerformanceTab = () => {
                   </div>
                   <Progress value={(performanceData.averageRating / 5) * 100} className="h-2" />
                   <div className="text-xs text-muted-foreground">
-                    Based on {performanceData.projectsWithRatings.length} ratings
+                    Based on {performanceData.totalRatings} citizen verifications
                   </div>
                 </div>
 

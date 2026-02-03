@@ -78,7 +78,14 @@ const CompanyProfileTab = ({ verificationData, getStatusColor }: CompanyProfileT
               <span className="text-sm text-gray-600">Overall Rating:</span>
               <div className="flex items-center">
                 <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                <span className="ml-1 font-semibold">{verificationData.overallRating}/5.0</span>
+                <span className="ml-1 font-semibold">
+                  {(verificationData.overallRating || 0).toFixed(1)}/5.0
+                </span>
+                {(verificationData as any).totalRatings > 0 && (
+                  <span className="ml-2 text-xs text-muted-foreground">
+                    ({(verificationData as any).totalRatings} citizen verifications)
+                  </span>
+                )}
               </div>
             </div>
           </div>
