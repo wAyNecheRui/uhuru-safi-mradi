@@ -24,6 +24,7 @@ interface ContractorCapacityProps {
   verificationStatus: string;
   rating: number;
   completedProjects: number;
+  totalRatings?: number;
 }
 
 const ContractorCapacityCard = ({
@@ -35,7 +36,8 @@ const ContractorCapacityCard = ({
   qualifiedForProjectSize,
   verificationStatus,
   rating,
-  completedProjects
+  completedProjects,
+  totalRatings = 0
 }: ContractorCapacityProps) => {
   const formatCurrency = (amount: number) => {
     if (amount >= 1000000000) return `KES ${(amount / 1000000000).toFixed(1)}B`;
@@ -78,9 +80,14 @@ const ContractorCapacityCard = ({
               <CardTitle className="text-lg">{companyName}</CardTitle>
               <div className="flex items-center mt-1">
                 <Star className="h-4 w-4 text-yellow-500 mr-1" />
-                <span className="font-medium">{rating.toFixed(1)}</span>
+                <span className="font-medium">
+                  {rating > 0 ? rating.toFixed(1) : 'N/A'}
+                </span>
                 <span className="text-muted-foreground text-sm ml-2">
-                  ({completedProjects} projects)
+                  {totalRatings > 0 
+                    ? `(${totalRatings} citizen verifications)`
+                    : `(${completedProjects} projects)`
+                  }
                 </span>
               </div>
             </div>
