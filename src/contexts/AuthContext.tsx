@@ -240,6 +240,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(null);
         setRoles([]);
         clearSupabaseAuthStorage();
+        clearDataCache(); // SECURITY: ensure no stale user data can render after sign-out
         setLoading(false);
       } else if (eventName === 'SIGNED_IN' && session?.user) {
         // Defer to avoid deadlock

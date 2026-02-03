@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useGlobalRealtimeRefresh } from '@/contexts/RealtimeContext';
+import { useCallback, useEffect, useRef } from 'react';
 
 export interface CitizenReport {
   id: string;
@@ -33,8 +34,39 @@ export interface CitizenStats {
 }
 
 export const useCitizenData = () => {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, signOut } = useAuth();
   const queryClient = useQueryClient();
+
+  const didForceSignOutRef = useRef(false);
+
+  const isAuthError = useCallback((err: unknown): boolean => {
+    if (!err) return false;
+    const anyErr = err as any;
+    const msg = String(anyErr?.message || '').toLowerCase();
+    const status = Number(anyErr?.status || anyErr?.code || 0);
+    return (
+      status === 401 ||
+      status === 403 ||
+      msg.includes('jwt') ||
+      msg.includes('token') ||
+      msg.includes('not authenticated') ||
+      msg.includes('permission denied')
+    );
+  }, []);
+
+  const handleAuthFailure = useCallback(
+    (err: unknown) => {
+      if (didForceSignOutRef.current) return;
+      if (!isAuthError(err)) return;
+      didForceSignOutRef.current = true;
+
+      // SECURITY + UX: if auth is invalid/expired, force a clean sign-out so we don't show stale/other-user data.
+      toast.error('Your session expired. Please sign in again.');
+      // Fire-and-forget; AuthContext will clear storage/cache.
+      void signOut();
+    },
+    [isAuthError, signOut]
+  );
 
   // SECURITY: Only use stable user ID after auth is complete
   const stableUserId = !authLoading && user?.id ? user.id : null;
@@ -119,6 +151,11 @@ export const useCitizenData = () => {
     enabled: !!stableUserId, // SECURITY: Only enable when user is stable
     refetchOnWindowFocus: false,
     staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: (failureCount, err) => {
+      // Don't retry auth failures endlessly.
+      if (isAuthError(err)) return false;
+      return failureCount < 2;
+    }
   });
 
   // Fetch citizen statistics with accurate project-based completion counting
@@ -212,7 +249,21 @@ export const useCitizenData = () => {
     enabled: !!stableUserId, // SECURITY: Only enable when user is stable
     refetchOnWindowFocus: false,
     staleTime: 10 * 60 * 1000, // 10 minutes
+    retry: (failureCount, err) => {
+      if (isAuthError(err)) return false;
+      return failureCount < 2;
+    }
   });
+
+  // TanStack Query v5 removed per-query onError callbacks from useQuery options.
+  // React to errors here instead.
+  useEffect(() => {
+    if (reportsError) handleAuthFailure(reportsError);
+  }, [reportsError, handleAuthFailure]);
+
+  useEffect(() => {
+    if (statsError) handleAuthFailure(statsError);
+  }, [statsError, handleAuthFailure]);
 
   // Submit a vote on a report (placeholder functionality)
   const submitVote = useMutation({
