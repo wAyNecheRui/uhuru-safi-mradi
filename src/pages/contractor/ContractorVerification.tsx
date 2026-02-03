@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Shield, CheckCircle, Clock, AlertTriangle, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { fetchContractorRatingsFromVerifications } from '@/utils/contractorRatingCalculation';
 
 const ContractorVerification = () => {
   const { user } = useAuth();
@@ -31,31 +32,39 @@ const ContractorVerification = () => {
 
   const fetchCapacityData = async () => {
     try {
-      // Fetch contractor profile
-      const { data: profile } = await supabase
-        .from('contractor_profiles')
-        .select('*')
-        .eq('user_id', user!.id)
-        .maybeSingle();
+      // Batch all queries in parallel for maximum performance
+      const [profileResult, activeProjectsResult, completedProjectsResult, realRatingsData] = await Promise.all([
+        supabase
+          .from('contractor_profiles')
+          .select('*')
+          .eq('user_id', user!.id)
+          .maybeSingle(),
+        supabase
+          .from('projects')
+          .select('id, budget')
+          .eq('contractor_id', user!.id)
+          .eq('status', 'in_progress'),
+        supabase
+          .from('projects')
+          .select('id')
+          .eq('contractor_id', user!.id)
+          .eq('status', 'completed'),
+        // Fetch REAL ratings from milestone_verifications & quality_checkpoints
+        fetchContractorRatingsFromVerifications([user!.id])
+      ]);
 
-      // Fetch active projects count
-      const { data: activeProjects } = await supabase
-        .from('projects')
-        .select('id, budget')
-        .eq('contractor_id', user!.id)
-        .eq('status', 'in_progress');
-
-      // Fetch completed projects count
-      const { data: completedProjects } = await supabase
-        .from('projects')
-        .select('id')
-        .eq('contractor_id', user!.id)
-        .eq('status', 'completed');
+      const profile = profileResult.data;
+      const activeProjects = activeProjectsResult.data;
+      const completedProjects = completedProjectsResult.data;
 
       if (profile) {
         const activeCount = activeProjects?.length || 0;
         const maxCapacity = profile.max_project_capacity || 5;
         const totalBudget = profile.total_contract_value || 0;
+        
+        // Get real rating from milestone verifications
+        const realRating = realRatingsData[user!.id];
+        const avgRating = realRating?.averageRating || 0;
         
         // Calculate qualification based on total contract value
         let qualifiedSize: 'small' | 'medium' | 'large' | 'mega' = 'small';
@@ -71,8 +80,9 @@ const ContractorVerification = () => {
           availableCapacity: Math.max(0, maxCapacity - activeCount) * (totalBudget / maxCapacity || 1000000),
           qualifiedForProjectSize: qualifiedSize,
           verificationStatus: profile.verified ? 'verified' : 'pending',
-          rating: profile.average_rating || 0,
-          completedProjects: completedProjects?.length || 0
+          rating: avgRating,
+          completedProjects: completedProjects?.length || 0,
+          totalRatings: realRating?.totalRatings || 0
         });
       }
     } catch (error) {

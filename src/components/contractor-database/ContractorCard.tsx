@@ -87,7 +87,9 @@ const ContractorCard = ({ contractor }: ContractorCardProps) => {
                     {contractor.rating > 0 ? `${contractor.rating.toFixed(1)}/5.0` : 'No ratings yet'}
                   </span>
                   {contractor.reviewCount !== undefined && contractor.reviewCount > 0 && (
-                    <span className="text-sm text-gray-600 ml-2">({contractor.reviewCount} reviews)</span>
+                    <span className="text-sm text-gray-600 ml-2">
+                      ({contractor.reviewCount} citizen {contractor.reviewCount === 1 ? 'verification' : 'verifications'})
+                    </span>
                   )}
                 </div>
 
