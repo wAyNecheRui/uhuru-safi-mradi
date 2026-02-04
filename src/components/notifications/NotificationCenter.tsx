@@ -446,8 +446,8 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ trigger }) => {
           </div>
         ) : (
           <>
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-              <div className="px-4 pt-2">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
+              <div className="px-4 pt-2 flex-shrink-0">
                 <TabsList className="w-full grid grid-cols-5">
                   <TabsTrigger value="all" className="text-xs">All</TabsTrigger>
                   <TabsTrigger value="project" className="text-xs">Projects</TabsTrigger>
@@ -457,55 +457,75 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ trigger }) => {
                 </TabsList>
               </div>
 
-              <ScrollArea className="flex-1 px-4">
-                <TabsContent value="all" className="mt-2 space-y-2 pb-4">
-                  {filterNotifications().length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <BellRing className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                      <p className="text-sm">No notifications yet</p>
-                      <p className="text-xs mt-1">You're all caught up!</p>
+              <div className="flex-1 min-h-0 overflow-hidden">
+                <TabsContent value="all" className="mt-0 h-full data-[state=active]:flex data-[state=active]:flex-col">
+                  <ScrollArea className="flex-1 px-4">
+                    <div className="space-y-2 py-2 pb-4">
+                      {filterNotifications().length === 0 ? (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <BellRing className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                          <p className="text-sm">No notifications yet</p>
+                          <p className="text-xs mt-1">You're all caught up</p>
+                        </div>
+                      ) : (
+                        filterNotifications().map(n => renderNotificationItem(n, n.isAlert))
+                      )}
                     </div>
-                  ) : (
-                    filterNotifications().map(n => renderNotificationItem(n, n.isAlert))
-                  )}
+                  </ScrollArea>
                 </TabsContent>
-                <TabsContent value="project" className="mt-2 space-y-2 pb-4">
-                  {filterNotifications('project').length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <p className="text-sm">No project notifications</p>
+                <TabsContent value="project" className="mt-0 h-full data-[state=active]:flex data-[state=active]:flex-col">
+                  <ScrollArea className="flex-1 px-4">
+                    <div className="space-y-2 py-2 pb-4">
+                      {filterNotifications('project').length === 0 ? (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <p className="text-sm">No project notifications</p>
+                        </div>
+                      ) : (
+                        filterNotifications('project').map(n => renderNotificationItem(n, n.isAlert))
+                      )}
                     </div>
-                  ) : (
-                    filterNotifications('project').map(n => renderNotificationItem(n, n.isAlert))
-                  )}
+                  </ScrollArea>
                 </TabsContent>
-                <TabsContent value="payment" className="mt-2 space-y-2 pb-4">
-                  {filterNotifications('payment').length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <p className="text-sm">No payment notifications</p>
+                <TabsContent value="payment" className="mt-0 h-full data-[state=active]:flex data-[state=active]:flex-col">
+                  <ScrollArea className="flex-1 px-4">
+                    <div className="space-y-2 py-2 pb-4">
+                      {filterNotifications('payment').length === 0 ? (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <p className="text-sm">No payment notifications</p>
+                        </div>
+                      ) : (
+                        filterNotifications('payment').map(n => renderNotificationItem(n, n.isAlert))
+                      )}
                     </div>
-                  ) : (
-                    filterNotifications('payment').map(n => renderNotificationItem(n, n.isAlert))
-                  )}
+                  </ScrollArea>
                 </TabsContent>
-                <TabsContent value="bid" className="mt-2 space-y-2 pb-4">
-                  {filterNotifications('bid').length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <p className="text-sm">No bid notifications</p>
+                <TabsContent value="bid" className="mt-0 h-full data-[state=active]:flex data-[state=active]:flex-col">
+                  <ScrollArea className="flex-1 px-4">
+                    <div className="space-y-2 py-2 pb-4">
+                      {filterNotifications('bid').length === 0 ? (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <p className="text-sm">No bid notifications</p>
+                        </div>
+                      ) : (
+                        filterNotifications('bid').map(n => renderNotificationItem(n, n.isAlert))
+                      )}
                     </div>
-                  ) : (
-                    filterNotifications('bid').map(n => renderNotificationItem(n, n.isAlert))
-                  )}
+                  </ScrollArea>
                 </TabsContent>
-                <TabsContent value="report" className="mt-2 space-y-2 pb-4">
-                  {filterNotifications('report').length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <p className="text-sm">No report notifications</p>
+                <TabsContent value="report" className="mt-0 h-full data-[state=active]:flex data-[state=active]:flex-col">
+                  <ScrollArea className="flex-1 px-4">
+                    <div className="space-y-2 py-2 pb-4">
+                      {filterNotifications('report').length === 0 ? (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <p className="text-sm">No report notifications</p>
+                        </div>
+                      ) : (
+                        filterNotifications('report').map(n => renderNotificationItem(n, n.isAlert))
+                      )}
                     </div>
-                  ) : (
-                    filterNotifications('report').map(n => renderNotificationItem(n, n.isAlert))
-                  )}
+                  </ScrollArea>
                 </TabsContent>
-              </ScrollArea>
+              </div>
             </Tabs>
 
             <div className="p-4 border-t">
