@@ -129,7 +129,7 @@ class NotificationServiceClass {
   async onProblemReported(reportTitle: string, location: string): Promise<void> {
     await this.notifyRole(
       'government',
-      '🆕 New Problem Report',
+      'New Problem Report',
       `A citizen reported: "${reportTitle}" at ${location}. Requires review.`,
       'info',
       'report',
@@ -144,7 +144,7 @@ class NotificationServiceClass {
     // Notify reporter
     await this.notifyUser(
       reporterId,
-      '✅ Your Report Was Approved!',
+      'Your Report Was Approved',
       `"${reportTitle}" has been approved and is now open for contractor bidding.`,
       'success',
       'report',
@@ -154,10 +154,10 @@ class NotificationServiceClass {
     // Notify all contractors
     await this.notifyRole(
       'contractor',
-      '🆕 New Bidding Opportunity',
-      `"${reportTitle}" is now open for bids. Submit your proposal!`,
+      'New Bidding Opportunity',
+      `"${reportTitle}" is now open for bids. Submit your proposal.`,
       'info',
-      'bid', // Changed from 'bidding' to 'bid' for consistency
+      'bid',
       '/contractor/bidding'
     );
   }
@@ -175,8 +175,8 @@ class NotificationServiceClass {
     // Notify reporter
     await this.notifyUser(
       reporterId,
-      '📋 New Bid on Your Report',
-      `${companyName} submitted a bid of KES ${bidAmount.toLocaleString()} for "${reportTitle}"`,
+      'New Bid on Your Report',
+      `${companyName} submitted a bid of KES ${bidAmount.toLocaleString()} for "${reportTitle}".`,
       'info',
       'bid',
       '/citizen/track-reports'
@@ -186,8 +186,8 @@ class NotificationServiceClass {
     if (governmentIds.length > 0) {
       await this.notifyUsers(
         governmentIds.slice(0, 10),
-        '📋 New Contractor Bid',
-        `${companyName} bid KES ${bidAmount.toLocaleString()} for "${reportTitle}"`,
+        'New Contractor Bid',
+        `${companyName} bid KES ${bidAmount.toLocaleString()} for "${reportTitle}".`,
         'info',
         'bid',
         '/government/bid-approval'
@@ -205,8 +205,8 @@ class NotificationServiceClass {
   ): Promise<void> {
     await this.notifyUser(
       contractorId,
-      '🎉 Congratulations! Your Bid Was Selected',
-      `You've been awarded the contract for "${projectTitle}". Project setup in progress.`,
+      'Your Bid Was Selected',
+      `You have been awarded the contract for "${projectTitle}". Project setup is in progress.`,
       'success',
       'bid',
       '/contractor/projects'
@@ -214,8 +214,8 @@ class NotificationServiceClass {
 
     await this.notifyUser(
       reporterId,
-      '🏗️ Contractor Selected for Your Report',
-      `A contractor has been selected for "${projectTitle}". Work will begin soon!`,
+      'Contractor Selected for Your Report',
+      `A contractor has been selected for "${projectTitle}". Work will begin soon.`,
       'success',
       'project',
       '/citizen/projects'
@@ -232,10 +232,10 @@ class NotificationServiceClass {
   ): Promise<void> {
     await this.notifyUser(
       contractorId,
-      '💰 Project Funded - Begin Work!',
-      `KES ${amount.toLocaleString()} deposited to escrow for "${projectTitle}". You can now begin work!`,
+      'Project Funded - Begin Work',
+      `KES ${amount.toLocaleString()} deposited to escrow for "${projectTitle}". You may now commence work.`,
       'success',
-      'payment', // Changed from 'escrow' to 'payment' for UI consistency
+      'payment',
       '/contractor/projects'
     );
   }
@@ -253,9 +253,9 @@ class NotificationServiceClass {
     // Notify all citizens near the project for community verification
     if (citizenIds.length > 0) {
       await this.notifyUsers(
-        citizenIds.slice(0, 100), // Increased limit for community verification
-        '🔔 Community Verification Needed!',
-        `"${milestoneName}" on "${projectTitle}" needs verification by at least 2 citizens. Help ensure quality work!`,
+        citizenIds.slice(0, 100),
+        'Community Verification Required',
+        `"${milestoneName}" on "${projectTitle}" requires verification by at least 2 citizens. Your input helps ensure quality work.`,
         'info',
         'milestone',
         '/citizen/projects'
@@ -266,7 +266,7 @@ class NotificationServiceClass {
     if (governmentIds.length > 0) {
       await this.notifyUsers(
         governmentIds.slice(0, 10),
-        '📋 Milestone Awaiting Citizen Verification',
+        'Milestone Awaiting Citizen Verification',
         `"${milestoneName}" submitted with evidence. ${citizenIds.length} citizens notified for verification.`,
         'info',
         'milestone',
@@ -289,10 +289,10 @@ class NotificationServiceClass {
 
     await this.notifyUser(
       contractorId,
-      `✅ Milestone Verified (${verificationsCount}/${requiredCount})`,
+      `Milestone Verified (${verificationsCount}/${requiredCount})`,
       isComplete 
-        ? `"${milestoneName}" fully verified! Payment ready for release.`
-        : `"${milestoneName}" received a verification. ${requiredCount - verificationsCount} more needed.`,
+        ? `"${milestoneName}" has been fully verified. Payment is ready for release.`
+        : `"${milestoneName}" received a verification. ${requiredCount - verificationsCount} more required.`,
       isComplete ? 'success' : 'info',
       'milestone',
       '/contractor/projects'
@@ -301,8 +301,8 @@ class NotificationServiceClass {
     if (isComplete && governmentIds.length > 0) {
       await this.notifyUsers(
         governmentIds.slice(0, 10),
-        '💰 Milestone Ready for Payment',
-        `"${milestoneName}" verified by ${verificationsCount} citizens. Automated payment processing.`,
+        'Milestone Ready for Payment',
+        `"${milestoneName}" verified by ${verificationsCount} citizens. Automated payment processing initiated.`,
         'success',
         'payment',
         '/government/payment-release'
@@ -321,8 +321,8 @@ class NotificationServiceClass {
   ): Promise<void> {
     await this.notifyUser(
       contractorId,
-      '💰 Payment Released!',
-      `KES ${amount.toLocaleString()} released for "${milestoneName}". Check your account!`,
+      'Payment Released',
+      `KES ${amount.toLocaleString()} has been released for "${milestoneName}". Please verify your account.`,
       'success',
       'payment',
       '/contractor/financials'
@@ -330,7 +330,7 @@ class NotificationServiceClass {
 
     await this.notifyUser(
       reporterId,
-      '✅ Project Milestone Paid',
+      'Project Milestone Paid',
       `Payment of KES ${amount.toLocaleString()} released for "${milestoneName}" on your reported issue.`,
       'success',
       'payment',
@@ -348,8 +348,8 @@ class NotificationServiceClass {
   ): Promise<void> {
     await this.notifyUser(
       contractorId,
-      '🎉 Project Completed!',
-      `Congratulations! "${projectTitle}" has been marked as complete.`,
+      'Project Completed',
+      `"${projectTitle}" has been marked as complete. Thank you for your service.`,
       'success',
       'project',
       '/contractor/projects'
@@ -357,8 +357,8 @@ class NotificationServiceClass {
 
     await this.notifyUser(
       reporterId,
-      '🎉 Your Reported Issue is Resolved!',
-      `"${projectTitle}" has been completed. Thank you for helping improve your community!`,
+      'Your Reported Issue is Resolved',
+      `"${projectTitle}" has been completed. Thank you for helping improve your community.`,
       'success',
       'project',
       '/citizen/projects'
