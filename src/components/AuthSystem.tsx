@@ -7,7 +7,6 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAuthForm } from '@/hooks/useAuthForm';
 import { useAuthHandlers } from '@/hooks/useAuthHandlers';
-import AuthHeader from './auth/AuthHeader';
 import AuthLoading from './auth/AuthLoading';
 import LoginTabContent from './auth/LoginTabContent';
 import RegistrationTabContent from './auth/RegistrationTabContent';
@@ -37,23 +36,29 @@ const AuthSystem = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-800 via-slate-700 to-blue-800 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md shadow-xl border-0 bg-white/95 backdrop-blur-md">
-        <AuthHeader />
-        <CardContent className="p-6">
+    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
+      {/* Header */}
+      <div className="mb-8 text-center">
+        <h1 className="text-2xl font-semibold text-slate-900 mb-2">Uhuru Safi</h1>
+        <p className="text-sm text-slate-600">Kenya's Official Government Project Transparency Platform</p>
+      </div>
+
+      {/* Auth Card */}
+      <Card className="w-full max-w-md shadow-lg border border-slate-200 bg-white">
+        <CardContent className="p-8">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-2 bg-gradient-to-r from-slate-100 to-blue-100">
+            <TabsList className="grid w-full grid-cols-2 h-11 bg-slate-100 p-1">
               <TabsTrigger 
                 value="login" 
-                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-slate-600 data-[state=active]:to-blue-600 data-[state=active]:text-white"
+                className="data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm rounded-md font-medium"
               >
-                Sign In
+                Sign in
               </TabsTrigger>
               <TabsTrigger 
                 value="register"
-                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-slate-600 data-[state=active]:to-blue-600 data-[state=active]:text-white"
+                className="data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm rounded-md font-medium"
               >
-                Register
+                Create account
               </TabsTrigger>
             </TabsList>
 
@@ -71,19 +76,25 @@ const AuthSystem = () => {
               onSubmit={handleRegister}
             />
           </Tabs>
-          
-          <div className="mt-6 text-center">
-            <Button
-              variant="ghost"
-              onClick={() => navigate('/')}
-              disabled={isLoading}
-              className="text-slate-600 hover:text-blue-600 hover:bg-slate-50"
-            >
-              ← Back to Home
-            </Button>
-          </div>
         </CardContent>
       </Card>
+
+      {/* Footer */}
+      <div className="mt-6 text-center">
+        <Button
+          variant="ghost"
+          onClick={() => navigate('/')}
+          disabled={isLoading}
+          className="text-slate-500 hover:text-slate-700 text-sm"
+        >
+          ← Back to home
+        </Button>
+      </div>
+
+      {/* Terms */}
+      <p className="mt-8 text-xs text-slate-500 text-center max-w-sm">
+        By continuing, you agree to the Terms of Service and Privacy Policy of the Government of Kenya.
+      </p>
     </div>
   );
 };
