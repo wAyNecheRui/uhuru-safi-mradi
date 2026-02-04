@@ -1,20 +1,19 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, User, Mail, Phone, MapPin, Building, Briefcase, FileText, CreditCard, Calendar, Shield, Users, Eye, EyeOff } from 'lucide-react';
+import { Loader2, User, Mail, Phone, Building, FileText, Shield, Users, Eye, EyeOff } from 'lucide-react';
 import UserTypeSelector from './UserTypeSelector';
+import SocialAuthButtons from './SocialAuthButtons';
+import AuthDivider from './AuthDivider';
 import { 
   KENYA_COUNTIES, 
   GOVERNMENT_DEPARTMENTS, 
   GOVERNMENT_POSITIONS, 
-  NCA_CATEGORIES, 
   AGPO_CATEGORIES,
   CONTRACTOR_SPECIALIZATIONS,
-  ID_TYPES,
-  GENDER_OPTIONS,
-  CLEARANCE_LEVELS
 } from '@/constants/kenyaAdministrativeUnits';
 
 interface RegistrationFormProps {
@@ -63,13 +62,22 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
-      {/* User Type Selection */}
-      <UserTypeSelector
-        selectedType={formData.type}
-        onTypeChange={(type) => onInputChange('type', type)}
-        disabled={isLoading}
-      />
+    <div className="space-y-6">
+      {/* Social Auth for Citizens */}
+      {formData.type === 'citizen' && (
+        <>
+          <SocialAuthButtons disabled={isLoading} />
+          <AuthDivider text="or register with email" />
+        </>
+      )}
+
+      <form onSubmit={onSubmit} className="space-y-5 max-h-[55vh] overflow-y-auto pr-2">
+        {/* User Type Selection */}
+        <UserTypeSelector
+          selectedType={formData.type}
+          onTypeChange={(type) => onInputChange('type', type)}
+          disabled={isLoading}
+        />
 
       {/* Essential Information Section */}
       <div className="space-y-4 p-4 bg-slate-50 rounded-lg border">
@@ -380,7 +388,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
 
       <Button 
         type="submit" 
-        className="w-full bg-gradient-to-r from-slate-600 to-blue-600 hover:from-slate-700 hover:to-blue-700 text-white py-2.5"
+        className="w-full h-11 bg-slate-800 hover:bg-slate-900 text-white font-medium transition-all"
         disabled={isLoading}
       >
         {isLoading ? (
@@ -392,7 +400,8 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
           'Create Account'
         )}
       </Button>
-    </form>
+      </form>
+    </div>
   );
 };
 
