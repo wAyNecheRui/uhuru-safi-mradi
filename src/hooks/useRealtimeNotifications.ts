@@ -144,13 +144,13 @@ export const useRealtimeNotifications = () => {
         },
         (payload) => {
           const updatedNotification = payload.new as Notification;
-          setNotifications(prev => 
-            prev.map(n => n.id === updatedNotification.id ? updatedNotification : n)
-          );
-          // Recalculate unread count
           setNotifications(prev => {
-            setUnreadCount(prev.filter(n => !n.read).length);
-            return prev;
+            const updated = prev.map(n => 
+              n.id === updatedNotification.id ? updatedNotification : n
+            );
+            // Recalculate unread count after update
+            setUnreadCount(updated.filter(n => !n.read).length);
+            return updated;
           });
         }
       )
@@ -185,23 +185,42 @@ export const useRealtimeNotifications = () => {
 
   // Mark single notification as read
   const markAsRead = useCallback(async (notificationId: string) => {
+    // First check if notification exists and is unread
+    const notification = notifications.find(n => n.id === notificationId);
+    if (!notification || notification.read) {
+      // Already read or not found - no need to update
+      return;
+    }
+
+    // Optimistic update first for better UX
+    setNotifications(prev => 
+      prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
+    );
+    setUnreadCount(prev => Math.max(0, prev - 1));
+
     try {
       const { error } = await supabase
         .from('notifications')
         .update({ read: true })
         .eq('id', notificationId);
 
-      if (error) throw error;
-
-      // Optimistic update
-      setNotifications(prev => 
-        prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
-      );
-      setUnreadCount(prev => Math.max(0, prev - 1));
+      if (error) {
+        // Revert optimistic update on error
+        console.error('Error marking notification as read:', error);
+        setNotifications(prev => 
+          prev.map(n => n.id === notificationId ? { ...n, read: false } : n)
+        );
+        setUnreadCount(prev => prev + 1);
+      }
     } catch (error) {
       console.error('Error marking notification as read:', error);
+      // Revert optimistic update on error
+      setNotifications(prev => 
+        prev.map(n => n.id === notificationId ? { ...n, read: false } : n)
+      );
+      setUnreadCount(prev => prev + 1);
     }
-  }, []);
+  }, [notifications]);
 
   // Mark all notifications as read
   const markAllAsRead = useCallback(async () => {
