@@ -8,12 +8,13 @@ import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { 
   Clock, DollarSign, MapPin, Calendar, Award, Loader2, Briefcase, 
-  Camera, CheckCircle, AlertCircle, Target, Upload, Wallet, Lock, Info, Users, Settings
+  Camera, CheckCircle, AlertCircle, Target, Upload, Wallet, Lock, Info, Users, Settings, Eye
 } from 'lucide-react';
 import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
 import ProgressUpdateForm from '@/components/contractor/ProgressUpdateForm';
 import MilestoneManagement from '@/components/contractor/MilestoneManagement';
+import MilestoneEvidenceViewer from '@/components/contractor/MilestoneEvidenceViewer';
 import ProjectLifecycleTracker from '@/components/workflow/ProjectLifecycleTracker';
 import WorkforceHiringPanel from '@/components/contractor/WorkforceHiringPanel';
 import { supabase } from '@/integrations/supabase/client';
@@ -70,6 +71,7 @@ const ContractorProjects = () => {
   const [loading, setLoading] = useState(true);
   const [updateModalOpen, setUpdateModalOpen] = useState(false);
   const [milestoneModalOpen, setMilestoneModalOpen] = useState(false);
+  const [evidenceModalOpen, setEvidenceModalOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<ProjectWithExtras | null>(null);
 
   const breadcrumbItems = [
@@ -139,18 +141,28 @@ const ContractorProjects = () => {
       const myRatings = user?.id ? contractorRatings[user.id] : null;
       
       // Build completed projects with per-project ratings from milestone verifications
-      const completedWithRating: ProjectWithExtras[] = completedRaw.map(project => {
+      // Also fetch milestones so contractors can view their submitted evidence
+      const completedWithRating: ProjectWithExtras[] = [];
+      for (const project of completedRaw) {
+        // Fetch milestones for this completed project
+        const { data: milestones } = await supabase
+          .from('project_milestones')
+          .select('id, title, description, milestone_number, status, payment_percentage, evidence_urls, submitted_at')
+          .eq('project_id', project.id)
+          .order('milestone_number', { ascending: true });
+        
         // Filter ratings for this specific project
         const projectRatings = myRatings?.ratings.filter(r => r.projectId === project.id) || [];
         const avgRating = projectRatings.length > 0
           ? projectRatings.reduce((acc, r) => acc + r.rating, 0) / projectRatings.length
           : 0;
         
-        return {
+        completedWithRating.push({
           ...project,
-          rating: Math.round(avgRating * 10) / 10 // Round to 1 decimal
-        } as ProjectWithExtras;
-      });
+          rating: Math.round(avgRating * 10) / 10, // Round to 1 decimal
+          milestones: milestones || []
+        } as ProjectWithExtras);
+      }
 
       setActiveProjects(activeWithProgress);
       setCompletedProjects(completedWithRating);
@@ -201,6 +213,11 @@ const ContractorProjects = () => {
     setMilestoneModalOpen(false);
     setSelectedProject(null);
     fetchProjects();
+  };
+
+  const handleViewEvidence = (project: ProjectWithExtras) => {
+    setSelectedProject(project);
+    setEvidenceModalOpen(true);
   };
 
   const formatCurrency = (amount: number) => {
@@ -396,10 +413,23 @@ const ContractorProjects = () => {
                     {/* Milestones Section */}
                     {project.milestones && project.milestones.length > 0 ? (
                       <div className="border rounded-lg p-3 sm:p-4 bg-muted/50 overflow-hidden">
-                        <h4 className="font-medium mb-3 flex items-center text-sm sm:text-base">
-                          <Target className="h-4 w-4 mr-2 text-primary flex-shrink-0" />
-                          Project Milestones
-                        </h4>
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="font-medium flex items-center text-sm sm:text-base">
+                            <Target className="h-4 w-4 mr-2 text-primary flex-shrink-0" />
+                            Project Milestones
+                          </h4>
+                          {project.milestones.some(m => m.evidence_urls && m.evidence_urls.length > 0) && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleViewEvidence(project)}
+                              className="text-xs"
+                            >
+                              <Eye className="h-3 w-3 mr-1" />
+                              View Evidence
+                            </Button>
+                          )}
+                        </div>
                         <div className="space-y-2 sm:space-y-3">
                           {project.milestones.map((milestone) => (
                             <div key={milestone.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-2 sm:p-3 bg-background rounded border">
@@ -568,7 +598,8 @@ const ContractorProjects = () => {
                     </div>
                   </CardHeader>
                   
-                  <CardContent className="p-3 sm:p-4 lg:p-6 pt-0">
+                  <CardContent className="p-3 sm:p-4 lg:p-6 pt-0 space-y-4">
+                    {/* Rating Section */}
                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                       <div className="flex items-center flex-wrap gap-2">
                         <Award className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-500 flex-shrink-0" />
@@ -594,6 +625,48 @@ const ContractorProjects = () => {
                         Completed
                       </Badge>
                     </div>
+
+                    {/* Milestones Summary for Completed Projects */}
+                    {project.milestones && project.milestones.length > 0 && (
+                      <div className="border rounded-lg p-3 sm:p-4 bg-muted/50">
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="font-medium flex items-center text-sm sm:text-base">
+                            <Target className="h-4 w-4 mr-2 text-primary flex-shrink-0" />
+                            Completed Milestones ({project.milestones.length})
+                          </h4>
+                          {project.milestones.some(m => m.evidence_urls && m.evidence_urls.length > 0) && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleViewEvidence(project)}
+                              className="text-xs"
+                            >
+                              <Eye className="h-3 w-3 mr-1" />
+                              View Evidence
+                            </Button>
+                          )}
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {project.milestones.map((milestone) => (
+                            <div key={milestone.id} className="flex items-center gap-2 p-2 bg-background rounded border">
+                              <div className="w-6 h-6 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-xs font-medium flex-shrink-0">
+                                <CheckCircle className="h-3 w-3" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-xs truncate">{milestone.title}</p>
+                                <p className="text-xs text-muted-foreground">{milestone.payment_percentage}%</p>
+                              </div>
+                              {milestone.evidence_urls && milestone.evidence_urls.length > 0 && (
+                                <Badge variant="outline" className="text-xs flex-shrink-0">
+                                  <Camera className="h-2.5 w-2.5 mr-0.5" />
+                                  {milestone.evidence_urls.length}
+                                </Badge>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ))
@@ -630,6 +703,16 @@ const ContractorProjects = () => {
           />
         )}
       </Dialog>
+
+      {/* Milestone Evidence Viewer Modal */}
+      {selectedProject && (
+        <MilestoneEvidenceViewer
+          milestones={selectedProject.milestones || []}
+          projectTitle={selectedProject.title}
+          open={evidenceModalOpen}
+          onClose={() => setEvidenceModalOpen(false)}
+        />
+      )}
     </div>
   );
 };

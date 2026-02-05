@@ -122,9 +122,17 @@ export class ProjectLifecycleService {
         ? ratings.reduce((acc, r) => acc + (r.rating || 0), 0) / ratings.length
         : null;
 
+      // Project is considered complete if:
+      // 1. Its status is explicitly 'completed', OR
+      // 2. All milestones are paid (work is done even if status not updated)
+      const allMilestonesPaid = milestonesTotal > 0 && milestonesPaid === milestonesTotal;
+      const isEffectivelyCompleted = project.status === 'completed' || allMilestonesPaid;
+
       // Determine current phase
       let currentPhase = project.status || 'planning';
-      if (!escrowFunded && project.contractor_id) {
+      if (isEffectivelyCompleted) {
+        currentPhase = PROJECT_LIFECYCLE_STATUS.COMPLETED;
+      } else if (!escrowFunded && project.contractor_id) {
         currentPhase = PROJECT_LIFECYCLE_STATUS.AWAITING_ESCROW;
       } else if (escrowFunded && project.status === 'planning') {
         currentPhase = PROJECT_LIFECYCLE_STATUS.ESCROW_FUNDED;
@@ -136,11 +144,12 @@ export class ProjectLifecycleService {
         contractorSelected: !!project.contractor_id,
         escrowFunded,
         fundedPercentage: escrowAmount > 0 ? (fundedAmount / escrowAmount) * 100 : 0,
-        workStarted: ['in_progress', 'under_verification', 'completed'].includes(project.status),
+        workStarted: ['in_progress', 'under_verification', 'completed'].includes(project.status) || allMilestonesPaid,
         milestonesSubmitted: milestonesCompleted > 0,
         milestonesVerified: milestonesVerified > 0,
         allMilestonesVerified: milestonesVerified === milestonesTotal && milestonesTotal > 0,
-        projectCompleted: project.status === 'completed',
+        allMilestonesPaid,
+        projectCompleted: isEffectivelyCompleted,
         hasRating: avgRating !== null
       };
 
@@ -182,9 +191,13 @@ export class ProjectLifecycleService {
     milestonesSubmitted: boolean;
     milestonesVerified: boolean;
     allMilestonesVerified: boolean;
+    allMilestonesPaid: boolean;
     projectCompleted: boolean;
     hasRating: boolean;
   }): LifecycleStep[] {
+    // When all milestones are paid, all steps should be completed
+    const allPaid = state.allMilestonesPaid;
+    
     const steps: LifecycleStep[] = [
       {
         step: 1,
@@ -237,15 +250,17 @@ export class ProjectLifecycleService {
         step: 6,
         name: 'Payment Release',
         description: 'Escrow releases payment for verified milestones',
-        status: state.allMilestonesVerified ? 'completed' : (state.milestonesVerified ? 'current' : 'pending'),
+        // Complete if all milestones are paid, OR if all milestones are verified
+        status: allPaid ? 'completed' : (state.allMilestonesVerified ? 'completed' : (state.milestonesVerified ? 'current' : 'pending')),
         actionBy: 'government'
       },
       {
         step: 7,
         name: 'Project Completion',
         description: 'Final sign-off and contractor performance rating',
-        status: state.projectCompleted ? 'completed' : (state.allMilestonesVerified ? 'current' : 'pending'),
-        actionRequired: state.allMilestonesVerified && !state.projectCompleted 
+        // Complete if project is marked complete OR all milestones are paid
+        status: state.projectCompleted ? 'completed' : (allPaid || state.allMilestonesVerified ? 'current' : 'pending'),
+        actionRequired: (allPaid || state.allMilestonesVerified) && !state.projectCompleted 
           ? 'Complete project and rate contractor'
           : undefined,
         actionBy: 'government'
