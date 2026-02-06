@@ -808,31 +808,43 @@ export type Database = {
           applicant_id: string
           application_message: string | null
           applied_at: string | null
+          completed_at: string | null
           id: string
           job_id: string
           reviewed_at: string | null
           reviewed_by: string | null
+          started_at: string | null
           status: string | null
+          total_days_worked: number | null
+          total_earned: number | null
         }
         Insert: {
           applicant_id: string
           application_message?: string | null
           applied_at?: string | null
+          completed_at?: string | null
           id?: string
           job_id: string
           reviewed_at?: string | null
           reviewed_by?: string | null
+          started_at?: string | null
           status?: string | null
+          total_days_worked?: number | null
+          total_earned?: number | null
         }
         Update: {
           applicant_id?: string
           application_message?: string | null
           applied_at?: string | null
+          completed_at?: string | null
           id?: string
           job_id?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
+          started_at?: string | null
           status?: string | null
+          total_days_worked?: number | null
+          total_earned?: number | null
         }
         Relationships: [
           {
@@ -1815,6 +1827,78 @@ export type Database = {
         }
         Relationships: []
       }
+      worker_daily_records: {
+        Row: {
+          amount_earned: number
+          created_at: string
+          daily_rate: number
+          hours_worked: number | null
+          id: string
+          job_application_id: string
+          job_id: string
+          notes: string | null
+          paid_at: string | null
+          payment_status: string | null
+          payment_transaction_id: string | null
+          updated_at: string
+          verification_status: string | null
+          verified_by: string | null
+          work_date: string
+          worker_id: string
+        }
+        Insert: {
+          amount_earned: number
+          created_at?: string
+          daily_rate: number
+          hours_worked?: number | null
+          id?: string
+          job_application_id: string
+          job_id: string
+          notes?: string | null
+          paid_at?: string | null
+          payment_status?: string | null
+          payment_transaction_id?: string | null
+          updated_at?: string
+          verification_status?: string | null
+          verified_by?: string | null
+          work_date: string
+          worker_id: string
+        }
+        Update: {
+          amount_earned?: number
+          created_at?: string
+          daily_rate?: number
+          hours_worked?: number | null
+          id?: string
+          job_application_id?: string
+          job_id?: string
+          notes?: string | null
+          paid_at?: string | null
+          payment_status?: string | null
+          payment_transaction_id?: string | null
+          updated_at?: string
+          verification_status?: string | null
+          verified_by?: string | null
+          work_date?: string
+          worker_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "worker_daily_records_job_application_id_fkey"
+            columns: ["job_application_id"]
+            isOneToOne: false
+            referencedRelation: "job_applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "worker_daily_records_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "workforce_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       worker_data_access_logs: {
         Row: {
           access_timestamp: string
@@ -1850,6 +1934,59 @@ export type Database = {
           worker_id?: string
         }
         Relationships: []
+      }
+      worker_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          daily_records_count: number
+          id: string
+          job_id: string
+          payment_method: string | null
+          payment_reference: string | null
+          payment_status: string | null
+          period_end: string
+          period_start: string
+          processed_at: string | null
+          worker_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          daily_records_count?: number
+          id?: string
+          job_id: string
+          payment_method?: string | null
+          payment_reference?: string | null
+          payment_status?: string | null
+          period_end: string
+          period_start: string
+          processed_at?: string | null
+          worker_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          daily_records_count?: number
+          id?: string
+          job_id?: string
+          payment_method?: string | null
+          payment_reference?: string | null
+          payment_status?: string | null
+          period_end?: string
+          period_start?: string
+          processed_at?: string | null
+          worker_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "worker_payments_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "workforce_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       workforce_applications: {
         Row: {

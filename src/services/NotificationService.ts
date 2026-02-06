@@ -13,6 +13,7 @@ export type NotificationCategory =
   | 'verification' 
   | 'issue' 
   | 'rating'
+  | 'workforce'
   | 'system'
   | 'general';
 
@@ -362,6 +363,60 @@ class NotificationServiceClass {
       'success',
       'project',
       '/citizen/projects'
+    );
+  }
+
+  /**
+   * When a worker is hired for a job
+   */
+  async onWorkerHired(
+    workerId: string,
+    jobTitle: string,
+    contractorName: string
+  ): Promise<void> {
+    await this.notifyUser(
+      workerId,
+      'Congratulations! You Have Been Hired',
+      `${contractorName} has selected you for "${jobTitle}". Check your My Jobs page to start working.`,
+      'success',
+      'workforce',
+      '/citizen/my-jobs'
+    );
+  }
+
+  /**
+   * When a worker's daily payment is processed
+   */
+  async onWorkerPaymentProcessed(
+    workerId: string,
+    amount: number,
+    daysCount: number
+  ): Promise<void> {
+    await this.notifyUser(
+      workerId,
+      'Payment Processing',
+      `Your payment of KES ${amount.toLocaleString()} for ${daysCount} day(s) of work is being processed.`,
+      'info',
+      'payment',
+      '/citizen/my-jobs'
+    );
+  }
+
+  /**
+   * When a worker's payment is completed
+   */
+  async onWorkerPaymentCompleted(
+    workerId: string,
+    amount: number,
+    reference: string
+  ): Promise<void> {
+    await this.notifyUser(
+      workerId,
+      'Payment Received',
+      `Your payment of KES ${amount.toLocaleString()} has been sent to your M-Pesa. Reference: ${reference}`,
+      'success',
+      'payment',
+      '/citizen/my-jobs'
     );
   }
 
