@@ -19,6 +19,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ProjectLifecycleService } from '@/services/ProjectLifecycleService';
+import { NotificationService } from '@/services/NotificationService';
 import { useViewport } from '@/hooks/useViewport';
 import { cn } from '@/lib/utils';
 
@@ -215,16 +216,51 @@ const WorkforceHiringPanel: React.FC<WorkforceHiringPanelProps> = ({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Must be logged in');
 
+      // Get the application details for notification
+      const application = applicants.find(a => a.id === applicationId);
+      
+      const updateData: any = {
+        status,
+        reviewed_at: new Date().toISOString(),
+        reviewed_by: user.id
+      };
+
+      // If accepting, also set the started_at date
+      if (status === 'accepted') {
+        updateData.started_at = new Date().toISOString();
+      }
+
       const { error } = await supabase
         .from('job_applications')
-        .update({
-          status,
-          reviewed_at: new Date().toISOString(),
-          reviewed_by: user.id
-        })
+        .update(updateData)
         .eq('id', applicationId);
 
       if (error) throw error;
+
+      // Send notification to the worker
+      if (application) {
+        const jobTitle = selectedJob?.title || 'a job';
+        
+        if (status === 'accepted') {
+          await NotificationService.notifyUser(
+            application.applicant_id,
+            'Congratulations! You Have Been Hired',
+            `You have been selected for "${jobTitle}". Please check your My Jobs page for details and start working.`,
+            'success',
+            'general',
+            '/citizen/my-jobs'
+          );
+        } else {
+          await NotificationService.notifyUser(
+            application.applicant_id,
+            'Application Update',
+            `Your application for "${jobTitle}" was not selected. Keep applying for other opportunities.`,
+            'info',
+            'general',
+            '/citizen/workforce'
+          );
+        }
+      }
 
       toast({
         title: status === 'accepted' ? "Worker Hired!" : "Application Rejected",

@@ -63,6 +63,15 @@ const CitizenDashboard = () => {
 
   const additionalActions = [
     {
+      title: 'My Jobs',
+      description: 'View your hired jobs and daily earnings',
+      icon: Wallet,
+      href: '/citizen/my-jobs',
+      color: 'bg-green-500 hover:bg-green-600',
+      iconColor: 'text-green-600',
+      badge: 'Earnings'
+    },
+    {
       title: 'Skills Registration',
       description: 'Register your skills for project opportunities',
       icon: Wrench,

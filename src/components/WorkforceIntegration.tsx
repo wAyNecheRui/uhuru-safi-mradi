@@ -123,6 +123,11 @@ const WorkforceIntegration = () => {
     }
   };
 
+  const getApplicationStatus = (jobId: string) => {
+    const app = applications.find(app => app.job_id === jobId);
+    return app?.status || null;
+  };
+
   const hasAppliedToJob = (jobId: string) => {
     return applications.some(app => app.job_id === jobId);
   };
@@ -326,6 +331,7 @@ const WorkforceIntegration = () => {
             <div className="grid gap-6">
               {jobs.map((job) => {
                 const hasApplied = hasAppliedToJob(job.id);
+                const appStatus = getApplicationStatus(job.id);
                 return (
                   <Card key={job.id} className="shadow-lg hover:shadow-xl transition-shadow">
                     <CardContent className="p-6">
@@ -333,11 +339,19 @@ const WorkforceIntegration = () => {
                         <div className="flex-1 space-y-3">
                           <div className="flex items-start justify-between">
                             <h3 className="text-xl font-semibold">{job.title}</h3>
-                            {hasApplied && (
-                              <Badge className="bg-green-100 text-green-800">
-                                Applied
+                            {appStatus === 'accepted' ? (
+                              <Badge className="bg-green-600 text-white">
+                                Hired
                               </Badge>
-                            )}
+                            ) : appStatus === 'rejected' ? (
+                              <Badge className="bg-red-100 text-red-800">
+                                Not Selected
+                              </Badge>
+                            ) : hasApplied ? (
+                              <Badge className="bg-yellow-100 text-yellow-800">
+                                Pending Review
+                              </Badge>
+                            ) : null}
                           </div>
 
                           <div className="flex items-center text-muted-foreground">
@@ -373,13 +387,22 @@ const WorkforceIntegration = () => {
                         </div>
 
                         <div className="flex flex-col space-y-2">
-                          <Button
-                            onClick={() => handleJobApplication(job.id)}
-                            className="bg-green-600 hover:bg-green-700"
-                            disabled={hasApplied || isApplying}
-                          >
-                            {hasApplied ? 'Already Applied' : 'Apply Now'}
-                          </Button>
+                          {appStatus === 'accepted' ? (
+                            <Button
+                              onClick={() => window.location.href = '/citizen/my-jobs'}
+                              className="bg-green-600 hover:bg-green-700"
+                            >
+                              View My Jobs
+                            </Button>
+                          ) : (
+                            <Button
+                              onClick={() => handleJobApplication(job.id)}
+                              className="bg-green-600 hover:bg-green-700"
+                              disabled={hasApplied || isApplying}
+                            >
+                              {hasApplied ? 'Pending Review' : 'Apply Now'}
+                            </Button>
+                          )}
                           <Button 
                             variant="outline" 
                             size="sm"
