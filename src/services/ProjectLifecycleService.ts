@@ -124,8 +124,13 @@ export class ProjectLifecycleService {
 
       // Project is considered complete if:
       // 1. Its status is explicitly 'completed', OR
-      // 2. All milestones are paid (work is done even if status not updated)
-      const allMilestonesPaid = milestonesTotal > 0 && milestonesPaid === milestonesTotal;
+      // 2. ALL escrow funds have been released (held_amount = 0 AND released_amount >= total_amount)
+      // NOTE: Do NOT consider "all milestones paid" as complete if there's still money in escrow
+      // because the contractor may need to add more milestones
+      const allEscrowReleased = escrow 
+        ? (escrow.held_amount === 0 && escrow.released_amount >= escrow.total_amount)
+        : false;
+      const allMilestonesPaid = milestonesTotal > 0 && milestonesPaid === milestonesTotal && allEscrowReleased;
       const isEffectivelyCompleted = project.status === 'completed' || allMilestonesPaid;
 
       // Determine current phase
