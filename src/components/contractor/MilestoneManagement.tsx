@@ -132,31 +132,105 @@ const MilestoneManagement: React.FC<MilestoneManagementProps> = ({ project, onCl
       return;
     }
 
+    // Validate all milestones have titles
+    const emptyTitles = milestones.filter(m => !m.title.trim());
+    if (emptyTitles.length > 0) {
+      toast({
+        title: "Missing Titles",
+        description: "All milestones must have a title.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setSaving(true);
     try {
-      // Delete existing milestones
-      await supabase
+      // Separate existing milestones (with IDs) from new ones
+      const existingMilestones = milestones.filter(m => m.id);
+      const newMilestones = milestones.filter(m => !m.id);
+
+      // Get current milestone IDs in database
+      const { data: currentDbMilestones, error: fetchError } = await supabase
         .from('project_milestones')
-        .delete()
+        .select('id, status')
         .eq('project_id', project.id);
 
+      if (fetchError) {
+        console.error('Error fetching current milestones:', fetchError);
+        throw new Error('Failed to fetch current milestones');
+      }
+
+      // Check if any milestones have progressed beyond 'pending' status
+      const nonPendingMilestones = currentDbMilestones?.filter(m => m.status !== 'pending') || [];
+      if (nonPendingMilestones.length > 0) {
+        toast({
+          title: "Cannot Modify Milestones",
+          description: "Some milestones have already progressed and cannot be deleted. Only pending milestones can be modified.",
+          variant: "destructive"
+        });
+        setSaving(false);
+        return;
+      }
+
+      // Find milestones to delete (in DB but not in current list)
+      const currentMilestoneIds = existingMilestones.map(m => m.id);
+      const milestonesToDelete = currentDbMilestones?.filter(m => !currentMilestoneIds.includes(m.id)) || [];
+
+      // Delete removed milestones (only pending ones)
+      if (milestonesToDelete.length > 0) {
+        const { error: deleteError } = await supabase
+          .from('project_milestones')
+          .delete()
+          .in('id', milestonesToDelete.map(m => m.id));
+
+        if (deleteError) {
+          console.error('Error deleting milestones:', deleteError);
+          throw new Error(`Failed to delete milestones: ${deleteError.message}`);
+        }
+      }
+
+      // Update existing milestones
+      for (const milestone of existingMilestones) {
+        const { error: updateError } = await supabase
+          .from('project_milestones')
+          .update({
+            title: milestone.title,
+            description: milestone.description,
+            payment_percentage: milestone.payment_percentage,
+            milestone_number: milestone.milestone_number,
+            target_completion_date: milestone.target_completion_date || null,
+            completion_criteria: milestone.completion_criteria,
+          })
+          .eq('id', milestone.id);
+
+        if (updateError) {
+          console.error('Error updating milestone:', updateError);
+          throw new Error(`Failed to update milestone: ${updateError.message}`);
+        }
+      }
+
       // Insert new milestones
-      const milestonesToInsert = milestones.map(m => ({
-        project_id: project.id,
-        title: m.title,
-        description: m.description,
-        payment_percentage: m.payment_percentage,
-        milestone_number: m.milestone_number,
-        target_completion_date: m.target_completion_date || null,
-        completion_criteria: m.completion_criteria,
-        status: 'pending'
-      }));
+      if (newMilestones.length > 0) {
+        const milestonesToInsert = newMilestones.map(m => ({
+          project_id: project.id,
+          title: m.title,
+          description: m.description,
+          payment_percentage: m.payment_percentage,
+          milestone_number: m.milestone_number,
+          target_completion_date: m.target_completion_date || null,
+          completion_criteria: m.completion_criteria,
+          status: 'pending'
+        }));
 
-      const { error } = await supabase
-        .from('project_milestones')
-        .insert(milestonesToInsert);
+        const { error: insertError } = await supabase
+          .from('project_milestones')
+          .insert(milestonesToInsert);
 
-      if (error) throw error;
+        if (insertError) {
+          console.error('Error inserting milestones:', insertError);
+          throw new Error(`Failed to insert milestones: ${insertError.message}`);
+        }
+      }
 
       toast({
         title: "Milestones Saved",
@@ -164,11 +238,11 @@ const MilestoneManagement: React.FC<MilestoneManagementProps> = ({ project, onCl
       });
 
       onSaved();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving milestones:', error);
       toast({
-        title: "Error",
-        description: "Failed to save milestones",
+        title: "Failed to Save Milestones",
+        description: error.message || "An unexpected error occurred. Please try again.",
         variant: "destructive"
       });
     } finally {
