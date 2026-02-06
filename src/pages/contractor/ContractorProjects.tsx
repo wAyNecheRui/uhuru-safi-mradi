@@ -229,7 +229,9 @@ const ContractorProjects = () => {
   };
 
   // Check if contractor can update progress based on milestone workflow
-  const canUpdateProgress = (project: ProjectWithExtras): { allowed: boolean; reason?: string } => {
+  const canUpdateProgress = (
+    project: ProjectWithExtras
+  ): { allowed: boolean; reason?: string; suggestedAction?: 'configure_milestones' } => {
     // First check if escrow is funded
     if (!project.canWork) {
       return { allowed: false, reason: project.workBlockedReason || 'Awaiting escrow funding' };
@@ -237,28 +239,27 @@ const ContractorProjects = () => {
 
     // Check if milestones are configured
     if (!project.milestones || project.milestones.length === 0) {
-      return { allowed: false, reason: 'Configure milestones first' };
+      return { allowed: false, reason: 'Configure milestones first', suggestedAction: 'configure_milestones' };
     }
 
-    // Check milestone statuses - enforce sequential completion
-    const milestones = project.milestones.sort((a, b) => a.milestone_number - b.milestone_number);
-    
+    const milestones = [...project.milestones].sort((a, b) => a.milestone_number - b.milestone_number);
+
     // Find milestones that are in progress or submitted (awaiting verification/payment)
-    const pendingMilestone = milestones.find(m => 
-      m.status === 'submitted' || m.status === 'verified' || m.status === 'in_progress'
+    const pendingMilestone = milestones.find(
+      (m) => m.status === 'submitted' || m.status === 'verified' || m.status === 'in_progress'
     );
 
     if (pendingMilestone) {
       if (pendingMilestone.status === 'submitted') {
-        return { 
-          allowed: false, 
-          reason: `Milestone "${pendingMilestone.title}" is awaiting citizen verification` 
+        return {
+          allowed: false,
+          reason: `Milestone "${pendingMilestone.title}" is awaiting citizen verification`,
         };
       }
       if (pendingMilestone.status === 'verified') {
-        return { 
-          allowed: false, 
-          reason: `Milestone "${pendingMilestone.title}" is awaiting payment release` 
+        return {
+          allowed: false,
+          reason: `Milestone "${pendingMilestone.title}" is awaiting payment release`,
         };
       }
       if (pendingMilestone.status === 'in_progress') {
@@ -267,14 +268,29 @@ const ContractorProjects = () => {
       }
     }
 
-    // Check if all milestones are completed (paid)
-    const allCompleted = milestones.every(m => m.status === 'paid');
-    if (allCompleted) {
+    const allocationSum = milestones.reduce((sum, m) => sum + (m.payment_percentage || 0), 0);
+    const escrow = project.escrow;
+    const escrowCleared = !!escrow && escrow.held_amount === 0 && escrow.released_amount >= escrow.total_amount;
+
+    // If all milestones are paid but the plan is incomplete / escrow not cleared,
+    // do NOT block the contractor from continuing the workflow.
+    // Instead, guide them to configure additional milestones.
+    const allPaid = milestones.every((m) => m.status === 'paid');
+    if (allPaid) {
+      if (!escrowCleared || allocationSum < 100) {
+        const remaining = escrow ? Math.max(escrow.total_amount - escrow.released_amount, 0) : 0;
+        return {
+          allowed: false,
+          reason: `Milestone configuration is incomplete (${allocationSum}% allocated). Remaining escrow: KES ${remaining.toLocaleString()}. Add milestones to continue`,
+          suggestedAction: 'configure_milestones',
+        };
+      }
+
       return { allowed: false, reason: 'All milestones completed' };
     }
 
     // Find the next pending milestone to work on
-    const nextPending = milestones.find(m => m.status === 'pending');
+    const nextPending = milestones.find((m) => m.status === 'pending');
     if (nextPending) {
       return { allowed: true };
     }
@@ -331,233 +347,253 @@ const ContractorProjects = () => {
                 </CardContent>
               </Card>
             ) : (
-              activeProjects.map((project) => (
-                <div key={project.id} className="space-y-4">
-                  {/* Project Lifecycle Tracker */}
-                  <ProjectLifecycleTracker projectId={project.id} compact />
-                  
-                  <Card className="shadow-lg">
-                  {/* Escrow Status Alert */}
-                  {!project.canWork && (
-                    <Alert className="m-4 mb-0 border-yellow-300 bg-yellow-50">
-                      <Lock className="h-4 w-4 text-yellow-600" />
-                      <AlertTitle className="text-yellow-800">Awaiting Escrow Funding</AlertTitle>
-                      <AlertDescription className="text-yellow-700">
-                        {project.workBlockedReason || 'Government must fund the escrow before work can begin.'}
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                  
-                  {/* Escrow Funding Progress */}
-                  {project.escrow && (
-                    <div className="mx-4 mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium flex items-center gap-1">
-                          <Wallet className="h-4 w-4" />
-                          Escrow Funding
-                        </span>
-                        <Badge className={project.escrow.held_amount >= project.escrow.total_amount ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
-                          {project.escrow.held_amount >= project.escrow.total_amount ? 'Fully Funded' : `${Math.round((project.escrow.held_amount / project.escrow.total_amount) * 100)}% Funded`}
-                        </Badge>
-                      </div>
-                      <Progress value={(project.escrow.held_amount / project.escrow.total_amount) * 100} className="h-2" />
-                      <div className="flex justify-between text-xs mt-1 text-muted-foreground">
-                        <span>Held: KES {project.escrow.held_amount.toLocaleString()}</span>
-                        <span>Total: KES {project.escrow.total_amount.toLocaleString()}</span>
-                      </div>
-                    </div>
-                  )}
+               activeProjects.map((project) => {
+                 const progressStatus = canUpdateProgress(project);
+                 const updateButtonEnabled =
+                   progressStatus.allowed || progressStatus.suggestedAction === 'configure_milestones';
 
-                  <CardHeader className="p-3 sm:p-4 lg:p-6">
-                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
-                      <div className="min-w-0 flex-1">
-                        <CardTitle className="text-base sm:text-lg lg:text-xl mb-2 break-words">{project.title}</CardTitle>
-                        <p className="text-sm text-gray-600 break-words">{project.description}</p>
-                        <div className="flex flex-col sm:flex-row sm:items-center text-xs sm:text-sm text-gray-500 mt-2 gap-2 sm:gap-4">
-                          <div className="flex items-center min-w-0">
-                            <MapPin className="h-3 w-3 sm:h-4 sm:w-4 mr-1 flex-shrink-0" />
-                            <span className="truncate">{project.problem_reports?.location || 'Location not specified'}</span>
-                          </div>
-                          <div className="flex items-center">
-                            <Calendar className="h-3 w-3 sm:h-4 sm:w-4 mr-1 flex-shrink-0" />
-                            <span className="whitespace-nowrap">Started: {new Date(project.created_at || '').toLocaleDateString()}</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-left sm:text-right flex-shrink-0">
-                        <div className="text-lg sm:text-xl lg:text-2xl font-bold text-green-600 mb-1">
-                          {formatCurrency(project.budget || 0)}
-                        </div>
-                        <Badge variant="outline" className="text-xs">
-                          {project.id.slice(0, 8)}
-                        </Badge>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  
-                  <CardContent className="space-y-4">
-                    {/* Progress Bar */}
-                    <div>
-                      <div className="flex justify-between text-sm mb-2">
-                        <span className="font-medium">Project Progress</span>
-                        <span className="font-bold">{project.progress || 0}%</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-3">
-                        <div 
-                          className="bg-blue-600 h-3 rounded-full transition-all duration-300" 
-                          style={{ width: `${project.progress || 0}%` }}
-                        ></div>
-                      </div>
-                    </div>
+                 return (
+                 <div key={project.id} className="space-y-4">
+                   {/* Project Lifecycle Tracker */}
+                   <ProjectLifecycleTracker projectId={project.id} compact />
+                   
+                   <Card className="shadow-lg">
+                   {/* Escrow Status Alert */}
+                   {!project.canWork && (
+                     <Alert className="m-4 mb-0 border-yellow-300 bg-yellow-50">
+                       <Lock className="h-4 w-4 text-yellow-600" />
+                       <AlertTitle className="text-yellow-800">Awaiting Escrow Funding</AlertTitle>
+                       <AlertDescription className="text-yellow-700">
+                         {project.workBlockedReason || 'Government must fund the escrow before work can begin.'}
+                       </AlertDescription>
+                     </Alert>
+                   )}
+                   
+                   {/* Escrow Funding Progress */}
+                   {project.escrow && (
+                     <div className="mx-4 mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                       <div className="flex items-center justify-between mb-2">
+                         <span className="text-sm font-medium flex items-center gap-1">
+                           <Wallet className="h-4 w-4" />
+                           Escrow Funding
+                         </span>
+                         <Badge className={project.escrow.held_amount >= project.escrow.total_amount ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
+                           {project.escrow.held_amount >= project.escrow.total_amount ? 'Fully Funded' : `${Math.round((project.escrow.held_amount / project.escrow.total_amount) * 100)}% Funded`}
+                         </Badge>
+                       </div>
+                       <Progress value={(project.escrow.held_amount / project.escrow.total_amount) * 100} className="h-2" />
+                       <div className="flex justify-between text-xs mt-1 text-muted-foreground">
+                         <span>Held: KES {project.escrow.held_amount.toLocaleString()}</span>
+                         <span>Total: KES {project.escrow.total_amount.toLocaleString()}</span>
+                       </div>
+                     </div>
+                   )}
 
-                    {/* Milestones Section */}
-                    {project.milestones && project.milestones.length > 0 ? (
-                      <div className="border rounded-lg p-3 sm:p-4 bg-muted/50 overflow-hidden">
-                        <div className="flex items-center justify-between mb-3">
-                          <h4 className="font-medium flex items-center text-sm sm:text-base">
-                            <Target className="h-4 w-4 mr-2 text-primary flex-shrink-0" />
-                            Project Milestones
-                          </h4>
-                          {project.milestones.some(m => m.evidence_urls && m.evidence_urls.length > 0) && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleViewEvidence(project)}
-                              className="text-xs"
-                            >
-                              <Eye className="h-3 w-3 mr-1" />
-                              View Evidence
-                            </Button>
-                          )}
-                        </div>
-                        <div className="space-y-2 sm:space-y-3">
-                          {project.milestones.map((milestone) => (
-                            <div key={milestone.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-2 sm:p-3 bg-background rounded border">
-                              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                                <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-medium flex-shrink-0 ${
-                                  milestone.status === 'paid' ? 'bg-green-100 text-green-700' :
-                                  milestone.status === 'verified' ? 'bg-blue-100 text-blue-700' :
-                                  milestone.status === 'submitted' ? 'bg-amber-100 text-amber-700' :
-                                  milestone.status === 'in_progress' ? 'bg-purple-100 text-purple-700' :
-                                  'bg-muted text-muted-foreground'
-                                }`}>
-                                  {milestone.milestone_number}
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                  <p className="font-medium text-xs sm:text-sm truncate">{milestone.title}</p>
-                                  <p className="text-xs text-muted-foreground">{milestone.payment_percentage}% of budget</p>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-2 flex-wrap pl-8 sm:pl-0">
-                                {milestone.evidence_urls && milestone.evidence_urls.length > 0 && (
-                                  <Badge variant="outline" className="text-xs">
-                                    <Camera className="h-3 w-3 mr-1" />
-                                    {milestone.evidence_urls.length}
-                                  </Badge>
+                   <CardHeader className="p-3 sm:p-4 lg:p-6">
+                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+                       <div className="min-w-0 flex-1">
+                         <CardTitle className="text-base sm:text-lg lg:text-xl mb-2 break-words">{project.title}</CardTitle>
+                         <p className="text-sm text-gray-600 break-words">{project.description}</p>
+                         <div className="flex flex-col sm:flex-row sm:items-center text-xs sm:text-sm text-gray-500 mt-2 gap-2 sm:gap-4">
+                           <div className="flex items-center min-w-0">
+                             <MapPin className="h-3 w-3 sm:h-4 sm:w-4 mr-1 flex-shrink-0" />
+                             <span className="truncate">{project.problem_reports?.location || 'Location not specified'}</span>
+                           </div>
+                           <div className="flex items-center">
+                             <Calendar className="h-3 w-3 sm:h-4 sm:w-4 mr-1 flex-shrink-0" />
+                             <span className="whitespace-nowrap">Started: {new Date(project.created_at || '').toLocaleDateString()}</span>
+                           </div>
+                         </div>
+                       </div>
+                       <div className="text-left sm:text-right flex-shrink-0">
+                         <div className="text-lg sm:text-xl lg:text-2xl font-bold text-green-600 mb-1">
+                           {formatCurrency(project.budget || 0)}
+                         </div>
+                         <Badge variant="outline" className="text-xs">
+                           {project.id.slice(0, 8)}
+                         </Badge>
+                       </div>
+                     </div>
+                   </CardHeader>
+                   
+                   <CardContent className="space-y-4">
+                     {/* Progress Bar */}
+                     <div>
+                       <div className="flex justify-between text-sm mb-2">
+                         <span className="font-medium">Project Progress</span>
+                         <span className="font-bold">{project.progress || 0}%</span>
+                       </div>
+                       <div className="w-full bg-gray-200 rounded-full h-3">
+                         <div 
+                           className="bg-blue-600 h-3 rounded-full transition-all duration-300" 
+                           style={{ width: `${project.progress || 0}%` }}
+                         ></div>
+                       </div>
+                     </div>
+
+                     {/* Milestones Section */}
+                     {project.milestones && project.milestones.length > 0 ? (
+                       <div className="border rounded-lg p-3 sm:p-4 bg-muted/50 overflow-hidden">
+                         <div className="flex items-center justify-between mb-3">
+                           <h4 className="font-medium flex items-center text-sm sm:text-base">
+                             <Target className="h-4 w-4 mr-2 text-primary flex-shrink-0" />
+                             Project Milestones
+                           </h4>
+                           {project.milestones.some(m => m.evidence_urls && m.evidence_urls.length > 0) && (
+                             <Button
+                               size="sm"
+                               variant="outline"
+                               onClick={() => handleViewEvidence(project)}
+                               className="text-xs"
+                             >
+                               <Eye className="h-3 w-3 mr-1" />
+                               View Evidence
+                             </Button>
+                           )}
+                         </div>
+                         <div className="space-y-2 sm:space-y-3">
+                           {project.milestones.map((milestone) => (
+                             <div key={milestone.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-2 sm:p-3 bg-background rounded border">
+                               <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                                 <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-medium flex-shrink-0 ${
+                                   milestone.status === 'paid' ? 'bg-green-100 text-green-700' :
+                                   milestone.status === 'verified' ? 'bg-blue-100 text-blue-700' :
+                                   milestone.status === 'submitted' ? 'bg-amber-100 text-amber-700' :
+                                   milestone.status === 'in_progress' ? 'bg-purple-100 text-purple-700' :
+                                   'bg-muted text-muted-foreground'
+                                 }`}>
+                                   {milestone.milestone_number}
+                                 </div>
+                                 <div className="min-w-0 flex-1">
+                                   <p className="font-medium text-xs sm:text-sm truncate">{milestone.title}</p>
+                                   <p className="text-xs text-muted-foreground">{milestone.payment_percentage}% of budget</p>
+                                 </div>
+                               </div>
+                               <div className="flex items-center gap-2 flex-wrap pl-8 sm:pl-0">
+                                 {milestone.evidence_urls && milestone.evidence_urls.length > 0 && (
+                                   <Badge variant="outline" className="text-xs">
+                                     <Camera className="h-3 w-3 mr-1" />
+                                     {milestone.evidence_urls.length}
+                                   </Badge>
+                                 )}
+                                 <Badge className={`text-xs ${
+                                   milestone.status === 'paid' ? 'bg-green-100 text-green-800' :
+                                   milestone.status === 'verified' ? 'bg-blue-100 text-blue-800' :
+                                   milestone.status === 'submitted' ? 'bg-amber-100 text-amber-800' :
+                                   milestone.status === 'in_progress' ? 'bg-purple-100 text-purple-800' :
+                                   'bg-muted text-muted-foreground'
+                                 }`}>
+                                   {milestone.status === 'paid' && <CheckCircle className="h-3 w-3 mr-1" />}
+                                   {milestone.status}
+                                 </Badge>
+                               </div>
+                             </div>
+                           ))}
+                         </div>
+                       </div>
+                     ) : (
+                       /* No Milestones - Show Configure Button */
+                       <Alert className="border-orange-300 bg-orange-50">
+                         <AlertCircle className="h-4 w-4 text-orange-600 flex-shrink-0" />
+                         <div className="flex-1 min-w-0">
+                           <AlertTitle className="text-orange-800 text-sm sm:text-base">Milestones Required</AlertTitle>
+                           <AlertDescription className="text-orange-700 text-xs sm:text-sm">
+                             <span className="block mb-2">Configure your project milestones to define payment schedules and track progress.</span>
+                             <Button
+                               size="sm"
+                               variant="outline"
+                               className="border-orange-400 text-orange-700 hover:bg-orange-100 w-full sm:w-auto text-xs sm:text-sm"
+                               onClick={() => handleConfigureMilestones(project)}
+                             >
+                               <Settings className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                               Configure Milestones
+                             </Button>
+                           </AlertDescription>
+                         </div>
+                       </Alert>
+                     )}
+                     
+                     {/* Milestone Progress Block Alert */}
+                     {(() => {
+                       if (!progressStatus.allowed && progressStatus.reason && project.canWork && project.milestones && project.milestones.length > 0) {
+                         return (
+                           <Alert className="border-blue-300 bg-blue-50">
+                             <Info className="h-4 w-4 text-blue-600" />
+                             <AlertTitle className="text-blue-800">Progress Update Blocked</AlertTitle>
+                              <AlertDescription className="text-blue-700">
+                                {progressStatus.reason}
+                                {progressStatus.suggestedAction !== 'configure_milestones' && (
+                                  <>. Complete the current milestone cycle before updating the next one.</>
                                 )}
-                                <Badge className={`text-xs ${
-                                  milestone.status === 'paid' ? 'bg-green-100 text-green-800' :
-                                  milestone.status === 'verified' ? 'bg-blue-100 text-blue-800' :
-                                  milestone.status === 'submitted' ? 'bg-amber-100 text-amber-800' :
-                                  milestone.status === 'in_progress' ? 'bg-purple-100 text-purple-800' :
-                                  'bg-muted text-muted-foreground'
-                                }`}>
-                                  {milestone.status === 'paid' && <CheckCircle className="h-3 w-3 mr-1" />}
-                                  {milestone.status}
-                                </Badge>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ) : (
-                      /* No Milestones - Show Configure Button */
-                      <Alert className="border-orange-300 bg-orange-50">
-                        <AlertCircle className="h-4 w-4 text-orange-600 flex-shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <AlertTitle className="text-orange-800 text-sm sm:text-base">Milestones Required</AlertTitle>
-                          <AlertDescription className="text-orange-700 text-xs sm:text-sm">
-                            <span className="block mb-2">Configure your project milestones to define payment schedules and track progress.</span>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="border-orange-400 text-orange-700 hover:bg-orange-100 w-full sm:w-auto text-xs sm:text-sm"
-                              onClick={() => handleConfigureMilestones(project)}
-                            >
-                              <Settings className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                              Configure Milestones
-                            </Button>
-                          </AlertDescription>
-                        </div>
-                      </Alert>
-                    )}
-                    
-                    {/* Milestone Progress Block Alert */}
-                    {(() => {
-                      const progressStatus = canUpdateProgress(project);
-                      if (!progressStatus.allowed && progressStatus.reason && project.canWork && project.milestones && project.milestones.length > 0) {
-                        return (
-                          <Alert className="border-blue-300 bg-blue-50">
-                            <Info className="h-4 w-4 text-blue-600" />
-                            <AlertTitle className="text-blue-800">Progress Update Blocked</AlertTitle>
-                            <AlertDescription className="text-blue-700">
-                              {progressStatus.reason}. Complete the current milestone cycle before updating the next one.
-                            </AlertDescription>
-                          </Alert>
-                        );
-                      }
-                      return null;
-                    })()}
+                              </AlertDescription>
+                           </Alert>
+                         );
+                       }
+                       return null;
+                     })()}
 
-                    {/* Actions Bar - Mobile Responsive */}
-                    <div className="flex flex-col gap-3 pt-3 border-t">
-                      <div className="flex items-center text-xs sm:text-sm text-muted-foreground">
-                        <Clock className="h-3 w-3 sm:h-4 sm:w-4 mr-1 flex-shrink-0" />
-                        <span>Updated: {new Date(project.updated_at).toLocaleDateString()}</span>
-                      </div>
-                      <div className="flex flex-col sm:flex-row gap-2 w-full">
-                        <Badge variant="secondary" className="w-fit">
-                          {project.status}
-                        </Badge>
-                        <div className="flex flex-col sm:flex-row gap-2 sm:ml-auto w-full sm:w-auto">
-                          {project.milestones && project.milestones.length > 0 && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleConfigureMilestones(project)}
-                              disabled={!canUpdateProgress(project).allowed}
-                              className="w-full sm:w-auto text-xs sm:text-sm"
-                            >
-                              <Settings className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                              <span className="sm:inline">Edit Milestones</span>
-                            </Button>
-                          )}
-                          <Button 
-                            size="sm" 
-                            onClick={() => handleUpdateProgress(project)}
-                            className="bg-primary w-full sm:w-auto text-xs sm:text-sm"
-                            disabled={!canUpdateProgress(project).allowed}
-                          >
-                            <Upload className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                            <span>Update Progress</span>
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                {/* Workforce Hiring Panel - only show when work can start */}
-                {project.canWork && (
-                  <WorkforceHiringPanel 
-                    projectId={project.id} 
-                    projectLocation={project.problem_reports?.location || undefined}
-                  />
-                )}
-                </div>
-              ))
-            )}
-          </TabsContent>
+                     {/* Actions Bar - Mobile Responsive */}
+                     <div className="flex flex-col gap-3 pt-3 border-t">
+                       <div className="flex items-center text-xs sm:text-sm text-muted-foreground">
+                         <Clock className="h-3 w-3 sm:h-4 sm:w-4 mr-1 flex-shrink-0" />
+                         <span>Updated: {new Date(project.updated_at).toLocaleDateString()}</span>
+                       </div>
+                       <div className="flex flex-col sm:flex-row gap-2 w-full">
+                         <Badge variant="secondary" className="w-fit">
+                           {project.status}
+                         </Badge>
+                         <div className="flex flex-col sm:flex-row gap-2 sm:ml-auto w-full sm:w-auto">
+                           {project.milestones && project.milestones.length > 0 && (
+                             <Button
+                               size="sm"
+                               variant="outline"
+                               onClick={() => handleConfigureMilestones(project)}
+                               className="w-full sm:w-auto text-xs sm:text-sm"
+                             >
+                               <Settings className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                               <span className="sm:inline">Edit Milestones</span>
+                             </Button>
+                           )}
+                           <Button 
+                             size="sm" 
+                             onClick={() => {
+                               if (progressStatus.allowed) {
+                                 handleUpdateProgress(project);
+                                 return;
+                               }
+
+                               if (progressStatus.suggestedAction === 'configure_milestones') {
+                                 toast({
+                                   title: 'Milestones Required',
+                                   description: progressStatus.reason || 'Please configure milestones to continue.',
+                                 });
+                                 handleConfigureMilestones(project);
+                               }
+                             }}
+                             className="bg-primary w-full sm:w-auto text-xs sm:text-sm"
+                             disabled={!updateButtonEnabled}
+                           >
+                             <Upload className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                             <span>Update Progress</span>
+                           </Button>
+                         </div>
+                       </div>
+                     </div>
+                   </CardContent>
+                 </Card>
+                 
+                 {/* Workforce Hiring Panel - only show when work can start */}
+                 {project.canWork && (
+                   <WorkforceHiringPanel 
+                     projectId={project.id} 
+                     projectLocation={project.problem_reports?.location || undefined}
+                   />
+                 )}
+                 </div>
+                 );
+               })
+             )}
+           </TabsContent>
 
           <TabsContent value="completed" className="space-y-4 sm:space-y-6">
             {completedProjects.length === 0 ? (

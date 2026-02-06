@@ -28,36 +28,41 @@ export const calculateProjectProgress = (milestones: MilestoneForProgress[]): nu
   if (!milestones || milestones.length === 0) return 0;
 
   // Check if milestones have payment percentages defined
-  const hasPaymentWeights = milestones.some(m => m.payment_percentage && m.payment_percentage > 0);
+  const hasPaymentWeights = milestones.some((m) => (m.payment_percentage || 0) > 0);
 
   if (hasPaymentWeights) {
-    // Weighted calculation based on payment_percentage
-    let totalProgress = 0;
+    // Weighted calculation based on payment_percentage.
+    // IMPORTANT: payment_percentage is already a % of the whole project budget.
+    // So progress should be the SUM of (weight% * statusMultiplier).
+    // Do NOT normalize by totalWeight, otherwise a partially-configured milestone plan
+    // (e.g., only 20% allocated) can incorrectly show 100% progress.
+
+    let weightedProgress = 0;
     let totalWeight = 0;
 
-    milestones.forEach(milestone => {
+    milestones.forEach((milestone) => {
       const weight = milestone.payment_percentage || 0;
       totalWeight += weight;
-      
+
       const statusMultiplier = getStatusMultiplier(milestone.status);
-      totalProgress += weight * statusMultiplier;
+      weightedProgress += weight * statusMultiplier;
     });
 
-    // Normalize to 100 if total weight doesn't equal 100
-    if (totalWeight > 0) {
-      return Math.round((totalProgress / totalWeight) * 100);
-    }
-    return 0;
-  } else {
-    // Equal weight calculation
-    let totalProgress = 0;
+    // If weights exceed 100 (bad data), normalize down.
+    const normalized = totalWeight > 100 && totalWeight > 0
+      ? (weightedProgress / totalWeight) * 100
+      : weightedProgress;
 
-    milestones.forEach(milestone => {
-      totalProgress += getStatusMultiplier(milestone.status);
-    });
-
-    return Math.round((totalProgress / milestones.length) * 100);
+    return Math.round(Math.min(Math.max(normalized, 0), 100));
   }
+
+  // Equal weight calculation
+  let totalProgress = 0;
+  milestones.forEach((milestone) => {
+    totalProgress += getStatusMultiplier(milestone.status);
+  });
+
+  return Math.round((totalProgress / milestones.length) * 100);
 };
 
 /**
@@ -115,17 +120,23 @@ export const isProjectEffectivelyCompleted = (
   projectStatus: string | null | undefined,
   milestones: MilestoneForProgress[]
 ): boolean => {
-  // Check explicit completion status
+  // Explicit completion status always wins
   if (projectStatus === 'completed') return true;
-  
-  // If no milestones, rely on project status
+
   if (!milestones || milestones.length === 0) return false;
-  
-  // Check if all milestones are in a completed state
-  const completedMilestones = milestones.filter(m => 
+
+  // If the project uses payment_percentage weighting, require a complete 100% allocation.
+  // Otherwise, a partially-defined plan (e.g., only one 20% milestone) could be treated as complete.
+  const hasWeights = milestones.some((m) => (m.payment_percentage || 0) > 0);
+  if (hasWeights) {
+    const allocationSum = milestones.reduce((sum, m) => sum + (m.payment_percentage || 0), 0);
+    if (allocationSum < 100) return false;
+  }
+
+  const completedMilestones = milestones.filter((m) =>
     m.status === 'paid' || m.status === 'completed' || m.status === 'verified'
   ).length;
-  
+
   return completedMilestones === milestones.length;
 };
 
