@@ -160,21 +160,40 @@ const MilestoneManagement: React.FC<MilestoneManagementProps> = ({ project, onCl
         throw new Error('Failed to fetch current milestones');
       }
 
-      // Check if any milestones have progressed beyond 'pending' status
-      const nonPendingMilestones = currentDbMilestones?.filter(m => m.status !== 'pending') || [];
-      if (nonPendingMilestones.length > 0) {
+      // Check if trying to DELETE or MODIFY milestones that have progressed beyond 'pending' status
+      const nonPendingDbMilestones = currentDbMilestones?.filter(m => m.status !== 'pending') || [];
+      const nonPendingIds = nonPendingDbMilestones.map(m => m.id);
+      
+      // Check if any non-pending milestones are being modified or deleted
+      const existingIds = existingMilestones.map(m => m.id);
+      const attemptingToDeleteNonPending = nonPendingIds.some(id => !existingIds.includes(id));
+      
+      if (attemptingToDeleteNonPending) {
         toast({
-          title: "Cannot Modify Milestones",
-          description: "Some milestones have already progressed and cannot be deleted. Only pending milestones can be modified.",
+          title: "Cannot Delete Progressed Milestones",
+          description: "Milestones that have been submitted, verified, or paid cannot be deleted.",
           variant: "destructive"
         });
         setSaving(false);
         return;
       }
+      
+      // Check if trying to modify non-pending milestones
+      for (const milestone of existingMilestones) {
+        if (nonPendingIds.includes(milestone.id)) {
+          const dbMilestone = currentDbMilestones?.find(m => m.id === milestone.id);
+          if (dbMilestone) {
+            // Allow viewing but show warning - we'll skip updates for non-pending
+            console.log(`Milestone ${milestone.id} has status ${dbMilestone.status}, skipping update`);
+          }
+        }
+      }
 
-      // Find milestones to delete (in DB but not in current list)
+      // Find milestones to delete (in DB but not in current list) - only pending ones
       const currentMilestoneIds = existingMilestones.map(m => m.id);
-      const milestonesToDelete = currentDbMilestones?.filter(m => !currentMilestoneIds.includes(m.id)) || [];
+      const milestonesToDelete = currentDbMilestones?.filter(m => 
+        !currentMilestoneIds.includes(m.id) && m.status === 'pending'
+      ) || [];
 
       // Delete removed milestones (only pending ones)
       if (milestonesToDelete.length > 0) {
@@ -189,8 +208,14 @@ const MilestoneManagement: React.FC<MilestoneManagementProps> = ({ project, onCl
         }
       }
 
-      // Update existing milestones
+      // Update existing milestones - only update pending ones
       for (const milestone of existingMilestones) {
+        // Skip non-pending milestones - they cannot be modified
+        if (nonPendingIds.includes(milestone.id)) {
+          console.log(`Skipping update for non-pending milestone ${milestone.id}`);
+          continue;
+        }
+        
         const { error: updateError } = await supabase
           .from('project_milestones')
           .update({
@@ -305,19 +330,29 @@ const MilestoneManagement: React.FC<MilestoneManagementProps> = ({ project, onCl
 
         {/* Milestones List */}
         <div className="space-y-3">
-          {milestones.map((milestone, index) => (
-            <Card key={index} className="shadow-sm">
+          {milestones.map((milestone, index) => {
+            const isLocked = milestone.status && milestone.status !== 'pending';
+            return (
+            <Card key={index} className={`shadow-sm ${isLocked ? 'bg-muted/50 border-muted' : ''}`}>
               <CardContent className="p-3 sm:p-4">
                 <div className="flex items-center justify-between mb-3 gap-2">
-                  <Badge variant="outline" className="text-primary text-xs">
-                    #{milestone.milestone_number}
-                  </Badge>
-                  {milestones.length > 1 && (
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="text-primary text-xs">
+                      #{milestone.milestone_number}
+                    </Badge>
+                    {isLocked && (
+                      <Badge variant="secondary" className="text-xs capitalize">
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        {milestone.status}
+                      </Badge>
+                    )}
+                  </div>
+                  {milestones.length > 1 && !isLocked && (
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => removeMilestone(index)}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8 p-0"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -325,6 +360,11 @@ const MilestoneManagement: React.FC<MilestoneManagementProps> = ({ project, onCl
                 </div>
 
                 <div className="space-y-3">
+                  {isLocked && (
+                    <p className="text-xs text-muted-foreground bg-muted p-2 rounded">
+                      This milestone has been {milestone.status} and cannot be edited.
+                    </p>
+                  )}
                   {/* Title - Full width */}
                   <div className="space-y-1.5">
                     <Label className="text-xs sm:text-sm">Title</Label>
@@ -333,6 +373,7 @@ const MilestoneManagement: React.FC<MilestoneManagementProps> = ({ project, onCl
                       onChange={(e) => updateMilestone(index, 'title', e.target.value)}
                       placeholder="e.g., Site Preparation & Mobilization"
                       className="text-sm"
+                      disabled={isLocked}
                     />
                   </div>
 
@@ -348,6 +389,7 @@ const MilestoneManagement: React.FC<MilestoneManagementProps> = ({ project, onCl
                           value={milestone.payment_percentage}
                           onChange={(e) => updateMilestone(index, 'payment_percentage', parseInt(e.target.value) || 0)}
                           className="text-sm w-20"
+                          disabled={isLocked}
                         />
                         <span className="text-xs text-muted-foreground truncate">
                           = {formatCurrency((project.budget || 0) * (milestone.payment_percentage / 100))}
@@ -362,6 +404,7 @@ const MilestoneManagement: React.FC<MilestoneManagementProps> = ({ project, onCl
                         value={milestone.target_completion_date}
                         onChange={(e) => updateMilestone(index, 'target_completion_date', e.target.value)}
                         className="text-sm"
+                        disabled={isLocked}
                       />
                     </div>
                   </div>
@@ -374,6 +417,7 @@ const MilestoneManagement: React.FC<MilestoneManagementProps> = ({ project, onCl
                       onChange={(e) => updateMilestone(index, 'description', e.target.value)}
                       placeholder="e.g., Initial setup, material delivery, and groundwork"
                       className="text-sm"
+                      disabled={isLocked}
                     />
                   </div>
 
@@ -386,12 +430,14 @@ const MilestoneManagement: React.FC<MilestoneManagementProps> = ({ project, onCl
                       placeholder="e.g., Site cleared and secured, all materials delivered and verified, foundation excavation complete"
                       rows={2}
                       className="text-sm resize-none"
+                      disabled={isLocked}
                     />
                   </div>
                 </div>
               </CardContent>
             </Card>
-          ))}
+          );
+          })}
         </div>
 
         <Button onClick={addMilestone} variant="outline" className="w-full">
