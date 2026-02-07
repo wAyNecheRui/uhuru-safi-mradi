@@ -6,17 +6,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Progress } from '@/components/ui/progress';
 import { 
   Briefcase, DollarSign, Calendar, Clock, MapPin, 
-  CheckCircle, Loader2, AlertCircle, TrendingUp,
-  Wallet, CalendarDays, Building
+  CheckCircle, Loader2, TrendingUp,
+  Wallet, CalendarDays, CreditCard, ArrowRight
 } from 'lucide-react';
 import { useCitizenJobs } from '@/hooks/useCitizenJobs';
 import { format, parseISO } from 'date-fns';
 
 const CitizenMyJobs = () => {
-  const { hiredJobs, pendingApplications, dailyRecords, earnings, loading } = useCitizenJobs();
+  const { hiredJobs, pendingApplications, dailyRecords, paymentHistory, earnings, loading } = useCitizenJobs();
   const [activeTab, setActiveTab] = useState('hired');
 
   const breadcrumbItems = [
@@ -55,8 +54,12 @@ const CitizenMyJobs = () => {
     switch (status) {
       case 'paid':
         return <Badge className="bg-green-100 text-green-800">Paid</Badge>;
+      case 'completed':
+        return <Badge className="bg-green-100 text-green-800">Completed</Badge>;
       case 'processing':
         return <Badge className="bg-blue-100 text-blue-800">Processing</Badge>;
+      case 'failed':
+        return <Badge className="bg-red-100 text-red-800">Failed</Badge>;
       default:
         return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
     }
@@ -84,6 +87,28 @@ const CitizenMyJobs = () => {
       <main>
         <ResponsiveContainer className="py-6 sm:py-8">
           <BreadcrumbNav items={breadcrumbItems} />
+
+          {/* How Payment Works Banner */}
+          <Card className="mb-6 border-l-4 border-l-green-600 bg-gradient-to-r from-green-50 to-transparent">
+            <CardContent className="p-4">
+              <h2 className="font-semibold text-base flex items-center gap-2 mb-2">
+                <DollarSign className="h-5 w-5 text-green-600" />
+                How You Get Paid
+              </h2>
+              <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                <Badge variant="outline" className="text-xs">1. Work Daily</Badge>
+                <ArrowRight className="h-3 w-3" />
+                <Badge variant="outline" className="text-xs">2. Contractor Records Attendance</Badge>
+                <ArrowRight className="h-3 w-3" />
+                <Badge variant="outline" className="text-xs">3. Contractor Pays via M-Pesa</Badge>
+                <ArrowRight className="h-3 w-3" />
+                <Badge variant="outline" className="text-xs">4. You Receive Payment</Badge>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Your daily wages are paid by the contractor from their project earnings. Payments are sent directly to your M-Pesa.
+              </p>
+            </CardContent>
+          </Card>
           
           {/* Earnings Summary */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -153,18 +178,22 @@ const CitizenMyJobs = () => {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3 bg-card shadow">
-              <TabsTrigger value="hired" className="flex items-center gap-2">
+            <TabsList className="grid w-full grid-cols-4 bg-card shadow">
+              <TabsTrigger value="hired" className="flex items-center gap-1 text-xs sm:text-sm">
                 <Briefcase className="h-4 w-4" />
-                Hired Jobs ({hiredJobs.length})
+                <span className="hidden sm:inline">Hired</span> ({hiredJobs.length})
               </TabsTrigger>
-              <TabsTrigger value="pending" className="flex items-center gap-2">
+              <TabsTrigger value="pending" className="flex items-center gap-1 text-xs sm:text-sm">
                 <Clock className="h-4 w-4" />
-                Pending ({pendingApplications.length})
+                <span className="hidden sm:inline">Pending</span> ({pendingApplications.length})
               </TabsTrigger>
-              <TabsTrigger value="earnings" className="flex items-center gap-2">
+              <TabsTrigger value="earnings" className="flex items-center gap-1 text-xs sm:text-sm">
                 <DollarSign className="h-4 w-4" />
-                Earnings History
+                <span className="hidden sm:inline">Daily</span> Records
+              </TabsTrigger>
+              <TabsTrigger value="payments" className="flex items-center gap-1 text-xs sm:text-sm">
+                <CreditCard className="h-4 w-4" />
+                <span className="hidden sm:inline">M-Pesa</span> Payments
               </TabsTrigger>
             </TabsList>
 
@@ -290,7 +319,7 @@ const CitizenMyJobs = () => {
               )}
             </TabsContent>
 
-            {/* Earnings History Tab */}
+            {/* Daily Earnings History Tab */}
             <TabsContent value="earnings" className="space-y-4">
               {dailyRecords.length === 0 ? (
                 <Card>
@@ -350,6 +379,66 @@ const CitizenMyJobs = () => {
                     </div>
                   </CardContent>
                 </Card>
+              )}
+            </TabsContent>
+
+            {/* M-Pesa Payments Tab */}
+            <TabsContent value="payments" className="space-y-4">
+              {paymentHistory.length === 0 ? (
+                <Card>
+                  <CardContent className="py-12 text-center">
+                    <CreditCard className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">No Payments Yet</h3>
+                    <p className="text-muted-foreground">
+                      Your M-Pesa payment receipts will appear here once your contractor processes your wages.
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-4">
+                  {paymentHistory.map((payment) => (
+                    <Card key={payment.id} className="shadow-md">
+                      <CardContent className="p-5">
+                        <div className="flex flex-col sm:flex-row justify-between gap-3">
+                          <div className="space-y-2 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h4 className="font-semibold text-lg">
+                                {formatCurrency(payment.amount)}
+                              </h4>
+                              {getPaymentStatusBadge(payment.payment_status)}
+                            </div>
+
+                            <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <CalendarDays className="h-4 w-4" />
+                                {formatDate(payment.period_start)} — {formatDate(payment.period_end)}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Calendar className="h-4 w-4" />
+                                {payment.daily_records_count} day(s)
+                              </span>
+                            </div>
+
+                            {payment.payment_reference && (
+                              <div className="bg-muted/50 rounded-md p-2 mt-2">
+                                <p className="text-xs text-muted-foreground">M-Pesa Reference</p>
+                                <p className="font-mono text-sm font-semibold">
+                                  {payment.payment_reference}
+                                </p>
+                              </div>
+                            )}
+
+                            {payment.processed_at && (
+                              <p className="text-xs text-muted-foreground">
+                                Processed: {formatDate(payment.processed_at)}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               )}
             </TabsContent>
           </Tabs>
