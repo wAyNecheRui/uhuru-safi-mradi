@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import type { HiredJobWithDetails, WorkerDailyRecord } from '@/types/workforce';
+import type { HiredJobWithDetails, WorkerDailyRecord, WorkerPayment } from '@/types/workforce';
 
 export const useCitizenJobs = () => {
   const { user } = useAuth();
@@ -10,6 +10,7 @@ export const useCitizenJobs = () => {
   const [hiredJobs, setHiredJobs] = useState<HiredJobWithDetails[]>([]);
   const [pendingApplications, setPendingApplications] = useState<HiredJobWithDetails[]>([]);
   const [dailyRecords, setDailyRecords] = useState<WorkerDailyRecord[]>([]);
+  const [paymentHistory, setPaymentHistory] = useState<WorkerPayment[]>([]);
   const [loading, setLoading] = useState(true);
   const [earnings, setEarnings] = useState({
     totalEarned: 0,
@@ -83,6 +84,17 @@ export const useCitizenJobs = () => {
           });
         }
       }
+
+      // Fetch payment history (completed batch payments with references)
+      const { data: payments, error: paymentsError } = await supabase
+        .from('worker_payments')
+        .select('*')
+        .eq('worker_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (!paymentsError && payments) {
+        setPaymentHistory(payments as WorkerPayment[]);
+      }
     } catch (error: any) {
       console.error('Error fetching citizen jobs:', error);
       toast({
@@ -129,6 +141,18 @@ export const useCitizenJobs = () => {
           fetchJobs();
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'worker_payments',
+          filter: `worker_id=eq.${user.id}`
+        },
+        () => {
+          fetchJobs();
+        }
+      )
       .subscribe();
 
     return () => {
@@ -140,6 +164,7 @@ export const useCitizenJobs = () => {
     hiredJobs,
     pendingApplications,
     dailyRecords,
+    paymentHistory,
     earnings,
     loading,
     refetch: fetchJobs

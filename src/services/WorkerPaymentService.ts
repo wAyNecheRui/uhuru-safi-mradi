@@ -1,9 +1,27 @@
 import { supabase } from '@/integrations/supabase/client';
 import { NotificationService } from './NotificationService';
 
+// Demo mode - generates simulated M-Pesa B2C transaction reference
+function generateDemoB2CRef(): string {
+  const timestamp = Date.now().toString(36).toUpperCase();
+  const random = Math.random().toString(36).substr(2, 8).toUpperCase();
+  return `WB2C${timestamp}${random}`;
+}
+
 /**
- * WorkerPaymentService - Handles daily worker payments separate from contractor milestone payments
- * Workers are paid based on verified daily attendance records
+ * WorkerPaymentService - Handles daily worker payments separate from contractor milestone payments.
+ *
+ * PAYMENT SOURCE: Contractors are the employers. They receive milestone payments from
+ * the government escrow and pay workers from their earnings. Worker wages are the
+ * contractor's operational cost — this system is completely independent of the
+ * project escrow / milestone payment pipeline.
+ *
+ * FLOW:
+ *  1. Contractor records daily attendance → worker_daily_records (auto-verified)
+ *  2. Contractor clicks "Pay" → processDailyPayment()
+ *  3. System creates worker_payments record
+ *  4. System auto-simulates M-Pesa B2C (demo mode) → completes payment immediately
+ *  5. worker_daily_records marked as 'paid', worker notified with reference
  */
 class WorkerPaymentServiceClass {
   /**
@@ -42,7 +60,7 @@ class WorkerPaymentServiceClass {
       await supabase
         .from('job_applications')
         .update({
-          total_days_worked: supabase.rpc ? undefined : 1, // Will be handled by trigger or manual update
+          total_days_worked: supabase.rpc ? undefined : 1,
           total_earned: amountEarned
         })
         .eq('id', params.jobApplicationId);
@@ -82,14 +100,23 @@ class WorkerPaymentServiceClass {
   }
 
   /**
-   * Process payment for verified daily records
+   * Process payment for verified daily records.
+   *
+   * In DEMO MODE the payment is auto-completed immediately:
+   *  - A simulated M-Pesa B2C reference is generated
+   *  - worker_payments status goes straight to 'completed'
+   *  - worker_daily_records are marked 'paid'
+   *  - Worker receives a notification with the payment reference
+   *
+   * The money comes from the CONTRACTOR (their milestone earnings).
+   * This is completely separate from the project escrow system.
    */
   async processDailyPayment(params: {
     workerId: string;
     jobId: string;
     recordIds: string[];
     paymentMethod?: string;
-  }): Promise<{ success: boolean; paymentId?: string; error?: string }> {
+  }): Promise<{ success: boolean; paymentId?: string; reference?: string; error?: string }> {
     try {
       // Get the records to pay
       const { data: records, error: fetchError } = await supabase
@@ -105,10 +132,19 @@ class WorkerPaymentServiceClass {
       }
 
       const totalAmount = records.reduce((sum, r) => sum + Number(r.amount_earned), 0);
-      const periodStart = records.reduce((min, r) => r.work_date < min ? r.work_date : min, records[0].work_date);
-      const periodEnd = records.reduce((max, r) => r.work_date > max ? r.work_date : max, records[0].work_date);
+      const periodStart = records.reduce(
+        (min, r) => (r.work_date < min ? r.work_date : min),
+        records[0].work_date
+      );
+      const periodEnd = records.reduce(
+        (max, r) => (r.work_date > max ? r.work_date : max),
+        records[0].work_date
+      );
 
-      // Create payment record
+      // --- DEMO MODE: auto-complete immediately ---
+      const transactionRef = generateDemoB2CRef();
+
+      // 1. Create payment record as already completed
       const { data: payment, error: paymentError } = await supabase
         .from('worker_payments')
         .insert({
@@ -116,7 +152,9 @@ class WorkerPaymentServiceClass {
           job_id: params.jobId,
           amount: totalAmount,
           payment_method: params.paymentMethod || 'mpesa',
-          payment_status: 'pending',
+          payment_status: 'completed',
+          payment_reference: transactionRef,
+          processed_at: new Date().toISOString(),
           period_start: periodStart,
           period_end: periodEnd,
           daily_records_count: records.length
@@ -126,91 +164,45 @@ class WorkerPaymentServiceClass {
 
       if (paymentError) throw paymentError;
 
-      // Update records as processing
+      // 2. Mark all daily records as paid
       const { error: updateError } = await supabase
         .from('worker_daily_records')
         .update({
-          payment_status: 'processing',
+          payment_status: 'paid',
+          payment_transaction_id: transactionRef,
+          paid_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
         .in('id', params.recordIds);
 
       if (updateError) throw updateError;
 
-      // Notify worker
+      // 3. Get job title for the notification
+      let jobTitle = 'your job';
+      const { data: jobData } = await supabase
+        .from('workforce_jobs')
+        .select('title')
+        .eq('id', params.jobId)
+        .maybeSingle();
+      if (jobData?.title) jobTitle = jobData.title;
+
+      // 4. Notify worker
       await NotificationService.notifyUser(
         params.workerId,
-        'Payment Processing',
-        `Your payment of KES ${totalAmount.toLocaleString()} for ${records.length} day(s) of work is being processed.`,
-        'info',
-        'payment',
-        '/citizen/my-jobs'
-      );
-
-      return { success: true, paymentId: payment.id };
-    } catch (error: any) {
-      console.error('Error processing payment:', error);
-      return { success: false, error: error.message };
-    }
-  }
-
-  /**
-   * Mark payment as completed (after M-Pesa confirmation)
-   */
-  async completePayment(
-    paymentId: string,
-    transactionReference: string
-  ): Promise<{ success: boolean; error?: string }> {
-    try {
-      // Get payment details
-      const { data: payment, error: fetchError } = await supabase
-        .from('worker_payments')
-        .select('*')
-        .eq('id', paymentId)
-        .single();
-
-      if (fetchError) throw fetchError;
-
-      // Update payment as completed
-      const { error: paymentError } = await supabase
-        .from('worker_payments')
-        .update({
-          payment_status: 'completed',
-          payment_reference: transactionReference,
-          processed_at: new Date().toISOString()
-        })
-        .eq('id', paymentId);
-
-      if (paymentError) throw paymentError;
-
-      // Update all related daily records as paid
-      const { error: recordsError } = await supabase
-        .from('worker_daily_records')
-        .update({
-          payment_status: 'paid',
-          payment_transaction_id: transactionReference,
-          paid_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .eq('job_id', payment.job_id)
-        .eq('worker_id', payment.worker_id)
-        .eq('payment_status', 'processing');
-
-      if (recordsError) throw recordsError;
-
-      // Notify worker
-      await NotificationService.notifyUser(
-        payment.worker_id,
-        'Payment Received',
-        `Your payment of KES ${Number(payment.amount).toLocaleString()} has been sent to your M-Pesa. Reference: ${transactionReference}`,
+        '💰 Payment Received!',
+        `You have been paid KES ${totalAmount.toLocaleString()} for ${records.length} day(s) of work on "${jobTitle}". M-Pesa Ref: ${transactionRef}`,
         'success',
         'payment',
         '/citizen/my-jobs'
       );
 
-      return { success: true };
+      console.log(
+        `[WORKER-PAY] Demo B2C completed: KES ${totalAmount} → worker ${params.workerId}, ref: ${transactionRef}`
+      );
+
+      return { success: true, paymentId: payment.id, reference: transactionRef };
     } catch (error: any) {
-      console.error('Error completing payment:', error);
+      console.error('Error processing payment:', error);
       return { success: false, error: error.message };
     }
   }

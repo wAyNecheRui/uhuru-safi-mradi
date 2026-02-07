@@ -228,6 +228,8 @@ const WorkerAttendanceTracker: React.FC<WorkerAttendanceTrackerProps> = ({
         return;
       }
 
+      const totalAmount = unpaidRecords.reduce((sum, r) => sum + r.amount_earned, 0);
+
       const result = await WorkerPaymentService.processDailyPayment({
         workerId: selectedWorker.applicant_id,
         jobId: jobId,
@@ -237,10 +239,11 @@ const WorkerAttendanceTracker: React.FC<WorkerAttendanceTrackerProps> = ({
 
       if (result.success) {
         toast({
-          title: 'Payment Initiated',
-          description: `Payment for ${unpaidRecords.length} day(s) has been initiated. Worker will be notified.`
+          title: '💰 Payment Sent Successfully',
+          description: `KES ${totalAmount.toLocaleString()} sent to ${selectedWorker.worker_name} via M-Pesa. Ref: ${result.reference}`
         });
         setShowPaymentDialog(false);
+        fetchWorkerRecords(selectedWorker.applicant_id);
         fetchHiredWorkers();
         onUpdate?.();
       } else {
