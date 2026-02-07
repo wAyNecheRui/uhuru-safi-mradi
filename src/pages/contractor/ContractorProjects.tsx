@@ -98,71 +98,63 @@ const ContractorProjects = () => {
 
       if (error) throw error;
 
-      const activeRaw = projects?.filter(p => 
-        p.status === 'in_progress' || p.status === 'planning' || p.status === 'active'
-      ) || [];
-      
-      const completedRaw = projects?.filter(p => p.status === 'completed') || [];
+      // Fetch REAL ratings from milestone verifications
+      const contractorRatings = user?.id ? await fetchContractorRatingsFromVerifications([user.id]) : {};
+      const myRatings = user?.id ? contractorRatings[user.id] : null;
 
-      // Fetch progress, milestones, and escrow for active projects
-      const activeWithProgress: ProjectWithExtras[] = [];
-      for (const project of activeRaw) {
+      // Fetch milestones and escrow for ALL projects first, then categorize
+      const allEnriched: ProjectWithExtras[] = [];
+      for (const project of (projects || [])) {
         const { data: milestones } = await supabase
           .from('project_milestones')
           .select('id, title, description, milestone_number, status, payment_percentage, evidence_urls, submitted_at')
           .eq('project_id', project.id)
           .order('milestone_number', { ascending: true });
-        
-        // Fetch escrow info
+
         const { data: escrow } = await supabase
           .from('escrow_accounts')
           .select('*')
           .eq('project_id', project.id)
           .single();
 
-        // Check if contractor can work
         const workStatus = await EscrowWorkflowService.canContractorWork(project.id);
-        
-        // Calculate progress from milestones using the unified utility
         const calculatedProgress = calculateProjectProgress(milestones || []);
-        
-        activeWithProgress.push({
-          ...project,
-          progress: calculatedProgress,
-          milestones: milestones || [],
-          escrow: escrow || null,
-          canWork: workStatus.allowed,
-          workBlockedReason: workStatus.allowed ? undefined : workStatus.reason
-        } as ProjectWithExtras);
-      }
 
-      // Fetch REAL ratings from milestone verifications (not the empty contractor_ratings table)
-      const contractorRatings = user?.id ? await fetchContractorRatingsFromVerifications([user.id]) : {};
-      const myRatings = user?.id ? contractorRatings[user.id] : null;
-      
-      // Build completed projects with per-project ratings from milestone verifications
-      // Also fetch milestones so contractors can view their submitted evidence
-      const completedWithRating: ProjectWithExtras[] = [];
-      for (const project of completedRaw) {
-        // Fetch milestones for this completed project
-        const { data: milestones } = await supabase
-          .from('project_milestones')
-          .select('id, title, description, milestone_number, status, payment_percentage, evidence_urls, submitted_at')
-          .eq('project_id', project.id)
-          .order('milestone_number', { ascending: true });
-        
-        // Filter ratings for this specific project
+        // Determine effective completion:
+        // A project is complete if DB says 'completed' OR
+        // all milestones are paid AND escrow is fully released
+        const milestonesArr = milestones || [];
+        const allMilestonesPaid = milestonesArr.length > 0 && milestonesArr.every(m => m.status === 'paid');
+        const escrowCleared = escrow
+          ? (escrow.held_amount === 0 && escrow.released_amount >= escrow.total_amount)
+          : false;
+        const isEffectivelyCompleted =
+          project.status === 'completed' || (allMilestonesPaid && escrowCleared);
+
+        // Per-project ratings
         const projectRatings = myRatings?.ratings.filter(r => r.projectId === project.id) || [];
         const avgRating = projectRatings.length > 0
           ? projectRatings.reduce((acc, r) => acc + r.rating, 0) / projectRatings.length
           : 0;
-        
-        completedWithRating.push({
+
+        allEnriched.push({
           ...project,
-          rating: Math.round(avgRating * 10) / 10, // Round to 1 decimal
-          milestones: milestones || []
+          progress: calculatedProgress,
+          milestones: milestonesArr,
+          escrow: escrow || null,
+          canWork: workStatus.allowed,
+          workBlockedReason: workStatus.allowed ? undefined : workStatus.reason,
+          rating: Math.round(avgRating * 10) / 10,
+          // Override status for effectively completed projects
+          status: isEffectivelyCompleted ? 'completed' : project.status,
         } as ProjectWithExtras);
       }
+
+      // Now categorize using the effective status
+      const activeWithProgress = allEnriched.filter(p =>
+        p.status !== 'completed' && p.status !== 'cancelled'
+      );
+      const completedWithRating = allEnriched.filter(p => p.status === 'completed');
 
       setActiveProjects(activeWithProgress);
       setCompletedProjects(completedWithRating);
