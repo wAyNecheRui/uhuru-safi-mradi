@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { calculateProjectProgress, getEffectiveProjectStatus } from '@/utils/progressCalculation';
 
 export interface Project {
   id: string;
@@ -92,19 +93,20 @@ export const useProjects = () => {
         const report = project.problem_reports;
         const milestones = project.project_milestones || [];
         
-        // Calculate progress from milestones
-        const completedWeight = milestones
-          .filter((m: any) => ['paid', 'verified', 'completed'].includes(m.status))
-          .reduce((sum: number, m: any) => sum + (m.payment_percentage || 0), 0);
+        // Calculate progress using the unified utility
+        const calculatedProgress = calculateProjectProgress(milestones);
+        
+        // Get effective status (handles case where all milestones are done but DB status lags)
+        const effectiveStatus = getEffectiveProjectStatus(project.status, milestones);
         
         // Map database status to UI status
         let uiStatus: Project['status'] = 'Active';
-        switch (project.status) {
+        switch (effectiveStatus) {
           case 'planning': uiStatus = 'Pending Review'; break;
           case 'in_progress': uiStatus = 'Active'; break;
           case 'completed': uiStatus = 'Completed'; break;
           case 'cancelled': uiStatus = 'Cancelled'; break;
-          default: uiStatus = project.status || 'Active';
+          default: uiStatus = effectiveStatus || 'Active';
         }
 
         return {
@@ -118,7 +120,7 @@ export const useProjects = () => {
             ? `KSh ${project.budget.toLocaleString()}` 
             : 'Budget TBD',
           contractor: contractorLookup[project.contractor_id] || 'Pending Assignment',
-          progress: completedWeight,
+          progress: calculatedProgress,
           reportedBy: 'Citizen Reporter',
           dateReported: report?.created_at 
             ? new Date(report.created_at).toISOString().split('T')[0]

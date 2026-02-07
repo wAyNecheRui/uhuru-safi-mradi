@@ -38,12 +38,42 @@ const GovernmentProjects = () => {
         .from('projects')
         .select(`
           *,
-          problem_reports(title, location, photo_urls, category)
+          problem_reports(title, location, photo_urls, category),
+          project_milestones(status, payment_percentage)
         `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setProjects(data || []);
+
+      // Enrich projects with escrow data for effective status
+      const enriched = [];
+      for (const project of (data || [])) {
+        const milestones = project.project_milestones || [];
+        const allMilestonesPaid = milestones.length > 0 && milestones.every((m: any) => m.status === 'paid');
+
+        let effectiveStatus = project.status;
+
+        if (project.status !== 'completed' && allMilestonesPaid) {
+          // Check escrow to confirm completion
+          const { data: escrow } = await supabase
+            .from('escrow_accounts')
+            .select('held_amount, released_amount, total_amount')
+            .eq('project_id', project.id)
+            .single();
+
+          const escrowCleared = escrow
+            ? (escrow.held_amount === 0 && escrow.released_amount >= escrow.total_amount)
+            : false;
+
+          if (escrowCleared) {
+            effectiveStatus = 'completed';
+          }
+        }
+
+        enriched.push({ ...project, effectiveStatus });
+      }
+
+      setProjects(enriched);
     } catch (error) {
       console.error('Error fetching projects:', error);
       toast({
@@ -152,8 +182,8 @@ const GovernmentProjects = () => {
                   </div>
                   
                   <div className="flex justify-between items-center">
-                    <Badge className={getStatusColor(project.status)}>
-                      {project.status?.replace('_', ' ').toUpperCase() || 'PLANNING'}
+                    <Badge className={getStatusColor(project.effectiveStatus || project.status)}>
+                      {(project.effectiveStatus || project.status)?.replace('_', ' ').toUpperCase() || 'PLANNING'}
                     </Badge>
                     <div className="flex gap-2">
                       <Button 
@@ -164,14 +194,17 @@ const GovernmentProjects = () => {
                         <Target className="h-4 w-4 mr-1" />
                         {expandedProject === project.id ? 'Hide Lifecycle' : 'View Lifecycle'}
                       </Button>
-                      {project.status === 'in_progress' && (
+                      {(project.effectiveStatus === 'in_progress' || 
+                        (project.effectiveStatus === 'completed' && project.status !== 'completed')) && (
                         <Button 
                           size="sm" 
                           className="bg-green-600 hover:bg-green-700"
                           onClick={() => setCompletionProject(project)}
                         >
                           <Award className="h-4 w-4 mr-1" />
-                          Complete Project
+                          {project.status !== 'completed' && project.effectiveStatus === 'completed' 
+                            ? 'Finalize Completion' 
+                            : 'Complete Project'}
                         </Button>
                       )}
                       <Button 
