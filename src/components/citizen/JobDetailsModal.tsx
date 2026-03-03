@@ -9,13 +9,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
-  MapPin, 
-  Clock, 
-  DollarSign, 
-  Users, 
-  Calendar,
-  Briefcase,
-  CheckCircle
+  MapPin, Clock, DollarSign, Users, Calendar, Briefcase, CheckCircle, User, Phone
 } from 'lucide-react';
 
 interface Job {
@@ -32,6 +26,18 @@ interface Job {
   created_at: string | null;
 }
 
+interface CitizenProfile {
+  full_name?: string;
+  phone_number?: string;
+  county?: string;
+  sub_county?: string;
+  ward?: string;
+  skills?: string[];
+  experience_years?: number;
+  daily_rate?: number;
+  national_id?: string;
+}
+
 interface JobDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -39,15 +45,11 @@ interface JobDetailsModalProps {
   onApply: (jobId: string) => void;
   hasApplied: boolean;
   isApplying: boolean;
+  citizenProfile?: CitizenProfile | null;
 }
 
 const JobDetailsModal = ({ 
-  isOpen, 
-  onClose, 
-  job, 
-  onApply, 
-  hasApplied,
-  isApplying 
+  isOpen, onClose, job, onApply, hasApplied, isApplying, citizenProfile
 }: JobDetailsModalProps) => {
   if (!job) return null;
 
@@ -65,14 +67,12 @@ const JobDetailsModal = ({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
-          {/* Description */}
+        <div className="space-y-4 overflow-y-auto flex-1">
           <div>
             <h4 className="font-medium text-sm text-muted-foreground mb-2">Description</h4>
             <p className="text-sm">{job.description}</p>
           </div>
 
-          {/* Required Skills */}
           <div>
             <h4 className="font-medium text-sm text-muted-foreground mb-2">Required Skills</h4>
             <div className="flex flex-wrap gap-2">
@@ -84,7 +84,6 @@ const JobDetailsModal = ({
             </div>
           </div>
 
-          {/* Job Details Grid */}
           <div className="grid grid-cols-2 gap-4">
             <div className="p-3 bg-muted rounded-lg">
               <div className="flex items-center gap-2 text-muted-foreground mb-1">
@@ -93,7 +92,6 @@ const JobDetailsModal = ({
               </div>
               <p className="font-medium">{job.duration_days ? `${job.duration_days} days` : 'Flexible'}</p>
             </div>
-
             <div className="p-3 bg-muted rounded-lg">
               <div className="flex items-center gap-2 text-muted-foreground mb-1">
                 <Users className="h-4 w-4" />
@@ -101,7 +99,6 @@ const JobDetailsModal = ({
               </div>
               <p className="font-medium">{job.positions_available || 'Multiple'} available</p>
             </div>
-
             <div className="p-3 bg-muted rounded-lg col-span-2">
               <div className="flex items-center gap-2 text-muted-foreground mb-1">
                 <DollarSign className="h-4 w-4" />
@@ -110,15 +107,11 @@ const JobDetailsModal = ({
               <p className="font-medium text-green-600">
                 {job.wage_min && job.wage_max 
                   ? `KES ${job.wage_min.toLocaleString()} - ${job.wage_max.toLocaleString()}`
-                  : job.wage_min 
-                    ? `From KES ${job.wage_min.toLocaleString()}`
-                    : 'Negotiable'
-                }
+                  : job.wage_min ? `From KES ${job.wage_min.toLocaleString()}` : 'Negotiable'}
               </p>
             </div>
           </div>
 
-          {/* Posted Date */}
           {job.created_at && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Calendar className="h-4 w-4" />
@@ -126,7 +119,29 @@ const JobDetailsModal = ({
             </div>
           )}
 
-          {/* Apply Button */}
+          {/* Your Profile - What the contractor will see */}
+          {citizenProfile && !hasApplied && (
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <h4 className="font-medium text-sm text-blue-800 flex items-center gap-2 mb-2">
+                <User className="h-4 w-4" />
+                Your Application Profile
+              </h4>
+              <p className="text-xs text-blue-600 mb-2">This information will be sent to the contractor:</p>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div><span className="text-blue-600">Name:</span> <span className="font-medium">{citizenProfile.full_name || 'Not set'}</span></div>
+                <div><span className="text-blue-600">Phone:</span> <span className="font-medium">{citizenProfile.phone_number || 'Not set'}</span></div>
+                <div><span className="text-blue-600">County:</span> <span className="font-medium">{citizenProfile.county || 'Not set'}</span></div>
+                <div><span className="text-blue-600">Experience:</span> <span className="font-medium">{citizenProfile.experience_years ? `${citizenProfile.experience_years} yrs` : 'Not set'}</span></div>
+                {citizenProfile.skills && citizenProfile.skills.length > 0 && (
+                  <div className="col-span-2">
+                    <span className="text-blue-600">Skills:</span>{' '}
+                    <span className="font-medium">{citizenProfile.skills.join(', ')}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           <div className="pt-4 border-t">
             {hasApplied ? (
               <div className="flex items-center justify-center gap-2 p-3 bg-green-50 rounded-lg text-green-700">
@@ -134,12 +149,8 @@ const JobDetailsModal = ({
                 <span className="font-medium">You have already applied for this job</span>
               </div>
             ) : (
-              <Button 
-                className="w-full bg-green-600 hover:bg-green-700"
-                onClick={() => onApply(job.id)}
-                disabled={isApplying}
-              >
-                {isApplying ? 'Submitting Application...' : 'Apply for this Job'}
+              <Button className="w-full bg-green-600 hover:bg-green-700" onClick={() => onApply(job.id)} disabled={isApplying}>
+                {isApplying ? 'Submitting Application...' : 'Apply with Your Profile'}
               </Button>
             )}
           </div>
