@@ -163,7 +163,7 @@ class PushNotificationServiceClass {
 
     try {
       // Check if already subscribed
-      let subscription = await this.swRegistration.pushManager.getSubscription();
+      let subscription = await (this.swRegistration as any).pushManager?.getSubscription();
 
       if (!subscription) {
         // Subscribe with VAPID key (you would need to generate this)
@@ -213,7 +213,7 @@ class PushNotificationServiceClass {
     if (!this.swRegistration) return false;
 
     try {
-      const subscription = await this.swRegistration.pushManager.getSubscription();
+      const subscription = await (this.swRegistration as any).pushManager?.getSubscription();
       if (subscription) {
         await subscription.unsubscribe();
         // Remove from database

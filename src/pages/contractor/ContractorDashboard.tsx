@@ -236,6 +236,14 @@ const ContractorDashboard = () => {
       href: '/contractor/communications',
       color: 'bg-cyan-500 hover:bg-cyan-600',
       iconColor: 'text-cyan-600'
+    },
+    {
+      title: 'Job Postings',
+      description: 'Manage jobs and review citizen applicants',
+      icon: Briefcase,
+      href: '/contractor/jobs',
+      color: 'bg-amber-500 hover:bg-amber-600',
+      iconColor: 'text-amber-600'
     }
   ];
 
