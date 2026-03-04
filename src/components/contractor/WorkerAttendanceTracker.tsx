@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { 
-  Calendar, Clock, DollarSign, CheckCircle, XCircle, 
+  Calendar, Clock, Wallet, CheckCircle, XCircle, 
   Loader2, UserCheck, AlertCircle 
 } from 'lucide-react';
 import {
@@ -319,7 +319,7 @@ const WorkerAttendanceTracker: React.FC<WorkerAttendanceTrackerProps> = ({
                     {worker.total_days_worked} days
                   </span>
                   <span className="flex items-center gap-1 text-green-600">
-                    <DollarSign className="h-4 w-4" />
+                    <Wallet className="h-4 w-4" />
                     KES {worker.total_earned.toLocaleString()}
                   </span>
                 </div>
@@ -337,7 +337,7 @@ const WorkerAttendanceTracker: React.FC<WorkerAttendanceTrackerProps> = ({
                   variant="outline"
                   onClick={() => handleOpenPaymentDialog(worker)}
                 >
-                  <DollarSign className="h-4 w-4 mr-1" />
+                  <Wallet className="h-4 w-4 mr-1" />
                   Pay
                 </Button>
               </div>

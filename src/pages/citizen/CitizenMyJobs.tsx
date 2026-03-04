@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
-  Briefcase, DollarSign, Calendar, Clock, MapPin, 
+  Briefcase, Calendar, Clock, MapPin, 
   CheckCircle, Loader2, TrendingUp,
   Wallet, CalendarDays, CreditCard, ArrowRight
 } from 'lucide-react';
@@ -92,7 +92,7 @@ const CitizenMyJobs = () => {
           <Card className="mb-6 border-l-4 border-l-green-600 bg-gradient-to-r from-green-50 to-transparent">
             <CardContent className="p-4">
               <h2 className="font-semibold text-base flex items-center gap-2 mb-2">
-                <DollarSign className="h-5 w-5 text-green-600" />
+                <Wallet className="h-5 w-5 text-green-600" />
                 How You Get Paid
               </h2>
               <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
@@ -188,7 +188,7 @@ const CitizenMyJobs = () => {
                 <span className="hidden sm:inline">Pending</span> ({pendingApplications.length})
               </TabsTrigger>
               <TabsTrigger value="earnings" className="flex items-center gap-1 text-xs sm:text-sm">
-                <DollarSign className="h-4 w-4" />
+                <Wallet className="h-4 w-4" />
                 <span className="hidden sm:inline">Daily</span> Records
               </TabsTrigger>
               <TabsTrigger value="payments" className="flex items-center gap-1 text-xs sm:text-sm">
@@ -231,7 +231,7 @@ const CitizenMyJobs = () => {
                               {job.job?.location}
                             </span>
                             <span className="flex items-center gap-1">
-                              <DollarSign className="h-4 w-4 text-muted-foreground" />
+                              <Wallet className="h-4 w-4 text-muted-foreground" />
                               {job.job?.wage_min && job.job?.wage_max 
                                 ? `KES ${job.job.wage_min.toLocaleString()} - ${job.job.wage_max.toLocaleString()}/day`
                                 : 'Rate TBD'}
@@ -302,7 +302,7 @@ const CitizenMyJobs = () => {
                               {app.job?.location}
                             </span>
                             <span className="flex items-center gap-1">
-                              <DollarSign className="h-4 w-4" />
+                              <Wallet className="h-4 w-4" />
                               {app.job?.wage_min 
                                 ? `KES ${app.job.wage_min.toLocaleString()}/day`
                                 : 'Rate TBD'}
@@ -324,7 +324,7 @@ const CitizenMyJobs = () => {
               {dailyRecords.length === 0 ? (
                 <Card>
                   <CardContent className="py-12 text-center">
-                    <DollarSign className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <Wallet className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                     <h3 className="text-lg font-semibold mb-2">No Earnings Yet</h3>
                     <p className="text-muted-foreground">
                       Your daily work records and earnings will appear here once you start working.
@@ -335,7 +335,7 @@ const CitizenMyJobs = () => {
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <DollarSign className="h-5 w-5" />
+                      <Wallet className="h-5 w-5" />
                       Daily Work Records
                     </CardTitle>
                   </CardHeader>

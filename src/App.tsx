@@ -45,6 +45,7 @@ const ContractorQuality = lazy(() => import("./pages/contractor/ContractorQualit
 const ContractorPerformance = lazy(() => import("./pages/contractor/ContractorPerformance"));
 const ContractorCommunications = lazy(() => import("./pages/contractor/ContractorCommunications"));
 const ContractorNotifications = lazy(() => import("./pages/contractor/ContractorNotifications"));
+const ContractorJobsManagement = lazy(() => import("./pages/contractor/ContractorJobsManagement"));
 
 // Government Routes
 const GovernmentDashboard = lazy(() => import("./pages/government/GovernmentDashboard"));
@@ -293,6 +294,14 @@ const App = () => {
                     element={
                       <ProtectedRoute allowedRoles={["contractor"]}>
                         <ContractorNotifications />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/contractor/jobs"
+                    element={
+                      <ProtectedRoute allowedRoles={["contractor"]}>
+                        <ContractorJobsManagement />
                       </ProtectedRoute>
                     }
                   />

@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { 
-  Users, Briefcase, MapPin, DollarSign, Clock, 
+  Users, Briefcase, MapPin, Wallet, Clock, 
   Plus, UserCheck, X, Loader2, Search, Eye, CheckCircle, XCircle,
   Star, Phone, Mail, FileText, User, GraduationCap, Wrench, Globe
 } from 'lucide-react';
@@ -355,7 +355,7 @@ const WorkforceHiringPanel: React.FC<WorkforceHiringPanelProps> = ({
                     <p className="text-sm text-muted-foreground line-clamp-2">{job.description}</p>
                     <div className="flex flex-wrap gap-3 text-sm">
                       <span className="flex items-center gap-1"><MapPin className="h-4 w-4" />{job.location}</span>
-                      {job.wage_min && <span className="flex items-center gap-1"><DollarSign className="h-4 w-4" />KES {job.wage_min.toLocaleString()}{job.wage_max && ` - ${job.wage_max.toLocaleString()}`}</span>}
+                      {job.wage_min && <span className="flex items-center gap-1"><Wallet className="h-4 w-4" />KES {job.wage_min.toLocaleString()}{job.wage_max && ` - ${job.wage_max.toLocaleString()}`}</span>}
                       {job.duration_days && <span className="flex items-center gap-1"><Clock className="h-4 w-4" />{job.duration_days} days</span>}
                     </div>
                     {job.required_skills?.length > 0 && (
