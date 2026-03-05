@@ -31,7 +31,10 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.create-escrow-account]
-verify_jwt = true
+verify_jwt = false
 
 [functions.mpesa-callback]
+verify_jwt = false
+
+[functions.create-notification]
 verify_jwt = false

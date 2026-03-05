@@ -58,13 +58,15 @@ export const signInUser = async (email: string, password: string) => {
 
 export const signUpUser = async (email: string, password: string, userData: SignUpData) => {
   try {
+    // SECURITY: Always register as citizen. The requested type is stored in metadata
+    // for the admin approval workflow. The DB trigger handle_new_user enforces citizen.
     const { data, error } = await supabase.auth.signUp({ 
       email: email.trim().toLowerCase(), 
       password,
       options: {
         emailRedirectTo: `${window.location.origin}/auth`,
         data: {
-          user_type: userData.type,
+          user_type: userData.type, // Stored as metadata; DB trigger overrides to 'citizen'
           full_name: userData.name,
           phone_number: userData.phone || null,
           county: userData.county || null,

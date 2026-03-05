@@ -80,9 +80,14 @@ export const useAuthHandlers = (
       }
       
       console.log('Registration successful');
+      
+      const roleMessage = formData.type !== 'citizen' 
+        ? ` Your ${formData.type} role request is pending admin verification. You will start with citizen access.`
+        : '';
+      
       toast.success(
-        "Registration successful! Please check your email to verify your account before logging in.",
-        { duration: 6000 }
+        `Registration successful! Please check your email to verify your account.${roleMessage}`,
+        { duration: 8000 }
       );
 
       resetForm();

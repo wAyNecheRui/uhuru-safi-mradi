@@ -3,7 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 }
 
 interface NotificationPayload {
@@ -15,46 +15,64 @@ interface NotificationPayload {
   type: 'info' | 'success' | 'warning' | 'error';
   category: string;
   actionUrl?: string;
-  metadata?: Record<string, unknown>;
 }
 
+const ALLOWED_TYPES = ['info', 'success', 'warning', 'error'];
+const ALLOWED_CATEGORIES = [
+  'report', 'project', 'payment', 'verification', 'system',
+  'bid', 'bidding', 'milestone', 'escrow', 'vote', 'issue', 'rating', 'general'
+];
+
 serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    // Create admin client with service role for inserting notifications
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    // Create user client to verify auth
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { auth: { autoRefreshToken: false, persistSession: false } }
-    )
-
-    // Verify caller is authenticated
+    // Verify caller is authenticated using getClaims
     const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
+    if (!authHeader?.startsWith('Bearer ')) {
       return new Response(
         JSON.stringify({ error: 'Missing authorization header' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    const token = authHeader.replace('Bearer ', '')
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token)
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
+    )
 
-    if (authError || !user) {
+    const token = authHeader.replace('Bearer ', '')
+    const { data: claimsData, error: claimsError } = await supabaseClient.auth.getClaims(token)
+
+    if (claimsError || !claimsData?.claims) {
       return new Response(
         JSON.stringify({ error: 'Invalid token' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const callerId = claimsData.claims.sub
+
+    // Rate limit: max 50 notification requests per minute per user
+    const { data: rateLimitAllowed } = await supabaseAdmin.rpc('check_rate_limit', {
+      p_key: `notif:${callerId}`,
+      p_max_requests: 50,
+      p_window_seconds: 60
+    })
+
+    if (rateLimitAllowed === false) {
+      return new Response(
+        JSON.stringify({ error: 'Rate limit exceeded' }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
@@ -68,26 +86,34 @@ serve(async (req) => {
       )
     }
 
-    // Allowed notification categories in the database
-    const allowedCategories = [
-      'report', 'project', 'payment', 'verification', 'system',
-      'bid', 'bidding', 'milestone', 'escrow', 'vote', 'issue', 'rating', 'general'
-    ];
+    // Validate type
+    if (!ALLOWED_TYPES.includes(payload.type)) {
+      return new Response(
+        JSON.stringify({ error: `Invalid type. Allowed: ${ALLOWED_TYPES.join(', ')}` }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
-    // Validate category is allowed
-    const category = allowedCategories.includes(payload.category) 
-      ? payload.category 
-      : 'general'; // Fallback to 'general' if unknown category
+    // Validate and normalize category
+    const category = ALLOWED_CATEGORIES.includes(payload.category) ? payload.category : 'general';
+
+    // Validate field lengths
+    if (payload.title.length > 200 || payload.message.length > 2000) {
+      return new Response(
+        JSON.stringify({ error: 'Title max 200 chars, message max 2000 chars' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
     // Determine target users
     let targetUserIds: string[] = []
 
     if (payload.userId) {
       targetUserIds = [payload.userId]
-    } else if (payload.userIds && payload.userIds.length > 0) {
-      targetUserIds = payload.userIds
+    } else if (payload.userIds && Array.isArray(payload.userIds) && payload.userIds.length > 0) {
+      // Cap at 500 users per request
+      targetUserIds = payload.userIds.slice(0, 500)
     } else if (payload.targetRole) {
-      // Fetch users by role
       if (payload.targetRole === 'all') {
         const { data: allUsers } = await supabaseAdmin
           .from('user_profiles')
@@ -111,18 +137,28 @@ serve(async (req) => {
       )
     }
 
-    // Create notification records for each user
+    // Validate all user IDs are valid UUIDs
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    targetUserIds = targetUserIds.filter(id => uuidRegex.test(id));
+
+    if (targetUserIds.length === 0) {
+      return new Response(
+        JSON.stringify({ error: 'No valid user IDs provided' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Create notification records
     const notifications = targetUserIds.map(userId => ({
       user_id: userId,
-      title: payload.title,
-      message: payload.message,
+      title: payload.title.slice(0, 200),
+      message: payload.message.slice(0, 2000),
       type: payload.type,
-      category: category, // Use validated category
-      action_url: payload.actionUrl || null,
+      category,
+      action_url: payload.actionUrl?.slice(0, 500) || null,
       read: false
     }))
 
-    // Batch insert notifications (Supabase handles this efficiently)
     const { data: insertedNotifications, error: insertError } = await supabaseAdmin
       .from('notifications')
       .insert(notifications)
@@ -136,7 +172,7 @@ serve(async (req) => {
       )
     }
 
-    console.log(`Created ${insertedNotifications?.length || 0} notifications for category: ${payload.category}`)
+    console.log(`Created ${insertedNotifications?.length || 0} notifications for category: ${category}`)
 
     return new Response(
       JSON.stringify({
@@ -150,7 +186,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error:', error)
     return new Response(
-      JSON.stringify({ error: error.message || 'Unknown error' }),
+      JSON.stringify({ error: 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }

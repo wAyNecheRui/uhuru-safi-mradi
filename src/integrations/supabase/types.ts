@@ -170,6 +170,27 @@ export type Database = {
           },
         ]
       }
+      callback_nonces: {
+        Row: {
+          callback_type: string | null
+          nonce: string
+          processed_at: string
+          source_ip: string | null
+        }
+        Insert: {
+          callback_type?: string | null
+          nonce: string
+          processed_at?: string
+          source_ip?: string | null
+        }
+        Update: {
+          callback_type?: string | null
+          nonce?: string
+          processed_at?: string
+          source_ip?: string | null
+        }
+        Relationships: []
+      }
       citizen_workers: {
         Row: {
           alternate_phone: string | null
@@ -1477,6 +1498,30 @@ export type Database = {
           },
         ]
       }
+      rate_limits: {
+        Row: {
+          expires_at: string
+          id: string
+          key: string
+          request_count: number
+          window_start: string
+        }
+        Insert: {
+          expires_at?: string
+          id?: string
+          key: string
+          request_count?: number
+          window_start?: string
+        }
+        Update: {
+          expires_at?: string
+          id?: string
+          key?: string
+          request_count?: number
+          window_start?: string
+        }
+        Relationships: []
+      }
       realtime_project_updates: {
         Row: {
           created_at: string | null
@@ -2288,6 +2333,15 @@ export type Database = {
           status_message: string
         }[]
       }
+      check_rate_limit: {
+        Args: {
+          p_key: string
+          p_max_requests?: number
+          p_window_seconds?: number
+        }
+        Returns: boolean
+      }
+      cleanup_expired_nonces: { Args: never; Returns: undefined }
       decrypt_sensitive_data: {
         Args: { encrypted_data: string }
         Returns: string

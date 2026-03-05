@@ -16,7 +16,7 @@ const AuthContext = createContext<EnhancedAuthContextType | undefined>(undefined
 const userCache = new Map<string, { user: AuthUser; roles: AppRole[]; timestamp: number }>();
 const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 
-const SUPABASE_STORAGE_PREFIX = 'sb-vncyydrizdexkojfnonu-';
+const SUPABASE_STORAGE_PREFIX = `sb-${import.meta.env.VITE_SUPABASE_PROJECT_ID || 'vncyydrizdexkojfnonu'}-`;
 
 const clearSupabaseAuthStorage = () => {
   try {

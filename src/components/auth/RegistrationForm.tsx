@@ -177,7 +177,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
             Contractor Registration
           </h4>
           <p className="text-xs text-orange-700">
-            Basic information to get started. Additional details can be added later in your profile.
+            Basic information to get started. Your account will start with citizen access until your contractor credentials are verified by an administrator.
           </p>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -306,7 +306,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
           </div>
 
           <div className="p-3 bg-yellow-100 border border-yellow-300 rounded text-xs text-yellow-800">
-            <strong>Note:</strong> Government accounts require verification before activation.
+            <strong>Important:</strong> Government accounts require admin verification before activation. You will start with citizen-level access until your credentials are verified.
           </div>
         </div>
       )}
