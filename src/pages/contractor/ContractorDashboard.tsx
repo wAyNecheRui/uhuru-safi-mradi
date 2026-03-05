@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Briefcase, FileText, DollarSign, Clock, TrendingUp, Award, Loader2, Eye, CheckCircle, MessageSquare, BarChart3 } from 'lucide-react';
+import { Briefcase, FileText, Wallet, Clock, TrendingUp, Award, Loader2, Eye, CheckCircle, MessageSquare, BarChart3 } from 'lucide-react';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
 import Header from '@/components/Header';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
@@ -208,7 +208,7 @@ const ContractorDashboard = () => {
     {
       title: 'Financials',
       description: 'Escrow, payments, and financial analytics',
-      icon: DollarSign,
+      icon: Wallet,
       href: '/contractor/financials',
       color: 'bg-teal-500 hover:bg-teal-600',
       iconColor: 'text-teal-600'
@@ -250,7 +250,7 @@ const ContractorDashboard = () => {
   const displayStats = [
     { label: 'Active Projects', value: stats.activeProjects.toString(), icon: Briefcase, color: 'text-blue-600' },
     { label: 'Completed Projects', value: stats.completedProjects.toString(), icon: Award, color: 'text-green-600' },
-    { label: 'Total Earnings', value: formatCurrency(stats.totalEarnings), icon: DollarSign, color: 'text-purple-600' },
+    { label: 'Total Earnings', value: formatCurrency(stats.totalEarnings), icon: Wallet, color: 'text-purple-600' },
     { label: 'Success Rate', value: `${stats.successRate}%`, icon: TrendingUp, color: 'text-orange-600' }
   ];
 

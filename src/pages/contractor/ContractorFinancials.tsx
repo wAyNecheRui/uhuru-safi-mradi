@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { 
-  DollarSign, Wallet, CreditCard, TrendingUp, Clock, CheckCircle, 
+  Wallet, CreditCard, TrendingUp, Clock, CheckCircle, 
   AlertTriangle, BarChart3, PiggyBank, ArrowUpRight, ArrowDownRight, Loader2, ArrowLeft
 } from 'lucide-react';
 import Header from '@/components/Header';

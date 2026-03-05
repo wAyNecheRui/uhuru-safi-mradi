@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { 
   TrendingUp, Award, BarChart3, Target, Clock, Star, 
-  ThumbsUp, DollarSign, Users, Loader2, PieChart, ArrowLeft
+  ThumbsUp, Wallet, Users, Loader2, PieChart, ArrowLeft
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Header from '@/components/Header';
@@ -324,7 +324,7 @@ const ContractorPerformance = () => {
                       const weights = [40, 30, 20, 10];
                       const weight = weights[index] || 10;
                       const actualScore = Math.round((metric.value / 100) * weight);
-                      const icons = [Clock, Star, DollarSign, ThumbsUp];
+                      const icons = [Clock, Star, Wallet, ThumbsUp];
                       const colors = ['blue', 'green', 'yellow', 'purple'];
                       const Icon = icons[index] || ThumbsUp;
                       const color = colors[index] || 'gray';
