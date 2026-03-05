@@ -9,7 +9,7 @@ import {
   Bell, 
   CheckCircle, 
   AlertTriangle, 
-  DollarSign,
+  Wallet,
   Calendar,
   Settings,
   XCircle,
@@ -82,7 +82,7 @@ const ContractorNotifications = () => {
     
     switch (category) {
       case 'project': return <Hammer className="h-5 w-5 text-blue-600" />;
-      case 'payment': return <DollarSign className="h-5 w-5 text-green-600" />;
+      case 'payment': return <Wallet className="h-5 w-5 text-green-600" />;
       case 'bid': return <Briefcase className="h-5 w-5 text-purple-600" />;
       case 'verification': return <ShieldCheck className="h-5 w-5 text-teal-600" />;
       case 'milestone': return <FileText className="h-5 w-5 text-orange-600" />;
@@ -306,7 +306,7 @@ const ContractorNotifications = () => {
             <TabsContent value="payment">
               <ScrollArea className="h-[calc(100vh-350px)]">
                 {filterByCategory('payment').length === 0 ? (
-                  renderEmptyState("No Payment Alerts", <DollarSign className="h-12 w-12" />)
+                  renderEmptyState("No Payment Alerts", <Wallet className="h-12 w-12" />)
                 ) : (
                   <div className="space-y-3 pr-4">
                     {filterByCategory('payment').map(renderNotificationCard)}

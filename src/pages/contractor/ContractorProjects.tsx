@@ -7,7 +7,7 @@ import { Dialog } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { 
-  Clock, DollarSign, MapPin, Calendar, Award, Loader2, Briefcase, 
+  Clock, MapPin, Calendar, Award, Loader2, Briefcase, 
   Camera, CheckCircle, AlertCircle, Target, Upload, Wallet, Lock, Info, Users, Settings, Eye
 } from 'lucide-react';
 import Header from '@/components/Header';
