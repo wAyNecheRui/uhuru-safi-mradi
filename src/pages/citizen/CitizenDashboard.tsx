@@ -186,17 +186,13 @@ const CitizenDashboard = () => {
         <main>
           <ResponsiveContainer className="py-6 sm:py-8">
             <Card className="p-6 text-center">
-              <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">Unable to Load Dashboard</h2>
-              <p className="text-gray-600 mb-4">
-                We're having trouble loading your dashboard data. Please try refreshing the page.
+              <AlertTriangle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
+              <h2 className="text-xl font-semibold text-foreground mb-2">Session Issue</h2>
+              <p className="text-muted-foreground mb-4">
+                Your session may have expired. Please sign in again to continue.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                <Button onClick={() => window.location.reload()}>
-                  Refresh Page
-                </Button>
                 <Button
-                  variant="outline"
                   onClick={async () => {
                     await signOut();
                     navigate('/auth', { replace: true });
