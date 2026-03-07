@@ -44,13 +44,14 @@ export const useCitizenData = () => {
     const anyErr = err as any;
     const msg = String(anyErr?.message || '').toLowerCase();
     const status = Number(anyErr?.status || anyErr?.code || 0);
+    // Only treat actual auth token issues as auth errors
+    // RLS "permission denied" (403) is NOT an auth error - it's a policy issue
     return (
       status === 401 ||
-      status === 403 ||
       msg.includes('jwt') ||
-      msg.includes('token') ||
-      msg.includes('not authenticated') ||
-      msg.includes('permission denied')
+      msg.includes('token is expired') ||
+      msg.includes('invalid jwt') ||
+      msg.includes('not authenticated')
     );
   }, []);
 
