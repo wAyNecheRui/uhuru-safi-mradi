@@ -168,22 +168,29 @@ export const useCitizenData = () => {
   } = useQuery({
     queryKey: ['citizenStats', stableUserId],
     queryFn: async () => {
-      // SECURITY: Double-check user ID is valid
-      if (!stableUserId) return {
+      const defaultStats: CitizenStats = {
         totalReports: 0,
         activeReports: 0,
         completedReports: 0,
         communityVotes: 0,
         verificationStatus: 'unverified' as const
       };
+      // SECURITY: Double-check user ID is valid
+      if (!stableUserId) return defaultStats;
       
       try {
         // Get reports with their IDs and statuses - ALWAYS filter by user ID
-        const { data: reportsData } = await supabase
+        const { data: reportsData, error: reportsErr } = await supabase
           .from('problem_reports')
           .select('id, status')
           .eq('reported_by', stableUserId)
           .is('deleted_at', null);
+        
+        // If reports query fails, return defaults instead of throwing
+        if (reportsErr) {
+          console.warn('Error fetching citizen reports for stats:', reportsErr);
+          return defaultStats;
+        }
         
         const reportIds = reportsData?.map(r => r.id) || [];
         
@@ -200,40 +207,43 @@ export const useCitizenData = () => {
           completedFromProjects = projectsData?.filter(p => p.status === 'completed').length || 0;
         }
         
-        // Get verification status from user_verifications table
-        const { data: verifications } = await supabase
-          .from('user_verifications')
-          .select('status')
-          .eq('user_id', stableUserId)
-          .eq('verification_type', 'citizen_id');
+        // Get verification status - wrapped in try/catch to not break stats on failure
+        let verificationStatus: 'verified' | 'pending' | 'unverified' = 'unverified';
+        try {
+          const { data: verifications } = await supabase
+            .from('user_verifications')
+            .select('status')
+            .eq('user_id', stableUserId)
+            .eq('verification_type', 'citizen_id');
+          
+          verificationStatus = verifications?.some(v => v.status === 'verified') 
+            ? 'verified' 
+            : verifications?.some(v => v.status === 'pending')
+            ? 'pending'
+            : 'unverified';
+        } catch {
+          // Non-critical - just default to unverified
+        }
         
         const totalReports = reportsData?.length || 0;
         
-        // Active = has a project that's not completed OR report status indicates active workflow
-        const activeStatuses = ['pending', 'under_review', 'approved', 'bidding_open', 'contractor_selected', 'in_progress'];
         const completedStatuses = ['completed', 'resolved'];
-        
-        // Count completed as: report status is completed OR linked project is completed
         const directlyCompleted = reportsData?.filter(r => completedStatuses.includes(r.status || '')).length || 0;
         const completedReports = Math.max(directlyCompleted, completedFromProjects);
-        
-        // Active = total - completed - rejected
         const rejectedReports = reportsData?.filter(r => r.status === 'rejected').length || 0;
         const activeReports = totalReports - completedReports - rejectedReports;
         
-        // Count user's community votes - SECURITY: filter by user ID
-        const { data: votesData } = await supabase
-          .from('community_votes')
-          .select('id')
-          .eq('user_id', stableUserId);
-        
-        const communityVotes = votesData?.length || 0;
-        
-        const verificationStatus = verifications?.some(v => v.status === 'verified') 
-          ? 'verified' 
-          : verifications?.some(v => v.status === 'pending')
-          ? 'pending'
-          : 'unverified';
+        // Count user's community votes
+        let communityVotes = 0;
+        try {
+          const { data: votesData } = await supabase
+            .from('community_votes')
+            .select('id')
+            .eq('user_id', stableUserId);
+          communityVotes = votesData?.length || 0;
+        } catch {
+          // Non-critical
+        }
         
         return {
           totalReports,
@@ -244,7 +254,8 @@ export const useCitizenData = () => {
         };
       } catch (error) {
         console.error('Error fetching citizen stats:', error);
-        throw error;
+        // Return defaults instead of throwing - prevents error UI for non-critical stats
+        return defaultStats;
       }
     },
     enabled: !!stableUserId, // SECURITY: Only enable when user is stable
@@ -252,8 +263,9 @@ export const useCitizenData = () => {
     staleTime: 10 * 60 * 1000, // 10 minutes
     retry: (failureCount, err) => {
       if (isAuthError(err)) return false;
-      return failureCount < 2;
-    }
+      return failureCount < 3;
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
   });
 
   // TanStack Query v5 removed per-query onError callbacks from useQuery options.
