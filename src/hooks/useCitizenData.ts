@@ -331,10 +331,11 @@ export const useCitizenData = () => {
     statsLoading: statsLoading || authLoading,
     isLoading: reportsLoading || statsLoading || authLoading,
     
-    // Errors
+    // Errors - only flag hasError for auth errors that force sign out
+    // Stats errors are gracefully handled (return defaults), so only report errors are critical
     reportsError,
     statsError,
-    hasError: !!reportsError || !!statsError,
+    hasError: !!reportsError && isAuthError(reportsError),
     
     // Actions
     submitVote: submitVote.mutate,
