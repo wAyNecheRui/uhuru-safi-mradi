@@ -154,8 +154,9 @@ export const useCitizenData = () => {
     retry: (failureCount, err) => {
       // Don't retry auth failures endlessly.
       if (isAuthError(err)) return false;
-      return failureCount < 2;
-    }
+      return failureCount < 3;
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
   });
 
   // Fetch citizen statistics with accurate project-based completion counting
