@@ -215,6 +215,29 @@ export const useGovernmentDashboard = () => {
       return false;
     }
 
+    // Fire notifications to contractors and reporter NOW (correct lifecycle moment)
+    try {
+      const { data: report } = await supabase
+        .from('problem_reports')
+        .select('title, reported_by')
+        .eq('id', reportId)
+        .single();
+
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (report && user) {
+        const { LiveNotificationService } = await import('@/services/LiveNotificationService');
+        await LiveNotificationService.onBiddingOpened(
+          reportId,
+          user.id,
+          report.title,
+          report.reported_by
+        );
+      }
+    } catch (notifErr) {
+      console.warn('Bidding-open notifications failed (non-blocking):', notifErr);
+    }
+
     toast({
       title: "Bidding Opened",
       description: "Contractors can now submit bids for this project.",
