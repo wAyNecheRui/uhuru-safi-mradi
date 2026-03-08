@@ -102,11 +102,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const profile = profileResult.data;
       const userRoles = (rolesResult.data?.map(r => r.role as AppRole) || []) as AppRole[];
 
+      // Fallback: if profile query fails (e.g. RLS issues), use JWT user_metadata
+      let userType: 'citizen' | 'contractor' | 'government' = 'citizen';
+      let userName = email.split('@')[0];
+      if (profile?.user_type) {
+        userType = profile.user_type as 'citizen' | 'contractor' | 'government';
+        userName = profile.full_name || userName;
+      } else {
+        // Try to get user_type from Supabase auth metadata
+        try {
+          const { data: { user: authUserData } } = await supabase.auth.getUser();
+          const metaType = authUserData?.user_metadata?.user_type;
+          if (metaType && ['citizen', 'contractor', 'government'].includes(metaType)) {
+            userType = metaType as 'citizen' | 'contractor' | 'government';
+          }
+          userName = authUserData?.user_metadata?.full_name || authUserData?.user_metadata?.name || userName;
+        } catch {
+          // ignore - use defaults
+        }
+      }
+
       const authUser: AuthUser = {
         id: userId,
         email: email,
-        name: profile?.full_name || email.split('@')[0],
-        user_type: (profile?.user_type as 'citizen' | 'contractor' | 'government') || 'citizen',
+        name: userName,
+        user_type: userType,
         profile: profile ? { full_name: profile.full_name, phone_number: profile.phone_number, location: profile.location } : undefined
       };
 

@@ -2543,6 +2543,7 @@ export type Database = {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"][]
       }
+      get_user_type: { Args: { _user_id: string }; Returns: string }
       get_worker_contact_info: {
         Args: { worker_id: string }
         Returns: {
