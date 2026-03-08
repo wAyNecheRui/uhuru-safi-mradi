@@ -130,9 +130,6 @@ const GovernmentReports = () => {
                       </div>
                       <p className="text-sm text-gray-600">{report.description?.substring(0, 150)}...</p>
                     </div>
-                    <Badge variant="outline" className="text-xs font-mono">
-                      {report.id.slice(0, 8)}
-                    </Badge>
                   </div>
                 </CardHeader>
                 

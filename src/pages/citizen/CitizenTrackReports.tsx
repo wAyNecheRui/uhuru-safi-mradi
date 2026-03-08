@@ -33,7 +33,7 @@ const CitizenTrackReports = () => {
 
   const filteredReports = reports.filter(report =>
     report.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    report.id.toLowerCase().includes(searchTerm.toLowerCase())
+    report.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getStatusColor = (status: string) => {
@@ -136,9 +136,6 @@ const CitizenTrackReports = () => {
                         </div>
                       </div>
                     </div>
-                    <Badge variant="outline" className="text-xs font-mono">
-                      {report.id}
-                    </Badge>
                   </div>
                 </CardHeader>
                 
