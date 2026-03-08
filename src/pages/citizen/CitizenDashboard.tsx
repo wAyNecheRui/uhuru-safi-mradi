@@ -216,121 +216,121 @@ const CitizenDashboard = () => {
         <ResponsiveContainer className="py-4 sm:py-6 lg:py-8">
           <BreadcrumbNav />
           
-          {/* Welcome Section with User Info */}
-          <div className="mb-6 sm:mb-8">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-                  Welcome back, {user.name}!
-                </h1>
-                <p className="text-gray-600 mt-1">
-                  Lead community change by identifying problems, verifying solutions, and contributing your skills.
-                </p>
+          {/* Welcome Header Card - Government Style */}
+          <Card className="shadow-xl border-t-4 border-t-green-600 mb-4 sm:mb-6">
+            <CardHeader className="bg-gradient-to-r from-green-50 to-blue-50 p-4 sm:p-6">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div className="min-w-0 flex-1">
+                  <CardTitle className="flex items-center text-lg sm:text-xl lg:text-2xl">
+                    <Users className="h-5 w-5 sm:h-6 sm:w-6 mr-2 sm:mr-3 text-green-600 flex-shrink-0" />
+                    <span className="break-words">Welcome back, {user.name}!</span>
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Lead community change by identifying problems, verifying solutions, and contributing your skills.
+                  </p>
+                </div>
+                <div className="flex items-center space-x-2 flex-shrink-0">
+                  {getVerificationBadge()}
+                </div>
               </div>
-              <div className="flex items-center space-x-2 mt-4 sm:mt-0">
-                {getVerificationBadge()}
-              </div>
-            </div>
+            </CardHeader>
+          </Card>
 
-            {/* Stats Overview */}
-            {isLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-green-600" />
-                <span className="ml-2 text-gray-600">Loading your dashboard...</span>
-              </div>
-            ) : (
-              <div className={`grid gap-4 mb-6 ${
-                isMobile ? 'grid-cols-2' : isTablet ? 'grid-cols-4' : 'grid-cols-4'
-              }`}>
-                <Card className="p-4">
-                  <div className="text-center">
+          {/* Stats Overview - Government Style */}
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-green-600" />
+              <span className="ml-2 text-muted-foreground">Loading your dashboard...</span>
+            </div>
+          ) : (
+            <Card className="shadow-lg mb-4 sm:mb-6">
+              <CardHeader>
+                <CardTitle className="flex items-center text-base sm:text-lg">
+                  <Shield className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-green-600 flex-shrink-0" />
+                  My Impact Overview
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6">
+                  <div className="text-center p-4 bg-blue-50 rounded-lg">
                     <div className="text-2xl font-bold text-blue-600">{stats?.totalReports || 0}</div>
-                    <div className="text-sm text-gray-600">Problems Reported</div>
+                    <div className="text-sm text-blue-700">Problems Reported</div>
                   </div>
-                </Card>
-                <Card className="p-4">
-                  <div className="text-center">
+                  <div className="text-center p-4 bg-orange-50 rounded-lg">
                     <div className="text-2xl font-bold text-orange-600">{stats?.activeReports || 0}</div>
-                    <div className="text-sm text-gray-600">Under Review</div>
+                    <div className="text-sm text-orange-700">Under Review</div>
                   </div>
-                </Card>
-                <Card className="p-4">
-                  <div className="text-center">
+                  <div className="text-center p-4 bg-green-50 rounded-lg">
                     <div className="text-2xl font-bold text-green-600">{stats?.completedReports || 0}</div>
-                    <div className="text-sm text-gray-600">Resolved</div>
+                    <div className="text-sm text-green-700">Resolved</div>
                   </div>
-                </Card>
-                <Card className="p-4">
-                  <div className="text-center">
+                  <div className="text-center p-4 bg-purple-50 rounded-lg">
                     <div className="text-2xl font-bold text-purple-600">{stats?.communityVotes || 0}</div>
-                    <div className="text-sm text-gray-600">Validations</div>
+                    <div className="text-sm text-purple-700">Validations</div>
                   </div>
-                </Card>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Quick Actions - Government Button Grid Style */}
+          <Card className="shadow-lg mb-4 sm:mb-6">
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="flex items-center text-base sm:text-lg">
+                <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-green-600 flex-shrink-0" />
+                Citizen Actions
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
+                {quickActions.map((action) => {
+                  const IconComponent = action.icon;
+                  return (
+                    <Button
+                      key={action.title}
+                      onClick={() => navigate(action.href)}
+                      className={`${action.color} text-white h-auto py-3 sm:py-4 flex flex-col items-center gap-1 sm:gap-2 text-xs relative`}
+                    >
+                      <IconComponent className="h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0" />
+                      <span className="text-center leading-tight break-words">{action.title}</span>
+                      {action.count > 0 && (
+                        <Badge className="absolute -top-2 -right-2 bg-white text-red-600 rounded-full px-1.5 py-0.5 text-xs font-bold">
+                          {action.count}
+                        </Badge>
+                      )}
+                    </Button>
+                  );
+                })}
               </div>
-            )}
-          </div>
+            </CardContent>
+          </Card>
 
-          {/* Citizen-First Actions - Updated Layout */}
-          <div className={`grid gap-4 sm:gap-6 mb-6 sm:mb-8 ${
-            isMobile ? 'grid-cols-1' : isTablet ? 'grid-cols-2' : 'grid-cols-2 lg:grid-cols-4'
-          }`}>
-            {quickActions.map((action) => {
-              const IconComponent = action.icon;
-              return (
-                <Link key={action.title} to={action.href}>
-                  <Card className="h-full hover:shadow-lg transition-all duration-200 hover:scale-105 cursor-pointer group">
-                    <CardHeader className="text-center pb-4">
-                      <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 group-hover:bg-gray-200 transition-colors relative">
-                        <IconComponent className={`h-6 w-6 sm:h-8 sm:w-8 ${action.iconColor}`} />
-                        {action.count > 0 && (
-                          <Badge className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full px-2 py-1 text-xs">
-                            {action.count}
-                          </Badge>
-                        )}
-                        <Badge className="absolute -bottom-1 -right-1 bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full">
-                          {action.badge}
-                        </Badge>
-                      </div>
-                      <CardTitle className="text-sm sm:text-base lg:text-lg">{action.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="text-center pt-0">
-                      <p className="text-xs sm:text-sm text-gray-600 mb-4">{action.description}</p>
-                      <Button className={`w-full ${action.color} text-white`} size={isMobile ? "sm" : "default"}>
-                        Start Now
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </Link>
-              );
-            })}
-          </div>
-
-          {/* Additional Actions Grid */}
-          <div className="mb-6 sm:mb-8">
-            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">More Features</h2>
-            <div className={`grid gap-3 sm:gap-4 ${
-              isMobile ? 'grid-cols-2' : isTablet ? 'grid-cols-3' : 'grid-cols-3 lg:grid-cols-6'
-            }`}>
-              {additionalActions.map((action) => {
-                const IconComponent = action.icon;
-                return (
-                  <Link key={action.title} to={action.href}>
-                    <Card className="h-full hover:shadow-md transition-all duration-200 hover:scale-105 cursor-pointer group p-3 sm:p-4">
-                      <div className="text-center">
-                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-2 group-hover:bg-gray-200 transition-colors">
-                          <IconComponent className={`h-5 w-5 sm:h-6 sm:w-6 ${action.iconColor}`} />
-                        </div>
-                        <h3 className="text-xs sm:text-sm font-medium text-gray-900 mb-1">{action.title}</h3>
-                        <Badge className={`${action.color} text-white text-xs`}>
-                          {action.badge}
-                        </Badge>
-                      </div>
-                    </Card>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
+          {/* Additional Actions - Government Button Grid Style */}
+          <Card className="shadow-lg mb-6 sm:mb-8">
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="flex items-center text-base sm:text-lg">
+                <Briefcase className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-green-600 flex-shrink-0" />
+                More Features
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3">
+                {additionalActions.map((action) => {
+                  const IconComponent = action.icon;
+                  return (
+                    <Button
+                      key={action.title}
+                      onClick={() => navigate(action.href)}
+                      className={`${action.color} text-white h-auto py-3 sm:py-4 flex flex-col items-center gap-1 sm:gap-2 text-xs`}
+                    >
+                      <IconComponent className="h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0" />
+                      <span className="text-center leading-tight break-words">{action.title}</span>
+                    </Button>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Citizen Impact Section */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6 sm:mb-8">

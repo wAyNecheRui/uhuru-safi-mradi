@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -26,6 +26,7 @@ interface ProjectWithProgress {
 
 const ContractorDashboard = () => {
   const { isMobile, isTablet } = useResponsive();
+  const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const [selectedCounty, setSelectedCounty] = useState('Nairobi');
   const [loading, setLoading] = useState(true);
@@ -282,59 +283,86 @@ const ContractorDashboard = () => {
         <ResponsiveContainer className="py-6 sm:py-8">
           <BreadcrumbNav />
           
-          <div className="mb-6 sm:mb-8">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Contractor Dashboard</h1>
-            <p className="text-sm sm:text-base text-gray-600">Manage your projects, bids, and track your performance.</p>
-          </div>
+          {/* Welcome Header Card - Government Style */}
+          <Card className="shadow-xl border-t-4 border-t-blue-600 mb-4 sm:mb-6">
+            <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 sm:p-6">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div className="min-w-0 flex-1">
+                  <CardTitle className="flex items-center text-lg sm:text-xl lg:text-2xl">
+                    <Briefcase className="h-5 w-5 sm:h-6 sm:w-6 mr-2 sm:mr-3 text-blue-600 flex-shrink-0" />
+                    <span className="break-words">Contractor Dashboard</span>
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Manage your projects, bids, and track your performance.
+                  </p>
+                </div>
+                <Badge className="bg-blue-100 text-blue-800 flex-shrink-0">
+                  Live Dashboard
+                </Badge>
+              </div>
+            </CardHeader>
+          </Card>
 
-          {/* Stats Cards */}
-          <div className={`grid gap-4 sm:gap-6 mb-6 sm:mb-8 ${
-            isMobile ? 'grid-cols-2' : isTablet ? 'grid-cols-2' : 'grid-cols-4'
-          }`}>
-            {displayStats.map((stat) => {
-              const IconComponent = stat.icon;
-              return (
-                <Card key={stat.label} className="shadow-lg">
-                  <CardContent className="p-4 sm:p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-xs sm:text-sm font-medium text-gray-600">{stat.label}</p>
-                        <p className="text-lg sm:text-2xl font-bold text-gray-900">{stat.value}</p>
-                      </div>
-                      <IconComponent className={`h-6 w-6 sm:h-8 sm:w-8 ${stat.color}`} />
+          {/* Stats Cards - Government Style */}
+          <Card className="shadow-lg mb-4 sm:mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center text-base sm:text-lg">
+                <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-blue-600 flex-shrink-0" />
+                Performance Overview
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6">
+                {displayStats.map((stat) => {
+                  const bgColors: Record<string, string> = {
+                    'text-blue-600': 'bg-blue-50',
+                    'text-green-600': 'bg-green-50',
+                    'text-purple-600': 'bg-purple-50',
+                    'text-orange-600': 'bg-orange-50'
+                  };
+                  const textColors: Record<string, string> = {
+                    'text-blue-600': 'text-blue-700',
+                    'text-green-600': 'text-green-700',
+                    'text-purple-600': 'text-purple-700',
+                    'text-orange-600': 'text-orange-700'
+                  };
+                  return (
+                    <div key={stat.label} className={`text-center p-4 ${bgColors[stat.color] || 'bg-gray-50'} rounded-lg`}>
+                      <div className={`text-2xl font-bold ${stat.color}`}>{stat.value}</div>
+                      <div className={`text-sm ${textColors[stat.color] || 'text-gray-700'}`}>{stat.label}</div>
                     </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
 
-          {/* Quick Actions */}
-          <div className={`grid gap-4 sm:gap-6 mb-6 sm:mb-8 ${
-            isMobile ? 'grid-cols-1' : isTablet ? 'grid-cols-2' : 'grid-cols-2 lg:grid-cols-3 xl:grid-cols-5'
-          }`}>
-            {quickActions.map((action) => {
-              const IconComponent = action.icon;
-              return (
-                <Link key={action.title} to={action.href}>
-                  <Card className="h-full hover:shadow-lg transition-all duration-200 hover:scale-105 cursor-pointer group">
-                    <CardHeader className="text-center pb-4">
-                      <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 group-hover:bg-gray-200 transition-colors">
-                        <IconComponent className={`h-6 w-6 sm:h-8 sm:w-8 ${action.iconColor}`} />
-                      </div>
-                      <CardTitle className="text-lg sm:text-xl">{action.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="text-center">
-                      <p className="text-sm sm:text-base text-gray-600 mb-4">{action.description}</p>
-                      <Button className={`w-full ${action.color} text-white`} size={isMobile ? "sm" : "default"}>
-                        Get Started
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </Link>
-              );
-            })}
-          </div>
+          {/* Quick Actions - Government Button Grid Style */}
+          <Card className="shadow-lg mb-6 sm:mb-8">
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="flex items-center text-base sm:text-lg">
+                <FileText className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-blue-600 flex-shrink-0" />
+                Management Modules
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3">
+                {quickActions.map((action) => {
+                  const IconComponent = action.icon;
+                  return (
+                    <Button
+                      key={action.title}
+                      onClick={() => navigate(action.href)}
+                      className={`${action.color} text-white h-auto py-3 sm:py-4 flex flex-col items-center gap-1 sm:gap-2 text-xs`}
+                    >
+                      <IconComponent className="h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0" />
+                      <span className="text-center leading-tight break-words">{action.title}</span>
+                    </Button>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Location Settings */}
           <ContractorLocationSettings />
