@@ -204,7 +204,7 @@ export class LiveNotificationService {
         message: `A citizen ${voteType === 'upvote' ? 'verified' : 'voted on'} your report: "${reportTitle}"`,
         type: 'info',
         category: 'vote',
-        actionUrl: '/citizen/track-reports'
+        actionUrl: '/citizen/track'
       });
     }
   }
@@ -245,7 +245,7 @@ export class LiveNotificationService {
           message: `"${milestoneName}" has been verified by ${verificationsCount} citizens. Automated payment processing.`,
           type: 'success',
           category: 'payment',
-          actionUrl: '/government/payment-release'
+          actionUrl: '/government/milestones'
         });
       });
     }
@@ -395,7 +395,7 @@ export class LiveNotificationService {
       message: `${companyName} submitted a bid of KES ${bidAmount.toLocaleString()} for "${report.title}"`,
       type: 'info',
       category: 'bid',
-      actionUrl: '/citizen/track-reports'
+      actionUrl: '/citizen/track'
     });
 
     // Notify government officials using user_profiles (more reliable)
@@ -574,7 +574,7 @@ export class LiveNotificationService {
       message: `"${reportTitle}" has been approved and is now open for contractor bidding.`,
       type: 'success',
       category: 'report',
-      actionUrl: '/citizen/track-reports'
+      actionUrl: '/citizen/track'
     });
 
     // Notify all contractors

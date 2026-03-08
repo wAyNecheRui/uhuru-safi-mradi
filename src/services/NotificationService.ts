@@ -149,7 +149,7 @@ class NotificationServiceClass {
       `"${reportTitle}" has been approved and is now open for contractor bidding.`,
       'success',
       'report',
-      '/citizen/track-reports'
+      '/citizen/track'
     );
 
     // Notify all contractors
@@ -180,7 +180,7 @@ class NotificationServiceClass {
       `${companyName} submitted a bid of KES ${bidAmount.toLocaleString()} for "${reportTitle}".`,
       'info',
       'bid',
-      '/citizen/track-reports'
+      '/citizen/track'
     );
 
     // Notify government
@@ -306,7 +306,7 @@ class NotificationServiceClass {
         `"${milestoneName}" verified by ${verificationsCount} citizens. Automated payment processing initiated.`,
         'success',
         'payment',
-        '/government/payment-release'
+        '/government/milestones'
       );
     }
   }

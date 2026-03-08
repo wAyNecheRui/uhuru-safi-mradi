@@ -207,13 +207,13 @@ export class BiddingWorkflowService {
         .single();
 
       if (existingProject) {
-        // Update existing project with contractor
+        // Update existing project with contractor — status stays 'planning' until escrow funded
         const { error: updateProjectError } = await supabase
           .from('projects')
           .update({
             contractor_id: selectedBidData.contractor_id,
             budget: selectedBidData.bid_amount,
-            status: 'in_progress',
+            status: 'planning',
             updated_at: new Date().toISOString()
           })
           .eq('id', existingProject.id);
@@ -222,7 +222,7 @@ export class BiddingWorkflowService {
           console.error('Error updating project:', updateProjectError);
         }
       } else {
-        // Create new project
+        // Create new project — status 'planning' (awaiting escrow funding before work can start)
         const { error: createProjectError } = await supabase
           .from('projects')
           .insert({
@@ -231,7 +231,7 @@ export class BiddingWorkflowService {
             description: reportData.description,
             budget: selectedBidData.bid_amount,
             contractor_id: selectedBidData.contractor_id,
-            status: 'in_progress'
+            status: 'planning'
           });
 
         if (createProjectError) {
