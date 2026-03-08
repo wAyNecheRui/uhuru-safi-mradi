@@ -23,6 +23,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useLocationFiltering, ProblemWithDistance } from '@/hooks/useLocationFiltering';
 import { WorkflowGuardService, MIN_VOTES_THRESHOLD, WORKFLOW_STATUS } from '@/services/WorkflowGuardService';
+import { getWorkflowStageDisplay } from '@/utils/workflowStatusDisplay';
 
 interface ProblemReport {
   id: string;
