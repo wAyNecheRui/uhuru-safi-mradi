@@ -180,7 +180,7 @@ class NotificationServiceClass {
       `${companyName} submitted a bid of KES ${bidAmount.toLocaleString()} for "${reportTitle}".`,
       'info',
       'bid',
-      '/citizen/track-reports'
+      '/citizen/track'
     );
 
     // Notify government
