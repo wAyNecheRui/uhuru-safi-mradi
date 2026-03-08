@@ -567,51 +567,74 @@ export class LiveNotificationService {
     reportTitle: string,
     reporterId: string
   ): Promise<void> {
-    // Notify reporter
+    // Notify reporter only — contractors are notified when bidding actually opens
     await this.notify({
       userId: reporterId,
       title: 'Your Report Was Approved!',
-      message: `"${reportTitle}" has been approved and is now open for contractor bidding.`,
+      message: `"${reportTitle}" has been approved by government. Bidding will open soon.`,
       type: 'success',
       category: 'report',
       actionUrl: '/citizen/track'
     });
 
-    // Notify all contractors
+    // Notify government peers
+    const govUserIds = await this.getGovernmentUserIds();
+    const otherGov = govUserIds.filter(id => id !== approvedBy);
+    if (otherGov.length > 0) {
+      const notifications = otherGov.slice(0, 10).map(userId => ({
+        userId,
+        title: 'Report Approved',
+        message: `"${reportTitle}" has been approved. Ready to open for bidding.`,
+        type: 'info' as NotificationType,
+        category: 'report',
+        actionUrl: '/government/approvals'
+      }));
+      await this.notifyMany(notifications);
+    }
+  }
+
+  /**
+   * When government opens bidding for an approved report
+   * This is when contractors should actually be notified
+   */
+  static async onBiddingOpened(
+    reportId: string,
+    openedBy: string,
+    reportTitle: string,
+    reporterId: string
+  ): Promise<void> {
+    const notifications: NotificationPayload[] = [];
+
+    // Notify reporter that bidding is now live
+    notifications.push({
+      userId: reporterId,
+      title: 'Bidding Now Open!',
+      message: `"${reportTitle}" is now open for contractor bids. Track progress on your dashboard.`,
+      type: 'info',
+      category: 'report',
+      actionUrl: '/citizen/track'
+    });
+
+    // Notify all verified contractors — THIS is the correct moment
     const { data: contractors } = await supabase
       .from('contractor_profiles')
       .select('user_id')
       .eq('verified', true);
 
     if (contractors && contractors.length > 0) {
-      const notifications = contractors.map(c => ({
-        userId: c.user_id,
-        title: 'New Bidding Opportunity',
-        message: `"${reportTitle}" is now open for bids. Submit your proposal!`,
-        type: 'info' as NotificationType,
-        category: 'bidding',
-        actionUrl: '/contractor/bidding'
-      }));
-
-      await this.notifyMany(notifications);
-    }
-
-    // Look up the project created by the approval trigger (report_id → project)
-    const { data: project } = await supabase
-      .from('projects')
-      .select('id')
-      .eq('report_id', reportId)
-      .single();
-
-    if (project) {
-      await supabase.from('realtime_project_updates').insert({
-        project_id: project.id,
-        update_type: 'report_approved',
-        message: `Report "${reportTitle}" approved - bidding now open`,
-        created_by: approvedBy,
-        metadata: { reportId }
+      contractors.forEach(c => {
+        notifications.push({
+          userId: c.user_id,
+          title: 'New Bidding Opportunity',
+          message: `"${reportTitle}" is now open for bids. Submit your proposal!`,
+          type: 'info',
+          category: 'bidding',
+          actionUrl: '/contractor/bidding'
+        });
       });
     }
+
+    await this.notifyMany(notifications);
   }
 
   /**
