@@ -23,6 +23,8 @@ interface Project {
     total_amount: number;
     held_amount: number;
     released_amount: number;
+    worker_wage_allocation: number;
+    worker_wage_released: number;
     status: string;
   } | null;
 }
