@@ -233,7 +233,7 @@ export default function GovernmentEscrowFunding() {
                   )}
 
                   {project.escrow && (
-                    <div className="mt-3 flex gap-4 text-sm">
+                    <div className="mt-3 flex flex-wrap gap-4 text-sm">
                       <span className="text-green-600">
                         <CheckCircle2 className="h-4 w-4 inline mr-1" />
                         Released: {formatCurrency(project.escrow.released_amount)}
@@ -241,6 +241,11 @@ export default function GovernmentEscrowFunding() {
                       <span className="text-blue-600">
                         Held: {formatCurrency(project.escrow.held_amount)}
                       </span>
+                      {project.escrow.worker_wage_allocation > 0 && (
+                        <span className="text-orange-600">
+                          👷 Worker Wages: {formatCurrency(project.escrow.worker_wage_released)}/{formatCurrency(project.escrow.worker_wage_allocation)}
+                        </span>
+                      )}
                     </div>
                   )}
                 </div>
