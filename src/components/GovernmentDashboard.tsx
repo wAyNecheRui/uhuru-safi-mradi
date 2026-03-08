@@ -21,6 +21,7 @@ import { useGovernmentDashboard } from '@/hooks/useGovernmentDashboard';
 import { SecurityMonitor } from '@/components/security/SecurityMonitor';
 import GovernmentJurisdictionSettings from '@/components/government/GovernmentJurisdictionSettings';
 import { WorkflowGuardService, WORKFLOW_STATUS, MIN_VOTES_THRESHOLD } from '@/services/WorkflowGuardService';
+import { LiveNotificationService } from '@/services/LiveNotificationService';
 import { supabase } from '@/integrations/supabase/client';
 
 // Component for Approved Reports that are ready to open for bidding
