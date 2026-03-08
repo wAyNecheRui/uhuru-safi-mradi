@@ -24,7 +24,7 @@ const DescriptionTemplateSection = ({ reportData, onInputChange }: DescriptionTe
 
   const getPlaceholder = () => {
     if (!template) return "Describe the problem in detail...";
-    return template.placeholder;
+    return template.template;
   };
 
   return (
