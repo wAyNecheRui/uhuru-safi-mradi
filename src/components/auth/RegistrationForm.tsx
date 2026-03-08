@@ -177,7 +177,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
             Contractor Registration
           </h4>
           <p className="text-xs text-orange-700">
-            Basic information to get started. Your account will start with citizen access until your contractor credentials are verified by an administrator.
+            Basic information to get started. Your credentials will be reviewed for verification.
           </p>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
