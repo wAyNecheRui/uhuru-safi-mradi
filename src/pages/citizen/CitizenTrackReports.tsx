@@ -33,7 +33,7 @@ const CitizenTrackReports = () => {
 
   const filteredReports = reports.filter(report =>
     report.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    report.id.toLowerCase().includes(searchTerm.toLowerCase())
+    report.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getStatusColor = (status: string) => {
