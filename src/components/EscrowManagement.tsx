@@ -327,12 +327,15 @@ const EscrowManagement = () => {
                                     </AlertDialogTrigger>
                                     <AlertDialogContent>
                                       <AlertDialogHeader>
-                                        <AlertDialogTitle>Confirm M-Pesa B2C Payment</AlertDialogTitle>
+                                        <AlertDialogTitle>Confirm M-Pesa B2C Payment (UAT Demo)</AlertDialogTitle>
                                         <AlertDialogDescription>
-                                          This will release <strong>{formatAmount(milestoneAmount)}</strong> to the contractor 
+                                          <span className="block mb-2 text-amber-600 font-medium">
+                                            Demo Mode — No real funds will be disbursed.
+                                          </span>
+                                          This will simulate releasing <strong>{formatAmount(milestoneAmount)}</strong> to the contractor 
                                           via M-Pesa B2C for milestone: <strong>{milestone.title}</strong>.
                                           <br /><br />
-                                          This action is recorded on the blockchain for transparency.
+                                          This action is recorded on the simulated blockchain ledger for transparency.
                                         </AlertDialogDescription>
                                       </AlertDialogHeader>
                                       <AlertDialogFooter>
