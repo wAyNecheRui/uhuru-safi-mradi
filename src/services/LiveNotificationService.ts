@@ -574,7 +574,7 @@ export class LiveNotificationService {
       message: `"${reportTitle}" has been approved and is now open for contractor bidding.`,
       type: 'success',
       category: 'report',
-      actionUrl: '/citizen/track-reports'
+      actionUrl: '/citizen/track'
     });
 
     // Notify all contractors
