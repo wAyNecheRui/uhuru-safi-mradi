@@ -525,12 +525,13 @@ export class WorkforceIntegrationCycle {
   /**
    * Get worker performance history
    */
-  static async getWorkerPerformance(workerId: string): Promise<WorkerPerformance | null> {
+  static async getWorkerPerformance(authUserId: string): Promise<WorkerPerformance | null> {
     try {
+      // Use user_id since callers pass auth UUID
       const { data: worker } = await supabase
         .from('citizen_workers')
         .select('*')
-        .eq('id', workerId)
+        .eq('user_id', authUserId)
         .single();
 
       if (!worker) return null;
