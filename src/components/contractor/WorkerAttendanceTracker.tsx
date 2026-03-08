@@ -501,7 +501,7 @@ const WorkerAttendanceTracker: React.FC<WorkerAttendanceTrackerProps> = ({
                   Processing...
                 </>
               ) : (
-                'Process Payment via M-Pesa'
+                'Pay from Escrow via M-Pesa'
               )}
             </Button>
           </DialogFooter>
