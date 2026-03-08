@@ -86,6 +86,17 @@ const EscrowManagement = () => {
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
+      {/* UAT Demo Banner */}
+      <div className="bg-amber-50 border-2 border-amber-400 border-dashed rounded-lg p-4 flex items-center gap-3">
+        <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0" />
+        <div>
+          <p className="font-semibold text-amber-800">UAT / Demo Mode</p>
+          <p className="text-sm text-amber-700">
+            All M-Pesa transactions on this page are simulated. No real funds are disbursed or collected.
+          </p>
+        </div>
+      </div>
+
       {/* Workflow Overview */}
       <Card className="shadow-xl border-t-4 border-t-green-600">
         <CardHeader className="bg-gradient-to-r from-green-50 to-blue-50">
