@@ -90,7 +90,7 @@ serve(async (req) => {
       )
     }
 
-    const { project_id, amount, treasury_reference } = await req.json()
+    const { project_id, amount, treasury_reference, worker_wage_allocation } = await req.json()
 
     console.log(`[C2B-DEMO] Processing treasury funding for project: ${project_id}, amount: ${amount}, user: ${user.id}`)
 
