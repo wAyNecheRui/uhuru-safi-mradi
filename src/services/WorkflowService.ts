@@ -116,6 +116,18 @@ export class WorkflowService {
   static async approveReport(reportId: string, budgetAmount: number) {
     const user = (await supabase.auth.getUser()).data.user;
     if (!user) throw new Error('User not authenticated');
+
+    // Guard: Only allow approval if report is in 'under_review' status
+    const { data: currentReport } = await supabase
+      .from('problem_reports')
+      .select('status, title, reported_by')
+      .eq('id', reportId)
+      .single();
+
+    if (!currentReport) throw new Error('Report not found');
+    if (currentReport.status !== 'under_review') {
+      throw new Error(`Cannot approve: Report must be in 'under_review' status (current: ${currentReport.status})`);
+    }
     
     const { data, error } = await supabase
       .from('problem_reports')
@@ -126,6 +138,7 @@ export class WorkflowService {
         approved_by: user.id
       })
       .eq('id', reportId)
+      .eq('status', 'under_review') // Double-guard: prevent race conditions
       .select()
       .single();
 
@@ -135,8 +148,8 @@ export class WorkflowService {
     await LiveNotificationService.onReportApproved(
       reportId,
       user.id,
-      data.title,
-      data.reported_by
+      currentReport.title,
+      currentReport.reported_by
     );
 
     return data;
