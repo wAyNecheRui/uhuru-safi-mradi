@@ -35,6 +35,7 @@ export default function GovernmentEscrowFunding() {
   const [loading, setLoading] = useState(true);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [fundingAmount, setFundingAmount] = useState("");
+  const [workerWagePercent, setWorkerWagePercent] = useState("20");
   const [treasuryReference, setTreasuryReference] = useState("");
   const [processing, setProcessing] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
