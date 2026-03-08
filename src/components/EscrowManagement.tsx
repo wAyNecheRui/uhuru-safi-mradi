@@ -426,10 +426,11 @@ const EscrowManagement = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Wallet className="h-5 w-5 text-amber-600" />
-              Fund Escrow via M-Pesa C2B
+              Fund Escrow via M-Pesa C2B (UAT Demo)
             </DialogTitle>
             <DialogDescription>
-              Simulate Treasury funding the escrow account. This triggers an M-Pesa C2B transaction.
+              <span className="text-amber-600 font-medium">Demo Mode — No real M-Pesa transaction will occur.</span>{' '}
+              Simulate Treasury funding the escrow account.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">

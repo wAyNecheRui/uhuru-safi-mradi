@@ -180,7 +180,6 @@ const GovernmentDashboard = () => {
     try {
       // First update budget if provided
       if (budgetAmount) {
-        const { supabase } = await import('@/integrations/supabase/client');
         await supabase
           .from('problem_reports')
           .update({ 
@@ -191,6 +190,18 @@ const GovernmentDashboard = () => {
       }
       
       await handleApproval(selectedReport.id, 'approve');
+
+      // Fire notifications to citizens and contractors
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        LiveNotificationService.onReportApproved(
+          selectedReport.id,
+          user.id,
+          selectedReport.title,
+          selectedReport.reported_by
+        );
+      }
+
       setApproveDialogOpen(false);
       setSelectedReport(null);
     } catch (error) {
