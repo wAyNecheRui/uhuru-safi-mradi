@@ -122,6 +122,22 @@ const MilestoneManagement: React.FC<MilestoneManagementProps> = ({ project, onCl
   };
 
   const saveMilestones = async () => {
+    // Block saves on completed projects
+    const { data: projectData } = await supabase
+      .from('projects')
+      .select('status')
+      .eq('id', project.id)
+      .single();
+    
+    if (projectData?.status === 'completed' || projectData?.status === 'cancelled') {
+      toast({
+        title: "Project Completed",
+        description: "No changes can be made to a completed project.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     const total = getTotalPercentage();
     if (total !== 100) {
       toast({
