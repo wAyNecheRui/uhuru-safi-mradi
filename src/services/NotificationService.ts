@@ -149,7 +149,7 @@ class NotificationServiceClass {
       `"${reportTitle}" has been approved and is now open for contractor bidding.`,
       'success',
       'report',
-      '/citizen/track-reports'
+      '/citizen/track'
     );
 
     // Notify all contractors
