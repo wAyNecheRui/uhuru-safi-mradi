@@ -407,7 +407,9 @@ export default function GovernmentEscrowFunding() {
 
           <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg space-y-2">
             <p><strong>Project:</strong> {selectedProject?.title}</p>
-            <p><strong>Amount:</strong> {formatCurrency(parseFloat(fundingAmount) || 0)}</p>
+            <p><strong>Total Amount:</strong> {formatCurrency(parseFloat(fundingAmount) || 0)}</p>
+            <p><strong>Worker Wage Pool:</strong> {formatCurrency(Math.round((parseFloat(fundingAmount) || 0) * (parseFloat(workerWagePercent) || 0) / 100))}</p>
+            <p><strong>Milestone Pool:</strong> {formatCurrency((parseFloat(fundingAmount) || 0) - Math.round((parseFloat(fundingAmount) || 0) * (parseFloat(workerWagePercent) || 0) / 100))}</p>
             <p><strong>Reference:</strong> {treasuryReference || `TRS-${Date.now()}`}</p>
           </div>
 
