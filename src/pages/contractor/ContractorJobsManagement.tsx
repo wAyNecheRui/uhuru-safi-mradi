@@ -558,7 +558,7 @@ const ContractorJobsManagement = () => {
                             </div>
                           )}
 
-                          {app.status === 'pending' && (
+                          {app.status === 'pending' && !(selectedJob?.project_status === 'completed' || selectedJob?.project_status === 'cancelled') && (
                             <div className="flex gap-2 pt-2">
                               <Button
                                 size="sm"
