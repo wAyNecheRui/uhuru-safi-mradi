@@ -297,19 +297,21 @@ export class ProjectLifecycleService {
       };
     }
 
-    const isFunded = escrow.held_amount >= escrow.total_amount;
+    // Total funded includes both held amount and already-released amount
+    const totalFunded = escrow.held_amount + escrow.released_amount;
+    const isFunded = totalFunded >= escrow.total_amount;
     
     if (!isFunded) {
       return {
         allowed: false,
-        reason: `Awaiting escrow funding. ${((escrow.held_amount / escrow.total_amount) * 100).toFixed(0)}% funded.`,
-        escrowStatus: { funded: escrow.held_amount, required: escrow.total_amount }
+        reason: `Awaiting escrow funding. ${((totalFunded / escrow.total_amount) * 100).toFixed(0)}% funded.`,
+        escrowStatus: { funded: totalFunded, required: escrow.total_amount }
       };
     }
 
     return {
       allowed: true,
-      escrowStatus: { funded: escrow.held_amount, required: escrow.total_amount }
+      escrowStatus: { funded: totalFunded, required: escrow.total_amount }
     };
   }
 

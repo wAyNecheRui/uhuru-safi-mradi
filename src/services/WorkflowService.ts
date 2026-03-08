@@ -116,6 +116,18 @@ export class WorkflowService {
   static async approveReport(reportId: string, budgetAmount: number) {
     const user = (await supabase.auth.getUser()).data.user;
     if (!user) throw new Error('User not authenticated');
+
+    // Guard: Only allow approval if report is in 'under_review' status
+    const { data: currentReport } = await supabase
+      .from('problem_reports')
+      .select('status, title, reported_by')
+      .eq('id', reportId)
+      .single();
+
+    if (!currentReport) throw new Error('Report not found');
+    if (currentReport.status !== 'under_review') {
+      throw new Error(`Cannot approve: Report must be in 'under_review' status (current: ${currentReport.status})`);
+    }
     
     const { data, error } = await supabase
       .from('problem_reports')
@@ -126,6 +138,7 @@ export class WorkflowService {
         approved_by: user.id
       })
       .eq('id', reportId)
+      .eq('status', 'under_review') // Double-guard: prevent race conditions
       .select()
       .single();
 
@@ -135,8 +148,8 @@ export class WorkflowService {
     await LiveNotificationService.onReportApproved(
       reportId,
       user.id,
-      data.title,
-      data.reported_by
+      currentReport.title,
+      currentReport.reported_by
     );
 
     return data;
@@ -438,20 +451,21 @@ export class WorkflowService {
     const requirements: string[] = [];
 
     // Determine current step and completion status
-    if (report.status === 'submitted') {
+    // Uses canonical status values matching WorkflowGuardService
+    if (report.status === 'pending') {
       currentStep = 'community_validation';
-      canProceed = (report.priority_score || 0) >= 3; // Minimum 3 votes threshold for testing
+      canProceed = (report.priority_score || 0) >= 3;
       if (!canProceed) requirements.push('Needs at least 3 community votes');
-    } else if (report.status === 'community_review') {
+    } else if (report.status === 'under_review') {
       completedSteps.push('community_validation');
       currentStep = 'government_approval';
       canProceed = true;
-    } else if (report.status === 'approved') {
+    } else if (report.status === 'approved' || report.status === 'bidding_open') {
       completedSteps.push('community_validation', 'government_approval');
       currentStep = 'contractor_bidding';
       canProceed = report.contractor_bids && report.contractor_bids.length > 0;
       if (!canProceed) requirements.push('Waiting for contractor bids');
-    } else if (report.status === 'contractor_selected') {
+    } else if (report.status === 'contractor_selected' || report.status === 'in_progress' || report.status === 'under_verification') {
       completedSteps.push('community_validation', 'government_approval', 'contractor_bidding');
       currentStep = 'project_execution';
       canProceed = true;
