@@ -338,6 +338,22 @@ export default function GovernmentEscrowFunding() {
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="wagePercent">Worker Wage Allocation (%)</Label>
+                <Input
+                  id="wagePercent"
+                  type="number"
+                  min="0"
+                  max="50"
+                  value={workerWagePercent}
+                  onChange={(e) => setWorkerWagePercent(e.target.value)}
+                  placeholder="e.g., 20"
+                />
+                <p className="text-xs text-muted-foreground">
+                  {formatCurrency(Math.round((parseFloat(fundingAmount) || 0) * (parseFloat(workerWagePercent) || 0) / 100))} reserved for worker wages
+                </p>
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="reference">Treasury Reference (Optional)</Label>
                 <Input
                   id="reference"
@@ -353,6 +369,13 @@ export default function GovernmentEscrowFunding() {
                   <p className="font-medium text-green-700 dark:text-green-400">M-Pesa PayBill</p>
                   <p className="text-green-600">Business No: 174379</p>
                 </div>
+              </div>
+
+              <div className="p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg text-sm">
+                <p className="font-medium text-orange-700 dark:text-orange-400">👷 Escrow Worker Protection</p>
+                <p className="text-orange-600 dark:text-orange-300 mt-1">
+                  Worker wages are paid directly from escrow — contractors cannot withhold them.
+                </p>
               </div>
             </div>
           )}
