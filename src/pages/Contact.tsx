@@ -4,9 +4,11 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Mail, Phone, MapPin, Send, MessageSquare, ArrowLeft } from 'lucide-react';
+import { Mail, Phone, MapPin, Send, MessageSquare, ArrowLeft, Loader2 } from 'lucide-react';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
 import { useResponsive } from '@/hooks/useResponsive';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const Contact = () => {
   const navigate = useNavigate();
