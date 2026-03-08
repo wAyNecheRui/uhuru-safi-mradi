@@ -398,7 +398,7 @@ export class BiddingWorkflowService {
         *,
         contractor_bids(count)
       `)
-      .eq('status', 'approved')
+      .eq('status', 'bidding_open')
       .eq('bidding_status', 'open');
 
     if (error) {

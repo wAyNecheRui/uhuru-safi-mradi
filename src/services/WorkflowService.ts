@@ -438,20 +438,21 @@ export class WorkflowService {
     const requirements: string[] = [];
 
     // Determine current step and completion status
-    if (report.status === 'submitted') {
+    // Uses canonical status values matching WorkflowGuardService
+    if (report.status === 'pending') {
       currentStep = 'community_validation';
-      canProceed = (report.priority_score || 0) >= 3; // Minimum 3 votes threshold for testing
+      canProceed = (report.priority_score || 0) >= 3;
       if (!canProceed) requirements.push('Needs at least 3 community votes');
-    } else if (report.status === 'community_review') {
+    } else if (report.status === 'under_review') {
       completedSteps.push('community_validation');
       currentStep = 'government_approval';
       canProceed = true;
-    } else if (report.status === 'approved') {
+    } else if (report.status === 'approved' || report.status === 'bidding_open') {
       completedSteps.push('community_validation', 'government_approval');
       currentStep = 'contractor_bidding';
       canProceed = report.contractor_bids && report.contractor_bids.length > 0;
       if (!canProceed) requirements.push('Waiting for contractor bids');
-    } else if (report.status === 'contractor_selected') {
+    } else if (report.status === 'contractor_selected' || report.status === 'in_progress' || report.status === 'under_verification') {
       completedSteps.push('community_validation', 'government_approval', 'contractor_bidding');
       currentStep = 'project_execution';
       canProceed = true;
