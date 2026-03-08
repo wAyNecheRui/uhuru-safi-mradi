@@ -467,13 +467,13 @@ export class WorkforceIntegrationCycle {
   /**
    * Find matching jobs for a worker based on skills and location
    */
-  static async findMatchingJobs(workerId: string): Promise<JobMatch[]> {
+  static async findMatchingJobs(authUserId: string): Promise<JobMatch[]> {
     try {
-      // Get worker profile
+      // Get worker profile - use user_id since callers pass auth UUID
       const { data: worker } = await supabase
         .from('citizen_workers')
         .select('*')
-        .eq('id', workerId)
+        .eq('user_id', authUserId)
         .single();
 
       if (!worker) return [];
