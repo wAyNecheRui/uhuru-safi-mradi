@@ -26,6 +26,7 @@ export interface ProblemWithDistance {
   priority_score: number | null;
   verified_votes: number | null;
   created_at: string;
+  reported_by: string;
   photo_urls: string[] | null;
   distance_km: number | null;
   distance_category: 'urgent' | 'nearby' | 'county' | 'unknown';
