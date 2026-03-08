@@ -371,19 +371,48 @@ export default function GovernmentEscrowFunding() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="wagePercent">Worker Wage Allocation (%)</Label>
+                <Label htmlFor="wageAmount">
+                  <div className="flex items-center gap-2">
+                    <Calculator className="h-4 w-4" />
+                    Worker Wage Allocation (KES)
+                  </div>
+                </Label>
                 <Input
-                  id="wagePercent"
+                  id="wageAmount"
                   type="number"
                   min="0"
-                  max="50"
-                  value={workerWagePercent}
-                  onChange={(e) => setWorkerWagePercent(e.target.value)}
-                  placeholder="e.g., 20"
+                  max={parseFloat(fundingAmount) || 0}
+                  value={workerWageAmount}
+                  onChange={(e) => setWorkerWageAmount(e.target.value)}
+                  placeholder="Auto-calculated from job postings"
                 />
-                <p className="text-xs text-muted-foreground">
-                  {formatCurrency(Math.round((parseFloat(fundingAmount) || 0) * (parseFloat(workerWagePercent) || 0) / 100))} reserved for worker wages
-                </p>
+                {selectedProject && selectedProject.jobs.length > 0 ? (
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-primary flex items-center gap-1">
+                      <Users className="h-3 w-3" />
+                      Calculated from {selectedProject.jobs.length} job posting(s):
+                    </p>
+                    {selectedProject.jobs.map((job, i) => (
+                      <p key={i} className="text-xs text-muted-foreground ml-4">
+                        • {job.title}: {job.positions_available} workers × KES {job.wage_max || job.wage_min}/day × {job.duration_days} days = {formatCurrency((job.wage_max || job.wage_min) * job.positions_available * job.duration_days)}
+                      </p>
+                    ))}
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Total required: {formatCurrency(selectedProject.calculatedWagePool)}
+                      {selectedProject.escrow?.worker_wage_allocation ? ` (already allocated: ${formatCurrency(selectedProject.escrow.worker_wage_allocation)})` : ''}
+                    </p>
+                    {(parseFloat(workerWageAmount) || 0) < (selectedProject.calculatedWagePool - (selectedProject.escrow?.worker_wage_allocation || 0)) && (
+                      <p className="text-xs text-destructive flex items-center gap-1">
+                        <AlertTriangle className="h-3 w-3" />
+                        Warning: Allocation is below the calculated requirement — workers may not be fully covered
+                      </p>
+                    )}
+                  </div>
+                ) : selectedProject ? (
+                  <p className="text-xs text-muted-foreground">
+                    No job postings yet — wage pool cannot be auto-calculated. Set manually or wait for contractor to post jobs.
+                  </p>
+                ) : null}
               </div>
 
               <div className="space-y-2">
