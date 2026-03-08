@@ -293,6 +293,10 @@ export default function GovernmentEscrowFunding() {
                           ? project.budget - (project.escrow?.held_amount || 0) 
                           : 0;
                         setFundingAmount(remainingAmount.toString());
+                        // Auto-set worker wage amount from calculated pool minus already allocated
+                        const alreadyAllocated = project.escrow?.worker_wage_allocation || 0;
+                        const recommended = Math.max(0, project.calculatedWagePool - alreadyAllocated);
+                        setWorkerWageAmount(recommended.toString());
                       }}
                     >
                       <Wallet className="h-4 w-4 mr-2" />
