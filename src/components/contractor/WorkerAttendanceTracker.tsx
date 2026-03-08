@@ -216,6 +216,10 @@ const WorkerAttendanceTracker: React.FC<WorkerAttendanceTrackerProps> = ({
 
   const handleProcessPayment = async () => {
     if (!selectedWorker) return;
+    if (readOnly) {
+      toast({ title: 'Project Completed', description: 'No actions can be performed on a completed project.', variant: 'destructive' });
+      return;
+    }
 
     setProcessingPayment(true);
     try {
