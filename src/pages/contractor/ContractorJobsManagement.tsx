@@ -142,9 +142,9 @@ const ContractorJobsManagement = () => {
     if (!user) return;
     const { data } = await supabase
       .from('projects')
-      .select('id, title')
+      .select('id, title, status')
       .eq('contractor_id', user.id)
-      .in('status', ['in_progress', 'active', 'planning']);
+      .not('status', 'in', '("completed","cancelled")');
     setContractorProjects(data || []);
   };
 
