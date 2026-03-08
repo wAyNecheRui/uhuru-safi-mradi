@@ -430,7 +430,7 @@ const WorkerAttendanceTracker: React.FC<WorkerAttendanceTrackerProps> = ({
       <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Process Worker Payment</DialogTitle>
+            <DialogTitle>Process Worker Payment (Escrow)</DialogTitle>
           </DialogHeader>
           
           <div className="space-y-4 py-4">
@@ -469,7 +469,7 @@ const WorkerAttendanceTracker: React.FC<WorkerAttendanceTrackerProps> = ({
                   ))}
                 </div>
 
-                <div className="pt-2 border-t">
+                <div className="pt-2 border-t space-y-2">
                   <div className="flex justify-between font-medium">
                     <span>Unpaid Total:</span>
                     <span className="text-green-600">
@@ -479,6 +479,9 @@ const WorkerAttendanceTracker: React.FC<WorkerAttendanceTrackerProps> = ({
                         .toLocaleString()}
                     </span>
                   </div>
+                  <p className="text-xs text-muted-foreground">
+                    💰 Paid directly from project escrow worker wage pool
+                  </p>
                 </div>
               </>
             )}
@@ -498,7 +501,7 @@ const WorkerAttendanceTracker: React.FC<WorkerAttendanceTrackerProps> = ({
                   Processing...
                 </>
               ) : (
-                'Process Payment via M-Pesa'
+                'Pay from Escrow via M-Pesa'
               )}
             </Button>
           </DialogFooter>

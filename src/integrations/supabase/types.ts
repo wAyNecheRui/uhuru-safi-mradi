@@ -711,6 +711,8 @@ export type Database = {
           stripe_account_id: string | null
           total_amount: number
           updated_at: string
+          worker_wage_allocation: number
+          worker_wage_released: number
         }
         Insert: {
           created_at?: string
@@ -724,6 +726,8 @@ export type Database = {
           stripe_account_id?: string | null
           total_amount: number
           updated_at?: string
+          worker_wage_allocation?: number
+          worker_wage_released?: number
         }
         Update: {
           created_at?: string
@@ -737,6 +741,8 @@ export type Database = {
           stripe_account_id?: string | null
           total_amount?: number
           updated_at?: string
+          worker_wage_allocation?: number
+          worker_wage_released?: number
         }
         Relationships: [
           {
@@ -2024,6 +2030,7 @@ export type Database = {
           amount: number
           created_at: string
           daily_records_count: number
+          escrow_account_id: string | null
           id: string
           job_id: string
           payment_method: string | null
@@ -2033,11 +2040,13 @@ export type Database = {
           period_start: string
           processed_at: string | null
           worker_id: string
+          worker_phone: string | null
         }
         Insert: {
           amount: number
           created_at?: string
           daily_records_count?: number
+          escrow_account_id?: string | null
           id?: string
           job_id: string
           payment_method?: string | null
@@ -2047,11 +2056,13 @@ export type Database = {
           period_start: string
           processed_at?: string | null
           worker_id: string
+          worker_phone?: string | null
         }
         Update: {
           amount?: number
           created_at?: string
           daily_records_count?: number
+          escrow_account_id?: string | null
           id?: string
           job_id?: string
           payment_method?: string | null
@@ -2061,8 +2072,16 @@ export type Database = {
           period_start?: string
           processed_at?: string | null
           worker_id?: string
+          worker_phone?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "worker_payments_escrow_account_id_fkey"
+            columns: ["escrow_account_id"]
+            isOneToOne: false
+            referencedRelation: "escrow_accounts"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "worker_payments_job_id_fkey"
             columns: ["job_id"]

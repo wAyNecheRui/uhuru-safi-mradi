@@ -90,7 +90,7 @@ serve(async (req) => {
       )
     }
 
-    const { project_id, amount, treasury_reference } = await req.json()
+    const { project_id, amount, treasury_reference, worker_wage_allocation } = await req.json()
 
     console.log(`[C2B-DEMO] Processing treasury funding for project: ${project_id}, amount: ${amount}, user: ${user.id}`)
 
@@ -181,12 +181,14 @@ serve(async (req) => {
 
     if (transactionError) throw transactionError
 
-    // Update escrow account balance
+    // Update escrow account balance (including worker wage allocation)
+    const wageAlloc = worker_wage_allocation || 0
     const { error: updateError } = await supabaseAdmin
       .from('escrow_accounts')
       .update({
         held_amount: escrow.held_amount + amount,
         total_amount: escrow.total_amount + amount,
+        worker_wage_allocation: (escrow.worker_wage_allocation || 0) + wageAlloc,
         updated_at: new Date().toISOString()
       })
       .eq('id', escrow.id)

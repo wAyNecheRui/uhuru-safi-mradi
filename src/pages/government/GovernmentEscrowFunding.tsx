@@ -23,6 +23,8 @@ interface Project {
     total_amount: number;
     held_amount: number;
     released_amount: number;
+    worker_wage_allocation: number;
+    worker_wage_released: number;
     status: string;
   } | null;
 }
@@ -33,6 +35,7 @@ export default function GovernmentEscrowFunding() {
   const [loading, setLoading] = useState(true);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [fundingAmount, setFundingAmount] = useState("");
+  const [workerWagePercent, setWorkerWagePercent] = useState("20");
   const [treasuryReference, setTreasuryReference] = useState("");
   const [processing, setProcessing] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -95,6 +98,9 @@ export default function GovernmentEscrowFunding() {
       return;
     }
 
+    const wagePercent = Math.min(100, Math.max(0, parseFloat(workerWagePercent) || 0));
+    const workerWageAllocation = Math.round((amount * wagePercent) / 100);
+
     setProcessing(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -104,7 +110,8 @@ export default function GovernmentEscrowFunding() {
         body: {
           project_id: selectedProject.id,
           amount,
-          treasury_reference: treasuryReference || `TRS-${Date.now()}`
+          treasury_reference: treasuryReference || `TRS-${Date.now()}`,
+          worker_wage_allocation: workerWageAllocation
         }
       });
 
@@ -226,7 +233,7 @@ export default function GovernmentEscrowFunding() {
                   )}
 
                   {project.escrow && (
-                    <div className="mt-3 flex gap-4 text-sm">
+                    <div className="mt-3 flex flex-wrap gap-4 text-sm">
                       <span className="text-green-600">
                         <CheckCircle2 className="h-4 w-4 inline mr-1" />
                         Released: {formatCurrency(project.escrow.released_amount)}
@@ -234,6 +241,11 @@ export default function GovernmentEscrowFunding() {
                       <span className="text-blue-600">
                         Held: {formatCurrency(project.escrow.held_amount)}
                       </span>
+                      {project.escrow.worker_wage_allocation > 0 && (
+                        <span className="text-orange-600">
+                          👷 Worker Wages: {formatCurrency(project.escrow.worker_wage_released)}/{formatCurrency(project.escrow.worker_wage_allocation)}
+                        </span>
+                      )}
                     </div>
                   )}
                 </div>
@@ -326,6 +338,22 @@ export default function GovernmentEscrowFunding() {
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="wagePercent">Worker Wage Allocation (%)</Label>
+                <Input
+                  id="wagePercent"
+                  type="number"
+                  min="0"
+                  max="50"
+                  value={workerWagePercent}
+                  onChange={(e) => setWorkerWagePercent(e.target.value)}
+                  placeholder="e.g., 20"
+                />
+                <p className="text-xs text-muted-foreground">
+                  {formatCurrency(Math.round((parseFloat(fundingAmount) || 0) * (parseFloat(workerWagePercent) || 0) / 100))} reserved for worker wages
+                </p>
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="reference">Treasury Reference (Optional)</Label>
                 <Input
                   id="reference"
@@ -341,6 +369,13 @@ export default function GovernmentEscrowFunding() {
                   <p className="font-medium text-green-700 dark:text-green-400">M-Pesa PayBill</p>
                   <p className="text-green-600">Business No: 174379</p>
                 </div>
+              </div>
+
+              <div className="p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg text-sm">
+                <p className="font-medium text-orange-700 dark:text-orange-400">👷 Escrow Worker Protection</p>
+                <p className="text-orange-600 dark:text-orange-300 mt-1">
+                  Worker wages are paid directly from escrow — contractors cannot withhold them.
+                </p>
               </div>
             </div>
           )}
@@ -372,7 +407,9 @@ export default function GovernmentEscrowFunding() {
 
           <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg space-y-2">
             <p><strong>Project:</strong> {selectedProject?.title}</p>
-            <p><strong>Amount:</strong> {formatCurrency(parseFloat(fundingAmount) || 0)}</p>
+            <p><strong>Total Amount:</strong> {formatCurrency(parseFloat(fundingAmount) || 0)}</p>
+            <p><strong>Worker Wage Pool:</strong> {formatCurrency(Math.round((parseFloat(fundingAmount) || 0) * (parseFloat(workerWagePercent) || 0) / 100))}</p>
+            <p><strong>Milestone Pool:</strong> {formatCurrency((parseFloat(fundingAmount) || 0) - Math.round((parseFloat(fundingAmount) || 0) * (parseFloat(workerWagePercent) || 0) / 100))}</p>
             <p><strong>Reference:</strong> {treasuryReference || `TRS-${Date.now()}`}</p>
           </div>
 
