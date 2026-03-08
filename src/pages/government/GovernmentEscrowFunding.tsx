@@ -98,6 +98,9 @@ export default function GovernmentEscrowFunding() {
       return;
     }
 
+    const wagePercent = Math.min(100, Math.max(0, parseFloat(workerWagePercent) || 0));
+    const workerWageAllocation = Math.round((amount * wagePercent) / 100);
+
     setProcessing(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -107,7 +110,8 @@ export default function GovernmentEscrowFunding() {
         body: {
           project_id: selectedProject.id,
           amount,
-          treasury_reference: treasuryReference || `TRS-${Date.now()}`
+          treasury_reference: treasuryReference || `TRS-${Date.now()}`,
+          worker_wage_allocation: workerWageAllocation
         }
       });
 
