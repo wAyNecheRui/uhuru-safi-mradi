@@ -7,9 +7,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Loader2, Wallet, Building2, ArrowRight, CheckCircle2, AlertCircle, Phone } from "lucide-react";
+import { Loader2, Wallet, Building2, ArrowRight, CheckCircle2, AlertCircle, Phone, Users, Calculator, AlertTriangle } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
+
+interface WorkforceJobSummary {
+  positions_available: number;
+  wage_max: number;
+  wage_min: number;
+  duration_days: number;
+  title: string;
+}
 
 interface Project {
   id: string;
@@ -18,6 +26,8 @@ interface Project {
   budget: number | null;
   status: string;
   contractor_id: string | null;
+  jobs: WorkforceJobSummary[];
+  calculatedWagePool: number;
   escrow?: {
     id: string;
     total_amount: number;
@@ -35,7 +45,7 @@ export default function GovernmentEscrowFunding() {
   const [loading, setLoading] = useState(true);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [fundingAmount, setFundingAmount] = useState("");
-  const [workerWagePercent, setWorkerWagePercent] = useState("20");
+  const [workerWageAmount, setWorkerWageAmount] = useState("");
   const [treasuryReference, setTreasuryReference] = useState("");
   const [processing, setProcessing] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -43,6 +53,15 @@ export default function GovernmentEscrowFunding() {
   useEffect(() => {
     fetchProjects();
   }, []);
+
+  const calculateWagePool = (jobs: WorkforceJobSummary[]) => {
+    return jobs.reduce((total, job) => {
+      const dailyRate = job.wage_max || job.wage_min || 0;
+      const positions = job.positions_available || 1;
+      const days = job.duration_days || 30;
+      return total + (dailyRate * positions * days);
+    }, 0);
+  };
 
   const fetchProjects = async () => {
     try {
@@ -53,20 +72,31 @@ export default function GovernmentEscrowFunding() {
 
       if (error) throw error;
 
-      // Fetch escrow accounts for projects
-      const projectsWithEscrow = await Promise.all(
+      const projectsWithDetails = await Promise.all(
         (projectsData || []).map(async (project) => {
-          const { data: escrow } = await supabase
-            .from('escrow_accounts')
-            .select('*')
-            .eq('project_id', project.id)
-            .single();
+          const [{ data: escrow }, { data: jobs }] = await Promise.all([
+            supabase.from('escrow_accounts').select('*').eq('project_id', project.id).single(),
+            supabase.from('workforce_jobs').select('title, positions_available, wage_min, wage_max, duration_days').eq('project_id', project.id)
+          ]);
 
-          return { ...project, escrow };
+          const jobSummaries: WorkforceJobSummary[] = (jobs || []).map(j => ({
+            title: j.title,
+            positions_available: j.positions_available || 1,
+            wage_min: j.wage_min || 0,
+            wage_max: j.wage_max || 0,
+            duration_days: j.duration_days || 30,
+          }));
+
+          return {
+            ...project,
+            escrow,
+            jobs: jobSummaries,
+            calculatedWagePool: calculateWagePool(jobSummaries),
+          };
         })
       );
 
-      setProjects(projectsWithEscrow);
+      setProjects(projectsWithDetails);
     } catch (error: any) {
       toast.error("Failed to fetch projects");
     } finally {
@@ -98,8 +128,7 @@ export default function GovernmentEscrowFunding() {
       return;
     }
 
-    const wagePercent = Math.min(100, Math.max(0, parseFloat(workerWagePercent) || 0));
-    const workerWageAllocation = Math.round((amount * wagePercent) / 100);
+    const workerWageAllocation = parseFloat(workerWageAmount) || 0;
 
     setProcessing(true);
     try {
@@ -248,6 +277,19 @@ export default function GovernmentEscrowFunding() {
                       )}
                     </div>
                   )}
+
+                  {project.jobs.length > 0 && (
+                    <div className="mt-2 text-xs text-muted-foreground flex items-center gap-1">
+                      <Users className="h-3 w-3" />
+                      {project.jobs.reduce((sum, j) => sum + j.positions_available, 0)} workers across {project.jobs.length} job(s) — 
+                      Calculated wage need: {formatCurrency(project.calculatedWagePool)}
+                      {project.escrow?.worker_wage_allocation ? (
+                        project.escrow.worker_wage_allocation >= project.calculatedWagePool
+                          ? <Badge variant="outline" className="ml-2 text-xs bg-green-50 text-green-700 border-green-200">✓ Covered</Badge>
+                          : <Badge variant="outline" className="ml-2 text-xs bg-destructive/10 text-destructive border-destructive/20">⚠ Shortfall</Badge>
+                      ) : null}
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex gap-2">
@@ -264,6 +306,10 @@ export default function GovernmentEscrowFunding() {
                           ? project.budget - (project.escrow?.held_amount || 0) 
                           : 0;
                         setFundingAmount(remainingAmount.toString());
+                        // Auto-set worker wage amount from calculated pool minus already allocated
+                        const alreadyAllocated = project.escrow?.worker_wage_allocation || 0;
+                        const recommended = Math.max(0, project.calculatedWagePool - alreadyAllocated);
+                        setWorkerWageAmount(recommended.toString());
                       }}
                     >
                       <Wallet className="h-4 w-4 mr-2" />
@@ -338,19 +384,48 @@ export default function GovernmentEscrowFunding() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="wagePercent">Worker Wage Allocation (%)</Label>
+                <Label htmlFor="wageAmount">
+                  <div className="flex items-center gap-2">
+                    <Calculator className="h-4 w-4" />
+                    Worker Wage Allocation (KES)
+                  </div>
+                </Label>
                 <Input
-                  id="wagePercent"
+                  id="wageAmount"
                   type="number"
                   min="0"
-                  max="50"
-                  value={workerWagePercent}
-                  onChange={(e) => setWorkerWagePercent(e.target.value)}
-                  placeholder="e.g., 20"
+                  max={parseFloat(fundingAmount) || 0}
+                  value={workerWageAmount}
+                  onChange={(e) => setWorkerWageAmount(e.target.value)}
+                  placeholder="Auto-calculated from job postings"
                 />
-                <p className="text-xs text-muted-foreground">
-                  {formatCurrency(Math.round((parseFloat(fundingAmount) || 0) * (parseFloat(workerWagePercent) || 0) / 100))} reserved for worker wages
-                </p>
+                {selectedProject && selectedProject.jobs.length > 0 ? (
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-primary flex items-center gap-1">
+                      <Users className="h-3 w-3" />
+                      Calculated from {selectedProject.jobs.length} job posting(s):
+                    </p>
+                    {selectedProject.jobs.map((job, i) => (
+                      <p key={i} className="text-xs text-muted-foreground ml-4">
+                        • {job.title}: {job.positions_available} workers × KES {job.wage_max || job.wage_min}/day × {job.duration_days} days = {formatCurrency((job.wage_max || job.wage_min) * job.positions_available * job.duration_days)}
+                      </p>
+                    ))}
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Total required: {formatCurrency(selectedProject.calculatedWagePool)}
+                      {selectedProject.escrow?.worker_wage_allocation ? ` (already allocated: ${formatCurrency(selectedProject.escrow.worker_wage_allocation)})` : ''}
+                    </p>
+                    {(parseFloat(workerWageAmount) || 0) < (selectedProject.calculatedWagePool - (selectedProject.escrow?.worker_wage_allocation || 0)) && (
+                      <p className="text-xs text-destructive flex items-center gap-1">
+                        <AlertTriangle className="h-3 w-3" />
+                        Warning: Allocation is below the calculated requirement — workers may not be fully covered
+                      </p>
+                    )}
+                  </div>
+                ) : selectedProject ? (
+                  <p className="text-xs text-muted-foreground">
+                    No job postings yet — wage pool cannot be auto-calculated. Set manually or wait for contractor to post jobs.
+                  </p>
+                ) : null}
               </div>
 
               <div className="space-y-2">
@@ -408,8 +483,8 @@ export default function GovernmentEscrowFunding() {
           <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg space-y-2">
             <p><strong>Project:</strong> {selectedProject?.title}</p>
             <p><strong>Total Amount:</strong> {formatCurrency(parseFloat(fundingAmount) || 0)}</p>
-            <p><strong>Worker Wage Pool:</strong> {formatCurrency(Math.round((parseFloat(fundingAmount) || 0) * (parseFloat(workerWagePercent) || 0) / 100))}</p>
-            <p><strong>Milestone Pool:</strong> {formatCurrency((parseFloat(fundingAmount) || 0) - Math.round((parseFloat(fundingAmount) || 0) * (parseFloat(workerWagePercent) || 0) / 100))}</p>
+            <p><strong>Worker Wage Pool:</strong> {formatCurrency(parseFloat(workerWageAmount) || 0)}</p>
+            <p><strong>Milestone Pool:</strong> {formatCurrency((parseFloat(fundingAmount) || 0) - (parseFloat(workerWageAmount) || 0))}</p>
             <p><strong>Reference:</strong> {treasuryReference || `TRS-${Date.now()}`}</p>
           </div>
 
