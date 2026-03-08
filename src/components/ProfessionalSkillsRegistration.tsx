@@ -153,6 +153,7 @@ const ProfessionalSkillsRegistration = () => {
     maxTravelDistance: ''
   });
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [existingRegistration, setExistingRegistration] = useState<any>(null);
 
   const counties = [
