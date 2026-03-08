@@ -146,8 +146,8 @@ export default function GovernmentEscrowFunding() {
 
       if (response.error) throw new Error(response.error.message);
 
-      toast.success(`Successfully funded escrow with KES ${amount.toLocaleString()}`, {
-        description: `M-Pesa Reference: ${response.data.transaction.mpesa_reference}`
+      toast.success(`[UAT Demo] Escrow funded with KES ${amount.toLocaleString()}`, {
+        description: `Simulated M-Pesa Ref: ${response.data.transaction.mpesa_reference}. No real funds moved.`
       });
 
       setShowConfirmDialog(false);
