@@ -45,6 +45,7 @@ interface WorkerAttendanceTrackerProps {
   jobId: string;
   dailyRate: number;
   onUpdate?: () => void;
+  readOnly?: boolean;
 }
 
 const WorkerAttendanceTracker: React.FC<WorkerAttendanceTrackerProps> = ({
