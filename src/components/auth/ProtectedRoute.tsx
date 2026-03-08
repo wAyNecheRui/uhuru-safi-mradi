@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
+import UnifiedLoader from '@/components/ui/unified-loader';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
