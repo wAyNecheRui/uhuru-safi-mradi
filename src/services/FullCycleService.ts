@@ -554,7 +554,7 @@ export class WorkforceIntegrationCycle {
       }, 0) || 0;
 
       return {
-        workerId,
+        workerId: authUserId,
         totalJobsCompleted: worker.total_jobs_completed || 0,
         averageRating: worker.rating || 0,
         reliabilityScore: worker.rating ? worker.rating * 20 : 0, // Convert 5-point to 100-point scale
