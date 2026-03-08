@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Loader2, Wallet, Building2, ArrowRight, CheckCircle2, AlertCircle, Phone } from "lucide-react";
+import { Loader2, Wallet, Building2, ArrowRight, CheckCircle2, AlertCircle, Phone, Users, Calculator, AlertTriangle } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 
