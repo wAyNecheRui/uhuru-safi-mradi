@@ -277,6 +277,19 @@ export default function GovernmentEscrowFunding() {
                       )}
                     </div>
                   )}
+
+                  {project.jobs.length > 0 && (
+                    <div className="mt-2 text-xs text-muted-foreground flex items-center gap-1">
+                      <Users className="h-3 w-3" />
+                      {project.jobs.reduce((sum, j) => sum + j.positions_available, 0)} workers across {project.jobs.length} job(s) — 
+                      Calculated wage need: {formatCurrency(project.calculatedWagePool)}
+                      {project.escrow?.worker_wage_allocation ? (
+                        project.escrow.worker_wage_allocation >= project.calculatedWagePool
+                          ? <Badge variant="outline" className="ml-2 text-xs bg-green-50 text-green-700 border-green-200">✓ Covered</Badge>
+                          : <Badge variant="outline" className="ml-2 text-xs bg-destructive/10 text-destructive border-destructive/20">⚠ Shortfall</Badge>
+                      ) : null}
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex gap-2">
