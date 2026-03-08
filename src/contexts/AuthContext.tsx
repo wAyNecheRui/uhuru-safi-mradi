@@ -220,6 +220,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return;
         }
 
+        // Clear cache to ensure fresh profile data on session restore
+        userCache.delete(session.user.id);
         const userData = await loadUserData(session.user.id, session.user.email || '');
         if (mountedRef.current && userData) {
           setUser(userData.user);
