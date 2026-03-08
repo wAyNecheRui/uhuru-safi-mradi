@@ -107,7 +107,7 @@ const ContractorJobsManagement = () => {
       setLoading(true);
       const { data, error } = await supabase
         .from('workforce_jobs')
-        .select(`*, projects(title)`)
+        .select(`*, projects(title, status)`)
         .eq('created_by', user.id)
         .order('created_at', { ascending: false });
 
@@ -124,6 +124,7 @@ const ContractorJobsManagement = () => {
           return {
             ...job,
             project_title: job.projects?.title || 'Unknown Project',
+            project_status: job.projects?.status || 'unknown',
             applicants_count: count || 0
           };
         })
