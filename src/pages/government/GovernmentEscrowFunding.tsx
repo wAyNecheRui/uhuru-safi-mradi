@@ -54,6 +54,15 @@ export default function GovernmentEscrowFunding() {
     fetchProjects();
   }, []);
 
+  const calculateWagePool = (jobs: WorkforceJobSummary[]) => {
+    return jobs.reduce((total, job) => {
+      const dailyRate = job.wage_max || job.wage_min || 0;
+      const positions = job.positions_available || 1;
+      const days = job.duration_days || 30;
+      return total + (dailyRate * positions * days);
+    }, 0);
+  };
+
   const fetchProjects = async () => {
     try {
       const { data: projectsData, error } = await supabase
@@ -63,20 +72,31 @@ export default function GovernmentEscrowFunding() {
 
       if (error) throw error;
 
-      // Fetch escrow accounts for projects
-      const projectsWithEscrow = await Promise.all(
+      const projectsWithDetails = await Promise.all(
         (projectsData || []).map(async (project) => {
-          const { data: escrow } = await supabase
-            .from('escrow_accounts')
-            .select('*')
-            .eq('project_id', project.id)
-            .single();
+          const [{ data: escrow }, { data: jobs }] = await Promise.all([
+            supabase.from('escrow_accounts').select('*').eq('project_id', project.id).single(),
+            supabase.from('workforce_jobs').select('title, positions_available, wage_min, wage_max, duration_days').eq('project_id', project.id)
+          ]);
 
-          return { ...project, escrow };
+          const jobSummaries: WorkforceJobSummary[] = (jobs || []).map(j => ({
+            title: j.title,
+            positions_available: j.positions_available || 1,
+            wage_min: j.wage_min || 0,
+            wage_max: j.wage_max || 0,
+            duration_days: j.duration_days || 30,
+          }));
+
+          return {
+            ...project,
+            escrow,
+            jobs: jobSummaries,
+            calculatedWagePool: calculateWagePool(jobSummaries),
+          };
         })
       );
 
-      setProjects(projectsWithEscrow);
+      setProjects(projectsWithDetails);
     } catch (error: any) {
       toast.error("Failed to fetch projects");
     } finally {
