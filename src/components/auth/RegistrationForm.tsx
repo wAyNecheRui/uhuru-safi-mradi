@@ -305,9 +305,6 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
             </div>
           </div>
 
-          <div className="p-3 bg-yellow-100 border border-yellow-300 rounded text-xs text-yellow-800">
-            <strong>Important:</strong> Government accounts require admin verification before activation. You will start with citizen-level access until your credentials are verified.
-          </div>
         </div>
       )}
 
