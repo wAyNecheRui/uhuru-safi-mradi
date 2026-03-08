@@ -1,9 +1,10 @@
 import React from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 import { ReportData } from '@/types/problemReporting';
 import { getTemplateByCategory, DESCRIPTION_TEMPLATES, getCategoryGuidance } from '@/constants/descriptionTemplates';
-import { AlertCircle, HelpCircle } from 'lucide-react';
+import { AlertCircle, HelpCircle, FileText, Eye } from 'lucide-react';
 
 interface DescriptionTemplateSectionProps {
   reportData: ReportData;
@@ -13,8 +14,14 @@ interface DescriptionTemplateSectionProps {
 const DescriptionTemplateSection = ({ reportData, onInputChange }: DescriptionTemplateSectionProps) => {
   const template = getTemplateByCategory(reportData.category) || DESCRIPTION_TEMPLATES.find(t => t.category === 'other');
   const guidance = getCategoryGuidance(reportData.category);
-  
-  // Dynamic placeholder based on category
+  const [showExample, setShowExample] = React.useState(false);
+
+  const applyTemplate = () => {
+    if (template) {
+      onInputChange('description', template.template);
+    }
+  };
+
   const getPlaceholder = () => {
     if (!template) return "Describe the problem in detail...";
     return template.placeholder;
@@ -23,17 +30,41 @@ const DescriptionTemplateSection = ({ reportData, onInputChange }: DescriptionTe
   return (
     <div className="space-y-3">
       {/* Label with helper text */}
-      <div className="space-y-1">
-        <Label 
-          htmlFor="problem-description" 
-          className="text-sm font-medium text-foreground flex items-center gap-1.5"
-        >
-          Problem Description
-          <span className="text-destructive">*</span>
-        </Label>
-        <p className="text-sm text-muted-foreground">
-          {guidance.instruction}
-        </p>
+      <div className="flex items-center justify-between">
+        <div className="space-y-1">
+          <Label 
+            htmlFor="problem-description" 
+            className="text-sm font-medium text-foreground flex items-center gap-1.5"
+          >
+            Problem Description
+            <span className="text-destructive">*</span>
+          </Label>
+          <p className="text-sm text-muted-foreground">
+            {guidance.instruction}
+          </p>
+        </div>
+        <div className="flex gap-2 shrink-0">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={applyTemplate}
+            className="flex items-center gap-1.5 text-xs"
+          >
+            <FileText className="h-3.5 w-3.5" />
+            Use Template
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowExample(!showExample)}
+            className="flex items-center gap-1.5 text-xs"
+          >
+            <Eye className="h-3.5 w-3.5" />
+            {showExample ? 'Hide' : 'Show'} Example
+          </Button>
+        </div>
       </div>
 
       {/* Guidance tips based on category */}
@@ -44,6 +75,16 @@ const DescriptionTemplateSection = ({ reportData, onInputChange }: DescriptionTe
             <p className="font-medium text-foreground">{guidance.title}</p>
             <p>{guidance.tips}</p>
           </div>
+        </div>
+      )}
+
+      {/* Example section */}
+      {showExample && template && (
+        <div className="p-3 bg-muted/50 border border-border rounded-lg">
+          <p className="text-xs font-medium text-muted-foreground mb-2">Example filled template:</p>
+          <pre className="text-xs text-foreground/80 whitespace-pre-wrap font-mono leading-relaxed">
+            {template.example}
+          </pre>
         </div>
       )}
 
