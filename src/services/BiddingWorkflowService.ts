@@ -343,7 +343,7 @@ export class BiddingWorkflowService {
         *,
         contractor_bids(count)
       `)
-      .eq('status', 'approved')
+      .eq('status', 'bidding_open')
       .eq('bidding_status', 'open')
       .order('bidding_end_date', { ascending: true });
 
