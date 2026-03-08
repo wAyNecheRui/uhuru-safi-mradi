@@ -136,6 +136,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
       if (error) return { user: null, error };
       if (data.user && data.session) {
+        // Always clear cache on sign-in to get fresh profile data
+        userCache.delete(data.user.id);
         const userData = await loadUserData(data.user.id, data.user.email || '');
         if (mountedRef.current && userData) {
           setUser(userData.user);
