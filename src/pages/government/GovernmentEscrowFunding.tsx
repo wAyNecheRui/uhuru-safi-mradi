@@ -347,9 +347,10 @@ export default function GovernmentEscrowFunding() {
       <Dialog open={!!selectedProject} onOpenChange={(open) => !open && setSelectedProject(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Fund Escrow via M-Pesa C2B</DialogTitle>
+            <DialogTitle>Fund Escrow via M-Pesa C2B (UAT Demo)</DialogTitle>
             <DialogDescription>
-              Transfer funds from Treasury to project escrow account
+              <span className="text-amber-600 font-medium">Demo Mode — No real M-Pesa transaction will occur.</span>{' '}
+              Simulate transfer of funds from Treasury to project escrow account.
             </DialogDescription>
           </DialogHeader>
 
