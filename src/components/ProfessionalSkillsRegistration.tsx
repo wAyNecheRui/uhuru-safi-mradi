@@ -174,14 +174,12 @@ const ProfessionalSkillsRegistration = () => {
 
   const loadExistingRegistration = async () => {
     try {
-      // Check if user already has a skills profile
       const { data: skillsData } = await supabase
         .from('skills_profiles')
         .select('*')
         .eq('user_id', user?.id)
         .single();
 
-      // Also get basic profile info
       const { data: profileData } = await supabase
         .from('user_profiles')
         .select('*')
@@ -216,6 +214,8 @@ const ProfessionalSkillsRegistration = () => {
       }
     } catch (error) {
       console.error('Error loading registration:', error);
+    } finally {
+      setInitialLoading(false);
     }
   };
 
