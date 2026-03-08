@@ -212,9 +212,10 @@ const Contact = () => {
                   type="submit" 
                   size={isMobile ? "default" : "lg"} 
                   className="w-full bg-blue-600 hover:bg-blue-700"
+                  disabled={isSubmitting}
                 >
-                  <Send className="w-4 h-4 mr-2" />
-                  Send Message
+                  {isSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
+                  {isSubmitting ? 'Sending...' : 'Send Message'}
                 </Button>
               </form>
             </div>
