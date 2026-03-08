@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAuthForm } from '@/hooks/useAuthForm';
 import { useAuthHandlers } from '@/hooks/useAuthHandlers';
-import AuthLoading from './auth/AuthLoading';
+import UnifiedLoader from './ui/unified-loader';
 import LoginTabContent from './auth/LoginTabContent';
 import RegistrationTabContent from './auth/RegistrationTabContent';
 
@@ -23,16 +23,20 @@ const AuthSystem = () => {
     setActiveTab
   );
 
-  // Show loading state during auth operations
-  if (authLoading || isLoading) {
-    return <AuthLoading isLoading={true} />;
-  }
-
   // If user is authenticated, redirect them to their dashboard
-  if (user) {
-    console.log('User authenticated, redirecting to dashboard:', user.user_type);
-    navigate(`/${user.user_type}`, { replace: true });
-    return null;
+  useEffect(() => {
+    if (user && !authLoading) {
+      navigate(`/${user.user_type}`, { replace: true });
+    }
+  }, [user, authLoading, navigate]);
+
+  // Single unified loading screen for all auth states
+  if (authLoading || isLoading || user) {
+    return (
+      <UnifiedLoader 
+        message={isLoading ? "Signing you in..." : user ? "Redirecting to dashboard..." : "Loading..."} 
+      />
+    );
   }
 
   return (
