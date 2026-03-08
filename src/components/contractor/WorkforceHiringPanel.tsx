@@ -79,10 +79,11 @@ interface WorkforceHiringPanelProps {
   projectId: string;
   projectLocation?: string;
   onHire?: () => void;
+  readOnly?: boolean;
 }
 
 const WorkforceHiringPanel: React.FC<WorkforceHiringPanelProps> = ({
-  projectId, projectLocation, onHire
+  projectId, projectLocation, onHire, readOnly = false
 }) => {
   const { toast } = useToast();
   const { isMobile } = useViewport();
@@ -322,14 +323,18 @@ const WorkforceHiringPanel: React.FC<WorkforceHiringPanelProps> = ({
               <span className="text-base sm:text-lg">Workforce Integration</span>
             </div>
             <div className="flex gap-2">
-              <Button size="sm" variant="outline" onClick={() => setShowWorkerSearch(true)}>
-                <Search className="h-4 w-4 mr-1" />
-                <span className={isMobile ? 'sr-only' : ''}>Find Workers</span>
-              </Button>
-              <Button size="sm" onClick={() => setShowCreateJob(true)}>
-                <Plus className="h-4 w-4 mr-1" />
-                <span className={isMobile ? 'sr-only' : ''}>Post Job</span>
-              </Button>
+              {!readOnly && (
+                <>
+                  <Button size="sm" variant="outline" onClick={() => setShowWorkerSearch(true)}>
+                    <Search className="h-4 w-4 mr-1" />
+                    <span className={isMobile ? 'sr-only' : ''}>Find Workers</span>
+                  </Button>
+                  <Button size="sm" onClick={() => setShowCreateJob(true)}>
+                    <Plus className="h-4 w-4 mr-1" />
+                    <span className={isMobile ? 'sr-only' : ''}>Post Job</span>
+                  </Button>
+                </>
+              )}
             </div>
           </CardTitle>
           <p className="text-sm text-muted-foreground">Hire local skilled workers from the Citizen Worker Registry</p>

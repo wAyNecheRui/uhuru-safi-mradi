@@ -37,6 +37,7 @@ interface WorkforceJob {
   created_at: string;
   project_id: string;
   project_title?: string;
+  project_status?: string;
 }
 
 interface ApplicantDetail {
@@ -106,7 +107,7 @@ const ContractorJobsManagement = () => {
       setLoading(true);
       const { data, error } = await supabase
         .from('workforce_jobs')
-        .select(`*, projects(title)`)
+        .select(`*, projects(title, status)`)
         .eq('created_by', user.id)
         .order('created_at', { ascending: false });
 
@@ -123,6 +124,7 @@ const ContractorJobsManagement = () => {
           return {
             ...job,
             project_title: job.projects?.title || 'Unknown Project',
+            project_status: job.projects?.status || 'unknown',
             applicants_count: count || 0
           };
         })
@@ -140,9 +142,9 @@ const ContractorJobsManagement = () => {
     if (!user) return;
     const { data } = await supabase
       .from('projects')
-      .select('id, title')
+      .select('id, title, status')
       .eq('contractor_id', user.id)
-      .in('status', ['in_progress', 'active', 'planning']);
+      .not('status', 'in', '("completed","cancelled")');
     setContractorProjects(data || []);
   };
 
@@ -350,8 +352,10 @@ const ContractorJobsManagement = () => {
 
               {['open', 'closed'].map(tab => (
                 <TabsContent key={tab} value={tab} className="space-y-4">
-                  {(tab === 'open' ? openJobs : closedJobs).map(job => (
-                    <Card key={job.id} className="shadow-md">
+                  {(tab === 'open' ? openJobs : closedJobs).map(job => {
+                    const isProjectCompleted = job.project_status === 'completed' || job.project_status === 'cancelled';
+                    return (
+                    <Card key={job.id} className={`shadow-md ${isProjectCompleted ? 'opacity-75' : ''}`}>
                       <CardHeader className="pb-3">
                         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                           <div>
@@ -363,7 +367,15 @@ const ContractorJobsManagement = () => {
                               Project: <span className="font-medium">{job.project_title}</span>
                             </p>
                           </div>
-                          <Badge variant={job.status === 'open' ? 'default' : 'secondary'}>{job.status}</Badge>
+                          <div className="flex gap-2">
+                            {isProjectCompleted && (
+                              <Badge className="bg-green-100 text-green-800">
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                                Project Completed
+                              </Badge>
+                            )}
+                            <Badge variant={job.status === 'open' ? 'default' : 'secondary'}>{job.status}</Badge>
+                          </div>
                         </div>
                       </CardHeader>
                       <CardContent className="space-y-3">
@@ -387,19 +399,27 @@ const ContractorJobsManagement = () => {
                           <Button size="sm" onClick={() => fetchApplicants(job)}>
                             <Eye className="h-4 w-4 mr-1" />View Applicants ({(job as any).applicants_count || 0})
                           </Button>
-                          <Button size="sm" variant="outline" onClick={() => setShowAttendance(showAttendance === job.id ? null : job.id)}>
-                            <Users className="h-4 w-4 mr-1" />Attendance & Pay
-                          </Button>
+                          {!isProjectCompleted && (
+                            <Button size="sm" variant="outline" onClick={() => setShowAttendance(showAttendance === job.id ? null : job.id)}>
+                              <Users className="h-4 w-4 mr-1" />Attendance & Pay
+                            </Button>
+                          )}
                         </div>
 
                         {showAttendance === job.id && (
                           <div className="mt-4">
-                            <WorkerAttendanceTracker jobId={job.id} dailyRate={job.wage_min || 1000} onUpdate={fetchJobs} />
+                            <WorkerAttendanceTracker 
+                              jobId={job.id} 
+                              dailyRate={job.wage_min || 1000} 
+                              onUpdate={fetchJobs} 
+                              readOnly={isProjectCompleted}
+                            />
                           </div>
                         )}
                       </CardContent>
                     </Card>
-                  ))}
+                    );
+                  })}
                   {(tab === 'open' ? openJobs : closedJobs).length === 0 && (
                     <Card>
                       <CardContent className="py-8 text-center text-muted-foreground">
@@ -538,7 +558,7 @@ const ContractorJobsManagement = () => {
                             </div>
                           )}
 
-                          {app.status === 'pending' && (
+                          {app.status === 'pending' && !(selectedJob?.project_status === 'completed' || selectedJob?.project_status === 'cancelled') && (
                             <div className="flex gap-2 pt-2">
                               <Button
                                 size="sm"

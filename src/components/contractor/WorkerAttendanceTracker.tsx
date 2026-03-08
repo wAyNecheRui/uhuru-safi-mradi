@@ -45,12 +45,14 @@ interface WorkerAttendanceTrackerProps {
   jobId: string;
   dailyRate: number;
   onUpdate?: () => void;
+  readOnly?: boolean;
 }
 
 const WorkerAttendanceTracker: React.FC<WorkerAttendanceTrackerProps> = ({
   jobId,
   dailyRate,
-  onUpdate
+  onUpdate,
+  readOnly = false
 }) => {
   const { toast } = useToast();
   const [workers, setWorkers] = useState<HiredWorker[]>([]);
@@ -151,7 +153,10 @@ const WorkerAttendanceTracker: React.FC<WorkerAttendanceTrackerProps> = ({
 
   const handleRecordWork = async () => {
     if (!selectedWorker) return;
-
+    if (readOnly) {
+      toast({ title: 'Project Completed', description: 'No actions can be performed on a completed project.', variant: 'destructive' });
+      return;
+    }
     setRecordingWork(true);
     try {
       const rate = selectedWorker.daily_rate || dailyRate;
@@ -211,6 +216,10 @@ const WorkerAttendanceTracker: React.FC<WorkerAttendanceTrackerProps> = ({
 
   const handleProcessPayment = async () => {
     if (!selectedWorker) return;
+    if (readOnly) {
+      toast({ title: 'Project Completed', description: 'No actions can be performed on a completed project.', variant: 'destructive' });
+      return;
+    }
 
     setProcessingPayment(true);
     try {
@@ -324,23 +333,25 @@ const WorkerAttendanceTracker: React.FC<WorkerAttendanceTrackerProps> = ({
                   </span>
                 </div>
               </div>
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  onClick={() => handleOpenRecordDialog(worker)}
-                >
-                  <Clock className="h-4 w-4 mr-1" />
-                  Record Work
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleOpenPaymentDialog(worker)}
-                >
-                  <Wallet className="h-4 w-4 mr-1" />
-                  Pay
-                </Button>
-              </div>
+              {!readOnly && (
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    onClick={() => handleOpenRecordDialog(worker)}
+                  >
+                    <Clock className="h-4 w-4 mr-1" />
+                    Record Work
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleOpenPaymentDialog(worker)}
+                  >
+                    <Wallet className="h-4 w-4 mr-1" />
+                    Pay
+                  </Button>
+                </div>
+              )}
             </div>
           ))}
         </CardContent>
