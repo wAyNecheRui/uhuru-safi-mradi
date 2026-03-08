@@ -186,13 +186,24 @@ export default function GovernmentEscrowFunding() {
 
   return (
     <div className="container mx-auto p-6 max-w-6xl">
+      {/* UAT Demo Banner */}
+      <div className="mb-6 bg-amber-50 border-2 border-amber-400 border-dashed rounded-lg p-4 flex items-center gap-3">
+        <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0" />
+        <div>
+          <p className="font-semibold text-amber-800">UAT / Demo Mode</p>
+          <p className="text-sm text-amber-700">
+            All M-Pesa C2B transactions are simulated. No real funds are collected or disbursed.
+          </p>
+        </div>
+      </div>
+
       <div className="mb-8">
         <h1 className="text-3xl font-bold flex items-center gap-3">
           <Wallet className="h-8 w-8 text-primary" />
-          Escrow Funding (M-Pesa C2B)
+          Escrow Funding (M-Pesa C2B) — Demo
         </h1>
         <p className="text-muted-foreground mt-2">
-          Fund project escrow accounts using M-Pesa Customer-to-Business payments from Treasury
+          Fund project escrow accounts using simulated M-Pesa Customer-to-Business payments from Treasury
         </p>
       </div>
 
