@@ -12,6 +12,7 @@ import { WorkflowState } from '@/types/workflow';
 import { MapPin, DollarSign, Users, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { getWorkflowStageDisplay } from '@/utils/workflowStatusDisplay';
 
 const WorkflowDashboard = () => {
   const { reportId } = useParams<{ reportId: string }>();
