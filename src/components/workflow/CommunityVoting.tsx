@@ -208,7 +208,7 @@ const CommunityVoting: React.FC<CommunityVotingProps> = ({ reportId, currentUser
         {priorityScore >= 5 && (
           <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-4">
             <p className="text-green-800 dark:text-green-200 font-medium">
-              ✅ This problem has received sufficient community support and is ready for government review.
+              ✅ Community validation threshold reached — this report has progressed in the workflow.
             </p>
           </div>
         )}
