@@ -79,6 +79,7 @@ interface WorkforceHiringPanelProps {
   projectId: string;
   projectLocation?: string;
   onHire?: () => void;
+  readOnly?: boolean;
 }
 
 const WorkforceHiringPanel: React.FC<WorkforceHiringPanelProps> = ({
