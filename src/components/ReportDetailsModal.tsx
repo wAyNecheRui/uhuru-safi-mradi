@@ -281,9 +281,6 @@ const ReportDetailsModal = ({ report, isOpen, onClose }: ReportDetailsProps) => 
                 {report.category.toUpperCase()}
               </Badge>
             )}
-            <Badge variant="outline" className="font-mono text-xs">
-              ID: {report.id.substring(0, 8)}
-            </Badge>
           </div>
 
           {/* Basic Information */}

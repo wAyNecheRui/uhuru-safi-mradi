@@ -136,9 +136,6 @@ const CitizenTrackReports = () => {
                         </div>
                       </div>
                     </div>
-                    <Badge variant="outline" className="text-xs font-mono">
-                      {report.id}
-                    </Badge>
                   </div>
                 </CardHeader>
                 
