@@ -469,7 +469,7 @@ const WorkerAttendanceTracker: React.FC<WorkerAttendanceTrackerProps> = ({
                   ))}
                 </div>
 
-                <div className="pt-2 border-t">
+                <div className="pt-2 border-t space-y-2">
                   <div className="flex justify-between font-medium">
                     <span>Unpaid Total:</span>
                     <span className="text-green-600">
@@ -479,6 +479,9 @@ const WorkerAttendanceTracker: React.FC<WorkerAttendanceTrackerProps> = ({
                         .toLocaleString()}
                     </span>
                   </div>
+                  <p className="text-xs text-muted-foreground">
+                    💰 Paid directly from project escrow worker wage pool
+                  </p>
                 </div>
               </>
             )}
