@@ -142,12 +142,27 @@ class NotificationServiceClass {
    * When a report is approved and open for bidding
    */
   async onReportApproved(reporterId: string, reportTitle: string): Promise<void> {
-    // Notify reporter
+    // Notify reporter only — contractors notified when bidding actually opens
     await this.notifyUser(
       reporterId,
       'Your Report Was Approved',
-      `"${reportTitle}" has been approved and is now open for contractor bidding.`,
+      `"${reportTitle}" has been approved by government. Bidding will open soon.`,
       'success',
+      'report',
+      '/citizen/track'
+    );
+  }
+
+  /**
+   * When bidding is opened for an approved report
+   */
+  async onBiddingOpened(reporterId: string, reportTitle: string): Promise<void> {
+    // Notify reporter
+    await this.notifyUser(
+      reporterId,
+      'Bidding Now Open',
+      `"${reportTitle}" is now open for contractor bids. Track progress on your dashboard.`,
+      'info',
       'report',
       '/citizen/track'
     );
