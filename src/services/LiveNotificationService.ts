@@ -570,7 +570,7 @@ export class LiveNotificationService {
     // Notify reporter
     await this.notify({
       userId: reporterId,
-      title: '✅ Your Report Was Approved!',
+      title: 'Your Report Was Approved!',
       message: `"${reportTitle}" has been approved and is now open for contractor bidding.`,
       type: 'success',
       category: 'report',
@@ -586,7 +586,7 @@ export class LiveNotificationService {
     if (contractors && contractors.length > 0) {
       const notifications = contractors.map(c => ({
         userId: c.user_id,
-        title: '🆕 New Bidding Opportunity',
+        title: 'New Bidding Opportunity',
         message: `"${reportTitle}" is now open for bids. Submit your proposal!`,
         type: 'info' as NotificationType,
         category: 'bidding',
@@ -596,14 +596,22 @@ export class LiveNotificationService {
       await this.notifyMany(notifications);
     }
 
-    // Create realtime update
-    await supabase.from('realtime_project_updates').insert({
-      project_id: reportId,
-      update_type: 'report_approved',
-      message: `Report "${reportTitle}" approved - bidding now open`,
-      created_by: approvedBy,
-      metadata: { reportId }
-    });
+    // Look up the project created by the approval trigger (report_id → project)
+    const { data: project } = await supabase
+      .from('projects')
+      .select('id')
+      .eq('report_id', reportId)
+      .single();
+
+    if (project) {
+      await supabase.from('realtime_project_updates').insert({
+        project_id: project.id,
+        update_type: 'report_approved',
+        message: `Report "${reportTitle}" approved - bidding now open`,
+        created_by: approvedBy,
+        metadata: { reportId }
+      });
+    }
   }
 
   /**

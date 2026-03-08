@@ -146,8 +146,8 @@ export default function GovernmentEscrowFunding() {
 
       if (response.error) throw new Error(response.error.message);
 
-      toast.success(`Successfully funded escrow with KES ${amount.toLocaleString()}`, {
-        description: `M-Pesa Reference: ${response.data.transaction.mpesa_reference}`
+      toast.success(`[UAT Demo] Escrow funded with KES ${amount.toLocaleString()}`, {
+        description: `Simulated M-Pesa Ref: ${response.data.transaction.mpesa_reference}. No real funds moved.`
       });
 
       setShowConfirmDialog(false);
@@ -186,13 +186,24 @@ export default function GovernmentEscrowFunding() {
 
   return (
     <div className="container mx-auto p-6 max-w-6xl">
+      {/* UAT Demo Banner */}
+      <div className="mb-6 bg-amber-50 border-2 border-amber-400 border-dashed rounded-lg p-4 flex items-center gap-3">
+        <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0" />
+        <div>
+          <p className="font-semibold text-amber-800">UAT / Demo Mode</p>
+          <p className="text-sm text-amber-700">
+            All M-Pesa C2B transactions are simulated. No real funds are collected or disbursed.
+          </p>
+        </div>
+      </div>
+
       <div className="mb-8">
         <h1 className="text-3xl font-bold flex items-center gap-3">
           <Wallet className="h-8 w-8 text-primary" />
-          Escrow Funding (M-Pesa C2B)
+          Escrow Funding (M-Pesa C2B) — Demo
         </h1>
         <p className="text-muted-foreground mt-2">
-          Fund project escrow accounts using M-Pesa Customer-to-Business payments from Treasury
+          Fund project escrow accounts using simulated M-Pesa Customer-to-Business payments from Treasury
         </p>
       </div>
 
@@ -336,9 +347,10 @@ export default function GovernmentEscrowFunding() {
       <Dialog open={!!selectedProject} onOpenChange={(open) => !open && setSelectedProject(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Fund Escrow via M-Pesa C2B</DialogTitle>
+            <DialogTitle>Fund Escrow via M-Pesa C2B (UAT Demo)</DialogTitle>
             <DialogDescription>
-              Transfer funds from Treasury to project escrow account
+              <span className="text-amber-600 font-medium">Demo Mode — No real M-Pesa transaction will occur.</span>{' '}
+              Simulate transfer of funds from Treasury to project escrow account.
             </DialogDescription>
           </DialogHeader>
 
@@ -474,9 +486,10 @@ export default function GovernmentEscrowFunding() {
       <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Confirm Escrow Funding</DialogTitle>
+            <DialogTitle>Confirm Escrow Funding (UAT Demo)</DialogTitle>
             <DialogDescription>
-              You are about to fund the escrow account with M-Pesa C2B
+              <span className="text-amber-600 font-medium">Demo Mode — No real funds will be disbursed.</span>{' '}
+              You are about to simulate funding the escrow account with M-Pesa C2B.
             </DialogDescription>
           </DialogHeader>
 

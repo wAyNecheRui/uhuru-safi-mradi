@@ -21,6 +21,7 @@ import { useGovernmentDashboard } from '@/hooks/useGovernmentDashboard';
 import { SecurityMonitor } from '@/components/security/SecurityMonitor';
 import GovernmentJurisdictionSettings from '@/components/government/GovernmentJurisdictionSettings';
 import { WorkflowGuardService, WORKFLOW_STATUS, MIN_VOTES_THRESHOLD } from '@/services/WorkflowGuardService';
+import { LiveNotificationService } from '@/services/LiveNotificationService';
 import { supabase } from '@/integrations/supabase/client';
 
 // Component for Approved Reports that are ready to open for bidding
@@ -179,7 +180,6 @@ const GovernmentDashboard = () => {
     try {
       // First update budget if provided
       if (budgetAmount) {
-        const { supabase } = await import('@/integrations/supabase/client');
         await supabase
           .from('problem_reports')
           .update({ 
@@ -190,6 +190,18 @@ const GovernmentDashboard = () => {
       }
       
       await handleApproval(selectedReport.id, 'approve');
+
+      // Fire notifications to citizens and contractors
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        LiveNotificationService.onReportApproved(
+          selectedReport.id,
+          user.id,
+          selectedReport.title,
+          selectedReport.reported_by
+        );
+      }
+
       setApproveDialogOpen(false);
       setSelectedReport(null);
     } catch (error) {

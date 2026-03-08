@@ -86,6 +86,17 @@ const EscrowManagement = () => {
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
+      {/* UAT Demo Banner */}
+      <div className="bg-amber-50 border-2 border-amber-400 border-dashed rounded-lg p-4 flex items-center gap-3">
+        <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0" />
+        <div>
+          <p className="font-semibold text-amber-800">UAT / Demo Mode</p>
+          <p className="text-sm text-amber-700">
+            All M-Pesa transactions on this page are simulated. No real funds are disbursed or collected.
+          </p>
+        </div>
+      </div>
+
       {/* Workflow Overview */}
       <Card className="shadow-xl border-t-4 border-t-green-600">
         <CardHeader className="bg-gradient-to-r from-green-50 to-blue-50">
@@ -316,12 +327,15 @@ const EscrowManagement = () => {
                                     </AlertDialogTrigger>
                                     <AlertDialogContent>
                                       <AlertDialogHeader>
-                                        <AlertDialogTitle>Confirm M-Pesa B2C Payment</AlertDialogTitle>
+                                        <AlertDialogTitle>Confirm M-Pesa B2C Payment (UAT Demo)</AlertDialogTitle>
                                         <AlertDialogDescription>
-                                          This will release <strong>{formatAmount(milestoneAmount)}</strong> to the contractor 
+                                          <span className="block mb-2 text-amber-600 font-medium">
+                                            Demo Mode — No real funds will be disbursed.
+                                          </span>
+                                          This will simulate releasing <strong>{formatAmount(milestoneAmount)}</strong> to the contractor 
                                           via M-Pesa B2C for milestone: <strong>{milestone.title}</strong>.
                                           <br /><br />
-                                          This action is recorded on the blockchain for transparency.
+                                          This action is recorded on the simulated blockchain ledger for transparency.
                                         </AlertDialogDescription>
                                       </AlertDialogHeader>
                                       <AlertDialogFooter>
@@ -412,10 +426,11 @@ const EscrowManagement = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Wallet className="h-5 w-5 text-amber-600" />
-              Fund Escrow via M-Pesa C2B
+              Fund Escrow via M-Pesa C2B (UAT Demo)
             </DialogTitle>
             <DialogDescription>
-              Simulate Treasury funding the escrow account. This triggers an M-Pesa C2B transaction.
+              <span className="text-amber-600 font-medium">Demo Mode — No real M-Pesa transaction will occur.</span>{' '}
+              Simulate Treasury funding the escrow account.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
