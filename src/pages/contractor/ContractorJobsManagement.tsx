@@ -37,6 +37,7 @@ interface WorkforceJob {
   created_at: string;
   project_id: string;
   project_title?: string;
+  project_status?: string;
 }
 
 interface ApplicantDetail {
