@@ -116,7 +116,7 @@ const CommunityValidation = () => {
         const { data: reporterData } = await supabase
           .from('user_profiles')
           .select('full_name')
-          .eq('user_id', problem.id)
+          .eq('user_id', problem.reported_by)
           .maybeSingle();
 
         // Check eligibility
@@ -131,7 +131,7 @@ const CommunityValidation = () => {
           location: problem.location || 'Location not specified',
           photo_urls: problem.photo_urls,
           created_at: problem.created_at,
-          reported_by: '',
+          reported_by: problem.reported_by,
           status: problem.status || 'pending',
           priority_score: problem.priority_score || 0,
           user_vote: userVote as 'upvote' | 'downvote' | null,
