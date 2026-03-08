@@ -358,7 +358,21 @@ const ProfessionalSkillsRegistration = () => {
     }
   };
 
-  // If user already has a profile, show their current data
+  if (initialLoading) {
+    return (
+      <div className="max-w-6xl mx-auto space-y-6">
+        <Card>
+          <CardContent className="p-12 flex items-center justify-center">
+            <div className="text-center space-y-3">
+              <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto" />
+              <p className="text-muted-foreground">Loading your profile...</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (existingRegistration && formData.selectedSkills.length > 0) {
     return (
       <div className="max-w-6xl mx-auto space-y-6">
