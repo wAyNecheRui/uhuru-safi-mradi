@@ -326,23 +326,25 @@ const WorkerAttendanceTracker: React.FC<WorkerAttendanceTrackerProps> = ({
                   </span>
                 </div>
               </div>
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  onClick={() => handleOpenRecordDialog(worker)}
-                >
-                  <Clock className="h-4 w-4 mr-1" />
-                  Record Work
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleOpenPaymentDialog(worker)}
-                >
-                  <Wallet className="h-4 w-4 mr-1" />
-                  Pay
-                </Button>
-              </div>
+              {!readOnly && (
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    onClick={() => handleOpenRecordDialog(worker)}
+                  >
+                    <Clock className="h-4 w-4 mr-1" />
+                    Record Work
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleOpenPaymentDialog(worker)}
+                  >
+                    <Wallet className="h-4 w-4 mr-1" />
+                    Pay
+                  </Button>
+                </div>
+              )}
             </div>
           ))}
         </CardContent>
