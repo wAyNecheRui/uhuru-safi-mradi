@@ -204,7 +204,7 @@ export class LiveNotificationService {
         message: `A citizen ${voteType === 'upvote' ? 'verified' : 'voted on'} your report: "${reportTitle}"`,
         type: 'info',
         category: 'vote',
-        actionUrl: '/citizen/track-reports'
+        actionUrl: '/citizen/track'
       });
     }
   }
