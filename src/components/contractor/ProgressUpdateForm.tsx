@@ -232,6 +232,22 @@ const ProgressUpdateForm: React.FC<ProgressUpdateFormProps> = ({
       return;
     }
 
+    // Check if project is completed before allowing submission
+    const { data: projectCheck } = await supabase
+      .from('projects')
+      .select('status')
+      .eq('id', projectId)
+      .single();
+    
+    if (projectCheck?.status === 'completed' || projectCheck?.status === 'cancelled') {
+      toast({
+        title: "Project Completed",
+        description: "No progress updates can be submitted for a completed project.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setSubmitting(true);
     try {
       // Upload photos first
