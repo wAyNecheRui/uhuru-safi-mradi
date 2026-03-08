@@ -245,7 +245,7 @@ export class LiveNotificationService {
           message: `"${milestoneName}" has been verified by ${verificationsCount} citizens. Automated payment processing.`,
           type: 'success',
           category: 'payment',
-          actionUrl: '/government/payment-release'
+          actionUrl: '/government/milestones'
         });
       });
     }

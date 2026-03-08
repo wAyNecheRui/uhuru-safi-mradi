@@ -250,7 +250,7 @@ class RealtimeEventServiceClass {
       await SystemAlertService.workflowUpdate(
         `Report Status: ${report.status.charAt(0).toUpperCase() + report.status.slice(1)}`,
         message,
-        '/citizen/track-reports'
+        '/citizen/track'
       );
     }
   }

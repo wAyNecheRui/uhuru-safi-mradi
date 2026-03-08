@@ -306,7 +306,7 @@ class NotificationServiceClass {
         `"${milestoneName}" verified by ${verificationsCount} citizens. Automated payment processing initiated.`,
         'success',
         'payment',
-        '/government/payment-release'
+        '/government/milestones'
       );
     }
   }
