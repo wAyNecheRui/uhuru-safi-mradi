@@ -49,11 +49,9 @@ const PriorityImpactSection = ({ reportData, onInputChange }: PriorityImpactSect
                   <div className="w-4 h-4 bg-blue-500 rounded-full"></div>
                 )}
               </div>
-              {reportData.priority === priority.value && (
-                <p className="text-sm text-gray-600 mt-2">
-                  {getImpactDescription(priority.value)}
-                </p>
-              )}
+              <p className="text-sm text-muted-foreground mt-2">
+                {getImpactDescription(priority.value)}
+              </p>
             </div>
           ))}
         </div>
