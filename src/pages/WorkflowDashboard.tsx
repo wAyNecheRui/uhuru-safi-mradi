@@ -131,19 +131,14 @@ const WorkflowDashboard = () => {
                 />
               )}
 
-              {/* Government Approval Section */}
-              {workflowState?.currentStep === 'government_approval' && (
+              {/* Dynamic Workflow Stage Banner */}
+              {report && (
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Users className="h-5 w-5" />
-                      Government Review
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-600">
-                      This problem has received sufficient community support and is ready for government review and budget allocation.
-                    </p>
+                  <CardContent className="p-4">
+                    <div className={`rounded-lg border p-4 ${getWorkflowStageDisplay(report.status).colorClass}`}>
+                      <p className="font-medium">{getWorkflowStageDisplay(report.status).label}</p>
+                      <p className="text-sm mt-1 opacity-80">{getWorkflowStageDisplay(report.status).description}</p>
+                    </div>
                   </CardContent>
                 </Card>
               )}

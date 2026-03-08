@@ -545,21 +545,29 @@ const CommunityValidation = () => {
                 </div>
               </div>
               
-              {/* Vote Progress to Government Review */}
+              {/* Vote Progress & Dynamic Workflow Status */}
               <div className="mt-3 space-y-1">
-                <div className="flex justify-between text-xs text-gray-600">
-                  <span>Progress to Review</span>
-                  <span>{Math.min(report.upvotes + report.downvotes, MIN_VOTES_THRESHOLD)}/{MIN_VOTES_THRESHOLD}</span>
-                </div>
-                <Progress 
-                  value={Math.min(((report.upvotes + report.downvotes) / MIN_VOTES_THRESHOLD) * 100, 100)} 
-                  className="h-2"
-                />
-                <p className="text-xs text-gray-500">
-                  {report.upvotes + report.downvotes >= MIN_VOTES_THRESHOLD 
-                    ? '✓ Ready for government review' 
-                    : `${MIN_VOTES_THRESHOLD - (report.upvotes + report.downvotes)} more votes needed`}
-                </p>
+                {report.status === 'pending' ? (
+                  <>
+                    <div className="flex justify-between text-xs text-gray-600">
+                      <span>Progress to Review</span>
+                      <span>{Math.min(report.upvotes + report.downvotes, MIN_VOTES_THRESHOLD)}/{MIN_VOTES_THRESHOLD}</span>
+                    </div>
+                    <Progress 
+                      value={Math.min(((report.upvotes + report.downvotes) / MIN_VOTES_THRESHOLD) * 100, 100)} 
+                      className="h-2"
+                    />
+                    <p className="text-xs text-gray-500">
+                      {report.upvotes + report.downvotes >= MIN_VOTES_THRESHOLD 
+                        ? '✓ Ready for government review' 
+                        : `${MIN_VOTES_THRESHOLD - (report.upvotes + report.downvotes)} more votes needed`}
+                    </p>
+                  </>
+                ) : (
+                  <div className={`text-xs px-2 py-1.5 rounded border ${getWorkflowStageDisplay(report.status).colorClass}`}>
+                    {getWorkflowStageDisplay(report.status).label}
+                  </div>
+                )}
               </div>
             </div>
 
