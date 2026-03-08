@@ -113,6 +113,19 @@ export const useProblemReporting = () => {
         }
       }
 
+      // Parse coordinates into PostGIS point format for spatial queries
+      let gpsPoint: string | null = null;
+      if (reportData.coordinates) {
+        const parts = reportData.coordinates.split(',').map(s => s.trim());
+        if (parts.length === 2) {
+          const lat = parseFloat(parts[0]);
+          const lon = parseFloat(parts[1]);
+          if (!isNaN(lat) && !isNaN(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180) {
+            gpsPoint = `(${lon},${lat})`;
+          }
+        }
+      }
+
       // Submit the report
       const { data, error } = await supabase
         .from('problem_reports')
@@ -123,6 +136,7 @@ export const useProblemReporting = () => {
           priority: reportData.priority || 'medium',
           location: reportData.location,
           coordinates: reportData.coordinates,
+          gps_coordinates: gpsPoint,
           estimated_cost: reportData.estimatedCost ? parseFloat(reportData.estimatedCost) : null,
           affected_population: reportData.affectedPopulation ? parseInt(reportData.affectedPopulation) : null,
           photo_urls: photoUrls,
