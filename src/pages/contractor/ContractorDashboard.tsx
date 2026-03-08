@@ -26,6 +26,7 @@ interface ProjectWithProgress {
 
 const ContractorDashboard = () => {
   const { isMobile, isTablet } = useResponsive();
+  const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const [selectedCounty, setSelectedCounty] = useState('Nairobi');
   const [loading, setLoading] = useState(true);
