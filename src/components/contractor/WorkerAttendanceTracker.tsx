@@ -51,7 +51,8 @@ interface WorkerAttendanceTrackerProps {
 const WorkerAttendanceTracker: React.FC<WorkerAttendanceTrackerProps> = ({
   jobId,
   dailyRate,
-  onUpdate
+  onUpdate,
+  readOnly = false
 }) => {
   const { toast } = useToast();
   const [workers, setWorkers] = useState<HiredWorker[]>([]);
