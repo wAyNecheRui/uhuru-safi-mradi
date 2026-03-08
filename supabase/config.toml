@@ -41,3 +41,6 @@ verify_jwt = false
 
 [functions.submit-contact]
 verify_jwt = false
+
+[functions.pay-worker-from-escrow]
+verify_jwt = false
