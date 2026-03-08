@@ -152,18 +152,34 @@ const ContractorBidding = () => {
     try {
       setSubmitting(true);
       
+      const bidAmount = parseFloat(bidForm.amount.replace(/,/g, ''));
+      
       const { error } = await supabase
         .from('contractor_bids')
         .insert({
           report_id: selectedProblem.id,
           contractor_id: user.id,
-          bid_amount: parseFloat(bidForm.amount.replace(/,/g, '')),
+          bid_amount: bidAmount,
           estimated_duration: parseInt(bidForm.duration),
           proposal: bidForm.proposal,
           technical_approach: bidForm.technicalApproach || null
         });
 
       if (error) throw error;
+
+      // Fire notifications to citizen reporter and government
+      try {
+        const companyName = contractorProfile?.company_name || userProfile?.full_name || 'A contractor';
+        const { LiveNotificationService } = await import('@/services/LiveNotificationService');
+        await LiveNotificationService.onBidSubmitted(
+          selectedProblem.id,
+          user.id,
+          companyName,
+          bidAmount
+        );
+      } catch (notifError) {
+        console.warn('Bid notification failed (non-blocking):', notifError);
+      }
 
       toast({
         title: "Bid submitted successfully!",
