@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
+import UnifiedLoader from '@/components/ui/unified-loader';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -75,23 +76,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     }
   }, [user, loading, isAuthenticated, allowedRoles, navigate, redirectTo, location.pathname]);
 
-  // Show loading spinner during auth check
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
+    return <UnifiedLoader message="Verifying access..." />;
   }
 
-  // SECURITY: Show nothing until user is fully validated
-  // This prevents flash of other user's content during transitions
   if (!isAuthenticated || !user || !isUserValidated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
+    return <UnifiedLoader message="Preparing your dashboard..." />;
   }
 
   // If wrong role, show nothing (redirect is happening)
