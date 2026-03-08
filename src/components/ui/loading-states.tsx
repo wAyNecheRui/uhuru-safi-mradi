@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Loader2, Wifi, WifiOff } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -14,29 +13,26 @@ export const LoadingSpinner = ({ size = 'md', text, className = "" }: LoadingSpi
   const sizeClasses = {
     sm: 'h-4 w-4',
     md: 'h-6 w-6',
-    lg: 'h-8 w-8'
+    lg: 'h-10 w-10'
   };
 
   return (
     <div className={`flex items-center justify-center space-x-2 ${className}`}>
-      <Loader2 className={`animate-spin ${sizeClasses[size]}`} />
-      {text && <span className="text-gray-600">{text}</span>}
+      <Loader2 className={`animate-spin text-primary ${sizeClasses[size]}`} />
+      {text && <span className="text-muted-foreground">{text}</span>}
     </div>
   );
 };
 
-export const FullPageLoader = ({ message = "Loading..." }: { message?: string }) => (
-  <div className="min-h-screen flex items-center justify-center bg-gray-50">
-    <div className="text-center">
-      <LoadingSpinner size="lg" />
-      <p className="mt-4 text-gray-600 font-medium">{message}</p>
-    </div>
+export const FullPageLoader = ({ message }: { message?: string }) => (
+  <div className="min-h-screen flex items-center justify-center bg-background">
+    <Loader2 className="h-10 w-10 text-primary animate-spin" />
   </div>
 );
 
 export const InlineLoader = ({ message }: { message?: string }) => (
   <div className="flex items-center justify-center py-8">
-    <LoadingSpinner text={message} />
+    <Loader2 className="h-6 w-6 text-primary animate-spin" />
   </div>
 );
 
@@ -56,8 +52,8 @@ export const ConnectionStatus = ({ isOnline, onRetry }: ConnectionStatusProps) =
   if (isOnline) return null;
 
   return (
-    <Alert className="border-red-200 bg-red-50">
-      <WifiOff className="h-4 w-4 text-red-600" />
+    <Alert className="border-destructive/50 bg-destructive/10">
+      <WifiOff className="h-4 w-4 text-destructive" />
       <AlertDescription className="flex items-center justify-between">
         <span>You're currently offline. Some features may not be available.</span>
         {onRetry && (
@@ -72,13 +68,11 @@ export const ConnectionStatus = ({ isOnline, onRetry }: ConnectionStatusProps) =
 };
 
 export const DataLoadingCard = ({ title, isLoading }: { title: string; isLoading: boolean }) => (
-  <div className="bg-white rounded-lg border p-6">
+  <div className="bg-card rounded-lg border p-6">
     <h3 className="font-semibold mb-4">{title}</h3>
     {isLoading ? (
-      <div className="space-y-3">
-        <div className="h-3 bg-gray-200 rounded animate-pulse"></div>
-        <div className="h-3 bg-gray-200 rounded animate-pulse w-5/6"></div>
-        <div className="h-3 bg-gray-200 rounded animate-pulse w-4/6"></div>
+      <div className="flex items-center justify-center py-4">
+        <Loader2 className="h-6 w-6 text-primary animate-spin" />
       </div>
     ) : (
       <div>Content loaded successfully!</div>
