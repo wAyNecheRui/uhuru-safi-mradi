@@ -77,11 +77,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }, [user, loading, isAuthenticated, allowedRoles, navigate, redirectTo, location.pathname]);
 
   if (loading) {
-    return <UnifiedLoader message="Verifying access..." />;
+    return <UnifiedLoader />;
   }
 
   if (!isAuthenticated || !user || !isUserValidated) {
-    return <UnifiedLoader message="Preparing your dashboard..." />;
+    return <UnifiedLoader />;
   }
 
   // If wrong role, show nothing (redirect is happening)
