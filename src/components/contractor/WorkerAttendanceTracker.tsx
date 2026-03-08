@@ -153,7 +153,10 @@ const WorkerAttendanceTracker: React.FC<WorkerAttendanceTrackerProps> = ({
 
   const handleRecordWork = async () => {
     if (!selectedWorker) return;
-
+    if (readOnly) {
+      toast({ title: 'Project Completed', description: 'No actions can be performed on a completed project.', variant: 'destructive' });
+      return;
+    }
     setRecordingWork(true);
     try {
       const rate = selectedWorker.daily_rate || dailyRate;
