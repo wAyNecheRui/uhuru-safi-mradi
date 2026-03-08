@@ -11,6 +11,14 @@ import { Loader2, Wallet, Building2, ArrowRight, CheckCircle2, AlertCircle, Phon
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 
+interface WorkforceJobSummary {
+  positions_available: number;
+  wage_max: number;
+  wage_min: number;
+  duration_days: number;
+  title: string;
+}
+
 interface Project {
   id: string;
   title: string;
@@ -18,6 +26,8 @@ interface Project {
   budget: number | null;
   status: string;
   contractor_id: string | null;
+  jobs: WorkforceJobSummary[];
+  calculatedWagePool: number;
   escrow?: {
     id: string;
     total_amount: number;
