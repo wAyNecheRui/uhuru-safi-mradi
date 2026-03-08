@@ -83,7 +83,7 @@ interface WorkforceHiringPanelProps {
 }
 
 const WorkforceHiringPanel: React.FC<WorkforceHiringPanelProps> = ({
-  projectId, projectLocation, onHire
+  projectId, projectLocation, onHire, readOnly = false
 }) => {
   const { toast } = useToast();
   const { isMobile } = useViewport();
