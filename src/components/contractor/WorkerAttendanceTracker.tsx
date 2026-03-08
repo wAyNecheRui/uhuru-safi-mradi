@@ -430,7 +430,7 @@ const WorkerAttendanceTracker: React.FC<WorkerAttendanceTrackerProps> = ({
       <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Process Worker Payment</DialogTitle>
+            <DialogTitle>Process Worker Payment (Escrow)</DialogTitle>
           </DialogHeader>
           
           <div className="space-y-4 py-4">
