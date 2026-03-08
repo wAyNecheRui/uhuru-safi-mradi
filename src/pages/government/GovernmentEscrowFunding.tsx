@@ -128,8 +128,7 @@ export default function GovernmentEscrowFunding() {
       return;
     }
 
-    const wagePercent = Math.min(100, Math.max(0, parseFloat(workerWagePercent) || 0));
-    const workerWageAllocation = Math.round((amount * wagePercent) / 100);
+    const workerWageAllocation = parseFloat(workerWageAmount) || 0;
 
     setProcessing(true);
     try {
