@@ -249,6 +249,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else if (eventName === 'SIGNED_IN' && session?.user) {
         // Defer to avoid deadlock
         setTimeout(async () => {
+          userCache.delete(session.user.id);
           const userData = await loadUserData(session.user.id, session.user.email || '');
           if (mountedRef.current && userData) {
             setUser(userData.user);
