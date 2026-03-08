@@ -467,13 +467,13 @@ export class WorkforceIntegrationCycle {
   /**
    * Find matching jobs for a worker based on skills and location
    */
-  static async findMatchingJobs(workerId: string): Promise<JobMatch[]> {
+  static async findMatchingJobs(authUserId: string): Promise<JobMatch[]> {
     try {
-      // Get worker profile
+      // Get worker profile - use user_id since callers pass auth UUID
       const { data: worker } = await supabase
         .from('citizen_workers')
         .select('*')
-        .eq('id', workerId)
+        .eq('user_id', authUserId)
         .single();
 
       if (!worker) return [];
@@ -525,12 +525,13 @@ export class WorkforceIntegrationCycle {
   /**
    * Get worker performance history
    */
-  static async getWorkerPerformance(workerId: string): Promise<WorkerPerformance | null> {
+  static async getWorkerPerformance(authUserId: string): Promise<WorkerPerformance | null> {
     try {
+      // Use user_id since callers pass auth UUID
       const { data: worker } = await supabase
         .from('citizen_workers')
         .select('*')
-        .eq('id', workerId)
+        .eq('user_id', authUserId)
         .single();
 
       if (!worker) return null;
@@ -553,7 +554,7 @@ export class WorkforceIntegrationCycle {
       }, 0) || 0;
 
       return {
-        workerId,
+        workerId: authUserId,
         totalJobsCompleted: worker.total_jobs_completed || 0,
         averageRating: worker.rating || 0,
         reliabilityScore: worker.rating ? worker.rating * 20 : 0, // Convert 5-point to 100-point scale
