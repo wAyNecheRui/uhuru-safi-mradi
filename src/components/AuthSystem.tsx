@@ -32,11 +32,7 @@ const AuthSystem = () => {
 
   // Single unified loading screen for all auth states
   if (authLoading || isLoading || user) {
-    return (
-      <UnifiedLoader 
-        message={isLoading ? "Signing you in..." : user ? "Redirecting to dashboard..." : "Loading..."} 
-      />
-    );
+    return <UnifiedLoader />;
   }
 
   return (
