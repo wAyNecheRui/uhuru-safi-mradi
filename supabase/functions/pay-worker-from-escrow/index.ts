@@ -127,7 +127,62 @@ serve(async (req) => {
       )
     }
 
-    // 5. Simulate M-Pesa B2C payment
+    // RACE CONDITION FIX: Atomically lock daily records to 'processing' to prevent double-pay
+    const { data: lockedRecords, error: lockRecordsError } = await supabaseAdmin
+      .from('worker_daily_records')
+      .update({ payment_status: 'processing', updated_at: new Date().toISOString() })
+      .in('id', record_ids)
+      .eq('payment_status', 'unpaid') // Only lock unpaid records
+      .select('id')
+
+    if (lockRecordsError || !lockedRecords || lockedRecords.length === 0) {
+      return new Response(
+        JSON.stringify({ error: 'Records already being processed or paid' }),
+        { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    if (lockedRecords.length !== records.length) {
+      // Some records were already grabbed by another request — rollback locked ones
+      await supabaseAdmin
+        .from('worker_daily_records')
+        .update({ payment_status: 'unpaid' })
+        .in('id', lockedRecords.map((r: any) => r.id))
+      return new Response(
+        JSON.stringify({ error: `Only ${lockedRecords.length}/${records.length} records available. Concurrent payment detected.` }),
+        { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // 5. RACE CONDITION FIX: Optimistic lock on escrow balance
+    const { data: lockedEscrow, error: escrowLockError } = await supabaseAdmin
+      .from('escrow_accounts')
+      .update({
+        worker_wage_released: (escrow.worker_wage_released || 0) + totalAmount,
+        held_amount: escrow.held_amount - totalAmount,
+        released_amount: escrow.released_amount + totalAmount,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', escrow.id)
+      .eq('held_amount', escrow.held_amount) // Optimistic lock
+      .eq('worker_wage_released', escrow.worker_wage_released || 0) // Double lock on wage pool
+      .select('id')
+      .single()
+
+    if (escrowLockError || !lockedEscrow) {
+      // Rollback record locks
+      await supabaseAdmin
+        .from('worker_daily_records')
+        .update({ payment_status: 'unpaid' })
+        .in('id', record_ids)
+      console.error('[WORKER-ESCROW-PAY] Escrow lock failed — concurrent modification')
+      return new Response(
+        JSON.stringify({ error: 'Escrow balance changed during processing. Please retry.' }),
+        { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // 6. Simulate M-Pesa B2C payment
     const transactionRef = generateDemoB2CRef()
     console.log(`[WORKER-ESCROW-PAY] Demo B2C: KES ${totalAmount} → worker ${worker_id}, ref: ${transactionRef}`)
 
@@ -141,7 +196,7 @@ serve(async (req) => {
       records[0].work_date
     )
 
-    // 6. Create worker_payments record linked to escrow
+    // 7. Create worker_payments record linked to escrow
     const { data: payment, error: paymentError } = await supabaseAdmin
       .from('worker_payments')
       .insert({
@@ -156,14 +211,14 @@ serve(async (req) => {
         period_end: periodEnd,
         daily_records_count: records.length,
         escrow_account_id: escrow.id,
-        worker_phone: null // Will be set when real M-Pesa is active
+        worker_phone: null
       })
       .select()
       .single()
 
     if (paymentError) throw paymentError
 
-    // 7. Mark daily records as paid
+    // 8. Finalize daily records as paid
     const { error: updateError } = await supabaseAdmin
       .from('worker_daily_records')
       .update({
@@ -175,21 +230,6 @@ serve(async (req) => {
       .in('id', record_ids)
 
     if (updateError) throw updateError
-
-    // 8. Update escrow: deduct from worker wage pool AND from held_amount
-    const { error: escrowUpdateError } = await supabaseAdmin
-      .from('escrow_accounts')
-      .update({
-        worker_wage_released: (escrow.worker_wage_released || 0) + totalAmount,
-        held_amount: escrow.held_amount - totalAmount,
-        released_amount: escrow.released_amount + totalAmount,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', escrow.id)
-
-    if (escrowUpdateError) {
-      console.error('[WORKER-ESCROW-PAY] Escrow update error:', escrowUpdateError)
-    }
 
     // 9. Create blockchain record for transparency
     await supabaseAdmin

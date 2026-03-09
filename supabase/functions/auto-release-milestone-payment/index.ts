@@ -23,38 +23,24 @@ serve(async (req) => {
   }
 
   try {
-    // Use service role for admin operations (bypasses RLS)
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false
-        }
-      }
+      { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    // Use anon key for user auth verification
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false
-        }
-      }
+      { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
     const authHeader = req.headers.get('Authorization')
     let userId: string | null = null
     
-    // Authentication is optional - can be called by authenticated user or internally
     if (authHeader) {
       const token = authHeader.replace('Bearer ', '')
       const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token)
-      
       if (!authError && user) {
         userId = user.id
       }
@@ -65,10 +51,7 @@ serve(async (req) => {
     if (!milestoneId) {
       return new Response(
         JSON.stringify({ error: 'Milestone ID is required' }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
@@ -95,7 +78,6 @@ serve(async (req) => {
     let totalRating = 0
     let ratingCount = 0
     approvedVerifications.forEach(v => {
-      // Match both integer and decimal ratings like "Rating: 4/5" or "Rating: 3.8/5" or "Rating: 4.0000000000000000/5"
       const match = v.verification_notes?.match(/Rating:\s*([\d.]+)/)
       if (match) {
         const rating = parseFloat(match[1])
@@ -129,10 +111,7 @@ serve(async (req) => {
           averageRating,
           message 
         }),
-        { 
-          status: 200, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
@@ -147,25 +126,44 @@ serve(async (req) => {
       console.error('[AUTO-RELEASE] Milestone not found:', milestoneError)
       return new Response(
         JSON.stringify({ error: 'Milestone not found' }),
-        { 
-          status: 404, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Check if already paid
-    if (milestone.status === 'paid') {
+    // Check if already paid (idempotent)
+    if (milestone.status === 'paid' || milestone.status === 'payment_processing') {
       return new Response(
         JSON.stringify({ 
           success: true, 
           alreadyPaid: true,
-          message: 'Payment already released for this milestone' 
+          message: 'Payment already released or being processed for this milestone' 
         }),
-        { 
-          status: 200, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // RACE CONDITION FIX: Atomically lock milestone status to prevent concurrent auto-releases
+    const { data: lockedMilestone, error: lockError } = await supabaseAdmin
+      .from('project_milestones')
+      .update({ 
+        status: 'payment_processing',
+        verified_at: new Date().toISOString(),
+        ...(userId ? { verified_by: userId } : {})
+      })
+      .eq('id', milestoneId)
+      .eq('status', milestone.status) // Only succeeds if status unchanged since our read
+      .select('id')
+      .single()
+
+    if (lockError || !lockedMilestone) {
+      console.warn(`[AUTO-RELEASE] Milestone ${milestoneId} lock failed — concurrent request`)
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          alreadyPaid: true,
+          message: 'Payment already being processed for this milestone' 
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
@@ -177,13 +175,11 @@ serve(async (req) => {
       .single()
 
     if (escrowError || !escrow) {
+      await supabaseAdmin.from('project_milestones').update({ status: milestone.status }).eq('id', milestoneId)
       console.error('[AUTO-RELEASE] Escrow not found:', escrowError)
       return new Response(
         JSON.stringify({ error: 'Escrow account not found' }),
-        { 
-          status: 404, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
@@ -192,23 +188,43 @@ serve(async (req) => {
 
     // Check sufficient funds
     if (escrow.held_amount < milestoneAmount) {
+      await supabaseAdmin.from('project_milestones').update({ status: milestone.status }).eq('id', milestoneId)
       return new Response(
         JSON.stringify({ 
           success: false,
           error: 'Insufficient escrow funds',
           message: `Need KES ${milestoneAmount.toLocaleString()}, but only KES ${escrow.held_amount.toLocaleString()} available`
         }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // RACE CONDITION FIX: Optimistic lock on escrow balance
+    const { data: lockedEscrow, error: escrowLockError } = await supabaseAdmin
+      .from('escrow_accounts')
+      .update({
+        released_amount: escrow.released_amount + milestoneAmount,
+        held_amount: escrow.held_amount - milestoneAmount,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', escrow.id)
+      .eq('held_amount', escrow.held_amount) // Optimistic lock
+      .select('id')
+      .single()
+
+    if (escrowLockError || !lockedEscrow) {
+      await supabaseAdmin.from('project_milestones').update({ status: milestone.status }).eq('id', milestoneId)
+      console.error('[AUTO-RELEASE] Escrow lock failed — concurrent modification')
+      return new Response(
+        JSON.stringify({ error: 'Escrow balance changed during processing. Please retry.' }),
+        { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
     const paymentRef = generatePaymentRef()
     console.log(`[AUTO-RELEASE] Releasing KES ${milestoneAmount} for milestone ${milestoneId}. Ref: ${paymentRef}`)
 
-    // 7. Create payment transaction
+    // 7. Create payment transaction — DB unique index prevents duplicates
     const { data: transaction, error: txError } = await supabaseAdmin
       .from('payment_transactions')
       .insert({
@@ -224,47 +240,37 @@ serve(async (req) => {
       .single()
 
     if (txError) {
+      if (txError.code === '23505') {
+        await supabaseAdmin.from('project_milestones').update({ status: 'paid' }).eq('id', milestoneId)
+        return new Response(
+          JSON.stringify({ success: true, alreadyPaid: true, message: 'Payment already exists' }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+      // Rollback
+      await supabaseAdmin.from('escrow_accounts').update({
+        released_amount: escrow.released_amount,
+        held_amount: escrow.held_amount
+      }).eq('id', escrow.id)
+      await supabaseAdmin.from('project_milestones').update({ status: milestone.status }).eq('id', milestoneId)
       console.error('[AUTO-RELEASE] Transaction error:', txError)
       throw txError
     }
 
-    // 8. Update milestone status to 'paid'
-    const { error: milestoneUpdateError } = await supabaseAdmin
+    // 8. Finalize milestone status to 'paid'
+    await supabaseAdmin
       .from('project_milestones')
-      .update({ 
-        status: 'paid',
-        verified_at: new Date().toISOString(),
-        // verified_by is UUID, only set if we have a user ID
-        ...(userId ? { verified_by: userId } : {})
-      })
+      .update({ status: 'paid' })
       .eq('id', milestoneId)
 
-    if (milestoneUpdateError) {
-      console.error('[AUTO-RELEASE] Milestone update error:', milestoneUpdateError)
-    }
-
-    // 9. Update escrow account
-    const { error: escrowUpdateError } = await supabaseAdmin
-      .from('escrow_accounts')
-      .update({
-        released_amount: escrow.released_amount + milestoneAmount,
-        held_amount: escrow.held_amount - milestoneAmount,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', escrow.id)
-
-    if (escrowUpdateError) {
-      console.error('[AUTO-RELEASE] Escrow update error:', escrowUpdateError)
-    }
-
-    // 10. Get contractor info for notification
+    // 9. Get contractor info for notification
     const { data: project } = await supabaseAdmin
       .from('projects')
       .select('contractor_id, title')
       .eq('id', milestone.project_id)
       .single()
 
-    // 11. Create notifications for contractor
+    // 10. Create notifications for contractor
     if (project?.contractor_id) {
       await supabaseAdmin
         .from('notifications')
@@ -278,14 +284,14 @@ serve(async (req) => {
         })
     }
 
-    // 12. Create realtime update for transparency
+    // 11. Create realtime update for transparency
     await supabaseAdmin
       .from('realtime_project_updates')
       .insert({
         project_id: milestone.project_id,
         update_type: 'auto_payment_released',
         message: `💰 Automated payment of KES ${milestoneAmount.toLocaleString()} released for "${milestone.title}" after ${approvedCount} citizen verifications`,
-        created_by: userId || project?.contractor_id || milestone.project_id, // Use any available ID
+        created_by: userId || project?.contractor_id || milestone.project_id,
         metadata: {
           milestone_id: milestoneId,
           amount: milestoneAmount,
@@ -314,20 +320,14 @@ serve(async (req) => {
         },
         message: `🎉 Payment of KES ${milestoneAmount.toLocaleString()} automatically released! Reference: ${paymentRef}`
       }),
-      { 
-        status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 
   } catch (error) {
     console.error('[AUTO-RELEASE] Error:', error)
     return new Response(
       JSON.stringify({ error: error.message || 'Internal server error' }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
 })
