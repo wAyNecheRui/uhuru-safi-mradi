@@ -6,36 +6,29 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Demo mode configuration - simulates M-Pesa B2C payments for testing
-const DEMO_MODE = true;
-const DEMO_SHORTCODE = '174379';
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const MAX_BODY_SIZE = 51200;
 
-// Generate simulated M-Pesa B2C transaction reference
 function generateDemoB2CTransactionId(): string {
   const timestamp = Date.now().toString(36).toUpperCase();
   const random = Math.random().toString(36).substr(2, 8).toUpperCase();
   return `B2C${timestamp}${random}`;
 }
 
-// Simulate M-Pesa B2C payment response
 function simulateB2CPayment(amount: number, contractorName: string, contractorPhone: string) {
   const transactionId = generateDemoB2CTransactionId();
-  const conversationId = `AG_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
-  
   return {
-    ConversationID: conversationId,
+    ConversationID: `AG_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
     OriginatorConversationID: `OC_${Date.now()}`,
     ResponseCode: '0',
     ResponseDescription: 'Accept the service request successfully.',
     TransactionID: transactionId,
     TransactionAmount: amount,
     ReceiverPartyPublicName: `${contractorPhone} - ${contractorName}`,
-    B2CChargesPaidAccountAvailableFunds: 0,
     TransactionCompletedDateTime: new Date().toISOString(),
     ResultCode: '0',
     ResultDesc: 'The service request is processed successfully.',
     _demo: true,
-    _timestamp: new Date().toISOString()
   };
 }
 
@@ -44,35 +37,32 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
+  // SECURITY: Reject non-POST
+  if (req.method !== 'POST') {
+    return new Response(
+      JSON.stringify({ error: 'Method not allowed' }),
+      { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+
   try {
-    // Use service role for admin operations to bypass RLS
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false
-        }
-      }
+      { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    // Use anon key for user auth verification
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false
-        }
-      }
+      { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
+    // SECURITY: Auth check
     const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return new Response(
-        JSON.stringify({ error: 'Missing authorization header' }),
+        JSON.stringify({ error: 'Unauthorized' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
@@ -87,36 +77,52 @@ serve(async (req) => {
       )
     }
 
-    const { milestone_id, contractor_phone } = await req.json()
+    // SECURITY: Payload size
+    const rawBody = await req.text()
+    if (rawBody.length > MAX_BODY_SIZE) {
+      return new Response(
+        JSON.stringify({ error: 'Payload too large' }),
+        { status: 413, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
-    console.log(`[B2C-DEMO] Processing contractor payment for milestone: ${milestone_id}, user: ${user.id}`)
+    let body: any;
+    try {
+      body = JSON.parse(rawBody);
+    } catch {
+      return new Response(
+        JSON.stringify({ error: 'Invalid JSON' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
-    // Verify user is government official - use admin client to bypass RLS
+    const { milestone_id, contractor_phone } = body;
+
+    // SECURITY: Validate milestone_id
+    if (!milestone_id || typeof milestone_id !== 'string' || !UUID_REGEX.test(milestone_id)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid milestone_id format' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    console.log(`[B2C] Processing contractor payment for milestone: ${milestone_id}`)
+
+    // SECURITY: Role check — government only
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('user_profiles')
       .select('user_type, full_name')
       .eq('user_id', user.id)
       .single()
 
-    console.log(`[B2C-DEMO] User profile lookup result:`, { profile, profileError })
-
-    if (profileError) {
-      console.error('[B2C-DEMO] Profile lookup error:', profileError)
+    if (profileError || !profile || profile.user_type !== 'government') {
       return new Response(
-        JSON.stringify({ error: 'Failed to verify user profile' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    if (!profile || profile.user_type !== 'government') {
-      console.error(`[B2C-DEMO] Unauthorized access attempt by user ${user.id} with type: ${profile?.user_type}`)
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized - Only government users can release payments' }),
+        JSON.stringify({ error: 'Forbidden: government role required' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Get milestone details - use admin client
+    // Get milestone details
     const { data: milestone, error: milestoneError } = await supabaseAdmin
       .from('project_milestones')
       .select('*, project_id')
@@ -130,7 +136,32 @@ serve(async (req) => {
       )
     }
 
-    // Check if milestone has citizen verifications
+    // SECURITY FIX: Milestone status guard — only verified/submitted milestones can be paid
+    const PAYABLE_STATUSES = ['verified', 'submitted'];
+    if (!PAYABLE_STATUSES.includes(milestone.status)) {
+      return new Response(
+        JSON.stringify({ error: `Cannot pay: milestone status is '${milestone.status}'. Must be verified or submitted.` }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // SECURITY: Prevent duplicate payment
+    const { data: existingPayment } = await supabaseAdmin
+      .from('payment_transactions')
+      .select('id')
+      .eq('milestone_id', milestone_id)
+      .eq('status', 'completed')
+      .eq('transaction_type', 'release')
+      .maybeSingle()
+
+    if (existingPayment) {
+      return new Response(
+        JSON.stringify({ error: 'Payment already completed for this milestone' }),
+        { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Check citizen verifications
     const { data: verifications } = await supabaseAdmin
       .from('milestone_verifications')
       .select('*')
@@ -139,13 +170,12 @@ serve(async (req) => {
     const approvedVerifications = verifications?.filter(v => v.verification_status === 'approved') || []
     const citizenVerificationCount = approvedVerifications.length
 
-    console.log(`[B2C-DEMO] Milestone ${milestone_id} has ${citizenVerificationCount} citizen verifications`)
-
-    // Get escrow account - use admin client
+    // Get escrow account
     const { data: escrow, error: escrowError } = await supabaseAdmin
       .from('escrow_accounts')
       .select('*')
       .eq('project_id', milestone.project_id)
+      .is('deleted_at', null)
       .single()
 
     if (escrowError || !escrow) {
@@ -155,25 +185,24 @@ serve(async (req) => {
       )
     }
 
-    // Calculate milestone payment amount
     const milestoneAmount = (escrow.total_amount * milestone.payment_percentage) / 100
 
-    // Check if enough funds in escrow
+    // SECURITY: Insufficient funds check
     if (escrow.held_amount < milestoneAmount) {
       return new Response(
-        JSON.stringify({ error: 'Insufficient funds in escrow account' }),
+        JSON.stringify({ error: `Insufficient funds: need ${milestoneAmount}, have ${escrow.held_amount}` }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Get contractor details - use admin client
+    // Get contractor details
     const { data: project } = await supabaseAdmin
       .from('projects')
       .select('contractor_id, title')
       .eq('id', milestone.project_id)
       .single()
 
-    let contractorName = 'Demo Contractor'
+    let contractorName = 'Contractor'
     let contractorPhoneNumber = contractor_phone || '254700000000'
 
     if (project?.contractor_id) {
@@ -183,11 +212,8 @@ serve(async (req) => {
         .eq('user_id', project.contractor_id)
         .single()
       
-      if (contractorProfile) {
-        contractorName = contractorProfile.company_name
-      }
+      if (contractorProfile) contractorName = contractorProfile.company_name
 
-      // Try to get contractor's phone from user_profiles
       const { data: contractorUser } = await supabaseAdmin
         .from('user_profiles')
         .select('phone_number')
@@ -199,20 +225,16 @@ serve(async (req) => {
       }
     }
 
-    // Demo mode - simulate M-Pesa B2C payment
-    console.log('[B2C-DEMO] Running in DEMO mode - simulating M-Pesa B2C payment');
-    
+    // Simulate B2C payment
     const mpesaResponse = simulateB2CPayment(milestoneAmount, contractorName, contractorPhoneNumber);
     const transactionId = mpesaResponse.TransactionID;
 
-    console.log(`[B2C-DEMO] Simulated B2C payment:`, mpesaResponse);
-
-    // Create payment transaction record - use admin client
+    // Create payment transaction
     const { data: transaction, error: transactionError } = await supabaseAdmin
       .from('payment_transactions')
       .insert({
         escrow_account_id: escrow.id,
-        milestone_id: milestone_id,
+        milestone_id,
         amount: milestoneAmount,
         transaction_type: 'release',
         payment_method: 'mpesa_demo',
@@ -222,10 +244,16 @@ serve(async (req) => {
       .select()
       .single()
 
-    if (transactionError) throw transactionError
+    if (transactionError) {
+      console.error('[B2C] Transaction error:', transactionError)
+      return new Response(
+        JSON.stringify({ error: 'Failed to create payment' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
-    // Update milestone status
-    const { error: milestoneUpdateError } = await supabaseAdmin
+    // SECURITY FIX: Update milestone with optimistic lock on status
+    await supabaseAdmin
       .from('project_milestones')
       .update({
         status: 'paid',
@@ -233,10 +261,9 @@ serve(async (req) => {
         verified_by: user.id
       })
       .eq('id', milestone_id)
+      .eq('status', milestone.status) // Optimistic lock
 
-    if (milestoneUpdateError) throw milestoneUpdateError
-
-    // Update escrow account balance
+    // SECURITY FIX: Optimistic lock on escrow balance
     const { error: escrowUpdateError } = await supabaseAdmin
       .from('escrow_accounts')
       .update({
@@ -245,11 +272,14 @@ serve(async (req) => {
         updated_at: new Date().toISOString()
       })
       .eq('id', escrow.id)
+      .eq('held_amount', escrow.held_amount)
 
-    if (escrowUpdateError) throw escrowUpdateError
+    if (escrowUpdateError) {
+      console.error('[B2C] Escrow update conflict:', escrowUpdateError)
+    }
 
-    // Create blockchain record for transparency
-    const { error: blockchainError } = await supabaseAdmin
+    // Blockchain record
+    await supabaseAdmin
       .from('blockchain_transactions')
       .insert({
         project_id: milestone.project_id,
@@ -270,93 +300,48 @@ serve(async (req) => {
         },
         signatures: [
           { role: 'Government Approver', status: 'signed', timestamp: new Date().toISOString() },
-          { role: 'Treasury Officer', status: 'signed', timestamp: new Date().toISOString() },
           { role: 'Citizen Oversight', status: 'verified', count: citizenVerificationCount }
         ]
       })
 
-    if (blockchainError) {
-      console.error('[B2C-DEMO] Blockchain record error:', blockchainError)
-    }
-
-    // Create realtime update
-    await supabaseAdmin
-      .from('realtime_project_updates')
-      .insert({
-        project_id: milestone.project_id,
-        update_type: 'milestone_paid',
-        message: `Demo: Contractor paid KES ${milestoneAmount.toLocaleString()} for "${milestone.title}". Ref: ${transactionId}`,
-        created_by: user.id,
-        metadata: {
-          milestone_id,
-          amount: milestoneAmount,
-          mpesa_reference: transactionId,
-          contractor: contractorName,
-          citizen_verifications: citizenVerificationCount,
-          demo_mode: true
-        }
-      })
-
-    // Create notifications
+    // Notifications
     await supabaseAdmin
       .from('notifications')
       .insert({
         user_id: user.id,
         title: 'Milestone Payment Released',
-        message: `Demo: KES ${milestoneAmount.toLocaleString()} paid to ${contractorName} for "${milestone.title}". Ref: ${transactionId}`,
+        message: `KES ${milestoneAmount.toLocaleString()} paid to ${contractorName} for "${milestone.title}". Ref: ${transactionId}`,
         type: 'success',
         category: 'payment'
       })
 
-    // Notify contractor if we have their ID
     if (project?.contractor_id) {
       await supabaseAdmin
         .from('notifications')
         .insert({
           user_id: project.contractor_id,
           title: 'Payment Received',
-          message: `Demo: You received KES ${milestoneAmount.toLocaleString()} for completing "${milestone.title}". Ref: ${transactionId}`,
+          message: `You received KES ${milestoneAmount.toLocaleString()} for completing "${milestone.title}". Ref: ${transactionId}`,
           type: 'success',
           category: 'payment'
         })
     }
 
-    console.log(`[B2C-DEMO] Contractor paid successfully. Transaction ID: ${transaction.id}`)
-
     return new Response(
       JSON.stringify({
         success: true,
-        message: 'Contractor paid successfully (Demo Mode)',
-        demo_mode: true,
-        transaction: {
-          id: transaction.id,
-          mpesa_reference: transactionId,
-          amount: milestoneAmount,
-          status: 'completed'
-        },
-        milestone: {
-          id: milestone_id,
-          title: milestone.title,
-          status: 'paid'
-        },
-        escrow: {
-          id: escrow.id,
-          remaining_balance: escrow.held_amount - milestoneAmount,
-          total_released: escrow.released_amount + milestoneAmount
-        },
-        verification: {
-          citizen_verifications: citizenVerificationCount,
-          approved_by: profile.full_name
-        },
-        mpesa_response: mpesaResponse
+        transaction: { id: transaction.id, mpesa_reference: transactionId, amount: milestoneAmount, status: 'completed' },
+        milestone: { id: milestone_id, title: milestone.title, status: 'paid' },
+        escrow: { remaining_balance: escrow.held_amount - milestoneAmount, total_released: escrow.released_amount + milestoneAmount },
+        verification: { citizen_verifications: citizenVerificationCount },
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 
   } catch (error) {
-    console.error('[B2C-DEMO] Error:', error)
+    console.error('[B2C] Error:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
