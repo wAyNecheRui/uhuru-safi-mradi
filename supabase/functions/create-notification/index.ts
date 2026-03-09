@@ -20,7 +20,7 @@ interface NotificationPayload {
 const ALLOWED_TYPES = ['info', 'success', 'warning', 'error'];
 const ALLOWED_CATEGORIES = [
   'report', 'project', 'payment', 'verification', 'system',
-  'bid', 'bidding', 'milestone', 'escrow', 'vote', 'issue', 'rating', 'general'
+  'bid', 'bidding', 'milestone', 'escrow', 'vote', 'issue', 'rating', 'workforce', 'general'
 ];
 
 serve(async (req) => {
