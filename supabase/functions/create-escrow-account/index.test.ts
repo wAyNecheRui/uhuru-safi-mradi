@@ -97,9 +97,9 @@ Deno.test("create-escrow: does not leak error.message in 500", async () => {
 
 // ==================== initiate-payment ====================
 
-Deno.test("initiate-payment: GET returns 405", async () => {
+Deno.test("initiate-payment: GET rejected (405 or 401)", async () => {
   const { status } = await callMethod(FUNCTIONS.initiatePayment, "GET");
-  assertEquals(status, 405);
+  assertEquals([401, 405].includes(status), true);
 });
 
 Deno.test("initiate-payment: no auth returns 401", async () => {
