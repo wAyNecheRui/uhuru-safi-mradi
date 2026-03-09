@@ -28,6 +28,8 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
+  const MAX_BODY_SIZE = 51200; // 50KB
+
   try {
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -38,6 +40,8 @@ serve(async (req) => {
     // Verify caller is authenticated using getClaims
     const authHeader = req.headers.get('Authorization')
     if (!authHeader?.startsWith('Bearer ')) {
+      // Consume body to prevent resource leaks
+      await req.text().catch(() => {});
       return new Response(
         JSON.stringify({ error: 'Missing authorization header' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -76,7 +80,32 @@ serve(async (req) => {
       )
     }
 
-    const payload: NotificationPayload = await req.json()
+    // SECURITY: Read body as text first to enforce size limit and handle malformed JSON
+    const rawBody = await req.text();
+    if (rawBody.length > MAX_BODY_SIZE) {
+      return new Response(
+        JSON.stringify({ error: 'Payload too large' }),
+        { status: 413, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    let payload: NotificationPayload;
+    try {
+      payload = JSON.parse(rawBody);
+    } catch {
+      return new Response(
+        JSON.stringify({ error: 'Invalid JSON' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // SECURITY: Reject non-object payloads (arrays, primitives)
+    if (typeof payload !== 'object' || payload === null || Array.isArray(payload)) {
+      return new Response(
+        JSON.stringify({ error: 'Payload must be a JSON object' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
     // Validate required fields
     if (!payload.title || !payload.message || !payload.type || !payload.category) {
