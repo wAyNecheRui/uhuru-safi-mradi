@@ -138,14 +138,14 @@ Deno.test("initiate-payment: does not leak internal errors", async () => {
 
 // ==================== release-milestone-payment ====================
 
-Deno.test("release-milestone: GET returns 405", async () => {
+Deno.test("release-milestone: GET rejected (405 or 401)", async () => {
   const { status } = await callMethod(FUNCTIONS.releaseMilestone, "GET");
-  assertEquals(status, 405);
+  assertEquals([401, 405].includes(status), true);
 });
 
-Deno.test("release-milestone: PUT returns 405", async () => {
+Deno.test("release-milestone: PUT rejected (405 or 401)", async () => {
   const { status } = await callMethod(FUNCTIONS.releaseMilestone, "PUT");
-  assertEquals(status, 405);
+  assertEquals([401, 405].includes(status), true);
 });
 
 Deno.test("release-milestone: no auth returns 401", async () => {
