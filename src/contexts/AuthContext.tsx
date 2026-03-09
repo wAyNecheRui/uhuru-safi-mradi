@@ -36,12 +36,13 @@ const isInvalidJwtError = (err: unknown): boolean => {
   const anyErr = err as any;
   const msg = String(anyErr?.message || '').toLowerCase();
   const status = Number(anyErr?.status || anyErr?.code || 0);
+  // NOTE: 403 is excluded — it indicates RLS denial, not an expired/invalid session.
   return (
     msg.includes('jwt') ||
     msg.includes('token is expired') ||
     msg.includes('invalid jwt') ||
-    status === 401 ||
-    status === 403
+    msg.includes('refresh_token_not_found') ||
+    status === 401
   );
 };
 
