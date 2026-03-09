@@ -255,11 +255,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!mountedRef.current || eventName === 'INITIAL_SESSION') return;
 
       if (eventName === 'SIGNED_OUT' || eventName === 'TOKEN_REFRESH_FAILED' || !session?.user) {
+        userCache.clear(); // SECURITY: full wipe on sign-out / token failure
         setUser(null);
         setRoles([]);
         clearSupabaseAuthStorage();
-        clearDataCache(); // SECURITY: ensure no stale user data can render after sign-out
+        clearDataCache();
         setLoading(false);
+      } else if (eventName === 'TOKEN_REFRESHED' && session?.user) {
+        // Token refreshed successfully — validate session is still for the same user
+        const currentUserId = user?.id;
+        if (currentUserId && currentUserId !== session.user.id) {
+          // Session user changed during refresh (shouldn't happen, but guard against it)
+          console.warn('[AuthContext Security] User ID mismatch after token refresh');
+          userCache.clear();
+          clearDataCache();
+        }
+        // No need to reload profile; token refresh doesn't change user data
       } else if (eventName === 'SIGNED_IN' && session?.user) {
         // Defer to avoid deadlock
         setTimeout(async () => {
