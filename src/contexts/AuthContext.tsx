@@ -102,25 +102,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const profile = profileResult.data;
       const userRoles = (rolesResult.data?.map(r => r.role as AppRole) || []) as AppRole[];
 
-      // Fallback: if profile query fails (e.g. RLS issues), use JWT user_metadata
+      // SECURITY: Determine user_type from profile, but cross-check against user_roles
+      // for elevated roles to prevent self-elevation via DB manipulation.
       let userType: 'citizen' | 'contractor' | 'government' = 'citizen';
       let userName = email.split('@')[0];
+      
       if (profile?.user_type) {
-        userType = profile.user_type as 'citizen' | 'contractor' | 'government';
+        const requestedType = profile.user_type as string;
         userName = profile.full_name || userName;
-      } else {
-        // Try to get user_type from Supabase auth metadata
-        try {
-          const { data: { user: authUserData } } = await supabase.auth.getUser();
-          const metaType = authUserData?.user_metadata?.user_type;
-          if (metaType && ['citizen', 'contractor', 'government'].includes(metaType)) {
-            userType = metaType as 'citizen' | 'contractor' | 'government';
-          }
-          userName = authUserData?.user_metadata?.full_name || authUserData?.user_metadata?.name || userName;
-        } catch {
-          // ignore - use defaults
+        
+        if (requestedType === 'citizen') {
+          userType = 'citizen';
+        } else if (['contractor', 'government'].includes(requestedType)) {
+          // SECURITY: Only trust elevated user_type if backed by a matching role in user_roles
+          const hasMatchingRole = userRoles.some(r => r === requestedType);
+          userType = hasMatchingRole ? (requestedType as 'contractor' | 'government') : 'citizen';
         }
       }
+      // NOTE: We intentionally do NOT fall back to user_metadata.user_type
+      // as that is user-controlled signup data and can be manipulated.
 
       const authUser: AuthUser = {
         id: userId,

@@ -183,6 +183,13 @@ export class RoleService {
       return { success: false, error: roleError.message };
     }
 
+    // SECURITY: Update user_profiles.user_type to match the approved role
+    // This enables correct dashboard routing now that the role is verified.
+    await supabase
+      .from('user_profiles')
+      .update({ user_type: request.requested_role })
+      .eq('user_id', request.user_id);
+
     // Send live notification to the user
     await LiveNotificationService.notify({
       userId: request.user_id,
@@ -190,7 +197,7 @@ export class RoleService {
       message: `Your ${request.requested_role} role request has been approved. You now have access to ${request.requested_role} features.`,
       type: 'success',
       category: 'verification',
-      actionUrl: request.requested_role === 'contractor' ? '/contractor/dashboard' : '/government/dashboard'
+      actionUrl: request.requested_role === 'contractor' ? '/contractor' : '/government'
     });
 
     return { success: true };
