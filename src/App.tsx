@@ -114,9 +114,21 @@ const App = () => {
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/user-guide" element={<UserGuide />} />
-                  <Route path="/contractor-database" element={<ContractorDatabasePage />} />
-                  <Route path="/workforce" element={<WorkforcePage />} />
-                  <Route path="/analytics" element={<AnalyticsPage />} />
+                  <Route path="/contractor-database" element={
+                    <ProtectedRoute allowedRoles={["government", "admin", "contractor"]}>
+                      <ContractorDatabasePage />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/workforce" element={
+                    <ProtectedRoute allowedRoles={["government", "admin", "contractor"]}>
+                      <WorkforcePage />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/analytics" element={
+                    <ProtectedRoute allowedRoles={["government", "admin"]}>
+                      <AnalyticsPage />
+                    </ProtectedRoute>
+                  } />
                   
                   {/* Citizen Routes */}
                   <Route

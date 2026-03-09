@@ -14,14 +14,14 @@ interface ProtectedRouteProps {
  * ProtectedRoute with enhanced security:
  * 1. Clears cached data on user change to prevent data leakage
  * 2. Shows nothing until user is fully validated
- * 3. Validates user type matches allowed roles before rendering
+ * 3. Validates user type OR user roles matches allowed roles before rendering
  */
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
   children, 
   allowedRoles,
   redirectTo = '/auth'
 }) => {
-  const { user, loading, isAuthenticated } = useAuth();
+  const { user, loading, isAuthenticated, roles, hasRole } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
@@ -29,6 +29,15 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   // Track previous user to detect user switches
   const prevUserIdRef = useRef<string | null>(null);
   const [isUserValidated, setIsUserValidated] = useState(false);
+
+  // Check if user passes role requirements via user_type OR roles array
+  const userPassesRoleCheck = (allowedRoles: ('citizen' | 'contractor' | 'government' | 'admin')[]): boolean => {
+    if (!user) return false;
+    // Check user_type first (covers citizen, contractor, government)
+    if (allowedRoles.includes(user.user_type)) return true;
+    // Then check roles array (covers 'admin' and elevated roles from user_roles table)
+    return allowedRoles.some(role => hasRole(role as any));
+  };
 
   // SECURITY: Clear cache when user changes
   useEffect(() => {
@@ -60,7 +69,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       return;
     }
 
-    if (allowedRoles && user && !allowedRoles.includes(user.user_type)) {
+    if (allowedRoles && user && !userPassesRoleCheck(allowedRoles)) {
       setIsUserValidated(false);
       navigate(`/${user.user_type}`, { replace: true });
       return;
@@ -74,7 +83,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       }, 50);
       return () => clearTimeout(timer);
     }
-  }, [user, loading, isAuthenticated, allowedRoles, navigate, redirectTo, location.pathname]);
+  }, [user, loading, isAuthenticated, allowedRoles, roles, navigate, redirectTo, location.pathname]);
 
   if (loading) {
     return <UnifiedLoader />;
@@ -85,7 +94,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   // If wrong role, show nothing (redirect is happening)
-  if (allowedRoles && !allowedRoles.includes(user.user_type)) {
+  if (allowedRoles && !userPassesRoleCheck(allowedRoles)) {
     return null;
   }
 
