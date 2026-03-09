@@ -36,12 +36,13 @@ const isInvalidJwtError = (err: unknown): boolean => {
   const anyErr = err as any;
   const msg = String(anyErr?.message || '').toLowerCase();
   const status = Number(anyErr?.status || anyErr?.code || 0);
+  // NOTE: 403 is excluded — it indicates RLS denial, not an expired/invalid session.
   return (
     msg.includes('jwt') ||
     msg.includes('token is expired') ||
     msg.includes('invalid jwt') ||
-    status === 401 ||
-    status === 403
+    msg.includes('refresh_token_not_found') ||
+    status === 401
   );
 };
 
@@ -77,7 +78,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // signOut can fail when the session is already invalid; still clear local storage
     } finally {
       clearSupabaseAuthStorage();
-      clearDataCache(); // SECURITY: Clear cache on sign out
+      userCache.clear(); // SECURITY: Wipe entire in-memory cache on forced sign-out
+      clearDataCache();
       if (mountedRef.current) {
         setUser(null);
         setRoles([]);
@@ -181,20 +183,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signOut = useCallback(async () => {
-    if (user?.id) userCache.delete(user.id);
+    userCache.clear(); // SECURITY: Wipe entire in-memory cache — not just current user
     try {
       await supabase.auth.signOut();
     } catch {
       // ignore
     } finally {
       clearSupabaseAuthStorage();
-      clearDataCache(); // SECURITY: Clear cache on sign out
+      clearDataCache();
       if (mountedRef.current) {
         setUser(null);
         setRoles([]);
       }
     }
-  }, [user?.id, clearDataCache]);
+  }, [clearDataCache]);
 
   // SECURITY: Watch for user changes and clear cache
   useEffect(() => {
@@ -253,11 +255,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!mountedRef.current || eventName === 'INITIAL_SESSION') return;
 
       if (eventName === 'SIGNED_OUT' || eventName === 'TOKEN_REFRESH_FAILED' || !session?.user) {
+        userCache.clear(); // SECURITY: full wipe on sign-out / token failure
         setUser(null);
         setRoles([]);
         clearSupabaseAuthStorage();
-        clearDataCache(); // SECURITY: ensure no stale user data can render after sign-out
+        clearDataCache();
         setLoading(false);
+      } else if (eventName === 'TOKEN_REFRESHED' && session?.user) {
+        // Token refreshed successfully — validate session is still for the same user
+        const currentUserId = user?.id;
+        if (currentUserId && currentUserId !== session.user.id) {
+          // Session user changed during refresh (shouldn't happen, but guard against it)
+          console.warn('[AuthContext Security] User ID mismatch after token refresh');
+          userCache.clear();
+          clearDataCache();
+        }
+        // No need to reload profile; token refresh doesn't change user data
       } else if (eventName === 'SIGNED_IN' && session?.user) {
         // Defer to avoid deadlock
         setTimeout(async () => {
