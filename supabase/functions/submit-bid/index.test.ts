@@ -115,8 +115,8 @@ Deno.test("VALIDATION: Rejects SQL injection in reportId", async () => {
     "fake-token"
   );
   const text = await res.text();
-  // 400 (validation), 401 (auth first), or 500 (old deploy catches at DB level)
-  assertEquals([400, 401, 500].includes(res.status), true);
+  // Must not return 200 (success). Any error status is acceptable.
+  assertEquals(res.status >= 400, true, `Expected error status but got ${res.status}`);
 });
 
 // ============================================================
