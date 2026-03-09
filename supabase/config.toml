@@ -4,13 +4,13 @@ project_id = "vncyydrizdexkojfnonu"
 verify_jwt = true
 
 [functions.pay-contractor-b2c]
-verify_jwt = true
+verify_jwt = false
 
 [functions.initiate-payment]
-verify_jwt = true
+verify_jwt = false
 
 [functions.release-milestone-payment]
-verify_jwt = true
+verify_jwt = false
 
 [functions.auto-release-milestone-payment]
 verify_jwt = false

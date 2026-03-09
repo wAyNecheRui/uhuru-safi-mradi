@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -7,42 +6,78 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const MAX_BODY_SIZE = 51200;
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
+  // SECURITY: Reject non-POST
+  if (req.method !== 'POST') {
+    return new Response(
+      JSON.stringify({ error: 'Method not allowed' }),
+      { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+
   try {
+    // SECURITY: Use service role for all DB ops to avoid RLS issues on payment_transactions
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    )
+
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false
-        }
-      }
+      { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    const authHeader = req.headers.get('Authorization')!
+    // SECURITY: Auth check
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     const token = authHeader.replace('Bearer ', '')
-    
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token)
     
     if (authError || !user) {
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
-        { 
-          status: 401, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    const { escrow_account_id, amount, phone_number, payment_method } = await req.json()
+    // SECURITY: Payload size limit
+    const rawBody = await req.text()
+    if (rawBody.length > MAX_BODY_SIZE) {
+      return new Response(
+        JSON.stringify({ error: 'Payload too large' }),
+        { status: 413, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
-    // Verify user has permission to initiate payments (government users only)
-    const { data: profile, error: profileError } = await supabaseClient
+    let body: any;
+    try {
+      body = JSON.parse(rawBody);
+    } catch {
+      return new Response(
+        JSON.stringify({ error: 'Invalid JSON' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const { escrow_account_id, amount, phone_number, payment_method } = body;
+
+    // SECURITY: Role check — government only
+    const { data: profile, error: profileError } = await supabaseAdmin
       .from('user_profiles')
       .select('user_type')
       .eq('user_id', user.id)
@@ -50,27 +85,65 @@ serve(async (req) => {
 
     if (profileError || !profile || profile.user_type !== 'government') {
       return new Response(
-        JSON.stringify({ error: 'Unauthorized - Only government users can initiate payments' }),
-        { 
-          status: 403, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        JSON.stringify({ error: 'Forbidden: government role required' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Validate input data
-    if (!escrow_account_id || !amount || amount <= 0) {
+    // SECURITY: Validate inputs
+    if (!escrow_account_id || typeof escrow_account_id !== 'string' || !UUID_REGEX.test(escrow_account_id)) {
       return new Response(
-        JSON.stringify({ error: 'Invalid payment data' }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        JSON.stringify({ error: 'Invalid escrow_account_id' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Create payment transaction record
-    const { data: transaction, error: transactionError } = await supabaseClient
+    if (typeof amount !== 'number' || amount <= 0 || !Number.isFinite(amount) || amount > 100_000_000_000) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid amount: must be a positive finite number' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    if (!payment_method || typeof payment_method !== 'string' || !['mpesa', 'bank_transfer', 'manual'].includes(payment_method)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid payment_method' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // SECURITY: Verify escrow account exists and is active
+    const { data: escrow, error: escrowError } = await supabaseAdmin
+      .from('escrow_accounts')
+      .select('id, status, total_amount, held_amount, project_id')
+      .eq('id', escrow_account_id)
+      .is('deleted_at', null)
+      .single()
+
+    if (escrowError || !escrow) {
+      return new Response(
+        JSON.stringify({ error: 'Escrow account not found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    if (escrow.status !== 'active') {
+      return new Response(
+        JSON.stringify({ error: 'Escrow account is not active' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // SECURITY: Check for overfunding
+    if (escrow.held_amount + amount > escrow.total_amount) {
+      return new Response(
+        JSON.stringify({ error: `Deposit would exceed escrow budget. Max deposit: ${escrow.total_amount - escrow.held_amount}` }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Create payment transaction — use admin client
+    const { data: transaction, error: transactionError } = await supabaseAdmin
       .from('payment_transactions')
       .insert({
         escrow_account_id,
@@ -83,32 +156,31 @@ serve(async (req) => {
       .single()
 
     if (transactionError) {
-      throw transactionError
+      console.error('[initiate-payment] Transaction creation error:', transactionError)
+      return new Response(
+        JSON.stringify({ error: 'Failed to create transaction' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
-    // For M-Pesa integration (placeholder - would integrate with actual M-Pesa API)
+    // Simulate M-Pesa STK Push
     let paymentResponse = null
     if (payment_method === 'mpesa') {
-      // Simulate M-Pesa STK Push
       paymentResponse = {
         CheckoutRequestID: `ws_CO_${Date.now()}`,
         ResponseCode: "0",
-        ResponseDescription: "Success. Request accepted for processing",
-        CustomerMessage: "Success. Request accepted for processing"
+        ResponseDescription: "Request accepted for processing",
+        CustomerMessage: "Request accepted for processing"
       }
 
-      // Update transaction with M-Pesa details
-      await supabaseClient
+      await supabaseAdmin
         .from('payment_transactions')
-        .update({
-          mpesa_transaction_id: paymentResponse.CheckoutRequestID,
-          status: 'pending'
-        })
+        .update({ stripe_transaction_id: paymentResponse.CheckoutRequestID })
         .eq('id', transaction.id)
     }
 
-    // Create notification
-    await supabaseClient
+    // Notification
+    await supabaseAdmin
       .from('notifications')
       .insert({
         user_id: user.id,
@@ -121,24 +193,18 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: true, 
-        transaction,
+        transaction: { id: transaction.id, status: transaction.status },
         paymentResponse,
         message: 'Payment initiated successfully' 
       }),
-      { 
-        status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 
   } catch (error) {
-    console.error('Error:', error)
+    console.error('[initiate-payment] Error:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
+      JSON.stringify({ error: 'Internal server error' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
 })

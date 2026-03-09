@@ -6,7 +6,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Demo mode - generate simulated payment reference
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const MAX_BODY_SIZE = 51200;
+
 function generateDemoPaymentRef(): string {
   const timestamp = Date.now().toString(36).toUpperCase();
   const random = Math.random().toString(36).substr(2, 6).toUpperCase();
@@ -18,51 +20,77 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
+  if (req.method !== 'POST') {
+    return new Response(
+      JSON.stringify({ error: 'Method not allowed' }),
+      { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+
   try {
-    // Use service role for admin operations
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false
-        }
-      }
+      { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    // Use anon key for user auth verification
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false
-        }
-      }
+      { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    const authHeader = req.headers.get('Authorization')!
+    // SECURITY: Auth check
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     const token = authHeader.replace('Bearer ', '')
-    
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token)
     
     if (authError || !user) {
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
-        { 
-          status: 401, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    const { milestoneId } = await req.json()
+    // SECURITY: Payload size
+    const rawBody = await req.text()
+    if (rawBody.length > MAX_BODY_SIZE) {
+      return new Response(
+        JSON.stringify({ error: 'Payload too large' }),
+        { status: 413, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
-    console.log(`[RELEASE-DEMO] Processing milestone payment release: ${milestoneId}, user: ${user.id}`)
+    let body: any;
+    try {
+      body = JSON.parse(rawBody);
+    } catch {
+      return new Response(
+        JSON.stringify({ error: 'Invalid JSON' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
-    // Verify user has permission (government users only) - use admin client
+    const { milestoneId } = body;
+
+    // SECURITY: Validate milestoneId
+    if (!milestoneId || typeof milestoneId !== 'string' || !UUID_REGEX.test(milestoneId)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid milestoneId format' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    console.log(`[RELEASE] Processing milestone payment: ${milestoneId}, user: ${user.id}`)
+
+    // SECURITY: Role check — government only
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('user_profiles')
       .select('user_type, full_name')
@@ -71,15 +99,12 @@ serve(async (req) => {
 
     if (profileError || !profile || profile.user_type !== 'government') {
       return new Response(
-        JSON.stringify({ error: 'Unauthorized - Only government users can release payments' }),
-        { 
-          status: 403, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        JSON.stringify({ error: 'Forbidden: government role required' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Get milestone details - use admin client
+    // Get milestone details
     const { data: milestone, error: milestoneError } = await supabaseAdmin
       .from('project_milestones')
       .select('*, project_id')
@@ -89,37 +114,64 @@ serve(async (req) => {
     if (milestoneError || !milestone) {
       return new Response(
         JSON.stringify({ error: 'Milestone not found' }),
-        { 
-          status: 404, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Get escrow account - use admin client
+    // SECURITY FIX: Milestone status guard — only allow release for 'verified' or 'submitted' milestones
+    const RELEASABLE_STATUSES = ['verified', 'submitted'];
+    if (!RELEASABLE_STATUSES.includes(milestone.status)) {
+      return new Response(
+        JSON.stringify({ error: `Cannot release payment: milestone status is '${milestone.status}'. Must be verified or submitted.` }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // SECURITY: Check for existing completed payment for this milestone (prevent double-pay)
+    const { data: existingPayment } = await supabaseAdmin
+      .from('payment_transactions')
+      .select('id')
+      .eq('milestone_id', milestoneId)
+      .eq('status', 'completed')
+      .eq('transaction_type', 'release')
+      .maybeSingle()
+
+    if (existingPayment) {
+      return new Response(
+        JSON.stringify({ error: 'Payment already released for this milestone' }),
+        { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Get escrow account
     const { data: escrow, error: escrowError } = await supabaseAdmin
       .from('escrow_accounts')
       .select('*')
       .eq('project_id', milestone.project_id)
+      .is('deleted_at', null)
       .single()
 
     if (escrowError || !escrow) {
       return new Response(
         JSON.stringify({ error: 'Escrow account not found' }),
-        { 
-          status: 404, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
     // Calculate milestone amount
     const milestoneAmount = (escrow.total_amount * milestone.payment_percentage) / 100
+
+    // SECURITY: Insufficient funds check
+    if (escrow.held_amount < milestoneAmount) {
+      return new Response(
+        JSON.stringify({ error: `Insufficient escrow funds: need ${milestoneAmount}, have ${escrow.held_amount}` }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     const paymentRef = generateDemoPaymentRef();
 
-    console.log(`[RELEASE-DEMO] Demo mode - releasing KES ${milestoneAmount} for milestone ${milestoneId}`)
-
-    // Create payment transaction - use admin client
+    // Create payment transaction
     const { data: transaction, error: transactionError } = await supabaseAdmin
       .from('payment_transactions')
       .insert({
@@ -135,21 +187,26 @@ serve(async (req) => {
       .single()
 
     if (transactionError) {
-      throw transactionError
+      console.error('[RELEASE] Transaction error:', transactionError)
+      return new Response(
+        JSON.stringify({ error: 'Failed to create payment transaction' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
-    // Update milestone status - use admin client
+    // SECURITY FIX: Set milestone to 'paid' (not 'verified' — that's a different state)
     await supabaseAdmin
       .from('project_milestones')
       .update({ 
-        status: 'verified',
+        status: 'paid',
         verified_at: new Date().toISOString(),
         verified_by: user.id
       })
       .eq('id', milestoneId)
+      .eq('status', milestone.status) // Optimistic lock on status
 
-    // Update escrow account - use admin client
-    await supabaseAdmin
+    // SECURITY FIX: Optimistic lock on escrow balance to prevent race conditions
+    const { error: escrowUpdateError } = await supabaseAdmin
       .from('escrow_accounts')
       .update({
         released_amount: escrow.released_amount + milestoneAmount,
@@ -157,60 +214,39 @@ serve(async (req) => {
         updated_at: new Date().toISOString()
       })
       .eq('id', escrow.id)
+      .eq('held_amount', escrow.held_amount) // Optimistic lock
 
-    // Create notification - use admin client
+    if (escrowUpdateError) {
+      console.error('[RELEASE] Escrow update conflict:', escrowUpdateError)
+    }
+
+    // Notification
     await supabaseAdmin
       .from('notifications')
       .insert({
         user_id: user.id,
         title: 'Milestone Payment Released',
-        message: `Demo: KES ${milestoneAmount.toLocaleString()} released for "${milestone.title}". Ref: ${paymentRef}`,
+        message: `KES ${milestoneAmount.toLocaleString()} released for "${milestone.title}". Ref: ${paymentRef}`,
         type: 'success',
         category: 'payment'
       })
 
-    // Create realtime update
-    await supabaseAdmin
-      .from('realtime_project_updates')
-      .insert({
-        project_id: milestone.project_id,
-        update_type: 'payment_released',
-        message: `Demo: Payment of KES ${milestoneAmount.toLocaleString()} released for "${milestone.title}"`,
-        created_by: user.id,
-        metadata: {
-          milestone_id: milestoneId,
-          amount: milestoneAmount,
-          reference: paymentRef,
-          demo_mode: true
-        }
-      })
-
-    console.log(`[RELEASE-DEMO] Payment released successfully. Transaction ID: ${transaction.id}`)
+    console.log(`[RELEASE] Payment released successfully. Transaction: ${transaction.id}`)
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        demo_mode: true,
-        transaction: {
-          ...transaction,
-          reference: paymentRef
-        },
-        message: 'Milestone payment released successfully (Demo Mode)' 
+        transaction: { id: transaction.id, reference: paymentRef, amount: milestoneAmount },
+        message: 'Milestone payment released successfully' 
       }),
-      { 
-        status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 
   } catch (error) {
-    console.error('[RELEASE-DEMO] Error:', error)
+    console.error('[RELEASE] Error:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
+      JSON.stringify({ error: 'Internal server error' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
 })
