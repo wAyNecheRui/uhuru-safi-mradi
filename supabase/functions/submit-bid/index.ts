@@ -4,6 +4,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
 // Rate limiting map
@@ -26,14 +27,43 @@ function checkRateLimit(clientIP: string, maxRequests = 5, windowMs = 60000): { 
   return { allowed: true };
 }
 
-// Input sanitization
+const MAX_BODY_SIZE = 51200; // 50KB
+
+/**
+ * Robust input sanitization — decode HTML entities, strip all tags,
+ * remove dangerous URI schemes, event handlers, and null bytes.
+ */
 function sanitizeInput(input: string): string {
-  return input
-    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-    .replace(/javascript:/gi, '')
-    .replace(/on\w+\s*=/gi, '')
-    .replace(/<[^>]*>/g, '')
-    .trim();
+  if (!input || typeof input !== 'string') return '';
+
+  let cleaned = input;
+
+  // 1. Decode HTML entities to catch encoded payloads
+  cleaned = cleaned
+    .replace(/&#x([0-9a-fA-F]+);/g, (_m, hex) => String.fromCharCode(parseInt(hex, 16)))
+    .replace(/&#(\d+);/g, (_m, dec) => String.fromCharCode(parseInt(dec, 10)))
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&amp;/gi, '&')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#039;/gi, "'");
+
+  // 2. Remove ALL HTML/XML tags
+  cleaned = cleaned.replace(/<[^>]*>/g, '');
+
+  // 3. Remove dangerous URI schemes
+  cleaned = cleaned.replace(/\b(javascript|data|vbscript)\s*:/gi, '');
+
+  // 4. Remove event handler patterns
+  cleaned = cleaned.replace(/\bon\w+\s*=/gi, '');
+
+  // 5. Remove null bytes
+  cleaned = cleaned.replace(/\0/g, '');
+
+  // 6. Limit length
+  cleaned = cleaned.trim().slice(0, 10000);
+
+  return cleaned;
 }
 
 // UUID validation
@@ -70,8 +100,15 @@ function validateBidData(data: any): { valid: boolean; error?: string } {
     return { valid: false, error: 'Estimated duration is required' };
   }
   const duration = Number(data.estimatedDuration);
-  if (isNaN(duration) || duration <= 0 || duration > 365) {
-    return { valid: false, error: 'Duration must be between 1 and 365 days' };
+  if (isNaN(duration) || !Number.isInteger(duration) || duration <= 0 || duration > 365) {
+    return { valid: false, error: 'Duration must be a whole number between 1 and 365 days' };
+  }
+
+  // Validate optional technical_approach
+  if (data.technicalApproach !== undefined && data.technicalApproach !== null) {
+    if (typeof data.technicalApproach !== 'string' || data.technicalApproach.length > 10000) {
+      return { valid: false, error: 'Technical approach must be a string under 10000 characters' };
+    }
   }
   
   return { valid: true };
@@ -82,11 +119,20 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
+  // Only allow POST
+  if (req.method !== 'POST') {
+    return new Response(
+      JSON.stringify({ error: 'Method not allowed' }),
+      { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+
   try {
     // Check rate limit
     const clientIP = req.headers.get('x-forwarded-for') || req.headers.get('cf-connecting-ip') || 'unknown';
     const rateCheck = checkRateLimit(clientIP);
     if (!rateCheck.allowed) {
+      await req.text(); // consume body to prevent leaks
       return new Response(
         JSON.stringify({ error: 'Too many requests. Please try again later.' }),
         { 
@@ -100,33 +146,26 @@ serve(async (req) => {
       )
     }
 
-    // Check content length
-    const contentLength = req.headers.get('content-length');
-    if (contentLength && parseInt(contentLength) > 51200) { // 50KB limit
+    // Read body as text first to enforce size limit before JSON.parse
+    const bodyText = await req.text();
+    if (bodyText.length > MAX_BODY_SIZE) {
       return new Response(
         JSON.stringify({ error: 'Request payload too large' }),
         { status: 413, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Create admin client for notifications (service role)
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      { auth: { autoRefreshToken: false, persistSession: false } }
-    )
+    let bidData: any;
+    try {
+      bidData = JSON.parse(bodyText);
+    } catch {
+      return new Response(
+        JSON.stringify({ error: 'Invalid JSON' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false
-        }
-      }
-    )
-
+    // Auth check
     const authHeader = req.headers.get('Authorization')
     if (!authHeader?.startsWith('Bearer ')) {
       return new Response(
@@ -135,6 +174,16 @@ serve(async (req) => {
       )
     }
     
+    // User-scoped client for RLS-enforced operations
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        auth: { autoRefreshToken: false, persistSession: false },
+        global: { headers: { Authorization: authHeader } }
+      }
+    )
+
     const token = authHeader.replace('Bearer ', '')
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token)
     
@@ -152,14 +201,12 @@ serve(async (req) => {
       .eq('user_id', user.id)
       .single()
 
-    if (profileError || profile.user_type !== 'contractor') {
+    if (profileError || !profile || profile.user_type !== 'contractor') {
       return new Response(
         JSON.stringify({ error: 'Only contractors can submit bids' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
-
-    const bidData = await req.json()
 
     // Validate input
     const validation = validateBidData(bidData);
@@ -170,10 +217,80 @@ serve(async (req) => {
       )
     }
 
+    // Admin client for service-level queries (report status check, notifications)
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    )
+
+    // Verify report exists and bidding is open
+    const { data: report, error: reportError } = await supabaseAdmin
+      .from('problem_reports')
+      .select('id, title, reported_by, bidding_status, bidding_end_date, status, deleted_at')
+      .eq('id', bidData.reportId)
+      .single()
+
+    if (reportError || !report) {
+      return new Response(
+        JSON.stringify({ error: 'Report not found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    if (report.deleted_at) {
+      return new Response(
+        JSON.stringify({ error: 'Report has been deleted' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    if (report.bidding_status !== 'open') {
+      return new Response(
+        JSON.stringify({ error: 'Bidding is not open for this report' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Check bidding window hasn't expired
+    if (report.bidding_end_date && new Date(report.bidding_end_date) < new Date()) {
+      return new Response(
+        JSON.stringify({ error: 'Bidding window has closed' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Check for duplicate bid from same contractor on same report
+    const { data: existingBid } = await supabaseAdmin
+      .from('contractor_bids')
+      .select('id')
+      .eq('report_id', bidData.reportId)
+      .eq('contractor_id', user.id)
+      .is('deleted_at', null)
+      .maybeSingle()
+
+    if (existingBid) {
+      return new Response(
+        JSON.stringify({ error: 'You have already submitted a bid for this report' }),
+        { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     // Sanitize text inputs
     const sanitizedProposal = sanitizeInput(bidData.proposal);
+    const sanitizedTechnicalApproach = bidData.technicalApproach 
+      ? sanitizeInput(bidData.technicalApproach) 
+      : null;
 
-    // Insert the contractor bid with validated and sanitized data
+    // Re-validate sanitized proposal length
+    if (sanitizedProposal.length < 20) {
+      return new Response(
+        JSON.stringify({ error: 'Proposal contains too much invalid content' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Insert the contractor bid using user-scoped client (RLS enforced)
     const { data: bid, error: bidError } = await supabaseClient
       .from('contractor_bids')
       .insert({
@@ -181,7 +298,8 @@ serve(async (req) => {
         contractor_id: user.id,
         bid_amount: Number(bidData.bidAmount),
         proposal: sanitizedProposal,
-        estimated_duration: Number(bidData.estimatedDuration)
+        estimated_duration: Number(bidData.estimatedDuration),
+        technical_approach: sanitizedTechnicalApproach,
       })
       .select()
       .single()
@@ -194,14 +312,7 @@ serve(async (req) => {
       )
     }
 
-    // Get report details for notifications
-    const { data: report } = await supabaseAdmin
-      .from('problem_reports')
-      .select('reported_by, title')
-      .eq('id', bidData.reportId)
-      .single()
-
-    // Get contractor company name
+    // --- Notifications ---
     const { data: contractorProfile } = await supabaseAdmin
       .from('contractor_profiles')
       .select('company_name')
@@ -209,35 +320,36 @@ serve(async (req) => {
       .single()
 
     const companyName = contractorProfile?.company_name || 'A contractor'
-    const projectTitle = report?.title ? String(report.title).slice(0, 100) : (bidData.projectTitle ? sanitizeInput(String(bidData.projectTitle).slice(0, 100)) : 'a project')
+    const projectTitle = sanitizeInput(String(report.title || 'a project').slice(0, 100))
     const bidAmountFormatted = Number(bidData.bidAmount).toLocaleString()
 
-    // Notification for the contractor (confirmation)
+    // 1. Confirmation notification for the contractor
     await supabaseAdmin
       .from('notifications')
       .insert({
         user_id: user.id,
-        title: '✅ Bid Submitted Successfully',
+        title: 'Bid Submitted Successfully',
         message: `Your bid of KES ${bidAmountFormatted} for "${projectTitle}" has been submitted.`,
         type: 'success',
-        category: 'bid'
+        category: 'bid',
+        action_url: '/contractor/bid-tracking'
       })
 
-    // Notify the citizen who reported the issue
-    if (report?.reported_by) {
+    // 2. Notify the citizen who reported the issue
+    if (report.reported_by) {
       await supabaseAdmin
         .from('notifications')
         .insert({
           user_id: report.reported_by,
-          title: '📋 New Bid on Your Report',
+          title: 'New Bid on Your Report',
           message: `${companyName} submitted a bid of KES ${bidAmountFormatted} for "${projectTitle}"`,
           type: 'info',
           category: 'bid',
-          action_url: '/citizen/track'
+          action_url: '/citizen/track-reports'
         })
     }
 
-    // Notify government officials
+    // 3. Notify government officials
     const { data: govUsers } = await supabaseAdmin
       .from('user_profiles')
       .select('user_id')
@@ -247,7 +359,7 @@ serve(async (req) => {
     if (govUsers && govUsers.length > 0) {
       const govNotifications = govUsers.map(gov => ({
         user_id: gov.user_id,
-        title: '📋 New Contractor Bid',
+        title: 'New Contractor Bid',
         message: `${companyName} bid KES ${bidAmountFormatted} for "${projectTitle}"`,
         type: 'info',
         category: 'bid',
@@ -261,7 +373,6 @@ serve(async (req) => {
     }
 
     console.log(`Bid submitted: ${bid.id} by ${companyName} for report ${bidData.reportId}`)
-
 
     return new Response(
       JSON.stringify({ 
