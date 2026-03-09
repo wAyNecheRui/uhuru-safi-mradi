@@ -13,7 +13,11 @@ const SAFARICOM_IP_RANGES = [
   '196.201.213.',
 ];
 
-const DEMO_MODE = true;
+// SECURITY: Max payload size (100KB) to prevent OOM
+const MAX_BODY_SIZE = 102400;
+
+// SECURITY: Use environment variable to control demo mode, default to strict
+const DEMO_MODE = Deno.env.get('MPESA_DEMO_MODE') === 'true';
 
 // === SECURITY: HMAC signature verification ===
 async function verifyCallbackSignature(
@@ -21,9 +25,14 @@ async function verifyCallbackSignature(
   signatureHeader: string | null,
   sharedSecret: string
 ): Promise<boolean> {
-  if (DEMO_MODE && !signatureHeader) {
-    return true; // Skip in demo mode if no signature provided
+  // SECURITY FIX: Never skip signature verification based on demo mode alone.
+  // In demo mode without a configured secret, require no signature header either (internal calls only).
+  if (!signatureHeader && !sharedSecret) {
+    // Only allow if demo mode AND no secret is configured (development only)
+    if (DEMO_MODE) return true;
+    return false;
   }
+
   if (!signatureHeader || !sharedSecret) return false;
 
   try {
@@ -80,6 +89,12 @@ async function checkAndStoreNonce(
   sourceIP: string,
   callbackType: string
 ): Promise<boolean> {
+  // SECURITY FIX: Validate nonce format
+  if (!nonce || typeof nonce !== 'string' || nonce.length < 5 || nonce.length > 200) {
+    console.warn(`[M-Pesa Callback] Invalid nonce format: length=${nonce?.length}`);
+    return false;
+  }
+
   try {
     const { error } = await supabaseClient
       .from('callback_nonces')
@@ -87,7 +102,6 @@ async function checkAndStoreNonce(
 
     if (error) {
       if (error.code === '23505') {
-        // Duplicate key = replay attack
         console.warn(`[M-Pesa Callback] REPLAY DETECTED: nonce ${nonce} already processed`);
         return false;
       }
@@ -109,10 +123,14 @@ function validateCallbackStructure(data: any): { valid: boolean; error?: string 
 
   if (data.Body?.stkCallback) {
     const stk = data.Body.stkCallback;
-    if (typeof stk.CheckoutRequestID !== 'string' || stk.CheckoutRequestID.length < 10) {
+    if (typeof stk.CheckoutRequestID !== 'string' || stk.CheckoutRequestID.length < 10 || stk.CheckoutRequestID.length > 100) {
       return { valid: false, error: 'Invalid CheckoutRequestID format' };
     }
-    if (typeof stk.ResultCode !== 'number') {
+    // SECURITY: Reject CheckoutRequestIDs with dangerous characters
+    if (!/^[a-zA-Z0-9_-]+$/.test(stk.CheckoutRequestID)) {
+      return { valid: false, error: 'Invalid CheckoutRequestID characters' };
+    }
+    if (typeof stk.ResultCode !== 'number' || !Number.isInteger(stk.ResultCode)) {
       return { valid: false, error: 'Invalid ResultCode format' };
     }
     if (stk.ResultCode === 0) {
@@ -120,8 +138,8 @@ function validateCallbackStructure(data: any): { valid: boolean; error?: string 
         return { valid: false, error: 'Missing callback metadata for successful payment' };
       }
       const items = stk.CallbackMetadata.Item;
-      const hasReceipt = items.some((i: any) => i.Name === 'MpesaReceiptNumber');
-      const hasAmount = items.some((i: any) => i.Name === 'Amount');
+      const hasReceipt = items.some((i: any) => i.Name === 'MpesaReceiptNumber' && typeof i.Value === 'string');
+      const hasAmount = items.some((i: any) => i.Name === 'Amount' && typeof i.Value === 'number' && i.Value > 0);
       if (!hasReceipt || !hasAmount) {
         return { valid: false, error: 'Missing required callback metadata fields' };
       }
@@ -130,6 +148,10 @@ function validateCallbackStructure(data: any): { valid: boolean; error?: string 
   }
 
   if (data.TransactionType === 'Pay Bill') {
+    // SECURITY FIX: Require TransID for C2B callbacks
+    if (!data.TransID || typeof data.TransID !== 'string' || data.TransID.length < 5) {
+      return { valid: false, error: 'Missing or invalid TransID for C2B callback' };
+    }
     return { valid: true };
   }
 
@@ -186,6 +208,14 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
+  // SECURITY FIX: Reject non-POST methods
+  if (req.method !== 'POST') {
+    return new Response(
+      JSON.stringify({ error: 'Method not allowed' }),
+      { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
   const supabaseClient = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -222,8 +252,25 @@ serve(async (req) => {
       );
     }
 
-    // Parse body
+    // SECURITY FIX: Enforce payload size limit before reading
+    const contentLength = req.headers.get('content-length');
+    if (contentLength && parseInt(contentLength) > MAX_BODY_SIZE) {
+      await logCallback(supabaseClient, null, sourceIP, 'rejected', 'Payload too large');
+      return new Response(
+        JSON.stringify({ error: 'Payload too large' }),
+        { status: 413, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Parse body with size check
     const rawBody = await req.text();
+    if (rawBody.length > MAX_BODY_SIZE) {
+      await logCallback(supabaseClient, null, sourceIP, 'rejected', 'Payload too large');
+      return new Response(
+        JSON.stringify({ error: 'Payload too large' }),
+        { status: 413, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // SECURITY: Verify HMAC signature (shared secret from env)
     const signatureHeader = req.headers.get('x-mpesa-signature') || req.headers.get('x-callback-signature');
@@ -234,7 +281,7 @@ serve(async (req) => {
       console.error(`[M-Pesa Callback] Invalid signature from ${sourceIP}`);
       await logCallback(supabaseClient, null, sourceIP, 'rejected', 'Invalid callback signature');
       return new Response(
-        JSON.stringify({ success: false, message: 'Invalid signature' }),
+        JSON.stringify({ success: false, message: 'Forbidden' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -259,7 +306,7 @@ serve(async (req) => {
       console.error('[M-Pesa Callback] Invalid structure:', structureValidation.error);
       await logCallback(supabaseClient, callbackData, sourceIP, 'rejected', structureValidation.error);
       return new Response(
-        JSON.stringify({ success: false, message: structureValidation.error }),
+        JSON.stringify({ success: false, message: 'Invalid callback structure' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -292,9 +339,10 @@ serve(async (req) => {
 
       if (findError || !transaction) {
         console.error('[M-Pesa Callback] Transaction not found:', checkoutRequestId);
+        // SECURITY FIX: Generic error message to prevent enumeration
         await logCallback(supabaseClient, callbackData, sourceIP, 'rejected', 'Transaction not found');
         return new Response(
-          JSON.stringify({ success: false, message: 'Transaction not found' }),
+          JSON.stringify({ success: false, message: 'Processing error' }),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
@@ -313,7 +361,7 @@ serve(async (req) => {
         console.log('[M-Pesa Callback] Transaction not pending:', transaction.status);
         await logCallback(supabaseClient, callbackData, sourceIP, 'rejected', `Invalid state: ${transaction.status}`);
         return new Response(
-          JSON.stringify({ success: false, message: 'Transaction not in pending state' }),
+          JSON.stringify({ success: false, message: 'Processing error' }),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
@@ -324,23 +372,34 @@ serve(async (req) => {
         const amount = callbackMetadata.find((i: any) => i.Name === 'Amount')?.Value;
         const phoneNumber = callbackMetadata.find((i: any) => i.Name === 'PhoneNumber')?.Value;
 
-        // SECURITY: Validate amount matches expected
-        if (amount && Math.abs(amount - transaction.amount) > 1) {
+        // SECURITY FIX: Exact amount match (no tolerance) to prevent rounding exploits
+        if (typeof amount !== 'number' || amount !== transaction.amount) {
           console.error(`[M-Pesa Callback] Amount mismatch: expected ${transaction.amount}, got ${amount}`);
           await logCallback(supabaseClient, callbackData, sourceIP, 'rejected', 'Amount mismatch');
           return new Response(
-            JSON.stringify({ success: false, message: 'Amount mismatch' }),
+            JSON.stringify({ success: false, message: 'Processing error' }),
+            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        // SECURITY: Validate receipt number format
+        if (!mpesaReceiptNumber || typeof mpesaReceiptNumber !== 'string' || !/^[A-Z0-9]{10,15}$/.test(mpesaReceiptNumber)) {
+          console.error(`[M-Pesa Callback] Invalid receipt number format: ${mpesaReceiptNumber}`);
+          await logCallback(supabaseClient, callbackData, sourceIP, 'rejected', 'Invalid receipt format');
+          return new Response(
+            JSON.stringify({ success: false, message: 'Processing error' }),
             { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
 
         console.log(`[M-Pesa Callback] Payment successful. Receipt: ${mpesaReceiptNumber}, Amount: ${amount}`);
 
-        const { error: updateError } = await supabaseClient
+        // SECURITY: Atomic update with status guard
+        const { error: updateError, count: updateCount } = await supabaseClient
           .from('payment_transactions')
           .update({
             status: 'completed',
-            stripe_transaction_id: mpesaReceiptNumber || checkoutRequestId
+            stripe_transaction_id: mpesaReceiptNumber
           })
           .eq('id', transaction.id)
           .eq('status', 'pending');
@@ -349,12 +408,12 @@ serve(async (req) => {
           console.error('[M-Pesa Callback] Failed to update transaction:', updateError);
           await logCallback(supabaseClient, callbackData, sourceIP, 'error', updateError.message);
           return new Response(
-            JSON.stringify({ success: false, message: 'Failed to update transaction' }),
+            JSON.stringify({ success: false, message: 'Processing error' }),
             { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
 
-        // Update escrow balance
+        // Update escrow balance with optimistic locking
         const { data: escrow } = await supabaseClient
           .from('escrow_accounts')
           .select('*')
@@ -362,14 +421,22 @@ serve(async (req) => {
           .single();
 
         if (escrow) {
-          await supabaseClient
+          // SECURITY FIX: Optimistic locking on escrow update to prevent race conditions
+          const { error: escrowError } = await supabaseClient
             .from('escrow_accounts')
             .update({
               held_amount: escrow.held_amount + transaction.amount,
               total_amount: escrow.total_amount + transaction.amount,
               updated_at: new Date().toISOString()
             })
-            .eq('id', escrow.id);
+            .eq('id', escrow.id)
+            .eq('held_amount', escrow.held_amount); // Optimistic lock
+
+          if (escrowError) {
+            console.error('[M-Pesa Callback] Escrow update conflict (possible race condition):', escrowError);
+            await logCallback(supabaseClient, callbackData, sourceIP, 'error', 'Escrow update conflict');
+            // Transaction is already completed, escrow will be reconciled
+          }
 
           await supabaseClient
             .from('blockchain_transactions')
@@ -377,7 +444,7 @@ serve(async (req) => {
               project_id: escrow.project_id,
               payment_transaction_id: transaction.id,
               amount: transaction.amount,
-              transaction_hash: `0x${mpesaReceiptNumber || checkoutRequestId}${Date.now().toString(16)}`,
+              transaction_hash: `0x${mpesaReceiptNumber}${Date.now().toString(16)}`,
               block_hash: `0x${crypto.randomUUID().replace(/-/g, '')}`,
               block_number: Math.floor(Date.now() / 1000),
               network_status: 'confirmed',
@@ -406,14 +473,15 @@ serve(async (req) => {
       }
 
       return new Response(
-        JSON.stringify({ success: true, resultCode, resultDesc }),
+        JSON.stringify({ success: true }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     // Handle C2B Pay Bill
     if (callbackData.TransactionType === 'Pay Bill') {
-      const c2bNonce = callbackData.TransID || `c2b_${Date.now()}`;
+      // SECURITY FIX: TransID is now required by structure validation, no fallback to Date.now()
+      const c2bNonce = callbackData.TransID;
       const nonceValid = await checkAndStoreNonce(supabaseClient, c2bNonce, sourceIP, 'c2b_paybill');
       if (!nonceValid) {
         return new Response(
