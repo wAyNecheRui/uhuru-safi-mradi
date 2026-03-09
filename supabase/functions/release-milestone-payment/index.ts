@@ -118,7 +118,7 @@ serve(async (req) => {
       )
     }
 
-    // SECURITY FIX: Milestone status guard — only allow release for 'verified' or 'submitted' milestones
+    // SECURITY: Milestone status guard — only allow release for 'verified' or 'submitted' milestones
     const RELEASABLE_STATUSES = ['verified', 'submitted'];
     if (!RELEASABLE_STATUSES.includes(milestone.status)) {
       return new Response(
@@ -127,18 +127,24 @@ serve(async (req) => {
       )
     }
 
-    // SECURITY: Check for existing completed payment for this milestone (prevent double-pay)
-    const { data: existingPayment } = await supabaseAdmin
-      .from('payment_transactions')
+    // RACE CONDITION FIX: Atomically lock milestone status FIRST before any payment logic.
+    // This prevents two concurrent requests from both passing the status check above.
+    const { data: lockedMilestone, error: lockError } = await supabaseAdmin
+      .from('project_milestones')
+      .update({ 
+        status: 'payment_processing',
+        verified_at: new Date().toISOString(),
+        verified_by: user.id
+      })
+      .eq('id', milestoneId)
+      .eq('status', milestone.status) // Optimistic lock: only succeeds if status hasn't changed
       .select('id')
-      .eq('milestone_id', milestoneId)
-      .eq('status', 'completed')
-      .eq('transaction_type', 'release')
-      .maybeSingle()
+      .single()
 
-    if (existingPayment) {
+    if (lockError || !lockedMilestone) {
+      console.warn(`[RELEASE] Milestone ${milestoneId} status lock failed — concurrent request likely won`)
       return new Response(
-        JSON.stringify({ error: 'Payment already released for this milestone' }),
+        JSON.stringify({ error: 'Payment already being processed for this milestone' }),
         { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
@@ -152,6 +158,8 @@ serve(async (req) => {
       .single()
 
     if (escrowError || !escrow) {
+      // Rollback milestone status
+      await supabaseAdmin.from('project_milestones').update({ status: milestone.status }).eq('id', milestoneId)
       return new Response(
         JSON.stringify({ error: 'Escrow account not found' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -163,15 +171,40 @@ serve(async (req) => {
 
     // SECURITY: Insufficient funds check
     if (escrow.held_amount < milestoneAmount) {
+      // Rollback milestone status
+      await supabaseAdmin.from('project_milestones').update({ status: milestone.status }).eq('id', milestoneId)
       return new Response(
         JSON.stringify({ error: `Insufficient escrow funds: need ${milestoneAmount}, have ${escrow.held_amount}` }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
+    // RACE CONDITION FIX: Optimistic lock on escrow balance BEFORE creating payment
+    const { data: lockedEscrow, error: escrowLockError } = await supabaseAdmin
+      .from('escrow_accounts')
+      .update({
+        released_amount: escrow.released_amount + milestoneAmount,
+        held_amount: escrow.held_amount - milestoneAmount,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', escrow.id)
+      .eq('held_amount', escrow.held_amount) // Optimistic lock: prevents concurrent overdraw
+      .select('id')
+      .single()
+
+    if (escrowLockError || !lockedEscrow) {
+      // Rollback milestone status
+      await supabaseAdmin.from('project_milestones').update({ status: milestone.status }).eq('id', milestoneId)
+      console.error('[RELEASE] Escrow balance lock failed — concurrent modification detected')
+      return new Response(
+        JSON.stringify({ error: 'Escrow balance changed during processing. Please retry.' }),
+        { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     const paymentRef = generateDemoPaymentRef();
 
-    // Create payment transaction
+    // Create payment transaction — DB unique index prevents duplicates
     const { data: transaction, error: transactionError } = await supabaseAdmin
       .from('payment_transactions')
       .insert({
@@ -187,6 +220,21 @@ serve(async (req) => {
       .single()
 
     if (transactionError) {
+      // Check if it's a duplicate constraint violation
+      if (transactionError.code === '23505') {
+        // Milestone already paid — set status to paid (idempotent)
+        await supabaseAdmin.from('project_milestones').update({ status: 'paid' }).eq('id', milestoneId)
+        return new Response(
+          JSON.stringify({ error: 'Payment already released for this milestone' }),
+          { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+      // Rollback escrow and milestone on other errors
+      await supabaseAdmin.from('escrow_accounts').update({
+        released_amount: escrow.released_amount,
+        held_amount: escrow.held_amount
+      }).eq('id', escrow.id)
+      await supabaseAdmin.from('project_milestones').update({ status: milestone.status }).eq('id', milestoneId)
       console.error('[RELEASE] Transaction error:', transactionError)
       return new Response(
         JSON.stringify({ error: 'Failed to create payment transaction' }),
@@ -194,31 +242,11 @@ serve(async (req) => {
       )
     }
 
-    // SECURITY FIX: Set milestone to 'paid' (not 'verified' — that's a different state)
+    // Finalize milestone status to 'paid'
     await supabaseAdmin
       .from('project_milestones')
-      .update({ 
-        status: 'paid',
-        verified_at: new Date().toISOString(),
-        verified_by: user.id
-      })
+      .update({ status: 'paid' })
       .eq('id', milestoneId)
-      .eq('status', milestone.status) // Optimistic lock on status
-
-    // SECURITY FIX: Optimistic lock on escrow balance to prevent race conditions
-    const { error: escrowUpdateError } = await supabaseAdmin
-      .from('escrow_accounts')
-      .update({
-        released_amount: escrow.released_amount + milestoneAmount,
-        held_amount: escrow.held_amount - milestoneAmount,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', escrow.id)
-      .eq('held_amount', escrow.held_amount) // Optimistic lock
-
-    if (escrowUpdateError) {
-      console.error('[RELEASE] Escrow update conflict:', escrowUpdateError)
-    }
 
     // Notification
     await supabaseAdmin

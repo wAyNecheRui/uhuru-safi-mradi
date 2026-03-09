@@ -291,6 +291,7 @@ serve(async (req) => {
     }
 
     // Insert the contractor bid using user-scoped client (RLS enforced)
+    // DB unique index idx_unique_active_bid_per_contractor_report prevents duplicates
     const { data: bid, error: bidError } = await supabaseClient
       .from('contractor_bids')
       .insert({
@@ -305,6 +306,13 @@ serve(async (req) => {
       .single()
 
     if (bidError) {
+      // RACE CONDITION FIX: Catch unique constraint violation from concurrent inserts
+      if (bidError.code === '23505') {
+        return new Response(
+          JSON.stringify({ error: 'You have already submitted a bid for this report' }),
+          { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
       console.error('Database error:', bidError);
       return new Response(
         JSON.stringify({ error: 'Failed to submit bid' }),
