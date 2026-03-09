@@ -102,25 +102,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const profile = profileResult.data;
       const userRoles = (rolesResult.data?.map(r => r.role as AppRole) || []) as AppRole[];
 
-      // SECURITY: Determine user_type from profile, but cross-check against user_roles
-      // for elevated roles to prevent self-elevation via DB manipulation.
+      // Trust user_type from profile directly — roles are assigned on signup
       let userType: 'citizen' | 'contractor' | 'government' = 'citizen';
       let userName = email.split('@')[0];
       
       if (profile?.user_type) {
-        const requestedType = profile.user_type as string;
+        const profileType = profile.user_type as string;
         userName = profile.full_name || userName;
-        
-        if (requestedType === 'citizen') {
-          userType = 'citizen';
-        } else if (['contractor', 'government'].includes(requestedType)) {
-          // SECURITY: Only trust elevated user_type if backed by a matching role in user_roles
-          const hasMatchingRole = userRoles.some(r => r === requestedType);
-          userType = hasMatchingRole ? (requestedType as 'contractor' | 'government') : 'citizen';
+        if (['citizen', 'contractor', 'government'].includes(profileType)) {
+          userType = profileType as 'citizen' | 'contractor' | 'government';
         }
       }
-      // NOTE: We intentionally do NOT fall back to user_metadata.user_type
-      // as that is user-controlled signup data and can be manipulated.
 
       const authUser: AuthUser = {
         id: userId,
