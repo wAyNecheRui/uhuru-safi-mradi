@@ -4,6 +4,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
 // Rate limiting map
@@ -26,20 +27,54 @@ function checkRateLimit(clientIP: string, maxRequests = 10, windowMs = 60000): {
   return { allowed: true };
 }
 
-// Input sanitization
+// Max body size: 50KB
+const MAX_BODY_SIZE = 51200;
+
+/**
+ * Robust input sanitization using allowlist approach.
+ * Strips ALL HTML tags, decodes HTML entities, removes dangerous URI schemes.
+ */
 function sanitizeInput(input: string): string {
-  return input
-    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-    .replace(/javascript:/gi, '')
-    .replace(/on\w+\s*=/gi, '')
-    .replace(/<[^>]*>/g, '')
-    .trim();
+  if (!input || typeof input !== 'string') return '';
+
+  let cleaned = input;
+
+  // 1. Decode HTML entities to catch encoded payloads like &#x6A;avascript:
+  cleaned = cleaned
+    .replace(/&#x([0-9a-fA-F]+);/g, (_m, hex) => String.fromCharCode(parseInt(hex, 16)))
+    .replace(/&#(\d+);/g, (_m, dec) => String.fromCharCode(parseInt(dec, 10)))
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&amp;/gi, '&')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#039;/gi, "'");
+
+  // 2. Remove ALL HTML/XML tags (including self-closing, SVG, etc.)
+  cleaned = cleaned.replace(/<[^>]*>/g, '');
+
+  // 3. Remove dangerous URI schemes (javascript:, data:, vbscript:)
+  cleaned = cleaned.replace(/\b(javascript|data|vbscript)\s*:/gi, '');
+
+  // 4. Remove event handler patterns (onclick=, onerror=, onload=, etc.)
+  cleaned = cleaned.replace(/\bon\w+\s*=/gi, '');
+
+  // 5. Remove null bytes
+  cleaned = cleaned.replace(/\0/g, '');
+
+  // 6. Limit length to prevent storage abuse
+  cleaned = cleaned.trim().slice(0, 10000);
+
+  return cleaned;
 }
 
-// UUID validation
-function isValidUUID(uuid: string): boolean {
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  return uuidRegex.test(uuid);
+// Validate coordinate string format: "lat,lon"
+function isValidCoordinates(coords: string): boolean {
+  if (typeof coords !== 'string') return false;
+  const parts = coords.split(',').map(s => s.trim());
+  if (parts.length !== 2) return false;
+  const lat = Number(parts[0]);
+  const lon = Number(parts[1]);
+  return !isNaN(lat) && !isNaN(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
 }
 
 // Validate report data
@@ -63,13 +98,17 @@ function validateReportData(data: any): { valid: boolean; error?: string } {
     return { valid: false, error: 'Invalid category' };
   }
   
-  const validPriorities = ['low', 'medium', 'high', 'critical'];
+  const validPriorities = ['low', 'medium', 'high', 'critical', 'urgent'];
   if (data.priority && !validPriorities.includes(data.priority)) {
     return { valid: false, error: 'Invalid priority' };
   }
   
   if (data.location && (typeof data.location !== 'string' || data.location.length > 500)) {
     return { valid: false, error: 'Location must be a string under 500 characters' };
+  }
+
+  if (data.coordinates && !isValidCoordinates(data.coordinates)) {
+    return { valid: false, error: 'Coordinates must be in "lat,lon" format with valid ranges' };
   }
   
   if (data.estimatedCost !== undefined) {
@@ -94,6 +133,14 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
+  // Only allow POST
+  if (req.method !== 'POST') {
+    return new Response(
+      JSON.stringify({ error: 'Method not allowed' }),
+      { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+
   try {
     // Check rate limit
     const clientIP = req.headers.get('x-forwarded-for') || req.headers.get('cf-connecting-ip') || 'unknown';
@@ -112,32 +159,41 @@ serve(async (req) => {
       )
     }
 
-    // Check content length
+    // Check content length BEFORE parsing body
     const contentLength = req.headers.get('content-length');
-    if (contentLength && parseInt(contentLength) > 51200) { // 50KB limit
+    if (contentLength && parseInt(contentLength) > MAX_BODY_SIZE) {
+      // Consume the body to prevent resource leaks
+      await req.text();
       return new Response(
         JSON.stringify({ error: 'Request payload too large' }),
         { status: 413, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Create admin client for notifications (service role)
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      { auth: { autoRefreshToken: false, persistSession: false } }
-    )
+    // Read body as text first to enforce size limit regardless of header
+    const bodyText = await req.text();
+    if (bodyText.length > MAX_BODY_SIZE) {
+      return new Response(
+        JSON.stringify({ error: 'Request payload too large' }),
+        { status: 413, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
-    // Create user client for auth verification
+    let reportData: any;
+    try {
+      reportData = JSON.parse(bodyText);
+    } catch {
+      return new Response(
+        JSON.stringify({ error: 'Invalid JSON' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Auth check: create user-scoped client (NOT service role) for the insert
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false
-        }
-      }
+      { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
     const authHeader = req.headers.get('Authorization')
@@ -158,8 +214,6 @@ serve(async (req) => {
       )
     }
 
-    const reportData = await req.json()
-
     // Validate input
     const validation = validateReportData(reportData);
     if (!validation.valid) {
@@ -174,7 +228,21 @@ serve(async (req) => {
     const sanitizedDescription = sanitizeInput(reportData.description);
     const sanitizedLocation = reportData.location ? sanitizeInput(reportData.location) : null;
 
-    // Insert the problem report with sanitized data
+    // Re-validate sanitized title/description lengths (sanitization may shorten them)
+    if (sanitizedTitle.length < 5) {
+      return new Response(
+        JSON.stringify({ error: 'Title contains too much invalid content' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+    if (sanitizedDescription.length < 20) {
+      return new Response(
+        JSON.stringify({ error: 'Description contains too much invalid content' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Insert the problem report using user-scoped client (RLS enforced)
     const { data: report, error: reportError } = await supabaseClient
       .from('problem_reports')
       .insert({
@@ -199,18 +267,24 @@ serve(async (req) => {
       )
     }
 
-    // Create notification for user using admin client (RLS bypassed)
+    // Create notification using service role (needs to bypass RLS for gov notifications)
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    )
+
     await supabaseAdmin
       .from('notifications')
       .insert({
         user_id: user.id,
-        title: '✅ Report Submitted Successfully',
+        title: 'Report Submitted Successfully',
         message: `Your report "${sanitizedTitle}" has been submitted for review.`,
         type: 'success',
         category: 'report'
       })
 
-    // Also notify government users about the new report
+    // Notify government users
     const { data: govUsers } = await supabaseAdmin
       .from('user_profiles')
       .select('user_id')
@@ -220,7 +294,7 @@ serve(async (req) => {
     if (govUsers && govUsers.length > 0) {
       const govNotifications = govUsers.map(gov => ({
         user_id: gov.user_id,
-        title: '🆕 New Problem Report',
+        title: 'New Problem Report',
         message: `A citizen reported: "${sanitizedTitle}" at ${sanitizedLocation || 'Unknown location'}. Requires review.`,
         type: 'info',
         category: 'report',
