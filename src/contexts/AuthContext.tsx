@@ -183,20 +183,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signOut = useCallback(async () => {
-    if (user?.id) userCache.delete(user.id);
+    userCache.clear(); // SECURITY: Wipe entire in-memory cache — not just current user
     try {
       await supabase.auth.signOut();
     } catch {
       // ignore
     } finally {
       clearSupabaseAuthStorage();
-      clearDataCache(); // SECURITY: Clear cache on sign out
+      clearDataCache();
       if (mountedRef.current) {
         setUser(null);
         setRoles([]);
       }
     }
-  }, [user?.id, clearDataCache]);
+  }, [clearDataCache]);
 
   // SECURITY: Watch for user changes and clear cache
   useEffect(() => {
