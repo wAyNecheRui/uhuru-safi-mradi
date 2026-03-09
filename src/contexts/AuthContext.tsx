@@ -78,7 +78,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // signOut can fail when the session is already invalid; still clear local storage
     } finally {
       clearSupabaseAuthStorage();
-      clearDataCache(); // SECURITY: Clear cache on sign out
+      userCache.clear(); // SECURITY: Wipe entire in-memory cache on forced sign-out
+      clearDataCache();
       if (mountedRef.current) {
         setUser(null);
         setRoles([]);
