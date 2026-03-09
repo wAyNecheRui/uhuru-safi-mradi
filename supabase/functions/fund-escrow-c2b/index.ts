@@ -181,9 +181,9 @@ serve(async (req) => {
 
     if (transactionError) throw transactionError
 
-    // Update escrow account balance (including worker wage allocation)
+    // Update escrow account balance with optimistic lock
     const wageAlloc = worker_wage_allocation || 0
-    const { error: updateError } = await supabaseAdmin
+    const { data: updatedEscrow, error: updateError } = await supabaseAdmin
       .from('escrow_accounts')
       .update({
         held_amount: escrow.held_amount + amount,
@@ -192,8 +192,16 @@ serve(async (req) => {
         updated_at: new Date().toISOString()
       })
       .eq('id', escrow.id)
+      .eq('held_amount', escrow.held_amount) // Optimistic lock
+      .select('id')
+      .single()
 
-    if (updateError) throw updateError
+    if (updateError || !updatedEscrow) {
+      return new Response(
+        JSON.stringify({ error: 'Escrow balance changed during processing. Please retry.' }),
+        { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
     // Create blockchain record for transparency
     const { error: blockchainError } = await supabaseAdmin
