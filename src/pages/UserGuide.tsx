@@ -193,7 +193,7 @@ const UserGuide = () => {
                         <li>Higher voted issues get reviewed first by government</li>
                       </ol>
                     </div>
-                    <Button onClick={() => navigate('/citizen/community-voting')} variant="outline">
+                    <Button onClick={() => navigate('/citizen/voting')} variant="outline">
                       Vote on Community Issues <ArrowRight className="h-4 w-4 ml-2" />
                     </Button>
                   </CardContent>
