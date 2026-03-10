@@ -306,9 +306,9 @@ const UserGuide = () => {
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
                       {[
                         { path: '/citizen', label: 'Dashboard', icon: Home },
-                        { path: '/citizen/report-issue', label: 'Report Issue', icon: AlertTriangle },
-                        { path: '/citizen/track-reports', label: 'Track Reports', icon: FileSearch },
-                        { path: '/citizen/community-voting', label: 'Community Voting', icon: Vote },
+                        { path: '/citizen/report', label: 'Report Issue', icon: AlertTriangle },
+                        { path: '/citizen/track', label: 'Track Reports', icon: FileSearch },
+                        { path: '/citizen/voting', label: 'Community Voting', icon: Vote },
                         { path: '/citizen/projects', label: 'View Projects', icon: ClipboardList },
                         { path: '/citizen/workforce', label: 'Workforce', icon: Briefcase },
                         { path: '/citizen/transparency', label: 'Transparency', icon: Eye },
