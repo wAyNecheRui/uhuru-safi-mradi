@@ -158,7 +158,7 @@ const UserGuide = () => {
                         <ul className="text-sm text-gray-600 space-y-1">
                           <li>• Review and submit your report</li>
                           <li>• Receive confirmation with tracking ID</li>
-                          <li>• Track status at <strong>/citizen/track-reports</strong></li>
+                          <li>• Track status at <strong>/citizen/track</strong></li>
                           <li>• Receive notifications on status changes</li>
                         </ul>
                       </div>
