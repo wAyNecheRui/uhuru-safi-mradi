@@ -185,7 +185,7 @@ const UserGuide = () => {
                     <div className="space-y-3">
                       <h4 className="font-semibold">How to Vote:</h4>
                       <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 ml-4">
-                        <li>Go to <strong>/citizen/community-voting</strong></li>
+                        <li>Go to <strong>/citizen/voting</strong></li>
                         <li>Browse problems reported in your area</li>
                         <li>Validate if the problem exists (you've seen it)</li>
                         <li>Upvote issues you believe are urgent</li>
