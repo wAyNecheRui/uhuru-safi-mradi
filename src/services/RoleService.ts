@@ -245,7 +245,7 @@ export class RoleService {
         message: `Your ${request.requested_role} role request was not approved. Reason: ${reviewNotes}`,
         type: 'warning',
         category: 'verification',
-        actionUrl: '/dashboard'
+        actionUrl: '/'
       });
     }
 

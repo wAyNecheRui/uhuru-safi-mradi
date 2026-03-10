@@ -238,7 +238,10 @@ const NotificationBell: React.FC = () => {
               className="w-full text-sm"
               onClick={() => {
                 setIsOpen(false);
-                navigate('/citizen/notifications');
+                const userType = window.location.pathname.split('/')[1] || 'citizen';
+                const validTypes = ['citizen', 'contractor', 'government'];
+                const notifPath = validTypes.includes(userType) ? `/${userType}/notifications` : '/citizen/notifications';
+                navigate(notifPath);
               }}
             >
               View All Notifications

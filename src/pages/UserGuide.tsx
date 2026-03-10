@@ -158,12 +158,12 @@ const UserGuide = () => {
                         <ul className="text-sm text-gray-600 space-y-1">
                           <li>• Review and submit your report</li>
                           <li>• Receive confirmation with tracking ID</li>
-                          <li>• Track status at <strong>/citizen/track-reports</strong></li>
+                          <li>• Track status at <strong>/citizen/track</strong></li>
                           <li>• Receive notifications on status changes</li>
                         </ul>
                       </div>
                     </div>
-                    <Button onClick={() => navigate('/citizen/report-issue')} variant="outline">
+                    <Button onClick={() => navigate('/citizen/report')} variant="outline">
                       Report an Issue <ArrowRight className="h-4 w-4 ml-2" />
                     </Button>
                   </CardContent>
@@ -185,7 +185,7 @@ const UserGuide = () => {
                     <div className="space-y-3">
                       <h4 className="font-semibold">How to Vote:</h4>
                       <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 ml-4">
-                        <li>Go to <strong>/citizen/community-voting</strong></li>
+                        <li>Go to <strong>/citizen/voting</strong></li>
                         <li>Browse problems reported in your area</li>
                         <li>Validate if the problem exists (you've seen it)</li>
                         <li>Upvote issues you believe are urgent</li>
@@ -193,7 +193,7 @@ const UserGuide = () => {
                         <li>Higher voted issues get reviewed first by government</li>
                       </ol>
                     </div>
-                    <Button onClick={() => navigate('/citizen/community-voting')} variant="outline">
+                    <Button onClick={() => navigate('/citizen/voting')} variant="outline">
                       Vote on Community Issues <ArrowRight className="h-4 w-4 ml-2" />
                     </Button>
                   </CardContent>
@@ -306,9 +306,9 @@ const UserGuide = () => {
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
                       {[
                         { path: '/citizen', label: 'Dashboard', icon: Home },
-                        { path: '/citizen/report-issue', label: 'Report Issue', icon: AlertTriangle },
-                        { path: '/citizen/track-reports', label: 'Track Reports', icon: FileSearch },
-                        { path: '/citizen/community-voting', label: 'Community Voting', icon: Vote },
+                        { path: '/citizen/report', label: 'Report Issue', icon: AlertTriangle },
+                        { path: '/citizen/track', label: 'Track Reports', icon: FileSearch },
+                        { path: '/citizen/voting', label: 'Community Voting', icon: Vote },
                         { path: '/citizen/projects', label: 'View Projects', icon: ClipboardList },
                         { path: '/citizen/workforce', label: 'Workforce', icon: Briefcase },
                         { path: '/citizen/transparency', label: 'Transparency', icon: Eye },
@@ -521,7 +521,7 @@ const UserGuide = () => {
                         { path: '/contractor', label: 'Dashboard', icon: Home },
                         { path: '/contractor/verification', label: 'Verification', icon: Shield },
                         { path: '/contractor/bidding', label: 'Bidding', icon: FileText },
-                        { path: '/contractor/bid-tracking', label: 'Bid Tracking', icon: Clock },
+                        { path: '/contractor/tracking', label: 'Bid Tracking', icon: Clock },
                         { path: '/contractor/projects', label: 'Projects', icon: ClipboardList },
                         { path: '/contractor/financials', label: 'Financials', icon: Wallet },
                         { path: '/contractor/performance', label: 'Performance', icon: TrendingUp },
