@@ -149,7 +149,7 @@ class SystemAlertServiceClass {
         : `Your bid for "${projectTitle}" was not selected`,
       isWinner ? 'success' : 'info',
       'bid',
-      { actionUrl: '/contractor/bid-tracking' }
+      { actionUrl: '/contractor/tracking' }
     );
   }
 

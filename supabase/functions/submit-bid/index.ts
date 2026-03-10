@@ -356,7 +356,7 @@ serve(async (req) => {
           message: `${companyName} submitted a bid of KES ${bidAmountFormatted} for "${projectTitle}"`,
           type: 'info',
           category: 'bid',
-          action_url: '/citizen/track-reports'
+          action_url: '/citizen/track'
         })
     }
 

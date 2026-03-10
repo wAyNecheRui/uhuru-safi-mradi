@@ -521,7 +521,7 @@ const UserGuide = () => {
                         { path: '/contractor', label: 'Dashboard', icon: Home },
                         { path: '/contractor/verification', label: 'Verification', icon: Shield },
                         { path: '/contractor/bidding', label: 'Bidding', icon: FileText },
-                        { path: '/contractor/bid-tracking', label: 'Bid Tracking', icon: Clock },
+                        { path: '/contractor/tracking', label: 'Bid Tracking', icon: Clock },
                         { path: '/contractor/projects', label: 'Projects', icon: ClipboardList },
                         { path: '/contractor/financials', label: 'Financials', icon: Wallet },
                         { path: '/contractor/performance', label: 'Performance', icon: TrendingUp },
