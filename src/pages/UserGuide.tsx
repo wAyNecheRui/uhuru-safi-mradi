@@ -163,7 +163,7 @@ const UserGuide = () => {
                         </ul>
                       </div>
                     </div>
-                    <Button onClick={() => navigate('/citizen/report-issue')} variant="outline">
+                    <Button onClick={() => navigate('/citizen/report')} variant="outline">
                       Report an Issue <ArrowRight className="h-4 w-4 ml-2" />
                     </Button>
                   </CardContent>
