@@ -343,7 +343,7 @@ serve(async (req) => {
         message: `Your bid of KES ${bidAmountFormatted} for "${projectTitle}" has been submitted.`,
         type: 'success',
         category: 'bid',
-        action_url: '/contractor/bid-tracking'
+        action_url: '/contractor/tracking'
       })
 
     // 2. Notify the citizen who reported the issue
