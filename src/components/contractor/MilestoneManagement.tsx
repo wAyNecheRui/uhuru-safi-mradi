@@ -122,10 +122,11 @@ const MilestoneManagement: React.FC<MilestoneManagementProps> = ({ project, onCl
   };
 
   const saveMilestones = async () => {
-    // Block saves on completed projects
+    // Pre-check: verify project status and contractor assignment
+    const { data: { user } } = await supabase.auth.getUser();
     const { data: projectData } = await supabase
       .from('projects')
-      .select('status')
+      .select('status, contractor_id')
       .eq('id', project.id)
       .single();
     
@@ -133,6 +134,15 @@ const MilestoneManagement: React.FC<MilestoneManagementProps> = ({ project, onCl
       toast({
         title: "Project Completed",
         description: "No changes can be made to a completed project.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (projectData?.contractor_id !== user?.id) {
+      toast({
+        title: "Not Assigned",
+        description: "You can only configure milestones for projects assigned to you.",
         variant: "destructive"
       });
       return;
