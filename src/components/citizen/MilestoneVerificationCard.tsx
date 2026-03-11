@@ -251,9 +251,27 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
     }
   };
 
-  const canVerify = milestone.status === 'submitted' && user && !hasUserVerified;
-  const isPaid = milestone.status === 'paid';
+  const canVerify = (milestone.status === 'submitted' || milestone.status === 'in_progress') && user && !hasUserVerified;
+  const isPaid = milestone.status === 'paid' || milestone.status === 'payment_processing';
   const isVerified = milestone.status === 'verified';
+
+  // Recovery: if milestone is 'verified' but not yet paid, attempt auto-payment
+  useEffect(() => {
+    if (isVerified && currentVerificationStatus?.canRelease && user) {
+      console.log('[MilestoneVerification] Recovery: milestone verified but not paid, triggering auto-payment');
+      MilestonePaymentService.triggerAutomatedPayment(milestone.id)
+        .then(result => {
+          if (result.success) {
+            toast({
+              title: "💰 Payment Released!",
+              description: result.message
+            });
+            onVerified();
+          }
+        })
+        .catch(err => console.error('[MilestoneVerification] Recovery payment failed:', err));
+    }
+  }, [isVerified, currentVerificationStatus?.canRelease]);
   const verificationProgress = currentVerificationStatus 
     ? (currentVerificationStatus.approvedCount / currentVerificationStatus.requiredCount) * 100 
     : 0;
