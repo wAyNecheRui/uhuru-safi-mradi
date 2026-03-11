@@ -213,19 +213,27 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
           description: "Triggering automated payment release..."
         });
 
-        // Trigger automated payment
-        const paymentResult = await MilestonePaymentService.triggerAutomatedPayment(milestone.id);
-        
-        if (paymentResult.success) {
+        // Trigger automated payment (DB trigger already set milestone to 'verified')
+        try {
+          const paymentResult = await MilestonePaymentService.triggerAutomatedPayment(milestone.id);
+          
+          if (paymentResult.success) {
+            toast({
+              title: "💰 Payment Released!",
+              description: paymentResult.message
+            });
+          } else {
+            toast({
+              title: "Payment Pending",
+              description: paymentResult.message,
+              variant: paymentResult.error ? "destructive" : "default"
+            });
+          }
+        } catch (paymentError) {
+          console.error('[MilestoneVerification] Auto-payment call failed, DB trigger has milestone as verified:', paymentError);
           toast({
-            title: "💰 Payment Released!",
-            description: paymentResult.message
-          });
-        } else {
-          toast({
-            title: "Payment Pending",
-            description: paymentResult.message,
-            variant: paymentResult.error ? "destructive" : "default"
+            title: "Payment Queued",
+            description: "Verification recorded. Payment will be processed automatically.",
           });
         }
       }
