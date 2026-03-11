@@ -146,6 +146,17 @@ serve(async (req) => {
       )
     }
 
+    // Accept milestones in 'submitted' or 'verified' status (DB trigger sets 'verified')
+    if (!['submitted', 'verified', 'in_progress'].includes(milestone.status)) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          message: `Milestone is in '${milestone.status}' status and cannot be processed for payment` 
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     // RACE CONDITION FIX: Atomically lock milestone status to prevent concurrent auto-releases
     const { data: lockedMilestone, error: lockError } = await supabaseAdmin
       .from('project_milestones')
