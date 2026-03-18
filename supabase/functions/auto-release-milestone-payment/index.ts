@@ -224,7 +224,7 @@ serve(async (req) => {
     }
 
     // RACE CONDITION FIX: Optimistic lock on escrow balance
-    const { data: lockedEscrow, error: escrowLockError } = await supabaseAdmin
+    const { data: lockedEscrowRows, error: escrowLockError } = await supabaseAdmin
       .from('escrow_accounts')
       .update({
         released_amount: escrow.released_amount + milestoneAmount,
@@ -232,12 +232,11 @@ serve(async (req) => {
         updated_at: new Date().toISOString()
       })
       .eq('id', escrow.id)
-      .eq('held_amount', escrow.held_amount) // Optimistic lock
+      .gte('held_amount', milestoneAmount)
       .select('id')
-      .single()
 
-    if (escrowLockError || !lockedEscrow) {
-      await supabaseAdmin.from('project_milestones').update({ status: milestone.status }).eq('id', milestoneId)
+    if (escrowLockError || !lockedEscrowRows || lockedEscrowRows.length === 0) {
+      await supabaseAdmin.from('project_milestones').update({ status: 'verified' }).eq('id', milestoneId)
       console.error('[AUTO-RELEASE] Escrow lock failed — concurrent modification')
       return new Response(
         JSON.stringify({ error: 'Escrow balance changed during processing. Please retry.' }),
