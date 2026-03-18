@@ -104,11 +104,9 @@ export class WorkflowGuardService {
     const meetsVoteThreshold = totalVotes >= MIN_VOTES_THRESHOLD;
     const hasGPS = !!(report.gps_coordinates || report.coordinates);
     const hasMedia = (report.photo_urls?.length > 0) || (report.video_urls?.length > 0);
-    const hasBudget = !!(report.estimated_cost && report.estimated_cost > 0);
-
     // Can approve only if in under_review status and meets all requirements
     const canApprove = report.status === WORKFLOW_STATUS.UNDER_REVIEW && 
-                       meetsVoteThreshold && hasGPS && hasMedia && hasBudget;
+                       meetsVoteThreshold && hasGPS && hasMedia;
 
     // Can open bidding only if already approved
     const canOpenBidding = report.status === WORKFLOW_STATUS.APPROVED;
