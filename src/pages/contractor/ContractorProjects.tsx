@@ -15,7 +15,7 @@ import BreadcrumbNav from '@/components/BreadcrumbNav';
 import ProgressUpdateForm from '@/components/contractor/ProgressUpdateForm';
 import MilestoneManagement from '@/components/contractor/MilestoneManagement';
 import MilestoneEvidenceViewer from '@/components/contractor/MilestoneEvidenceViewer';
-import ProjectLifecycleTracker from '@/components/workflow/ProjectLifecycleTracker';
+
 import WorkforceHiringPanel from '@/components/contractor/WorkforceHiringPanel';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -346,8 +346,6 @@ const ContractorProjects = () => {
 
                  return (
                  <div key={project.id} className="space-y-4">
-                   {/* Project Lifecycle Tracker */}
-                   <ProjectLifecycleTracker projectId={project.id} compact />
                    
                    <Card className="shadow-lg">
                    {/* Escrow Status Alert */}
@@ -401,10 +399,7 @@ const ContractorProjects = () => {
                          <div className="text-lg sm:text-xl lg:text-2xl font-bold text-green-600 mb-1">
                            {formatCurrency(project.budget || 0)}
                          </div>
-                         <Badge variant="outline" className="text-xs">
-                           {project.id.slice(0, 8)}
-                         </Badge>
-                       </div>
+                        </div>
                      </div>
                    </CardHeader>
                    
@@ -619,10 +614,7 @@ const ContractorProjects = () => {
                         <div className="text-lg sm:text-xl lg:text-2xl font-bold text-green-600 mb-1">
                           {formatCurrency(project.budget || 0)}
                         </div>
-                        <Badge variant="outline" className="text-xs">
-                          {project.id.slice(0, 8)}
-                        </Badge>
-                      </div>
+                       </div>
                     </div>
                   </CardHeader>
                   

@@ -154,9 +154,6 @@ const GovernmentProjects = () => {
                           ? new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES', notation: 'compact' }).format(project.budget)
                           : 'TBD'}
                       </div>
-                      <Badge variant="outline" className="text-xs">
-                        {project.id.slice(0, 8)}
-                      </Badge>
                     </div>
                   </div>
                 </CardHeader>
