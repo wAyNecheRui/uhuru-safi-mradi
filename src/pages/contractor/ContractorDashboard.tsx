@@ -398,9 +398,6 @@ const ContractorDashboard = () => {
                           <p className="font-semibold text-green-600 text-sm sm:text-base">
                             {formatCurrency(project.budget || 0)}
                           </p>
-                          <Badge variant="outline" className="text-xs mt-1">
-                            {project.id.slice(0, 8)}
-                          </Badge>
                         </div>
                       </div>
                       

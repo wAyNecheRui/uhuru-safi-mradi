@@ -614,10 +614,7 @@ const ContractorProjects = () => {
                         <div className="text-lg sm:text-xl lg:text-2xl font-bold text-green-600 mb-1">
                           {formatCurrency(project.budget || 0)}
                         </div>
-                        <Badge variant="outline" className="text-xs">
-                          {project.id.slice(0, 8)}
-                        </Badge>
-                      </div>
+                       </div>
                     </div>
                   </CardHeader>
                   
