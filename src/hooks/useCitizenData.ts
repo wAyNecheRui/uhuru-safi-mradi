@@ -111,7 +111,7 @@ export const useCitizenData = () => {
 
       if (!reportsData || reportsData.length === 0) return [];
 
-      // Fetch linked projects for these reports
+      // Fetch linked projects for these reports, including milestone data for accurate status
       const reportIds = reportsData.map(r => r.id);
       const { data: projectsData } = await supabase
         .from('projects')
@@ -127,17 +127,50 @@ export const useCitizenData = () => {
         }
       });
 
+      // For projects that exist, check milestones + escrow for effective completion
+      const projectIds = projectsData?.map(p => p.id) || [];
+      let milestonesByProject: Record<string, { status: string }[]> = {};
+      let escrowByProject: Record<string, { held_amount: number; released_amount: number; total_amount: number }> = {};
+
+      if (projectIds.length > 0) {
+        const { data: milestonesData } = await supabase
+          .from('project_milestones')
+          .select('project_id, status')
+          .in('project_id', projectIds);
+
+        (milestonesData || []).forEach(m => {
+          if (!milestonesByProject[m.project_id]) milestonesByProject[m.project_id] = [];
+          milestonesByProject[m.project_id].push({ status: m.status });
+        });
+
+        const { data: escrowData } = await supabase
+          .from('escrow_accounts')
+          .select('project_id, held_amount, released_amount, total_amount')
+          .in('project_id', projectIds);
+
+        (escrowData || []).forEach(e => {
+          escrowByProject[e.project_id] = e;
+        });
+      }
+
       // Enrich reports with project status
       return reportsData.map(report => {
         const project = projectMap.get(report.id);
         let effectiveStatus = report.status;
         
-        // Use project status if available and more advanced
         if (project) {
-          if (project.status === 'completed') {
+          const ms = milestonesByProject[project.id] || [];
+          const escrow = escrowByProject[project.id];
+          const allMilestonesPaid = ms.length > 0 && ms.every(m => m.status === 'paid');
+          const escrowCleared = escrow ? (escrow.held_amount === 0 && escrow.released_amount >= escrow.total_amount) : false;
+          const isEffectivelyCompleted = project.status === 'completed' || (allMilestonesPaid && escrowCleared);
+
+          if (isEffectivelyCompleted) {
             effectiveStatus = 'completed';
           } else if (project.status === 'in_progress' && report.status !== 'completed') {
             effectiveStatus = 'in_progress';
+          } else if (project.status && project.status !== 'planning') {
+            effectiveStatus = project.status;
           }
         }
 
