@@ -158,20 +158,27 @@ serve(async (req) => {
     }
 
     // RACE CONDITION FIX: Atomically lock milestone status to prevent concurrent auto-releases
-    const { data: lockedMilestone, error: lockError } = await supabaseAdmin
+    const { data: lockedRows, error: lockError } = await supabaseAdmin
       .from('project_milestones')
       .update({ 
         status: 'payment_processing',
-        verified_at: new Date().toISOString(),
+        verified_at: milestone.verified_at || new Date().toISOString(),
         ...(userId ? { verified_by: userId } : {})
       })
       .eq('id', milestoneId)
-      .eq('status', milestone.status) // Only succeeds if status unchanged since our read
+      .in('status', ['submitted', 'verified', 'in_progress'])
       .select('id')
-      .single()
 
-    if (lockError || !lockedMilestone) {
-      console.warn(`[AUTO-RELEASE] Milestone ${milestoneId} lock failed — concurrent request`)
+    if (lockError) {
+      console.error(`[AUTO-RELEASE] Milestone ${milestoneId} lock error:`, lockError)
+      return new Response(
+        JSON.stringify({ error: 'Failed to lock milestone for payment processing' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    if (!lockedRows || lockedRows.length === 0) {
+      console.warn(`[AUTO-RELEASE] Milestone ${milestoneId} lock failed — already processing or paid`)
       return new Response(
         JSON.stringify({ 
           success: true, 
@@ -181,6 +188,8 @@ serve(async (req) => {
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
+
+    console.log(`[AUTO-RELEASE] Milestone ${milestoneId} locked successfully for payment processing`)
 
     // 5. Get escrow account
     const { data: escrow, error: escrowError } = await supabaseAdmin
