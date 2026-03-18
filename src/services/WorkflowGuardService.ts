@@ -56,7 +56,6 @@ export interface ReportWithVotes {
   downvotes: number;
   hasGPS: boolean;
   hasMedia: boolean;
-  hasBudget: boolean;
 }
 
 export class WorkflowGuardService {
