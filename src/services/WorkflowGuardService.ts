@@ -74,7 +74,6 @@ export class WorkflowGuardService {
     meetsVoteThreshold: boolean;
     hasGPS: boolean;
     hasMedia: boolean;
-    hasBudget: boolean;
     voteCount: number;
     upvotes: number;
     downvotes: number;
