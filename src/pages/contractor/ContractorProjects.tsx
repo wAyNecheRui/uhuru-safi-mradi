@@ -346,8 +346,6 @@ const ContractorProjects = () => {
 
                  return (
                  <div key={project.id} className="space-y-4">
-                   {/* Project Lifecycle Tracker */}
-                   <ProjectLifecycleTracker projectId={project.id} compact />
                    
                    <Card className="shadow-lg">
                    {/* Escrow Status Alert */}
