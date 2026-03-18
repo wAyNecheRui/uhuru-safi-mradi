@@ -147,9 +147,14 @@ const CitizenTrackReports = () => {
                     <Badge className={getPriorityColor(report.priority)}>
                       {report.priority?.toUpperCase()} Priority
                     </Badge>
-                    {(report as any).project_id && (
-                      <Badge variant="outline" className="text-green-600 border-green-200">
+                    {(report as any).project_id && (report as any).effective_status !== 'completed' && (
+                      <Badge variant="outline" className="text-blue-600 border-blue-200">
                         Project Active
+                      </Badge>
+                    )}
+                    {(report as any).project_id && (report as any).effective_status === 'completed' && (
+                      <Badge variant="outline" className="text-green-600 border-green-200">
+                        Project Completed
                       </Badge>
                     )}
                   </div>
