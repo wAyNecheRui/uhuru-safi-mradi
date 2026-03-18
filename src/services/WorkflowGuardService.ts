@@ -115,7 +115,6 @@ export class WorkflowGuardService {
       meetsVoteThreshold,
       hasGPS,
       hasMedia,
-      hasBudget,
       voteCount: totalVotes,
       upvotes,
       downvotes,

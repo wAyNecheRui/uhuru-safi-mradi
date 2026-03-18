@@ -104,8 +104,7 @@ const GovernmentApprovalDashboard = () => {
     const checks = {
       communityVotes: report.totalVotes >= MIN_VOTES_THRESHOLD,
       gpsValidation: !!report.gps_coordinates || !!report.coordinates,
-      mediaEvidence: (report.photo_urls?.length > 0) || (report.video_urls?.length > 0),
-      budgetFeasibility: !!report.estimated_cost && report.estimated_cost > 0
+      mediaEvidence: (report.photo_urls?.length > 0) || (report.video_urls?.length > 0)
     };
 
     return checks;
