@@ -56,7 +56,6 @@ export interface ReportWithVotes {
   downvotes: number;
   hasGPS: boolean;
   hasMedia: boolean;
-  hasBudget: boolean;
 }
 
 export class WorkflowGuardService {
@@ -75,7 +74,6 @@ export class WorkflowGuardService {
     meetsVoteThreshold: boolean;
     hasGPS: boolean;
     hasMedia: boolean;
-    hasBudget: boolean;
     voteCount: number;
     upvotes: number;
     downvotes: number;
@@ -104,11 +102,9 @@ export class WorkflowGuardService {
     const meetsVoteThreshold = totalVotes >= MIN_VOTES_THRESHOLD;
     const hasGPS = !!(report.gps_coordinates || report.coordinates);
     const hasMedia = (report.photo_urls?.length > 0) || (report.video_urls?.length > 0);
-    const hasBudget = !!(report.estimated_cost && report.estimated_cost > 0);
-
     // Can approve only if in under_review status and meets all requirements
     const canApprove = report.status === WORKFLOW_STATUS.UNDER_REVIEW && 
-                       meetsVoteThreshold && hasGPS && hasMedia && hasBudget;
+                       meetsVoteThreshold && hasGPS && hasMedia;
 
     // Can open bidding only if already approved
     const canOpenBidding = report.status === WORKFLOW_STATUS.APPROVED;
@@ -117,7 +113,6 @@ export class WorkflowGuardService {
       meetsVoteThreshold,
       hasGPS,
       hasMedia,
-      hasBudget,
       voteCount: totalVotes,
       upvotes,
       downvotes,
@@ -177,7 +172,6 @@ export class WorkflowGuardService {
       }
       if (!requirements.hasGPS) missing.push('Missing GPS coordinates');
       if (!requirements.hasMedia) missing.push('Missing photo/video evidence');
-      if (!requirements.hasBudget) missing.push('Missing budget estimate');
       if (requirements.currentStatus !== WORKFLOW_STATUS.UNDER_REVIEW) {
         missing.push(`Report must be in 'under_review' status (current: ${requirements.currentStatus})`);
       }
