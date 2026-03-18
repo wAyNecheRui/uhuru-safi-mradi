@@ -365,22 +365,6 @@ const GovernmentApprovalDashboard = () => {
                             </div>
                           </div>
                           
-                          <div className={`flex items-center gap-3 p-3 rounded-lg ${
-                            verification.budgetFeasibility ? 'bg-green-50' : 'bg-red-50'
-                          }`}>
-                            {verification.budgetFeasibility ? 
-                              <CheckCircle className="h-5 w-5 text-green-600" /> : 
-                              <XCircle className="h-5 w-5 text-red-600" />
-                            }
-                            <div>
-                              <p className="font-medium">Budget Feasibility</p>
-                              <p className="text-sm text-gray-600">
-                                {report.estimated_cost 
-                                  ? new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES' }).format(report.estimated_cost)
-                                  : 'Not estimated'}
-                              </p>
-                            </div>
-                          </div>
                         </div>
                       </div>
                       

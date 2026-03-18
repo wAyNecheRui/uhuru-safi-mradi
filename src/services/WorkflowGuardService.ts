@@ -172,7 +172,6 @@ export class WorkflowGuardService {
       }
       if (!requirements.hasGPS) missing.push('Missing GPS coordinates');
       if (!requirements.hasMedia) missing.push('Missing photo/video evidence');
-      if (!requirements.hasBudget) missing.push('Missing budget estimate');
       if (requirements.currentStatus !== WORKFLOW_STATUS.UNDER_REVIEW) {
         missing.push(`Report must be in 'under_review' status (current: ${requirements.currentStatus})`);
       }
