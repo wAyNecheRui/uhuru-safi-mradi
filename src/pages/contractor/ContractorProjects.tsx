@@ -15,7 +15,7 @@ import BreadcrumbNav from '@/components/BreadcrumbNav';
 import ProgressUpdateForm from '@/components/contractor/ProgressUpdateForm';
 import MilestoneManagement from '@/components/contractor/MilestoneManagement';
 import MilestoneEvidenceViewer from '@/components/contractor/MilestoneEvidenceViewer';
-import ProjectLifecycleTracker from '@/components/workflow/ProjectLifecycleTracker';
+
 import WorkforceHiringPanel from '@/components/contractor/WorkforceHiringPanel';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
