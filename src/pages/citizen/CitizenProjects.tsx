@@ -26,7 +26,7 @@ import BreadcrumbNav from '@/components/BreadcrumbNav';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
 import ProjectMapModal from '@/components/citizen/ProjectMapModal';
 import ProjectProgressViewer from '@/components/citizen/ProjectProgressViewer';
-import ProjectLifecycleTracker from '@/components/workflow/ProjectLifecycleTracker';
+
 import MilestoneVerificationCard from '@/components/citizen/MilestoneVerificationCard';
 import QualityRatingModal from '@/components/citizen/QualityRatingModal';
 import ProjectIssueReportModal from '@/components/citizen/ProjectIssueReportModal';
