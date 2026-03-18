@@ -454,45 +454,7 @@ const CitizenProjects = () => {
                       )}
 
                       {/* Verification Actions */}
-                      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="text-primary"
-                          onClick={() => setSelectedProjectForLifecycle(
-                            selectedProjectForLifecycle?.id === project.id ? null : project
-                          )}
-                        >
-                          <Target className="h-4 w-4 mr-2" />
-                          Full Lifecycle
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="text-blue-600"
-                          onClick={() => setSelectedProjectForProgress(project)}
-                        >
-                          <Eye className="h-4 w-4 mr-2" />
-                          Photo Evidence
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="text-green-600"
-                          onClick={() => handleQRCheckin(project.id)}
-                        >
-                          <QrCode className="h-4 w-4 mr-2" />
-                          QR Check-in
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="text-orange-600"
-                          onClick={() => handleRateQuality(project)}
-                        >
-                          <Star className="h-4 w-4 mr-2" />
-                          Rate Quality
-                        </Button>
+                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <Button 
                           variant="outline" 
                           size="sm" 
@@ -503,13 +465,6 @@ const CitizenProjects = () => {
                           Report Issue
                         </Button>
                       </div>
-                      
-                      {/* Lifecycle Tracker (Expandable) */}
-                      {selectedProjectForLifecycle?.id === project.id && (
-                        <div className="mt-6">
-                          <ProjectLifecycleTracker projectId={project.id} />
-                        </div>
-                      )}
                     </CardContent>
                   </Card>
                 );
