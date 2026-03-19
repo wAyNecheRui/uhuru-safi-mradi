@@ -792,7 +792,7 @@ const GovernmentBidApproval = () => {
               </ul>
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0">
             <Button variant="outline" onClick={() => setShowDirectProcurementDialog(false)}>
               Cancel
             </Button>

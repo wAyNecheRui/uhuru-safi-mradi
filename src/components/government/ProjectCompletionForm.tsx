@@ -241,7 +241,7 @@ const ProjectCompletionForm: React.FC<ProjectCompletionFormProps> = ({
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex-shrink-0">
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={processing}>
             Cancel
           </Button>
