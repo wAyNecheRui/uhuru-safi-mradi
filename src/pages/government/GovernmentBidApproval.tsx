@@ -665,13 +665,13 @@ const GovernmentBidApproval = () => {
       {/* Bid Selection Dialog */}
       <Dialog open={showApprovalDialog} onOpenChange={setShowApprovalDialog}>
         <DialogContent className="max-w-lg">
-          <DialogHeader>
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <Award className="h-5 w-5 text-green-600" />
               Confirm Contractor Selection
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-4 overflow-y-auto flex-1 min-h-0 pr-1">
             {selectedBid && (
               <div className="bg-green-50 p-4 rounded-lg">
                 <p className="font-semibold text-green-800">{selectedBid.contractor_name}</p>
