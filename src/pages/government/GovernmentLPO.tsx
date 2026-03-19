@@ -461,7 +461,7 @@ export default function GovernmentLPO() {
           </DialogHeader>
 
           {selectedLPO && (
-            <div className="space-y-4">
+            <div className="space-y-4 overflow-y-auto flex-1 min-h-0 pr-1">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-muted-foreground">Status</Label>
