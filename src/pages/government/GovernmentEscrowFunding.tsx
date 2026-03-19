@@ -345,9 +345,9 @@ export default function GovernmentEscrowFunding() {
 
       {/* Funding Dialog */}
       <Dialog open={!!selectedProject} onOpenChange={(open) => !open && setSelectedProject(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Fund Escrow via M-Pesa C2B (UAT Demo)</DialogTitle>
+        <DialogContent className="max-w-md flex flex-col max-h-[90dvh]">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle className="pr-8">Fund Escrow via M-Pesa C2B (UAT Demo)</DialogTitle>
             <DialogDescription>
               <span className="text-amber-600 font-medium">Demo Mode — No real M-Pesa transaction will occur.</span>{' '}
               Simulate transfer of funds from Treasury to project escrow account.
@@ -355,7 +355,7 @@ export default function GovernmentEscrowFunding() {
           </DialogHeader>
 
           {selectedProject && (
-            <div className="space-y-4">
+            <div className="space-y-4 overflow-y-auto flex-1 min-h-0 pr-1">
               <div className="p-4 bg-muted rounded-lg">
                 <p className="font-medium">{selectedProject.title}</p>
                 <p className="text-sm text-muted-foreground">
@@ -380,7 +380,6 @@ export default function GovernmentEscrowFunding() {
                   onChange={(e) => {
                     const val = parseFloat(e.target.value);
                     const maxAmount = getRemainingAmount(selectedProject);
-                    // Prevent entering more than remaining amount
                     if (!isNaN(val) && val > maxAmount) {
                       setFundingAmount(maxAmount.toString());
                     } else {
@@ -466,8 +465,7 @@ export default function GovernmentEscrowFunding() {
               </div>
             </div>
           )}
-
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0">
             <Button variant="outline" onClick={() => setSelectedProject(null)}>
               Cancel
             </Button>
@@ -484,9 +482,9 @@ export default function GovernmentEscrowFunding() {
 
       {/* Confirmation Dialog */}
       <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm Escrow Funding (UAT Demo)</DialogTitle>
+        <DialogContent className="flex flex-col max-h-[90dvh]">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle className="pr-8">Confirm Escrow Funding (UAT Demo)</DialogTitle>
             <DialogDescription>
               <span className="text-amber-600 font-medium">Demo Mode — No real funds will be disbursed.</span>{' '}
               You are about to simulate funding the escrow account with M-Pesa C2B.
@@ -501,7 +499,7 @@ export default function GovernmentEscrowFunding() {
             <p><strong>Reference:</strong> {treasuryReference || `TRS-${Date.now()}`}</p>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0">
             <Button variant="outline" onClick={() => setShowConfirmDialog(false)}>
               Cancel
             </Button>

@@ -61,7 +61,7 @@ export const RoleRequestModal = ({ isOpen, onClose, onSuccess }: RoleRequestModa
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
+        <div className="space-y-4 py-4 overflow-y-auto flex-1 min-h-0 pr-1">
           {/* Role Selection */}
           <div className="space-y-2">
             <Label htmlFor="role">Requested Role</Label>
@@ -133,7 +133,7 @@ export const RoleRequestModal = ({ isOpen, onClose, onSuccess }: RoleRequestModa
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex-shrink-0">
           <Button variant="outline" onClick={onClose} disabled={loading}>
             Cancel
           </Button>

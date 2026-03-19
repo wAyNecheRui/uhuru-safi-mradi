@@ -435,11 +435,11 @@ const ContractorCommunications = () => {
 
       {/* New Dispute Dialog */}
       <Dialog open={newDisputeOpen} onOpenChange={setNewDisputeOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Submit New Dispute</DialogTitle>
+        <DialogContent className="max-w-lg flex flex-col max-h-[90dvh]">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle className="pr-8">Submit New Dispute</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 py-4 overflow-y-auto flex-1 min-h-0 pr-1">
             <div className="space-y-2">
               <Label>Category</Label>
               <Select 
@@ -468,7 +468,7 @@ const ContractorCommunications = () => {
               />
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0">
             <Button variant="outline" onClick={() => setNewDisputeOpen(false)}>Cancel</Button>
             <Button onClick={handleSubmitDispute} className="bg-red-600 hover:bg-red-700">
               Submit Dispute

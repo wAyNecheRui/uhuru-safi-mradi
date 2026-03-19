@@ -593,11 +593,11 @@ const ContractorJobsManagement = () => {
 
       {/* Create Job Dialog */}
       <Dialog open={showCreateJob} onOpenChange={setShowCreateJob}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Create New Job Posting</DialogTitle>
+        <DialogContent className="sm:max-w-lg flex flex-col max-h-[90dvh]">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle className="pr-8">Create New Job Posting</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3">
+          <div className="space-y-3 overflow-y-auto flex-1 min-h-0 pr-1">
             <div>
               <label className="text-sm font-medium">Project *</label>
               <select
@@ -648,7 +648,7 @@ const ContractorJobsManagement = () => {
               </div>
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0">
             <Button variant="outline" onClick={() => setShowCreateJob(false)}>Cancel</Button>
             <Button onClick={handleCreateJob} disabled={creating}>
               {creating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}

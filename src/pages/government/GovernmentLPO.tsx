@@ -361,15 +361,15 @@ export default function GovernmentLPO() {
 
       {/* Create LPO Dialog */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Create Local Purchase Order</DialogTitle>
+        <DialogContent className="max-w-lg flex flex-col max-h-[90dvh]">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle className="pr-8">Create Local Purchase Order</DialogTitle>
             <DialogDescription>
               Generate an LPO for an approved project with assigned contractor
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
+          <div className="space-y-4 overflow-y-auto flex-1 min-h-0 pr-1">
             <div className="space-y-2">
               <Label>Select Project *</Label>
               <Select
@@ -437,7 +437,7 @@ export default function GovernmentLPO() {
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0">
             <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
               Cancel
             </Button>
@@ -455,13 +455,13 @@ export default function GovernmentLPO() {
 
       {/* View LPO Dialog */}
       <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>{selectedLPO?.lpo_number}</DialogTitle>
+        <DialogContent className="max-w-lg flex flex-col max-h-[90dvh]">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle className="pr-8">{selectedLPO?.lpo_number}</DialogTitle>
           </DialogHeader>
 
           {selectedLPO && (
-            <div className="space-y-4">
+            <div className="space-y-4 overflow-y-auto flex-1 min-h-0 pr-1">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-muted-foreground">Status</Label>
@@ -495,7 +495,7 @@ export default function GovernmentLPO() {
             </div>
           )}
 
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0">
             <Button variant="outline" onClick={() => setShowViewDialog(false)}>
               Close
             </Button>
