@@ -211,8 +211,8 @@ const ProjectIssueReportModal: React.FC<ProjectIssueReportModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2 text-destructive pr-8">
             <AlertTriangle className="h-5 w-5 flex-shrink-0" />
             <span className="truncate">Report Project Issue</span>
@@ -222,7 +222,7 @@ const ProjectIssueReportModal: React.FC<ProjectIssueReportModalProps> = ({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
+        <div className="space-y-6 py-4 overflow-y-auto flex-1 min-h-0 pr-1">
           {/* Issue Type Selection */}
           <div className="space-y-2">
             <Label htmlFor="issueType">Type of Issue *</Label>
@@ -389,7 +389,7 @@ const ProjectIssueReportModal: React.FC<ProjectIssueReportModalProps> = ({
           </div>
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-0">
+        <DialogFooter className="flex-shrink-0 gap-2 sm:gap-0">
           <Button variant="outline" onClick={onClose} disabled={submitting}>
             Cancel
           </Button>

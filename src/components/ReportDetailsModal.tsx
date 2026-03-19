@@ -260,14 +260,14 @@ const ReportDetailsModal = ({ report, isOpen, onClose }: ReportDetailsProps) => 
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-4xl">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="text-xl font-bold pr-8">
             {report.title}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-6 overflow-y-auto flex-1 min-h-0 pr-1">
           {/* Status and Priority Badges */}
           <div className="flex flex-wrap gap-2">
             <Badge className={getStatusColor(effectiveStatus)}>

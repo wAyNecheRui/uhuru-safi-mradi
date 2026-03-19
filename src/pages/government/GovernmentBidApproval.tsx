@@ -665,13 +665,13 @@ const GovernmentBidApproval = () => {
       {/* Bid Selection Dialog */}
       <Dialog open={showApprovalDialog} onOpenChange={setShowApprovalDialog}>
         <DialogContent className="max-w-lg">
-          <DialogHeader>
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <Award className="h-5 w-5 text-green-600" />
               Confirm Contractor Selection
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-4 overflow-y-auto flex-1 min-h-0 pr-1">
             {selectedBid && (
               <div className="bg-green-50 p-4 rounded-lg">
                 <p className="font-semibold text-green-800">{selectedBid.contractor_name}</p>
@@ -704,7 +704,7 @@ const GovernmentBidApproval = () => {
               </ul>
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0">
             <Button variant="outline" onClick={() => setShowApprovalDialog(false)}>
               Cancel
             </Button>
@@ -758,13 +758,13 @@ const GovernmentBidApproval = () => {
       {/* Direct Procurement Dialog */}
       <Dialog open={showDirectProcurementDialog} onOpenChange={setShowDirectProcurementDialog}>
         <DialogContent className="max-w-lg">
-          <DialogHeader>
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <Gavel className="h-5 w-5 text-red-600" />
               Request Direct Procurement
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-4 overflow-y-auto flex-1 min-h-0 pr-1">
             <div className="bg-red-50 p-3 rounded-lg text-sm text-red-800">
               <p className="font-medium">⚠️ Exception Process Required</p>
               <p className="mt-1">
@@ -792,7 +792,7 @@ const GovernmentBidApproval = () => {
               </ul>
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0">
             <Button variant="outline" onClick={() => setShowDirectProcurementDialog(false)}>
               Cancel
             </Button>

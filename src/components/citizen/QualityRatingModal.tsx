@@ -284,8 +284,8 @@ const QualityRatingModal: React.FC<QualityRatingModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2 pr-8">
             <Star className="h-5 w-5 text-yellow-500 flex-shrink-0" />
             <span className="truncate">Rate Project Quality</span>
@@ -312,7 +312,7 @@ const QualityRatingModal: React.FC<QualityRatingModalProps> = ({
           </div>
         ) : (
           <>
-            <div className="space-y-6 py-4">
+            <div className="space-y-6 py-4 overflow-y-auto flex-1 min-h-0 pr-1">
               {/* Progress Indicator */}
               <div className="bg-muted/50 rounded-lg p-4">
                 <div className="flex items-center justify-between mb-2">
@@ -439,7 +439,7 @@ const QualityRatingModal: React.FC<QualityRatingModalProps> = ({
               </div>
             </div>
 
-            <DialogFooter className="gap-2 sm:gap-0">
+            <DialogFooter className="flex-shrink-0 gap-2 sm:gap-0">
               <Button variant="outline" onClick={onClose} disabled={submitting}>
                 Cancel
               </Button>
