@@ -489,6 +489,14 @@ const App = () => {
                     }
                   />
                   <Route
+                    path="/government/payment-release"
+                    element={
+                      <ProtectedRoute allowedRoles={["government", "admin"]}>
+                        <GovernmentPaymentRelease />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
                     path="/disputes"
                     element={
                       <ProtectedRoute>
