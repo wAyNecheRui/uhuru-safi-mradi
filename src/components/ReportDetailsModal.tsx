@@ -260,7 +260,7 @@ const ReportDetailsModal = ({ report, isOpen, onClose }: ReportDetailsProps) => 
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold pr-8">
             {report.title}

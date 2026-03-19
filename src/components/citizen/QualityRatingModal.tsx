@@ -439,7 +439,7 @@ const QualityRatingModal: React.FC<QualityRatingModalProps> = ({
               </div>
             </div>
 
-            <DialogFooter className="gap-2 sm:gap-0">
+            <DialogFooter className="flex-shrink-0 gap-2 sm:gap-0">
               <Button variant="outline" onClick={onClose} disabled={submitting}>
                 Cancel
               </Button>
