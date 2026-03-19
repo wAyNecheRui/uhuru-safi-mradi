@@ -483,8 +483,8 @@ export default function GovernmentEscrowFunding() {
       {/* Confirmation Dialog */}
       <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
         <DialogContent className="flex flex-col max-h-[90dvh]">
-          <DialogHeader>
-            <DialogTitle>Confirm Escrow Funding (UAT Demo)</DialogTitle>
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle className="pr-8">Confirm Escrow Funding (UAT Demo)</DialogTitle>
             <DialogDescription>
               <span className="text-amber-600 font-medium">Demo Mode — No real funds will be disbursed.</span>{' '}
               You are about to simulate funding the escrow account with M-Pesa C2B.
