@@ -439,7 +439,7 @@ const ContractorCommunications = () => {
           <DialogHeader className="flex-shrink-0">
             <DialogTitle className="pr-8">Submit New Dispute</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 py-4 overflow-y-auto flex-1 min-h-0 pr-1">
             <div className="space-y-2">
               <Label>Category</Label>
               <Select 
