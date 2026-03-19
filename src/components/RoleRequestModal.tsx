@@ -133,7 +133,7 @@ export const RoleRequestModal = ({ isOpen, onClose, onSuccess }: RoleRequestModa
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex-shrink-0">
           <Button variant="outline" onClick={onClose} disabled={loading}>
             Cancel
           </Button>

@@ -495,7 +495,7 @@ export default function GovernmentLPO() {
             </div>
           )}
 
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0">
             <Button variant="outline" onClick={() => setShowViewDialog(false)}>
               Close
             </Button>

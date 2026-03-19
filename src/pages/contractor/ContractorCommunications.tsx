@@ -468,7 +468,7 @@ const ContractorCommunications = () => {
               />
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0">
             <Button variant="outline" onClick={() => setNewDisputeOpen(false)}>Cancel</Button>
             <Button onClick={handleSubmitDispute} className="bg-red-600 hover:bg-red-700">
               Submit Dispute

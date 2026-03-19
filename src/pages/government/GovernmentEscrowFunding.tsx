@@ -499,7 +499,7 @@ export default function GovernmentEscrowFunding() {
             <p><strong>Reference:</strong> {treasuryReference || `TRS-${Date.now()}`}</p>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0">
             <Button variant="outline" onClick={() => setShowConfirmDialog(false)}>
               Cancel
             </Button>

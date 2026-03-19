@@ -648,7 +648,7 @@ const ContractorJobsManagement = () => {
               </div>
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0">
             <Button variant="outline" onClick={() => setShowCreateJob(false)}>Cancel</Button>
             <Button onClick={handleCreateJob} disabled={creating}>
               {creating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
