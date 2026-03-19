@@ -465,7 +465,7 @@ export default function GovernmentEscrowFunding() {
               </div>
             </div>
           )}
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0">
             <Button variant="outline" onClick={() => setSelectedProject(null)}>
               Cancel
             </Button>
