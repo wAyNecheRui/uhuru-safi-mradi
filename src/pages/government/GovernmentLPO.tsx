@@ -455,9 +455,9 @@ export default function GovernmentLPO() {
 
       {/* View LPO Dialog */}
       <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>{selectedLPO?.lpo_number}</DialogTitle>
+        <DialogContent className="max-w-lg flex flex-col max-h-[90dvh]">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle className="pr-8">{selectedLPO?.lpo_number}</DialogTitle>
           </DialogHeader>
 
           {selectedLPO && (
