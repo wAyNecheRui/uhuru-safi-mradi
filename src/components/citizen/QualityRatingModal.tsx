@@ -312,7 +312,7 @@ const QualityRatingModal: React.FC<QualityRatingModalProps> = ({
           </div>
         ) : (
           <>
-            <div className="space-y-6 py-4">
+            <div className="space-y-6 py-4 overflow-y-auto flex-1 min-h-0 pr-1">
               {/* Progress Indicator */}
               <div className="bg-muted/50 rounded-lg p-4">
                 <div className="flex items-center justify-between mb-2">
