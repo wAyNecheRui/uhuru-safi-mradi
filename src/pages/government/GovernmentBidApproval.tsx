@@ -758,13 +758,13 @@ const GovernmentBidApproval = () => {
       {/* Direct Procurement Dialog */}
       <Dialog open={showDirectProcurementDialog} onOpenChange={setShowDirectProcurementDialog}>
         <DialogContent className="max-w-lg">
-          <DialogHeader>
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <Gavel className="h-5 w-5 text-red-600" />
               Request Direct Procurement
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-4 overflow-y-auto flex-1 min-h-0 pr-1">
             <div className="bg-red-50 p-3 rounded-lg text-sm text-red-800">
               <p className="font-medium">⚠️ Exception Process Required</p>
               <p className="mt-1">
