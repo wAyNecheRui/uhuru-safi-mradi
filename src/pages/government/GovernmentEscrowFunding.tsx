@@ -482,7 +482,7 @@ export default function GovernmentEscrowFunding() {
 
       {/* Confirmation Dialog */}
       <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-        <DialogContent>
+        <DialogContent className="flex flex-col max-h-[90dvh]">
           <DialogHeader>
             <DialogTitle>Confirm Escrow Funding (UAT Demo)</DialogTitle>
             <DialogDescription>
