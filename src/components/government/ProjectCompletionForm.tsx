@@ -160,7 +160,7 @@ const ProjectCompletionForm: React.FC<ProjectCompletionFormProps> = ({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
+        <div className="space-y-6 py-4 overflow-y-auto flex-1 min-h-0 pr-1">
           {/* Project Summary */}
           <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
             <h4 className="font-semibold mb-2">{projectTitle}</h4>
