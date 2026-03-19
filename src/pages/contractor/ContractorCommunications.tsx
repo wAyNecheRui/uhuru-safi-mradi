@@ -435,9 +435,9 @@ const ContractorCommunications = () => {
 
       {/* New Dispute Dialog */}
       <Dialog open={newDisputeOpen} onOpenChange={setNewDisputeOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Submit New Dispute</DialogTitle>
+        <DialogContent className="max-w-lg flex flex-col max-h-[90dvh]">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle className="pr-8">Submit New Dispute</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
