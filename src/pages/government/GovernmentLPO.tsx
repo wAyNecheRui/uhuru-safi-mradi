@@ -361,9 +361,9 @@ export default function GovernmentLPO() {
 
       {/* Create LPO Dialog */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Create Local Purchase Order</DialogTitle>
+        <DialogContent className="max-w-lg flex flex-col max-h-[90dvh]">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle className="pr-8">Create Local Purchase Order</DialogTitle>
             <DialogDescription>
               Generate an LPO for an approved project with assigned contractor
             </DialogDescription>
