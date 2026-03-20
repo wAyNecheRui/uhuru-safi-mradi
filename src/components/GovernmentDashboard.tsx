@@ -13,7 +13,7 @@ import {
   Shield, CheckCircle, Clock, AlertTriangle, Users, DollarSign, FileText, 
   Gavel, Loader2, Eye, Wallet, Briefcase, BarChart3, 
   ClipboardCheck, UserCog, Building2, Scale, Globe, Lock, FolderOpen, Image,
-  PlayCircle, XCircle
+  PlayCircle, XCircle, Award
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
