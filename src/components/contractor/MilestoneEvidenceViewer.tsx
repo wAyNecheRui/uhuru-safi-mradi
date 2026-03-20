@@ -2,12 +2,10 @@ import React, { useState } from 'react';
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Camera, X, ChevronLeft, ChevronRight, CheckCircle, Clock, DollarSign } from 'lucide-react';
 
 interface Milestone {
@@ -85,37 +83,55 @@ const MilestoneEvidenceViewer: React.FC<MilestoneEvidenceViewerProps> = ({
     setSelectedImageIndex(0);
   };
 
+  const handleOpenChange = (value: boolean) => {
+    if (!value) {
+      if (selectedMilestone) {
+        handleBackToList();
+      } else {
+        onClose();
+      }
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="w-[calc(100vw-1rem)] sm:w-full sm:max-w-4xl max-h-[90dvh] flex flex-col p-0">
-        <DialogHeader className="p-4 pb-2 border-b flex-shrink-0">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              {selectedMilestone && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={handleBackToList}
-                  className="mr-2"
-                >
-                  <ChevronLeft className="h-4 w-4 mr-1" />
-                  Back
-                </Button>
-              )}
-              <Camera className="h-5 w-5 text-primary" />
-              <DialogTitle className="text-base sm:text-lg">
-                {selectedMilestone 
-                  ? `${selectedMilestone.title} - Evidence`
-                  : `Milestone Evidence - ${projectTitle}`
-                }
-              </DialogTitle>
-            </div>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent className="w-[calc(100vw-1rem)] sm:w-full sm:max-w-4xl max-h-[85dvh] flex flex-col p-0 overflow-hidden">
+        <div className="p-4 pb-2 border-b flex-shrink-0 flex items-center justify-between pr-12">
+          <div className="flex items-center gap-2">
+            {selectedMilestone ? (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleBackToList}
+                className="mr-1"
+              >
+                <ChevronLeft className="h-4 w-4 mr-1" />
+                Back
+              </Button>
+            ) : (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={onClose}
+                className="mr-1"
+              >
+                <X className="h-4 w-4 mr-1" />
+                Close
+              </Button>
+            )}
+            <Camera className="h-5 w-5 text-primary" />
+            <DialogTitle className="text-base sm:text-lg">
+              {selectedMilestone 
+                ? `${selectedMilestone.title} - Evidence`
+                : `Milestone Evidence - ${projectTitle}`
+              }
+            </DialogTitle>
           </div>
-        </DialogHeader>
+        </div>
 
         {/* Milestone List View */}
         {!selectedMilestone && (
-          <ScrollArea className="flex-1 p-4">
+          <div className="flex-1 overflow-y-auto p-4">
             <div className="space-y-3">
               {milestones.map((milestone) => (
                 <div
@@ -190,7 +206,7 @@ const MilestoneEvidenceViewer: React.FC<MilestoneEvidenceViewerProps> = ({
                 </div>
               )}
             </div>
-          </ScrollArea>
+          </div>
         )}
 
         {/* Full Image View */}
