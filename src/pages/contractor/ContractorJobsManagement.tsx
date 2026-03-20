@@ -593,7 +593,7 @@ const ContractorJobsManagement = () => {
 
       {/* Create Job Dialog */}
       <Dialog open={showCreateJob} onOpenChange={setShowCreateJob}>
-        <DialogContent className="sm:max-w-lg flex flex-col max-h-[90dvh]">
+        <DialogContent className="w-[calc(100vw-1rem)] sm:w-full sm:max-w-lg flex flex-col max-h-[85dvh]">
           <DialogHeader className="flex-shrink-0">
             <DialogTitle className="pr-8">Create New Job Posting</DialogTitle>
           </DialogHeader>

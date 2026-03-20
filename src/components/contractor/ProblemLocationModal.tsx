@@ -73,7 +73,7 @@ const ProblemLocationModal = ({ isOpen, onClose, problem }: ProblemLocationModal
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="w-[calc(100vw-1rem)] sm:w-full max-w-2xl max-h-[85dvh] overflow-hidden flex flex-col">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2 pr-8">
             <MapPin className="h-5 w-5 text-primary flex-shrink-0" />
@@ -84,7 +84,7 @@ const ProblemLocationModal = ({ isOpen, onClose, problem }: ProblemLocationModal
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="flex-1 overflow-y-auto min-h-0 space-y-4 pr-1">
           {/* Problem Details */}
           <div className="p-4 bg-muted/50 rounded-lg space-y-2">
             <div className="flex items-start justify-between gap-2">

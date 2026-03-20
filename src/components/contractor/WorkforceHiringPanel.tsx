@@ -643,9 +643,9 @@ const WorkforceHiringPanel: React.FC<WorkforceHiringPanelProps> = ({
 
       {/* Worker Search Dialog */}
       <Dialog open={showWorkerSearch} onOpenChange={setShowWorkerSearch}>
-        <DialogContent className={cn("max-h-[80vh] overflow-auto", isMobile ? 'max-w-[95vw]' : 'max-w-2xl')}>
-          <DialogHeader><DialogTitle>Citizen Worker Registry</DialogTitle></DialogHeader>
-          <div className="space-y-4">
+        <DialogContent className="w-[calc(100vw-1rem)] sm:w-full sm:max-w-2xl max-h-[85dvh] flex flex-col">
+          <DialogHeader className="flex-shrink-0"><DialogTitle className="pr-8">Citizen Worker Registry</DialogTitle></DialogHeader>
+          <div className="flex-1 overflow-y-auto min-h-0 space-y-4 pr-1">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Search by skill..." value={searchSkill} onChange={(e) => setSearchSkill(e.target.value)} className="pl-10" />
