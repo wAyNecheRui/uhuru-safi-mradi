@@ -206,7 +206,7 @@ const MilestoneEvidenceViewer: React.FC<MilestoneEvidenceViewerProps> = ({
                 </div>
               )}
             </div>
-          </ScrollArea>
+          </div>
         )}
 
         {/* Full Image View */}
