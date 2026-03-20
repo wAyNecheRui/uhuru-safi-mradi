@@ -463,13 +463,24 @@ const GovernmentPortfolio = () => {
                           </div>
                         </div>
                         
-                        <Button 
-                          onClick={() => handleViewProgress(project)}
-                          className="bg-blue-600 hover:bg-blue-700"
-                        >
-                          <Eye className="h-4 w-4 mr-2" />
-                          View Full Progress
-                        </Button>
+                        <div className="flex flex-col gap-2">
+                          <Button 
+                            onClick={() => handleViewProgress(project)}
+                            className="bg-blue-600 hover:bg-blue-700"
+                          >
+                            <Eye className="h-4 w-4 mr-2" />
+                            View Full Progress
+                          </Button>
+                          {isFullyPaid && project.status !== 'completed' && (
+                            <Button 
+                              onClick={() => setCompletionProject(project)}
+                              className="bg-green-600 hover:bg-green-700"
+                            >
+                              <Award className="h-4 w-4 mr-2" />
+                              Finalize Completion
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
