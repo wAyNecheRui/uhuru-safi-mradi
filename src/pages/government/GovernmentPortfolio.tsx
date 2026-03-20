@@ -3,6 +3,7 @@ import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
 import MilestonePaymentProgress from '@/components/government/MilestonePaymentProgress';
+import ProjectCompletionForm from '@/components/government/ProjectCompletionForm';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,7 +12,7 @@ import { Dialog } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { 
   Eye, Loader2, Building2, CheckCircle, Clock, Zap, Camera, Video, 
-  FileText, Activity, Search, DollarSign, TrendingUp, AlertTriangle, MapPin
+  FileText, Activity, Search, DollarSign, TrendingUp, AlertTriangle, MapPin, Award
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
