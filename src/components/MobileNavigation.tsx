@@ -2,7 +2,8 @@
 import React, { useState } from 'react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Menu, Shield, X, ChevronRight } from 'lucide-react';
+import { Menu, X, ChevronRight } from 'lucide-react';
+import logoImg from '@/assets/uhuru-safi-logo.png';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { TouchGesture } from './mobile/TouchGestures';
 import { useAuth } from '@/contexts/AuthContext';
@@ -71,8 +72,8 @@ const MobileNavigation = ({ onNavigate }: MobileNavigationProps) => {
           <div className="flex flex-col h-full">
             <div className="flex items-center justify-between p-6 border-b border-slate-700">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                  <Shield className="w-6 h-6 text-white" />
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center overflow-hidden">
+                  <img src={logoImg} alt="Uhuru Safi" className="w-full h-full object-contain" />
                 </div>
                 <div>
                   <span className="text-white font-bold text-xl">Uhuru Safi</span>
