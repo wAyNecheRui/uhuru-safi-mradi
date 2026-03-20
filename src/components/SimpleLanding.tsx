@@ -2,7 +2,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Shield } from 'lucide-react';
+import logoImg from '@/assets/uhuru-safi-logo.png';
 
 const SimpleLanding = () => {
   const navigate = useNavigate();
@@ -13,7 +13,7 @@ const SimpleLanding = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-800 via-slate-700 to-slate-600 flex items-center justify-center p-4">
       <div className="text-center max-w-2xl mx-auto">
         <div className="flex items-center justify-center space-x-3 mb-8">
-          <Shield className="w-12 h-12 text-white" />
+          <img src={logoImg} alt="Uhuru Safi" className="w-14 h-14 object-contain" />
           <span className="text-white font-bold text-3xl">Uhuru Safi</span>
         </div>
         

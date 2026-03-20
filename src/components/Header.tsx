@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield } from 'lucide-react';
 import ProfileButton from '@/components/ProfileButton';
+import logoImg from '@/assets/uhuru-safi-logo.png';
 import { useAuth } from '@/contexts/AuthContext';
 import NotificationCenter from '@/components/notifications/NotificationCenter';
 import RealtimeStatusIndicator from '@/components/realtime/RealtimeStatusIndicator';
@@ -59,13 +59,10 @@ const Header = () => {
             aria-label="Go to home"
           >
             <div className={cn(
-              'bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center flex-shrink-0',
+              'rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden',
               isMobile ? 'w-9 h-9' : 'w-10 h-10 sm:w-12 sm:h-12'
             )}>
-              <Shield className={cn(
-                'text-primary-foreground',
-                isMobile ? 'h-5 w-5' : 'h-5 w-5 sm:h-6 sm:w-6'
-              )} />
+              <img src={logoImg} alt="Uhuru Safi" className="w-full h-full object-contain" />
             </div>
             <div className="min-w-0 flex-1">
               <h1 className={cn(

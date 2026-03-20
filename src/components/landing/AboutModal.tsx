@@ -1,7 +1,8 @@
 
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Shield, Users, Building, Eye, CheckCircle, TrendingUp } from 'lucide-react';
+import { Users, Building, Eye, CheckCircle, TrendingUp } from 'lucide-react';
+import logoImg from '@/assets/uhuru-safi-logo.png';
 
 interface AboutModalProps {
   isOpen: boolean;
@@ -14,7 +15,7 @@ const AboutModal = ({ isOpen, onClose }: AboutModalProps) => {
       <DialogContent className="max-w-4xl max-h-[90dvh] flex flex-col">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center space-x-3 text-xl sm:text-2xl pr-8">
-            <Shield className="w-6 h-6 sm:w-8 sm:h-8 text-primary flex-shrink-0" />
+            <img src={logoImg} alt="Uhuru Safi" className="w-6 h-6 sm:w-8 sm:h-8 object-contain flex-shrink-0" />
             <span className="truncate">About Uhuru Safi</span>
           </DialogTitle>
         </DialogHeader>
