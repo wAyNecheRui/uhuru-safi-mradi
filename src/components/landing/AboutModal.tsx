@@ -1,7 +1,8 @@
 
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Shield, Users, Building, Eye, CheckCircle, TrendingUp } from 'lucide-react';
+import { Users, Building, Eye, CheckCircle, TrendingUp } from 'lucide-react';
+import logoImg from '@/assets/uhuru-safi-logo.png';
 
 interface AboutModalProps {
   isOpen: boolean;
