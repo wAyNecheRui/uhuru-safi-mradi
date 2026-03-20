@@ -2,7 +2,8 @@
 import React, { useState } from 'react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Menu, Shield, X, ChevronRight } from 'lucide-react';
+import { Menu, X, ChevronRight } from 'lucide-react';
+import logoImg from '@/assets/uhuru-safi-logo.png';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { TouchGesture } from './mobile/TouchGestures';
 import { useAuth } from '@/contexts/AuthContext';
