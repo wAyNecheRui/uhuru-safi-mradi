@@ -323,7 +323,7 @@ const MilestoneManagement: React.FC<MilestoneManagementProps> = ({ project, onCl
   const isValid = totalPercentage === 100;
 
   return (
-    <DialogContent className="w-[calc(100vw-1rem)] sm:w-full sm:max-w-4xl max-h-[90dvh] flex flex-col">
+    <DialogContent className="w-[calc(100vw-1rem)] sm:w-full sm:max-w-4xl max-h-[85dvh] flex flex-col">
       <DialogHeader className="flex-shrink-0">
         <DialogTitle className="flex items-center gap-2 text-base sm:text-lg pr-8">
           <Target className="h-5 w-5 text-primary flex-shrink-0" />

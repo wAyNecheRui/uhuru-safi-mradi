@@ -338,7 +338,7 @@ const ProgressUpdateForm: React.FC<ProgressUpdateFormProps> = ({
   };
 
   return (
-    <DialogContent className="w-[calc(100vw-1rem)] sm:w-full sm:max-w-2xl max-h-[90dvh] flex flex-col">
+    <DialogContent className="w-[calc(100vw-1rem)] sm:w-full sm:max-w-2xl max-h-[85dvh] flex flex-col">
       <DialogHeader className="flex-shrink-0">
         <DialogTitle className="text-base sm:text-lg pr-8">Submit Progress Update</DialogTitle>
         <p className="text-xs sm:text-sm text-muted-foreground truncate">{projectTitle}</p>
