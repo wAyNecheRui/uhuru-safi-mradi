@@ -18,7 +18,7 @@ export default defineConfig(({ mode }) => ({
       devOptions: {
         enabled: false // Disable PWA in development for faster HMR
       },
-      includeAssets: ['favicon.ico', 'robots.txt', 'icons/*.png'],
+      includeAssets: ['favicon.ico', 'favicon-16.png', 'favicon-32.png', 'apple-touch-icon.png', 'robots.txt'],
       manifest: {
         name: 'Uhuru Safi',
         short_name: 'Uhuru Safi',
@@ -31,13 +31,13 @@ export default defineConfig(({ mode }) => ({
         start_url: '/',
         icons: [
           {
-            src: '/icons/icon-192x192.png',
+            src: '/icon-192.png',
             sizes: '192x192',
             type: 'image/png',
             purpose: 'maskable any'
           },
           {
-            src: '/icons/icon-512x512.png',
+            src: '/icon-512.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable any'
