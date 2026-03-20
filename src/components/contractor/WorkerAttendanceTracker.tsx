@@ -359,12 +359,12 @@ const WorkerAttendanceTracker: React.FC<WorkerAttendanceTrackerProps> = ({
 
       {/* Record Work Dialog */}
       <Dialog open={showRecordDialog} onOpenChange={setShowRecordDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Record Daily Work</DialogTitle>
+        <DialogContent className="w-[calc(100vw-1rem)] sm:w-full sm:max-w-md max-h-[85dvh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle className="pr-8">Record Daily Work</DialogTitle>
           </DialogHeader>
           
-          <div className="space-y-4 py-4">
+          <div className="flex-1 overflow-y-auto min-h-0 space-y-4 py-2 pr-1">
             <div>
               <p className="text-sm text-muted-foreground mb-2">
                 Worker: <strong>{selectedWorker?.worker_name}</strong>
