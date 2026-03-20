@@ -13,7 +13,7 @@ import {
   Shield, CheckCircle, Clock, AlertTriangle, Users, DollarSign, FileText, 
   Gavel, Loader2, Eye, Wallet, Briefcase, BarChart3, 
   ClipboardCheck, UserCog, Building2, Scale, Globe, Lock, FolderOpen, Image,
-  PlayCircle, XCircle, Award
+  PlayCircle, XCircle
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -232,7 +232,6 @@ const GovernmentDashboard = () => {
 
   const quickActions = [
     { label: 'Project Portfolio', icon: FolderOpen, path: '/government/portfolio', color: 'bg-blue-600 hover:bg-blue-700' },
-    { label: 'Projects Overview', icon: Award, path: '/government/projects', color: 'bg-rose-600 hover:bg-rose-700' },
     { label: 'Report Approvals', icon: ClipboardCheck, path: '/government/approvals', color: 'bg-orange-600 hover:bg-orange-700' },
     { label: 'Bid Approval', icon: Gavel, path: '/government/bid-approval', color: 'bg-green-600 hover:bg-green-700' },
     { label: 'Contractor Management', icon: Building2, path: '/government/contractors', color: 'bg-purple-600 hover:bg-purple-700' },
