@@ -504,6 +504,21 @@ const GovernmentPortfolio = () => {
           />
         )}
       </Dialog>
+
+      {/* Project Completion Dialog */}
+      {completionProject && (
+        <ProjectCompletionForm
+          projectId={completionProject.id}
+          projectTitle={completionProject.title}
+          budget={completionProject.budget ?? undefined}
+          open={!!completionProject}
+          onOpenChange={(open) => !open && setCompletionProject(null)}
+          onCompleted={() => {
+            setCompletionProject(null);
+            fetchProjects();
+          }}
+        />
+      )}
     </div>
   );
 };
