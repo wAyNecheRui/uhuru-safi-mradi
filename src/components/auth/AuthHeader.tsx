@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { Shield } from 'lucide-react';
 import { CardHeader, CardTitle } from '@/components/ui/card';
+import logoImg from '@/assets/uhuru-safi-logo.png';
 
 const AuthHeader: React.FC = () => {
   return (

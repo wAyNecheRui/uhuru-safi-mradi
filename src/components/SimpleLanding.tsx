@@ -2,7 +2,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Shield } from 'lucide-react';
+import logoImg from '@/assets/uhuru-safi-logo.png';
 
 const SimpleLanding = () => {
   const navigate = useNavigate();

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield } from 'lucide-react';
 import ProfileButton from '@/components/ProfileButton';
+import logoImg from '@/assets/uhuru-safi-logo.png';
 import { useAuth } from '@/contexts/AuthContext';
 import NotificationCenter from '@/components/notifications/NotificationCenter';
 import RealtimeStatusIndicator from '@/components/realtime/RealtimeStatusIndicator';
