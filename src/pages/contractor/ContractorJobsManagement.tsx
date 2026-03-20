@@ -436,7 +436,7 @@ const ContractorJobsManagement = () => {
 
       {/* Applicants Dialog */}
       <Dialog open={!!selectedJob} onOpenChange={() => setSelectedJob(null)}>
-        <DialogContent className="w-[calc(100vw-1rem)] sm:w-full sm:max-w-3xl max-h-[90dvh] flex flex-col">
+        <DialogContent className="w-[calc(100vw-1rem)] sm:w-full sm:max-w-3xl max-h-[85dvh] flex flex-col">
           <DialogHeader className="flex-shrink-0">
             <DialogTitle className="flex items-center gap-2 pr-8">
               <Users className="h-5 w-5 text-primary" />
@@ -593,7 +593,7 @@ const ContractorJobsManagement = () => {
 
       {/* Create Job Dialog */}
       <Dialog open={showCreateJob} onOpenChange={setShowCreateJob}>
-        <DialogContent className="sm:max-w-lg flex flex-col max-h-[90dvh]">
+        <DialogContent className="w-[calc(100vw-1rem)] sm:w-full sm:max-w-lg flex flex-col max-h-[85dvh]">
           <DialogHeader className="flex-shrink-0">
             <DialogTitle className="pr-8">Create New Job Posting</DialogTitle>
           </DialogHeader>
