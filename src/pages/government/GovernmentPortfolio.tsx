@@ -3,6 +3,7 @@ import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
 import MilestonePaymentProgress from '@/components/government/MilestonePaymentProgress';
+import ProjectCompletionForm from '@/components/government/ProjectCompletionForm';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,7 +12,7 @@ import { Dialog } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { 
   Eye, Loader2, Building2, CheckCircle, Clock, Zap, Camera, Video, 
-  FileText, Activity, Search, DollarSign, TrendingUp, AlertTriangle, MapPin
+  FileText, Activity, Search, DollarSign, TrendingUp, AlertTriangle, MapPin, Award
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -49,6 +50,7 @@ const GovernmentPortfolio = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProject, setSelectedProject] = useState<ProjectWithProgress | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [completionProject, setCompletionProject] = useState<ProjectWithProgress | null>(null);
   const { toast } = useToast();
 
   const [stats, setStats] = useState({
@@ -461,13 +463,24 @@ const GovernmentPortfolio = () => {
                           </div>
                         </div>
                         
-                        <Button 
-                          onClick={() => handleViewProgress(project)}
-                          className="bg-blue-600 hover:bg-blue-700"
-                        >
-                          <Eye className="h-4 w-4 mr-2" />
-                          View Full Progress
-                        </Button>
+                        <div className="flex flex-col gap-2">
+                          <Button 
+                            onClick={() => handleViewProgress(project)}
+                            className="bg-blue-600 hover:bg-blue-700"
+                          >
+                            <Eye className="h-4 w-4 mr-2" />
+                            View Full Progress
+                          </Button>
+                          {isFullyPaid && project.status !== 'completed' && (
+                            <Button 
+                              onClick={() => setCompletionProject(project)}
+                              className="bg-green-600 hover:bg-green-700"
+                            >
+                              <Award className="h-4 w-4 mr-2" />
+                              Finalize Completion
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -491,6 +504,21 @@ const GovernmentPortfolio = () => {
           />
         )}
       </Dialog>
+
+      {/* Project Completion Dialog */}
+      {completionProject && (
+        <ProjectCompletionForm
+          projectId={completionProject.id}
+          projectTitle={completionProject.title}
+          budget={completionProject.budget ?? undefined}
+          open={!!completionProject}
+          onOpenChange={(open) => !open && setCompletionProject(null)}
+          onCompleted={() => {
+            setCompletionProject(null);
+            fetchProjects();
+          }}
+        />
+      )}
     </div>
   );
 };
