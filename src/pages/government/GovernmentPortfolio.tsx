@@ -50,6 +50,7 @@ const GovernmentPortfolio = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProject, setSelectedProject] = useState<ProjectWithProgress | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [completionProject, setCompletionProject] = useState<ProjectWithProgress | null>(null);
   const { toast } = useToast();
 
   const [stats, setStats] = useState({
