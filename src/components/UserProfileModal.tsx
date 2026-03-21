@@ -152,6 +152,36 @@ const UserProfileModal = ({ isOpen, onClose }: UserProfileModalProps) => {
     }
   }, [user, updateProfile, refreshProfiles]);
 
+  const handleRemoveImage = useCallback(async (type: 'avatar' | 'cover') => {
+    if (!user) return;
+    const isAvatar = type === 'avatar';
+    isAvatar ? setUploadingAvatar(true) : setUploadingCover(true);
+
+    try {
+      const currentUrl = isAvatar ? userProfile?.avatar_url : (userProfile as any)?.cover_url;
+      
+      // Try to delete from storage
+      if (currentUrl) {
+        const bucketPath = currentUrl.split('/profile-images/')[1];
+        if (bucketPath) {
+          await supabase.storage.from('profile-images').remove([decodeURIComponent(bucketPath)]);
+        }
+      }
+
+      const updateField = isAvatar ? 'avatar_url' : 'cover_url';
+      const success = await updateProfile({ [updateField]: null } as any);
+      if (success) {
+        toast.success(`${isAvatar ? 'Profile' : 'Cover'} photo removed`);
+        refreshProfiles();
+      }
+    } catch (error) {
+      console.error('Remove error:', error);
+      toast.error(`Failed to remove ${type} image`);
+    } finally {
+      isAvatar ? setUploadingAvatar(false) : setUploadingCover(false);
+    }
+  }, [user, userProfile, updateProfile, refreshProfiles]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const success = await updateProfile({
