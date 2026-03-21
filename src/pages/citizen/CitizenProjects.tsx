@@ -15,7 +15,6 @@ import {
   Camera,
   TrendingUp,
   ArrowLeft,
-  Wallet,
   Target,
 } from 'lucide-react';
 import Header from '@/components/Header';

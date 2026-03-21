@@ -12,7 +12,6 @@ import {
   HardHat,
   Camera,
   Users,
-  Wallet,
   Award,
   ArrowRight,
   Loader2
