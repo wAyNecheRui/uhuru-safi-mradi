@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { 
   User, Shield, Award, Building, Briefcase, Camera, 
-  MapPin, Phone, Mail, CheckCircle, AlertCircle, Edit3, Image, X
+  MapPin, Phone, Mail, CheckCircle, AlertCircle, Edit3, Image, Trash2, Upload
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
