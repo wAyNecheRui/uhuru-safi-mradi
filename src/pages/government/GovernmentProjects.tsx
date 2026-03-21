@@ -9,6 +9,7 @@ import BreadcrumbNav from '@/components/BreadcrumbNav';
 import ProjectLifecycleTracker from '@/components/workflow/ProjectLifecycleTracker';
 import ProjectCompletionForm from '@/components/government/ProjectCompletionForm';
 import { supabase } from '@/integrations/supabase/client';
+import ContractorBanner from '@/components/contractor/ContractorBanner';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
