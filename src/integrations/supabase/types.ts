@@ -2362,6 +2362,10 @@ export type Database = {
             Args: { lat1: number; lat2: number; lon1: number; lon2: number }
             Returns: number
           }
+      can_contractor_bid: {
+        Args: { p_contractor_id: string; p_report_id: string }
+        Returns: boolean
+      }
       can_user_verify:
         | {
             Args: { _milestone_id: string; _user_id: string }
@@ -2377,6 +2381,10 @@ export type Database = {
             Args: { report_id: string; user_lat: number; user_lon: number }
             Returns: boolean
           }
+      can_verify_milestone: {
+        Args: { p_milestone_id: string; user_lat: number; user_lon: number }
+        Returns: boolean
+      }
       check_bid_requirements: {
         Args: { p_report_id: string }
         Returns: {
@@ -2615,6 +2623,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      haversine_distance_km: {
+        Args: { lat1: number; lat2: number; lon1: number; lon2: number }
+        Returns: number
       }
       is_verified_government_user:
         | { Args: never; Returns: boolean }
