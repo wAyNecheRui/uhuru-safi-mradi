@@ -78,6 +78,9 @@ const UserGuide = lazy(() => import("./pages/UserGuide"));
 // Dispute Resolution
 const DisputeResolution = lazy(() => import("./pages/DisputeResolution"));
 
+// Settings
+const SettingsPage = lazy(() => import("./pages/Settings"));
+
 // Minimal loader for lazy routes
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -115,6 +118,11 @@ const App = () => {
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/user-guide" element={<UserGuide />} />
+                  <Route path="/settings" element={
+                    <ProtectedRoute allowedRoles={["citizen", "contractor", "government", "admin"]}>
+                      <SettingsPage />
+                    </ProtectedRoute>
+                  } />
                   <Route path="/contractor-database" element={
                     <ProtectedRoute allowedRoles={["government", "admin", "contractor"]}>
                       <ContractorDatabasePage />
