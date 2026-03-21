@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Star, Briefcase, Award, Clock, DollarSign, Users, Shield, FileText, CheckCircle, MapPin, Loader2, AlertCircle, Eye, Lock, Navigation } from 'lucide-react';
+import { canContractorBid } from '@/utils/geoUtils';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
@@ -144,6 +145,17 @@ const ContractorBidding = () => {
       toast({
         title: "Cannot Submit Bid",
         description: "Bidding is not open for this project yet",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Check contractor county eligibility
+    const countyAllowed = await canContractorBid(user.id, selectedProblem.id);
+    if (!countyAllowed) {
+      toast({
+        title: "County Mismatch",
+        description: "This project is outside your registered counties. Update your profile to include the relevant county.",
         variant: "destructive"
       });
       return;

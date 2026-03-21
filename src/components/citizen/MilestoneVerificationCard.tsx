@@ -21,6 +21,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { MilestonePaymentService, REQUIRED_CITIZEN_VERIFICATIONS } from '@/services/MilestonePaymentService';
+import { canVerifyMilestone, getCurrentPosition, haversineDistanceKm } from '@/utils/geoUtils';
 import { LiveNotificationService } from '@/services/LiveNotificationService';
 
 interface Milestone {
@@ -68,6 +69,8 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
   const [currentVerificationStatus, setCurrentVerificationStatus] = useState<VerificationStatus | null>(null);
   const [hasUserVerified, setHasUserVerified] = useState(false);
   const [checkingStatus, setCheckingStatus] = useState(true);
+  const [proximityCheck, setProximityCheck] = useState<'idle' | 'checking' | 'passed' | 'failed'>('idle');
+  const [proximityDistance, setProximityDistance] = useState<number | null>(null);
 
   // Check verification status on mount and after verification
   useEffect(() => {
@@ -99,43 +102,57 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
     }
   };
 
-  const handleGetLocation = () => {
-    if (!navigator.geolocation) {
-      toast({
-        title: "Not Supported",
-        description: "Geolocation is not supported by your browser",
-        variant: "destructive"
-      });
-      return;
-    }
-
+  const handleGetLocation = async () => {
     setGettingLocation(true);
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setLocation({
-          lat: position.coords.latitude,
-          lon: position.coords.longitude
-        });
-        setGettingLocation(false);
+    setProximityCheck('checking');
+    try {
+      const pos = await getCurrentPosition();
+      setLocation({ lat: pos.lat, lon: pos.lon });
+
+      // Server-side proximity check (10km radius)
+      const allowed = await canVerifyMilestone(pos.lat, pos.lon, milestone.id);
+      
+      if (allowed) {
+        setProximityCheck('passed');
         toast({
-          title: "Location Verified",
-          description: "Your location has been captured for verification."
+          title: "Location Verified ✅",
+          description: "You are within range of the project site."
         });
-      },
-      (error) => {
-        console.error('Geolocation error:', error);
-        setGettingLocation(false);
+      } else {
+        setProximityCheck('failed');
+        // Try to calculate approximate distance for user feedback
         toast({
-          title: "Location Error",
-          description: "Could not get your location.",
+          title: "Too Far From Project Site",
+          description: "You must be within 10km of the project location to verify this milestone.",
           variant: "destructive"
         });
       }
-    );
+    } catch (error: any) {
+      console.error('Geolocation error:', error);
+      setProximityCheck('failed');
+      setGettingLocation(false);
+      toast({
+        title: "Location Required",
+        description: "GPS access is required to verify milestones. Please enable location permissions.",
+        variant: "destructive"
+      });
+    } finally {
+      setGettingLocation(false);
+    }
   };
 
   const handleSubmitVerification = async () => {
     if (!user || !verificationStatus) return;
+
+    // Enforce mandatory location verification
+    if (!location || proximityCheck !== 'passed') {
+      toast({
+        title: "Location Required",
+        description: "You must verify your location at the project site before submitting.",
+        variant: "destructive"
+      });
+      return;
+    }
 
     // Prevent double submission
     if (hasUserVerified) {
@@ -452,22 +469,27 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
 
             {/* Location Verification */}
             <div>
-              <p className="text-sm font-medium mb-2">📍 Verify Your Location (Optional)</p>
+              <p className="text-sm font-medium mb-2">📍 Verify Your Location <span className="text-red-500">*Required</span></p>
               <Button
                 variant="outline"
                 onClick={handleGetLocation}
                 disabled={gettingLocation}
-                className="w-full"
+                className={`w-full ${proximityCheck === 'failed' ? 'border-red-400' : proximityCheck === 'passed' ? 'border-green-400' : ''}`}
               >
                 {gettingLocation ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Getting Location...
+                    Checking proximity to project site...
                   </>
-                ) : location ? (
+                ) : proximityCheck === 'passed' && location ? (
                   <>
                     <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
-                    Location Verified ({location.lat.toFixed(4)}, {location.lon.toFixed(4)})
+                    Within range ✅ ({location.lat.toFixed(4)}, {location.lon.toFixed(4)})
+                  </>
+                ) : proximityCheck === 'failed' ? (
+                  <>
+                    <AlertTriangle className="h-4 w-4 mr-2 text-red-600" />
+                    Too far from project site — Tap to retry
                   </>
                 ) : (
                   <>
@@ -476,6 +498,16 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
                   </>
                 )}
               </Button>
+              {proximityCheck === 'failed' && (
+                <p className="text-xs text-red-600 mt-1">
+                  You must be within 10km of the project location to verify. Please visit the site and try again.
+                </p>
+              )}
+              {proximityCheck === 'idle' && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  GPS location is mandatory to prevent fraud. You must be near the project site.
+                </p>
+              )}
             </div>
 
             {/* Rating */}
@@ -563,7 +595,7 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
             </Button>
             <Button
               onClick={handleSubmitVerification}
-              disabled={submitting || !verificationStatus || rating === 0}
+              disabled={submitting || !verificationStatus || rating === 0 || proximityCheck !== 'passed'}
               className={verificationStatus === 'approved' ? 'bg-green-600 hover:bg-green-700' : ''}
             >
               {submitting ? (
