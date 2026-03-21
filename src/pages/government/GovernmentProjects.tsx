@@ -165,9 +165,11 @@ const GovernmentProjects = () => {
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div className="flex items-center">
-                      <Building className="h-4 w-4 mr-2 text-gray-500" />
+                      <DollarSign className="h-4 w-4 mr-2 text-gray-500" />
                       <span className="text-sm">
-                        <span className="font-medium">Contractor:</span> {project.contractor_id ? 'Assigned' : 'Not assigned yet'}
+                        <span className="font-medium">Budget:</span> {project.budget 
+                          ? new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES' }).format(project.budget)
+                          : 'To be determined'}
                       </span>
                     </div>
                     <div className="flex items-center">
