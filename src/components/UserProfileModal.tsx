@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { 
   User, Shield, Award, Building, Briefcase, Camera, 
-  MapPin, Phone, Mail, CheckCircle, AlertCircle, Edit3, Image
+  MapPin, Phone, Mail, CheckCircle, AlertCircle, Edit3, Image, X
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
@@ -152,6 +152,36 @@ const UserProfileModal = ({ isOpen, onClose }: UserProfileModalProps) => {
     }
   }, [user, updateProfile, refreshProfiles]);
 
+  const handleRemoveImage = useCallback(async (type: 'avatar' | 'cover') => {
+    if (!user) return;
+    const isAvatar = type === 'avatar';
+    isAvatar ? setUploadingAvatar(true) : setUploadingCover(true);
+
+    try {
+      const currentUrl = isAvatar ? userProfile?.avatar_url : (userProfile as any)?.cover_url;
+      
+      // Try to delete from storage
+      if (currentUrl) {
+        const bucketPath = currentUrl.split('/profile-images/')[1];
+        if (bucketPath) {
+          await supabase.storage.from('profile-images').remove([decodeURIComponent(bucketPath)]);
+        }
+      }
+
+      const updateField = isAvatar ? 'avatar_url' : 'cover_url';
+      const success = await updateProfile({ [updateField]: null } as any);
+      if (success) {
+        toast.success(`${isAvatar ? 'Profile' : 'Cover'} photo removed`);
+        refreshProfiles();
+      }
+    } catch (error) {
+      console.error('Remove error:', error);
+      toast.error(`Failed to remove ${type} image`);
+    } finally {
+      isAvatar ? setUploadingAvatar(false) : setUploadingCover(false);
+    }
+  }, [user, userProfile, updateProfile, refreshProfiles]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const success = await updateProfile({
@@ -249,10 +279,19 @@ const UserProfileModal = ({ isOpen, onClose }: UserProfileModalProps) => {
                 </div>
               )}
               {/* Cover edit overlay */}
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100">
                 <div className="bg-background/90 rounded-full p-2">
                   <Camera className="h-5 w-5 text-foreground" />
                 </div>
+                {(userProfile as any)?.cover_url && (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); handleRemoveImage('cover'); }}
+                    className="bg-destructive/90 rounded-full p-2 hover:bg-destructive transition-colors"
+                  >
+                    <X className="h-5 w-5 text-destructive-foreground" />
+                  </button>
+                )}
               </div>
               {uploadingCover && (
                 <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
@@ -286,8 +325,17 @@ const UserProfileModal = ({ isOpen, onClose }: UserProfileModalProps) => {
                   </div>
                 )}
                 {/* Avatar edit overlay */}
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100 rounded-full">
-                  <Camera className="h-6 w-6 text-white" />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100 rounded-full">
+                  <Camera className="h-5 w-5 text-white" />
+                  {userProfile?.avatar_url && (
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); handleRemoveImage('avatar'); }}
+                      className="bg-destructive/90 rounded-full p-1 hover:bg-destructive transition-colors"
+                    >
+                      <X className="h-3.5 w-3.5 text-destructive-foreground" />
+                    </button>
+                  )}
                 </div>
                 {uploadingAvatar && (
                   <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-full">
