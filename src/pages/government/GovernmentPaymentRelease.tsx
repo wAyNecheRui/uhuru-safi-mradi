@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { DollarSign, Loader2, FolderOpen, MapPin, Calendar } from 'lucide-react';
+import { Wallet, Loader2, FolderOpen, MapPin, Calendar } from 'lucide-react';
 import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
 import PaymentReleaseManager from '@/components/government/PaymentReleaseManager';
@@ -127,7 +127,7 @@ const GovernmentPaymentRelease = () => {
                         )}
                       </div>
                       <Button size="sm" onClick={() => setSelectedProject(project)}>
-                        <DollarSign className="h-4 w-4 mr-1" />
+                        <Wallet className="h-4 w-4 mr-1" />
                         Manage Payments
                       </Button>
                     </div>

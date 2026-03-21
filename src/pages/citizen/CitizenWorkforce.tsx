@@ -7,7 +7,7 @@ import ResponsiveContainer from '@/components/ResponsiveContainer';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Users, Briefcase, Target, DollarSign } from 'lucide-react';
+import { Users, Briefcase, Target, Wallet } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 const CitizenWorkforce = () => {
@@ -49,7 +49,7 @@ const CitizenWorkforce = () => {
                   Skill-Based Matching
                 </Badge>
                 <Badge variant="outline" className="flex items-center gap-1 bg-green-50">
-                  <DollarSign className="h-3 w-3" />
+                  <Wallet className="h-3 w-3" />
                   Fair Compensation
                 </Badge>
               </div>

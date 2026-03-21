@@ -5,7 +5,7 @@ import { Progress } from '@/components/ui/progress';
 import { 
   Building2, 
   TrendingUp, 
-  DollarSign, 
+  Wallet, 
   Briefcase,
   Star,
   CheckCircle,
@@ -115,7 +115,7 @@ const ContractorCapacityCard = ({
         {/* Financial Capacity */}
         <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
           <div className="flex items-center">
-            <DollarSign className="h-5 w-5 text-green-600 mr-2" />
+            <Wallet className="h-5 w-5 text-green-600 mr-2" />
             <span className="text-sm font-medium">Financial Capacity</span>
           </div>
           <span className="font-bold text-green-600">{formatCurrency(financialCapacity)}</span>

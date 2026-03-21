@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Textarea } from '@/components/ui/textarea';
 import { 
-  DollarSign, CheckCircle, Clock, AlertTriangle, 
+  Wallet, CheckCircle, Clock, AlertTriangle, 
   Loader2, Lock, Unlock, Eye, Camera, FileText
 } from 'lucide-react';
 import {
@@ -145,7 +145,7 @@ const PaymentReleaseManager: React.FC<PaymentReleaseManagerProps> = ({
       case 'verified':
         return <Badge className="bg-blue-100 text-blue-800"><CheckCircle className="h-3 w-3 mr-1" />Verified - Ready</Badge>;
       case 'paid':
-        return <Badge className="bg-green-100 text-green-800"><DollarSign className="h-3 w-3 mr-1" />Paid</Badge>;
+        return <Badge className="bg-green-100 text-green-800"><Wallet className="h-3 w-3 mr-1" />Paid</Badge>;
       case 'submitted':
         return <Badge className="bg-yellow-100 text-yellow-800"><Clock className="h-3 w-3 mr-1" />Submitted</Badge>;
       case 'in_progress':
@@ -177,7 +177,7 @@ const PaymentReleaseManager: React.FC<PaymentReleaseManagerProps> = ({
     <DialogContent className="w-[calc(100vw-1rem)] sm:w-full sm:max-w-4xl max-h-[90dvh] flex flex-col">
       <DialogHeader className="flex-shrink-0">
         <DialogTitle className="flex items-center gap-2 text-base sm:text-lg pr-8">
-          <DollarSign className="h-5 w-5 text-primary flex-shrink-0" />
+          <Wallet className="h-5 w-5 text-primary flex-shrink-0" />
           <span className="truncate">Payment Release Manager</span>
         </DialogTitle>
         <DialogDescription className="truncate">{projectTitle}</DialogDescription>
@@ -355,7 +355,7 @@ const PaymentReleaseManager: React.FC<PaymentReleaseManagerProps> = ({
                 </>
               ) : (
                 <>
-                  <DollarSign className="h-4 w-4 mr-2" />
+                  <Wallet className="h-4 w-4 mr-2" />
                   Confirm Release
                 </>
               )}

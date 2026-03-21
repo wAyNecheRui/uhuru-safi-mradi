@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { FileText, DollarSign, Clock, User, Award } from 'lucide-react';
+import { FileText, Wallet, Clock, User, Award } from 'lucide-react';
 import { WorkflowService } from '@/services/WorkflowService';
 import { ContractorBid } from '@/types/workflow';
 import { useAuth } from '@/contexts/AuthContext';
@@ -262,7 +262,7 @@ const ContractorBidding: React.FC<ContractorBiddingProps> = ({
 
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div className="flex items-center gap-1">
-                          <DollarSign className="h-4 w-4 text-gray-500" />
+                          <Wallet className="h-4 w-4 text-gray-500" />
                           <span>KSh {bid.bid_amount.toLocaleString()}</span>
                         </div>
                         <div className="flex items-center gap-1">

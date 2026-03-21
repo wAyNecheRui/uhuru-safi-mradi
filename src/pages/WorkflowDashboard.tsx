@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { WorkflowService } from '@/services/WorkflowService';
 import { WorkflowState } from '@/types/workflow';
-import { MapPin, DollarSign, Users, Clock } from 'lucide-react';
+import { MapPin, Wallet, Users, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { getWorkflowStageDisplay } from '@/utils/workflowStatusDisplay';
@@ -84,7 +84,7 @@ const WorkflowDashboard = () => {
                     )}
                     {report?.budget && (
                       <div className="flex items-center gap-1">
-                        <DollarSign className="h-4 w-4" />
+                        <Wallet className="h-4 w-4" />
                         <span>KSh {report.budget.toLocaleString()}</span>
                       </div>
                     )}

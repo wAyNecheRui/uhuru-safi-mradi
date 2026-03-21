@@ -15,7 +15,7 @@ import {
   FileText,
   Camera,
   MapPin,
-  DollarSign,
+  Wallet,
   Phone,
   PlayCircle,
   Download,
@@ -146,7 +146,7 @@ const CitizenGuide = () => {
     {
       title: 'Budget Allocations',
       description: 'See how public funds are allocated in your constituency',
-      icon: DollarSign,
+      icon: Wallet,
       items: [
         'Roads & Transport allocations',
         'Water & Sanitation allocations',

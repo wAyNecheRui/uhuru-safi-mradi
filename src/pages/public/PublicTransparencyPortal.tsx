@@ -9,7 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import RegionalDevelopmentStats from "@/components/cycles/RegionalDevelopmentStats";
 import { 
-  Loader2, Search, Building2, MapPin, Calendar, DollarSign, 
+  Loader2, Search, Building2, MapPin, Calendar, Wallet, 
   Users, TrendingUp, Eye, ExternalLink, Shield, Clock,
   CheckCircle2, XCircle, AlertCircle, ArrowLeft, Home, BarChart3, Globe, Star
 } from "lucide-react";
@@ -267,7 +267,7 @@ export default function PublicTransparencyPortal() {
             </Card>
             <Card>
               <CardContent className="p-4 text-center">
-                <DollarSign className="h-6 w-6 mx-auto text-green-500 mb-2" />
+                <Wallet className="h-6 w-6 mx-auto text-green-500 mb-2" />
                 <p className="text-2xl font-bold">{formatCurrency(stats.totalBudget)}</p>
                 <p className="text-xs text-muted-foreground">Total Budget</p>
               </CardContent>

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, Clock, Award, DollarSign, Users, Star, AlertCircle } from 'lucide-react';
+import { TrendingUp, Clock, Award, Wallet, Users, Star, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { isProjectEffectivelyCompleted } from '@/utils/progressCalculation';

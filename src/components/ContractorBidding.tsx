@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Star, Briefcase, Award, Clock, DollarSign, Users, Shield, FileText, CheckCircle, MapPin, Loader2, AlertCircle, Eye, Lock, Navigation } from 'lucide-react';
+import { Star, Briefcase, Award, Clock, Wallet, Users, Shield, FileText, CheckCircle, MapPin, Loader2, AlertCircle, Eye, Lock, Navigation } from 'lucide-react';
 import { canContractorBid } from '@/utils/geoUtils';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -466,7 +466,7 @@ const ContractorBidding = () => {
 
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg">
                             <div className="text-center">
-                              <DollarSign className="h-5 w-5 mx-auto mb-1 text-green-600" />
+                              <Wallet className="h-5 w-5 mx-auto mb-1 text-green-600" />
                               <div className="font-semibold text-green-600">
                                 {problem.estimated_cost ? formatCurrency(problem.estimated_cost) : 'TBD'}
                               </div>
@@ -560,7 +560,7 @@ const ContractorBidding = () => {
                               </span>
                               {problem.estimated_cost && (
                                 <span className="flex items-center">
-                                  <DollarSign className="h-3 w-3 mr-1" />
+                                  <Wallet className="h-3 w-3 mr-1" />
                                   {formatCurrency(problem.estimated_cost)}
                                 </span>
                               )}
@@ -645,7 +645,7 @@ const ContractorBidding = () => {
                             </p>
                             <div className="flex items-center gap-4 mt-2">
                               <span className="text-sm">
-                                <DollarSign className="h-4 w-4 inline mr-1 text-green-600" />
+                                <Wallet className="h-4 w-4 inline mr-1 text-green-600" />
                                 {formatCurrency(bid.bid_amount)}
                               </span>
                               <span className="text-sm">

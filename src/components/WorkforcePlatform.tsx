@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Clock, DollarSign, Users, Briefcase } from 'lucide-react';
+import { MapPin, Clock, Wallet, Users, Briefcase } from 'lucide-react';
 import { useWorkforce } from '@/hooks/useWorkforce';
 import { useAuth } from '@/contexts/AuthContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -161,7 +161,7 @@ const WorkforcePlatform = () => {
                 
                 {(job.wage_min || job.wage_max) && (
                   <div className="flex items-center text-sm text-muted-foreground">
-                    <DollarSign className="h-4 w-4 mr-2" />
+                    <Wallet className="h-4 w-4 mr-2" />
                     KES {job.wage_min && job.wage_max 
                       ? `${job.wage_min.toLocaleString()} - ${job.wage_max.toLocaleString()}`
                       : job.wage_min?.toLocaleString() || job.wage_max?.toLocaleString()

@@ -10,7 +10,7 @@ import {
   CheckCircle, 
   AlertTriangle, 
   MessageSquare,
-  DollarSign,
+  Wallet,
   Calendar,
   Settings,
   XCircle,
@@ -83,7 +83,7 @@ const CitizenNotifications = () => {
     // Then by category for contextual icons
     switch (category) {
       case 'project': return <Calendar className="h-5 w-5 text-blue-600" />;
-      case 'payment': return <DollarSign className="h-5 w-5 text-green-600" />;
+      case 'payment': return <Wallet className="h-5 w-5 text-green-600" />;
       case 'report': return <MessageSquare className="h-5 w-5 text-purple-600" />;
       case 'verification': return <ShieldCheck className="h-5 w-5 text-teal-600" />;
       case 'bid': return <Briefcase className="h-5 w-5 text-indigo-600" />;
@@ -294,7 +294,7 @@ const CitizenNotifications = () => {
             <TabsContent value="payment">
               <ScrollArea className="h-[calc(100vh-350px)]">
                 {filterByCategory('payment').length === 0 ? (
-                  renderEmptyState("No Payment Alerts", <DollarSign className="h-12 w-12" />)
+                  renderEmptyState("No Payment Alerts", <Wallet className="h-12 w-12" />)
                 ) : (
                   <div className="space-y-3 pr-4">
                     {filterByCategory('payment').map(renderNotificationCard)}

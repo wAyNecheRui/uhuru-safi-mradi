@@ -5,7 +5,7 @@ import ResponsiveContainer from '@/components/ResponsiveContainer';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Target, Loader2, Building2, DollarSign, Calendar, CheckCircle } from 'lucide-react';
+import { Target, Loader2, Building2, Wallet, Calendar, CheckCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { calculateProjectProgress } from '@/utils/progressCalculation';
@@ -146,7 +146,7 @@ const GovernmentMilestones = () => {
                         <p className="text-gray-600 text-sm mb-3">{project.description}</p>
                         <div className="flex flex-wrap gap-2">
                           <Badge variant="outline" className="text-blue-600">
-                            <DollarSign className="h-3 w-3 mr-1" />
+                            <Wallet className="h-3 w-3 mr-1" />
                             {formatCurrency(project.budget || 0)}
                           </Badge>
                           <Badge variant="secondary">

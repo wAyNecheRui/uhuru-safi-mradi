@@ -2,7 +2,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Users, Search, Building, Shield, CheckCircle, DollarSign, ArrowLeft } from 'lucide-react';
+import { Users, Search, Building, Shield, CheckCircle, Wallet, ArrowLeft } from 'lucide-react';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
 import { useResponsive } from '@/hooks/useResponsive';
 
@@ -36,7 +36,7 @@ const HowItWorks = () => {
       details: ["Open bidding process", "Qualification verification", "Competitive evaluation", "Contract award"]
     },
     {
-      icon: DollarSign,
+      icon: Wallet,
       title: "Secure Escrow",
       description: "Project funds are held in secure escrow and released based on verified milestone completion.",
       details: ["Milestone-based payments", "Community verification", "Quality assurance", "Dispute resolution"]
@@ -142,7 +142,7 @@ const HowItWorks = () => {
                 </div>
                 <div className="text-center">
                   <div className="w-12 h-12 sm:w-16 sm:h-16 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <DollarSign className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
+                    <Wallet className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
                   </div>
                   <h3 className="text-lg sm:text-xl font-semibold text-slate-900 mb-2">Guaranteed Payments</h3>
                   <p className="text-slate-600 text-sm sm:text-base">Secure escrow system for contractors</p>

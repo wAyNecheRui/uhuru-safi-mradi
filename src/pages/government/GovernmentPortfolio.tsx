@@ -12,7 +12,7 @@ import { Dialog } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { 
   Eye, Loader2, Building2, CheckCircle, Clock, Zap, Camera, Video, 
-  FileText, Activity, Search, DollarSign, TrendingUp, AlertTriangle, MapPin, Award
+  FileText, Activity, Search, Wallet, TrendingUp, AlertTriangle, MapPin, Award
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -263,7 +263,7 @@ const GovernmentPortfolio = () => {
                     <p className="text-sm text-gray-600">Total Budget</p>
                     <p className="text-2xl font-bold text-green-600">{formatCurrency(stats.totalBudget)}</p>
                   </div>
-                  <DollarSign className="h-8 w-8 text-green-200" />
+                  <Wallet className="h-8 w-8 text-green-200" />
                 </div>
               </CardContent>
             </Card>

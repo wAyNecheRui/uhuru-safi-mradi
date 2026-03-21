@@ -7,7 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
-  CheckCircle, XCircle, AlertCircle, Clock, DollarSign, 
+  CheckCircle, XCircle, AlertCircle, Clock, Wallet, 
   Users, FileText, Award, TrendingUp, Loader2, RefreshCw,
   AlertTriangle, MapPin, Camera, Shield, Gavel, Wallet
 } from 'lucide-react';

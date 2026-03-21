@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { 
-  Plus, Trash2, CheckCircle, Clock, DollarSign, 
+  Plus, Trash2, CheckCircle, Clock, Wallet, 
   Loader2, Calendar, Target, Save, AlertCircle
 } from 'lucide-react';
 import {

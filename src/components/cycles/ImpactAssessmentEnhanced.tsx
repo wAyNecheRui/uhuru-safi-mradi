@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Heart, 
   GraduationCap, 
-  DollarSign, 
+  Wallet, 
   ShieldAlert, 
   Leaf,
   Users,
@@ -66,7 +66,7 @@ const ImpactAssessmentEnhanced = ({ data, onChange }: ImpactAssessmentEnhancedPr
   const impactItems = [
     { key: 'healthcare_access', label: 'Healthcare Access Impact', icon: Heart, description: 'This issue affects access to hospitals, clinics, or emergency services' },
     { key: 'education_access', label: 'Education Access Impact', icon: GraduationCap, description: 'This issue affects access to schools, colleges, or learning facilities' },
-    { key: 'economic_impact', label: 'Economic Impact', icon: DollarSign, description: 'This issue affects businesses, employment, or economic activities' },
+    { key: 'economic_impact', label: 'Economic Impact', icon: Wallet, description: 'This issue affects businesses, employment, or economic activities' },
     { key: 'safety_concern', label: 'Safety Concern', icon: ShieldAlert, description: 'This issue poses safety risks to residents or commuters' },
     { key: 'environmental_impact', label: 'Environmental Impact', icon: Leaf, description: 'This issue has environmental consequences (pollution, flooding, etc.)' }
   ];

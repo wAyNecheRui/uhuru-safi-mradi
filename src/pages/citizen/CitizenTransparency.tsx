@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Search, 
-  DollarSign, 
+  Wallet, 
   Building2, 
   Star, 
   AlertTriangle,
@@ -278,7 +278,7 @@ const CitizenTransparency = () => {
             <Card className="bg-gradient-to-br from-green-50 to-green-100">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <DollarSign className="h-8 w-8 text-green-600" />
+                  <Wallet className="h-8 w-8 text-green-600" />
                   <div>
                     <div className="text-2xl font-bold text-green-800">
                       KES {(totalEscrowHeld / 1000000).toFixed(1)}M
@@ -520,7 +520,7 @@ const CitizenTransparency = () => {
                 {escrowAccounts.length === 0 && (
                   <Card>
                     <CardContent className="p-8 text-center">
-                      <DollarSign className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <Wallet className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                       <h3 className="text-lg font-semibold text-foreground mb-2">No Escrow Accounts</h3>
                       <p className="text-muted-foreground">No escrow accounts available for viewing.</p>
                     </CardContent>

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DollarSign, Shield, Clock, CheckCircle, AlertTriangle, Smartphone, Building2, Eye, Loader2 } from 'lucide-react';
+import { Wallet, Shield, Clock, CheckCircle, AlertTriangle, Smartphone, Building2, Eye, Loader2 } from 'lucide-react';
 import { usePaymentTransparency } from '@/hooks/usePaymentTransparency';
 
 const PaymentTransparency = () => {
@@ -114,7 +114,7 @@ const PaymentTransparency = () => {
           {displayPaymentTrails.length === 0 ? (
             <Card>
               <CardContent className="p-8 text-center text-gray-500">
-                <DollarSign className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <Wallet className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>No payment transactions yet</p>
               </CardContent>
             </Card>
@@ -306,7 +306,7 @@ const PaymentTransparency = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="shadow-lg">
           <CardContent className="p-6 text-center">
-            <DollarSign className="h-8 w-8 text-green-600 mx-auto mb-2" />
+            <Wallet className="h-8 w-8 text-green-600 mx-auto mb-2" />
             <div className="text-2xl font-bold text-gray-900">
               {formatAmount(paymentTrails.reduce((sum: number, p: any) => sum + (p.amount || 0), 0))}
             </div>

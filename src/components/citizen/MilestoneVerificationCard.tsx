@@ -7,7 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { 
   CheckCircle, XCircle, Star, Camera, 
   MapPin, Loader2, AlertTriangle, Eye,
-  Users, DollarSign, Clock, Shield
+  Users, Wallet, Clock, Shield
 } from 'lucide-react';
 import {
   Dialog,
@@ -336,7 +336,7 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
                   milestone.status === 'submitted' ? 'bg-yellow-500 text-white' :
                   'bg-gray-100 text-gray-800'
                 }>
-                  {isPaid && <DollarSign className="h-3 w-3 mr-1" />}
+                  {isPaid && <Wallet className="h-3 w-3 mr-1" />}
                   {isVerified && <CheckCircle className="h-3 w-3 mr-1" />}
                   {milestone.status === 'submitted' && <Clock className="h-3 w-3 mr-1" />}
                   {isPaid ? 'PAID' : milestone.status.replace('_', ' ').toUpperCase()}
