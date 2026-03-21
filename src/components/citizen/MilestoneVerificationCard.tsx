@@ -102,39 +102,43 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
     }
   };
 
-  const handleGetLocation = () => {
-    if (!navigator.geolocation) {
-      toast({
-        title: "Not Supported",
-        description: "Geolocation is not supported by your browser",
-        variant: "destructive"
-      });
-      return;
-    }
-
+  const handleGetLocation = async () => {
     setGettingLocation(true);
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setLocation({
-          lat: position.coords.latitude,
-          lon: position.coords.longitude
-        });
-        setGettingLocation(false);
+    setProximityCheck('checking');
+    try {
+      const pos = await getCurrentPosition();
+      setLocation({ lat: pos.lat, lon: pos.lon });
+
+      // Server-side proximity check (10km radius)
+      const allowed = await canVerifyMilestone(pos.lat, pos.lon, milestone.id);
+      
+      if (allowed) {
+        setProximityCheck('passed');
         toast({
-          title: "Location Verified",
-          description: "Your location has been captured for verification."
+          title: "Location Verified ✅",
+          description: "You are within range of the project site."
         });
-      },
-      (error) => {
-        console.error('Geolocation error:', error);
-        setGettingLocation(false);
+      } else {
+        setProximityCheck('failed');
+        // Try to calculate approximate distance for user feedback
         toast({
-          title: "Location Error",
-          description: "Could not get your location.",
+          title: "Too Far From Project Site",
+          description: "You must be within 10km of the project location to verify this milestone.",
           variant: "destructive"
         });
       }
-    );
+    } catch (error: any) {
+      console.error('Geolocation error:', error);
+      setProximityCheck('failed');
+      setGettingLocation(false);
+      toast({
+        title: "Location Required",
+        description: "GPS access is required to verify milestones. Please enable location permissions.",
+        variant: "destructive"
+      });
+    } finally {
+      setGettingLocation(false);
+    }
   };
 
   const handleSubmitVerification = async () => {
