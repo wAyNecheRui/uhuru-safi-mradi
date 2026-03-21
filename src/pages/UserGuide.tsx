@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { 
   Users, Building2, Briefcase, MapPin, FileText, Vote, 
-  Shield, DollarSign, CheckCircle, ArrowRight, AlertTriangle,
+  Shield, Wallet, CheckCircle, ArrowRight, AlertTriangle,
   Phone, Camera, Star, Clock, TrendingUp, Eye, Settings,
   Home, BookOpen, Wallet, UserCheck, FileSearch, ClipboardList
 } from 'lucide-react';
@@ -673,7 +673,7 @@ const UserGuide = () => {
                     <div className="grid md:grid-cols-2 gap-4">
                       <div className="p-4 border rounded-lg">
                         <h4 className="font-semibold mb-2 flex items-center gap-2">
-                          <DollarSign className="h-4 w-4" /> Fund Escrow (C2B):
+                          <Wallet className="h-4 w-4" /> Fund Escrow (C2B):
                         </h4>
                         <ol className="text-sm text-gray-600 space-y-1 list-decimal list-inside">
                           <li>Go to <strong>/government/escrow-funding</strong></li>
@@ -757,7 +757,7 @@ const UserGuide = () => {
                         { path: '/government/bid-approval', label: 'Bid Approval', icon: CheckCircle },
                         { path: '/government/verification-requests', label: 'Verify Contractors', icon: Shield },
                         { path: '/government/escrow-funding', label: 'Fund Escrow', icon: Wallet },
-                        { path: '/government/payment-release', label: 'Release Payments', icon: DollarSign },
+                        { path: '/government/payment-release', label: 'Release Payments', icon: Wallet },
                         { path: '/government/milestones', label: 'Milestones', icon: Clock },
                         { path: '/government/analytics', label: 'Analytics', icon: TrendingUp },
                         { path: '/government/lpo', label: 'LPO Management', icon: FileText },

@@ -9,7 +9,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
-  MapPin, Clock, DollarSign, Users, Calendar, Briefcase, CheckCircle, User, Phone
+  MapPin, Clock, Wallet, Users, Calendar, Briefcase, CheckCircle, User, Phone
 } from 'lucide-react';
 
 interface Job {
@@ -101,7 +101,7 @@ const JobDetailsModal = ({
             </div>
             <div className="p-3 bg-muted rounded-lg col-span-2">
               <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                <DollarSign className="h-4 w-4" />
+                <Wallet className="h-4 w-4" />
                 <span className="text-xs">Daily Wage</span>
               </div>
               <p className="font-medium text-green-600">

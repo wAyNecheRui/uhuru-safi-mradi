@@ -11,7 +11,7 @@ import {
   Pause,
   Eye,
   Send,
-  DollarSign,
+  Wallet,
   Shield,
   Users,
 } from 'lucide-react';
@@ -79,7 +79,7 @@ const statusConfigs: Record<StatusType, StatusConfig> = {
   paid: {
     label: 'Paid',
     className: 'bg-green-100 text-green-800 border-green-200',
-    icon: DollarSign,
+    icon: Wallet,
   },
   unpaid: {
     label: 'Unpaid',

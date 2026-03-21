@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
-import { Database, TrendingUp, MapPin, DollarSign, Users, Calendar, BarChart3, PieChart as PieChartIcon, Shield, Loader2, AlertCircle } from 'lucide-react';
+import { Database, TrendingUp, MapPin, Wallet, Users, Calendar, BarChart3, PieChart as PieChartIcon, Shield, Loader2, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { getContractorSatisfactionMetrics } from '@/utils/contractorRatingCalculation';
 
@@ -250,7 +250,7 @@ const KenyaOpenDataIntegration = () => {
         </Card>
         <Card className="shadow-lg">
           <CardContent className="p-4 text-center">
-            <DollarSign className="h-6 w-6 mx-auto mb-2 text-purple-600" />
+            <Wallet className="h-6 w-6 mx-auto mb-2 text-purple-600" />
             <div className="text-2xl font-bold">{formatAmount(platformStats.totalBudget)}</div>
             <div className="text-sm text-muted-foreground">Total Budget</div>
           </CardContent>

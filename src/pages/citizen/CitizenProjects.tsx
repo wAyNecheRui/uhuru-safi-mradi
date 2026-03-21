@@ -9,7 +9,7 @@ import {
   MapPin, 
   Search, 
   Clock, 
-  DollarSign, 
+  Wallet, 
   CheckCircle,
   AlertTriangle,
   Camera,
@@ -353,7 +353,7 @@ const CitizenProjects = () => {
                               {project.status.replace('_', ' ').toUpperCase()}
                             </Badge>
                             <Badge variant="outline" className="text-blue-600">
-                              <DollarSign className="h-3 w-3 mr-1" />
+                              <Wallet className="h-3 w-3 mr-1" />
                               KES {(project.budget || 0).toLocaleString()}
                             </Badge>
                             {photosCount > 0 && (

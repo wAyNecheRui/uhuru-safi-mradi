@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Shield, Users, Building, Eye, DollarSign, CheckCircle, TrendingUp, ChevronRight } from 'lucide-react';
+import { Shield, Users, Building, Eye, Wallet, CheckCircle, TrendingUp, ChevronRight } from 'lucide-react';
 import logoImg from '@/assets/uhuru-safi-logo.png';
 import MobileNavigation from '@/components/MobileNavigation';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
@@ -268,7 +268,7 @@ const Landing = () => {
                 <p className="text-slate-200 text-sm leading-relaxed">Real-time project tracking and public fund visibility</p>
               </div>
               <div className="text-center p-4">
-                <DollarSign className="w-10 h-10 sm:w-12 sm:h-12 text-emerald-400 mx-auto mb-4" />
+                <Wallet className="w-10 h-10 sm:w-12 sm:h-12 text-emerald-400 mx-auto mb-4" />
                 <h4 className="text-lg font-semibold text-white mb-2">Secure Escrow</h4>
                 <p className="text-slate-200 text-sm leading-relaxed">Guaranteed contractor payments upon milestone completion</p>
               </div>

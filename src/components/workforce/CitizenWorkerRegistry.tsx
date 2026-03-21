@@ -18,7 +18,7 @@ import {
   CheckCircle, 
   AlertTriangle,
   Calendar,
-  DollarSign,
+  Wallet,
   FileText,
   Shield
 } from 'lucide-react';

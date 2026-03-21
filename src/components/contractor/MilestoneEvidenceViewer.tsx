@@ -6,7 +6,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Camera, X, ChevronLeft, ChevronRight, CheckCircle, Clock, DollarSign } from 'lucide-react';
+import { Camera, X, ChevronLeft, ChevronRight, CheckCircle, Clock, Wallet } from 'lucide-react';
 
 interface Milestone {
   id: string;
@@ -47,7 +47,7 @@ const MilestoneEvidenceViewer: React.FC<MilestoneEvidenceViewerProps> = ({
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'paid': return <DollarSign className="h-3 w-3" />;
+      case 'paid': return <Wallet className="h-3 w-3" />;
       case 'verified': 
       case 'submitted':
         return <CheckCircle className="h-3 w-3" />;

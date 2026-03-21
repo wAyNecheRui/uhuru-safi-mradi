@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { 
-  Shield, CheckCircle, Clock, AlertTriangle, Users, DollarSign, FileText, 
+  Shield, CheckCircle, Clock, AlertTriangle, Users, Wallet, FileText, 
   Gavel, Loader2, Eye, Wallet, Briefcase, BarChart3, Award,
   ClipboardCheck, UserCog, Building2, Scale, Globe, Lock, FolderOpen, Image,
   PlayCircle, XCircle
@@ -239,7 +239,7 @@ const GovernmentDashboard = () => {
     { label: 'Analytics & Reports', icon: BarChart3, path: '/government/analytics', color: 'bg-indigo-600 hover:bg-indigo-700' },
     { label: 'Compliance', icon: Scale, path: '/government/compliance', color: 'bg-teal-600 hover:bg-teal-700' },
     { label: 'Escrow Funding', icon: Wallet, path: '/government/escrow-funding', color: 'bg-emerald-600 hover:bg-emerald-700' },
-    { label: 'Release Payments', icon: DollarSign, path: '/government/payment-release', color: 'bg-teal-600 hover:bg-teal-700' },
+    { label: 'Release Payments', icon: Wallet, path: '/government/payment-release', color: 'bg-teal-600 hover:bg-teal-700' },
     { label: 'Issue LPO', icon: FileText, path: '/government/lpo', color: 'bg-cyan-600 hover:bg-cyan-700' },
   ];
 
@@ -292,7 +292,7 @@ const GovernmentDashboard = () => {
       <Card className="shadow-lg">
         <CardHeader>
           <CardTitle className="flex items-center">
-            <DollarSign className="h-5 w-5 mr-2 text-green-600" />
+            <Wallet className="h-5 w-5 mr-2 text-green-600" />
             Budget Overview - FY 2024
           </CardTitle>
         </CardHeader>

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Users, Search, Building, Shield, CheckCircle, DollarSign } from 'lucide-react';
+import { Users, Search, Building, Shield, CheckCircle, Wallet } from 'lucide-react';
 
 interface HowItWorksModalProps {
   isOpen: boolean;
@@ -35,7 +35,7 @@ const HowItWorksModal = ({ isOpen, onClose }: HowItWorksModalProps) => {
       details: ["Open bidding process", "Qualification verification", "Competitive evaluation", "Contract award"]
     },
     {
-      icon: DollarSign,
+      icon: Wallet,
       title: "Secure Escrow",
       description: "Project funds are held in secure escrow and released based on verified milestone completion.",
       details: ["Milestone-based payments", "Community verification", "Quality assurance", "Dispute resolution"]
@@ -116,7 +116,7 @@ const HowItWorksModal = ({ isOpen, onClose }: HowItWorksModalProps) => {
               </div>
               <div className="text-center">
                 <div className="w-12 h-12 bg-accent-foreground rounded-full flex items-center justify-center mx-auto mb-2">
-                  <DollarSign className="w-6 h-6 text-accent" />
+                  <Wallet className="w-6 h-6 text-accent" />
                 </div>
                 <h4 className="font-semibold text-foreground">Guaranteed Payments</h4>
                 <p className="text-sm text-muted-foreground mt-1">Secure escrow system for contractors</p>

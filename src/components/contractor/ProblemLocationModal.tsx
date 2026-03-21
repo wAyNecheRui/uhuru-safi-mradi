@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MapPin, DollarSign, Users, Navigation, ExternalLink } from 'lucide-react';
+import { MapPin, Wallet, Users, Navigation, ExternalLink } from 'lucide-react';
 
 interface Problem {
   id: string;
@@ -101,7 +101,7 @@ const ProblemLocationModal = ({ isOpen, onClose, problem }: ProblemLocationModal
               </div>
               {problem.estimated_cost && (
                 <div className="flex items-center gap-1 text-green-600">
-                  <DollarSign className="h-4 w-4" />
+                  <Wallet className="h-4 w-4" />
                   <span>KES {problem.estimated_cost.toLocaleString()}</span>
                 </div>
               )}

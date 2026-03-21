@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { 
   CheckCircle, XCircle, AlertCircle, Users, MapPin, 
-  Camera, DollarSign, Clock, FileText, Shield,
+  Camera, Wallet, Clock, FileText, Shield,
   ThumbsUp, ThumbsDown, Loader2, MessageSquare, Gavel, Play
 } from 'lucide-react';
 import Header from '@/components/Header';

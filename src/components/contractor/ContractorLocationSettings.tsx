@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { MapPin, DollarSign, Users, Loader2, Save, Award, Building, Briefcase, Heart, Edit, CheckCircle } from 'lucide-react';
+import { MapPin, Wallet, Users, Loader2, Save, Award, Building, Briefcase, Heart, Edit, CheckCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -380,7 +380,7 @@ const ContractorLocationSettings = () => {
         {/* Project Capacity */}
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <DollarSign className="h-4 w-4 text-primary" />
+            <Wallet className="h-4 w-4 text-primary" />
             <Label className="font-medium">Maximum Project Capacity</Label>
           </div>
           {isEditMode ? (

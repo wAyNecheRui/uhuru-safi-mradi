@@ -15,7 +15,7 @@ import {
   Star,
   MapPin,
   Calendar,
-  DollarSign,
+  Wallet,
   CheckCircle,
   Clock,
   FileText,
@@ -282,7 +282,7 @@ const ContractorPortfolioModal: React.FC<ContractorPortfolioModalProps> = ({
               </Card>
               <Card>
                 <CardContent className="p-4 text-center">
-                  <DollarSign className="h-6 w-6 text-purple-600 mx-auto mb-2" />
+                  <Wallet className="h-6 w-6 text-purple-600 mx-auto mb-2" />
                   <div className="text-xl font-bold text-gray-900">
                     {(stats.totalValue / 1000000).toFixed(1)}M
                   </div>
@@ -329,7 +329,7 @@ const ContractorPortfolioModal: React.FC<ContractorPortfolioModalProps> = ({
                             </p>
                             <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
                               <span className="flex items-center gap-1">
-                                <DollarSign className="h-4 w-4" />
+                                <Wallet className="h-4 w-4" />
                                 {formatCurrency(project.budget || 0)}
                               </span>
                               <span className="flex items-center gap-1">

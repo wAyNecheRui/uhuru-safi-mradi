@@ -7,7 +7,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, DollarSign } from 'lucide-react';
+import { MapPin, Wallet } from 'lucide-react';
 
 interface Project {
   id: string;
@@ -105,7 +105,7 @@ const ProjectMapModal = ({ isOpen, onClose, projects }: ProjectMapModalProps) =>
                 </p>
                 <div className="flex items-center gap-3 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1">
-                    <DollarSign className="h-3 w-3" />
+                    <Wallet className="h-3 w-3" />
                     KES {(project.budget || 0).toLocaleString()}
                   </span>
                   {project.coordinates && (

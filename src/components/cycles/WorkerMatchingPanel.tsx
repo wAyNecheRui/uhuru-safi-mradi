@@ -8,7 +8,7 @@ import {
   MapPin, 
   Star, 
   Briefcase,
-  DollarSign,
+  Wallet,
   CheckCircle,
   Phone,
   Loader2,
@@ -125,7 +125,7 @@ const WorkerMatchingPanel = ({ workerId, projectLocation, requiredSkills, mode }
                   <p className="text-xs text-muted-foreground">Reliability</p>
                 </div>
                 <div className="text-center p-3 bg-muted/50 rounded-lg">
-                  <DollarSign className="h-5 w-5 mx-auto text-green-600 mb-1" />
+                  <Wallet className="h-5 w-5 mx-auto text-green-600 mb-1" />
                   <p className="text-2xl font-bold">{formatCurrency(performance.earnedWages)}</p>
                   <p className="text-xs text-muted-foreground">Earned Wages</p>
                 </div>

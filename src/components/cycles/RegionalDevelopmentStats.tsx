@@ -7,7 +7,7 @@ import {
   MapPin, 
   Building2, 
   Users, 
-  DollarSign,
+  Wallet,
   TrendingUp,
   CheckCircle,
   Briefcase,
@@ -123,7 +123,7 @@ const RegionalDevelopmentStatsComponent = () => {
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
-            <DollarSign className="h-6 w-6 mx-auto text-blue-500 mb-2" />
+            <Wallet className="h-6 w-6 mx-auto text-blue-500 mb-2" />
             <p className="text-2xl font-bold">{formatCurrency(totals.totalBudget)}</p>
             <p className="text-xs text-muted-foreground">Total Budget</p>
           </CardContent>

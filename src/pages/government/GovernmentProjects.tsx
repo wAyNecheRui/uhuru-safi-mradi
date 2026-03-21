@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog } from '@/components/ui/dialog';
-import { Building, MapPin, Calendar, DollarSign, Users, Loader2, FolderOpen, Target, Award, CheckCircle } from 'lucide-react';
+import { Building, MapPin, Calendar, Wallet, Users, Loader2, FolderOpen, Target, Award, CheckCircle } from 'lucide-react';
 import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
 import ProjectLifecycleTracker from '@/components/workflow/ProjectLifecycleTracker';
@@ -165,7 +165,7 @@ const GovernmentProjects = () => {
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div className="flex items-center">
-                      <DollarSign className="h-4 w-4 mr-2 text-gray-500" />
+                      <Wallet className="h-4 w-4 mr-2 text-gray-500" />
                       <span className="text-sm">
                         <span className="font-medium">Budget:</span> {project.budget 
                           ? new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES' }).format(project.budget)
@@ -173,7 +173,7 @@ const GovernmentProjects = () => {
                       </span>
                     </div>
                     <div className="flex items-center">
-                      <DollarSign className="h-4 w-4 mr-2 text-gray-500" />
+                      <Wallet className="h-4 w-4 mr-2 text-gray-500" />
                       <span className="text-sm">
                         <span className="font-medium">Budget:</span> {project.budget 
                           ? new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES' }).format(project.budget)

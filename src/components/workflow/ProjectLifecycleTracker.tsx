@@ -12,7 +12,7 @@ import {
   HardHat,
   Camera,
   Users,
-  DollarSign,
+  Wallet,
   Award,
   ArrowRight,
   Loader2
@@ -31,7 +31,7 @@ const stepIcons: Record<number, React.ReactNode> = {
   3: <HardHat className="h-5 w-5" />,
   4: <Camera className="h-5 w-5" />,
   5: <Users className="h-5 w-5" />,
-  6: <DollarSign className="h-5 w-5" />,
+  6: <Wallet className="h-5 w-5" />,
   7: <Award className="h-5 w-5" />
 };
 
@@ -201,7 +201,7 @@ const ProjectLifecycleTracker: React.FC<ProjectLifecycleTrackerProps> = ({
             <p className="text-xs text-muted-foreground">Citizen Verifications</p>
           </div>
           <div className="text-center p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
-            <DollarSign className="h-5 w-5 mx-auto text-amber-600 mb-1" />
+            <Wallet className="h-5 w-5 mx-auto text-amber-600 mb-1" />
             <p className="text-lg font-bold">{lifecycle.milestonesPaid}/{lifecycle.milestonesTotal}</p>
             <p className="text-xs text-muted-foreground">Payments Released</p>
           </div>

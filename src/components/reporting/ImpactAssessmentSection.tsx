@@ -2,7 +2,7 @@ import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Users, DollarSign, Clock, AlertTriangle } from 'lucide-react';
+import { Users, Wallet, Clock, AlertTriangle } from 'lucide-react';
 import { ReportData } from '@/types/problemReporting';
 
 interface ImpactAssessmentSectionProps {
@@ -15,8 +15,8 @@ const ImpactAssessmentSection = ({ reportData, onInputChange }: ImpactAssessment
     const numCost = parseFloat(cost);
     if (isNaN(numCost)) return null;
     
-    if (numCost < 100000) return { label: 'Low Cost', color: 'bg-green-100 text-green-800', icon: DollarSign };
-    if (numCost < 500000) return { label: 'Medium Cost', color: 'bg-yellow-100 text-yellow-800', icon: DollarSign };
+    if (numCost < 100000) return { label: 'Low Cost', color: 'bg-green-100 text-green-800', icon: Wallet };
+    if (numCost < 500000) return { label: 'Medium Cost', color: 'bg-yellow-100 text-yellow-800', icon: Wallet };
     if (numCost < 2000000) return { label: 'High Cost', color: 'bg-orange-100 text-orange-800', icon: AlertTriangle };
     return { label: 'Very High Cost', color: 'bg-red-100 text-red-800', icon: AlertTriangle };
   };
