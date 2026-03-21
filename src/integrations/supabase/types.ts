@@ -1690,6 +1690,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           county: string | null
+          cover_url: string | null
           created_at: string | null
           date_of_birth: string | null
           email_verified: boolean | null
@@ -1712,6 +1713,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           county?: string | null
+          cover_url?: string | null
           created_at?: string | null
           date_of_birth?: string | null
           email_verified?: boolean | null
@@ -1734,6 +1736,7 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           county?: string | null
+          cover_url?: string | null
           created_at?: string | null
           date_of_birth?: string | null
           email_verified?: boolean | null
