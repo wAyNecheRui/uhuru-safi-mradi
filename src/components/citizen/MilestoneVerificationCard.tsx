@@ -183,6 +183,17 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
           verification_photos: location ? [`GPS: ${location.lat}, ${location.lon}`] : null
         });
 
+      // Log to verification audit trail (Phase D)
+      await supabase.from('verification_audit_log' as any).insert({
+        action_type: 'milestone_verify',
+        user_id: user.id,
+        milestone_id: milestone.id,
+        gps_latitude: location?.lat,
+        gps_longitude: location?.lon,
+        result: error ? (error.code === '23505' ? 'denied_duplicate' : 'error') : 'allowed',
+        metadata: { rating, verification_status: verificationStatus, proximity_check: proximityCheck }
+      });
+
       if (error) {
         // Handle unique constraint violation
         if (error.code === '23505') {

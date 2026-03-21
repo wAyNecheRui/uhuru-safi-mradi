@@ -1833,6 +1833,66 @@ export type Database = {
         }
         Relationships: []
       }
+      verification_audit_log: {
+        Row: {
+          action_type: string
+          created_at: string
+          distance_km: number | null
+          gps_accuracy: number | null
+          gps_latitude: number | null
+          gps_longitude: number | null
+          id: string
+          metadata: Json | null
+          milestone_id: string | null
+          report_id: string | null
+          result: string
+          user_id: string
+        }
+        Insert: {
+          action_type: string
+          created_at?: string
+          distance_km?: number | null
+          gps_accuracy?: number | null
+          gps_latitude?: number | null
+          gps_longitude?: number | null
+          id?: string
+          metadata?: Json | null
+          milestone_id?: string | null
+          report_id?: string | null
+          result: string
+          user_id: string
+        }
+        Update: {
+          action_type?: string
+          created_at?: string
+          distance_km?: number | null
+          gps_accuracy?: number | null
+          gps_latitude?: number | null
+          gps_longitude?: number | null
+          id?: string
+          metadata?: Json | null
+          milestone_id?: string | null
+          report_id?: string | null
+          result?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "verification_audit_log_milestone_id_fkey"
+            columns: ["milestone_id"]
+            isOneToOne: false
+            referencedRelation: "project_milestones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "verification_audit_log_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "problem_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       verification_requests: {
         Row: {
           created_at: string | null

@@ -266,6 +266,19 @@ const CommunityValidation = () => {
 
       if (error) throw error;
 
+      // Log to verification audit trail (Phase D - fire and forget)
+      try {
+        await supabase.from('verification_audit_log' as any).insert({
+          action_type: 'vote',
+          user_id: user.id,
+          report_id: reportId,
+          gps_latitude: userLocation?.latitude,
+          gps_longitude: userLocation?.longitude,
+          result: 'allowed',
+          metadata: { vote_type: voteType }
+        });
+      } catch { /* non-blocking */ }
+
       // Update local state immediately for better UX
       const applyVoteUpdate = (report: ProblemReport): ProblemReport => {
         const wasUpvote = report.user_vote === 'upvote';
