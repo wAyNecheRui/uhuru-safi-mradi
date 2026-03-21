@@ -69,6 +69,8 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
   const [currentVerificationStatus, setCurrentVerificationStatus] = useState<VerificationStatus | null>(null);
   const [hasUserVerified, setHasUserVerified] = useState(false);
   const [checkingStatus, setCheckingStatus] = useState(true);
+  const [proximityCheck, setProximityCheck] = useState<'idle' | 'checking' | 'passed' | 'failed'>('idle');
+  const [proximityDistance, setProximityDistance] = useState<number | null>(null);
 
   // Check verification status on mount and after verification
   useEffect(() => {
