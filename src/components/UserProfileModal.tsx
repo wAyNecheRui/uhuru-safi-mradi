@@ -325,8 +325,17 @@ const UserProfileModal = ({ isOpen, onClose }: UserProfileModalProps) => {
                   </div>
                 )}
                 {/* Avatar edit overlay */}
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100 rounded-full">
-                  <Camera className="h-6 w-6 text-white" />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100 rounded-full">
+                  <Camera className="h-5 w-5 text-white" />
+                  {userProfile?.avatar_url && (
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); handleRemoveImage('avatar'); }}
+                      className="bg-destructive/90 rounded-full p-1 hover:bg-destructive transition-colors"
+                    >
+                      <X className="h-3.5 w-3.5 text-destructive-foreground" />
+                    </button>
+                  )}
                 </div>
                 {uploadingAvatar && (
                   <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-full">
