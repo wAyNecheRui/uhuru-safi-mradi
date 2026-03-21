@@ -42,6 +42,7 @@ const UserProfileModal = ({ isOpen, onClose }: UserProfileModalProps) => {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
+  const [photoMenu, setPhotoMenu] = useState<'avatar' | 'cover' | null>(null);
   
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
