@@ -9,6 +9,7 @@ import BreadcrumbNav from '@/components/BreadcrumbNav';
 import ProjectLifecycleTracker from '@/components/workflow/ProjectLifecycleTracker';
 import ProjectCompletionForm from '@/components/government/ProjectCompletionForm';
 import { supabase } from '@/integrations/supabase/client';
+import ContractorBanner from '@/components/contractor/ContractorBanner';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -134,6 +135,7 @@ const GovernmentProjects = () => {
             projects.map((project) => (
               <Card key={project.id} className="shadow-lg">
                 <CardHeader>
+                  <ContractorBanner contractorId={project.contractor_id} />
                   <div className="flex justify-between items-start">
                     <div>
                       <CardTitle className="text-xl mb-2">{project.title}</CardTitle>
@@ -163,9 +165,11 @@ const GovernmentProjects = () => {
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div className="flex items-center">
-                      <Building className="h-4 w-4 mr-2 text-gray-500" />
+                      <DollarSign className="h-4 w-4 mr-2 text-gray-500" />
                       <span className="text-sm">
-                        <span className="font-medium">Contractor:</span> {project.contractor_id ? 'Assigned' : 'Not assigned yet'}
+                        <span className="font-medium">Budget:</span> {project.budget 
+                          ? new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES' }).format(project.budget)
+                          : 'To be determined'}
                       </span>
                     </div>
                     <div className="flex items-center">
