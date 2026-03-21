@@ -28,6 +28,7 @@ import MilestoneVerificationCard from '@/components/citizen/MilestoneVerificatio
 import QualityRatingModal from '@/components/citizen/QualityRatingModal';
 import ProjectIssueReportModal from '@/components/citizen/ProjectIssueReportModal';
 import { supabase } from '@/integrations/supabase/client';
+import ContractorBanner from '@/components/contractor/ContractorBanner';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
