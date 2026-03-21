@@ -150,6 +150,17 @@ const ContractorBidding = () => {
       return;
     }
 
+    // Check contractor county eligibility
+    const countyAllowed = await canContractorBid(user.id, selectedProblem.id);
+    if (!countyAllowed) {
+      toast({
+        title: "County Mismatch",
+        description: "This project is outside your registered counties. Update your profile to include the relevant county.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
       setSubmitting(true);
       
