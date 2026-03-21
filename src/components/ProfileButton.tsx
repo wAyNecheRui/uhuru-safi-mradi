@@ -57,14 +57,18 @@ const ProfileButton = () => {
             <ChevronDown className="h-3 w-3 text-muted-foreground" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-48">
+        <DropdownMenuContent align="end" className="w-52">
           <div className="px-3 py-2 border-b border-border">
             <p className="text-sm font-medium truncate">{userProfile?.full_name || user.name}</p>
             <p className="text-xs text-muted-foreground truncate">{user.email}</p>
           </div>
           <DropdownMenuItem onClick={() => setIsProfileOpen(true)} className="cursor-pointer">
-            <Settings className="h-4 w-4 mr-2" />
+            <User className="h-4 w-4 mr-2" />
             My Profile
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => navigate('/settings')} className="cursor-pointer">
+            <Settings className="h-4 w-4 mr-2" />
+            Settings
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleLogout} className="text-destructive cursor-pointer">

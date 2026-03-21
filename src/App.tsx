@@ -118,6 +118,11 @@ const App = () => {
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/user-guide" element={<UserGuide />} />
+                  <Route path="/settings" element={
+                    <ProtectedRoute allowedRoles={["citizen", "contractor", "government", "admin"]}>
+                      <SettingsPage />
+                    </ProtectedRoute>
+                  } />
                   <Route path="/contractor-database" element={
                     <ProtectedRoute allowedRoles={["government", "admin", "contractor"]}>
                       <ContractorDatabasePage />
