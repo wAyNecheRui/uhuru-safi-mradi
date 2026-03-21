@@ -179,6 +179,17 @@ const ContractorBidding = () => {
 
       if (error) throw error;
 
+      // Log to verification audit trail (Phase D - fire and forget)
+      try {
+        await supabase.from('verification_audit_log' as any).insert({
+          action_type: 'bid_submit',
+          user_id: user.id,
+          report_id: selectedProblem.id,
+          result: 'allowed',
+          metadata: { bid_amount: bidAmount, estimated_duration: parseInt(bidForm.duration) }
+        });
+      } catch { /* non-blocking */ }
+
       // Fire notifications to citizen reporter and government
       try {
         const companyName = contractorProfile?.company_name || userProfile?.full_name || 'A contractor';
