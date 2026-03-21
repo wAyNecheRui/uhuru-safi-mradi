@@ -343,6 +343,7 @@ const CitizenProjects = () => {
                 return (
                   <Card key={project.id} className="shadow-lg hover:shadow-xl transition-shadow">
                     <CardHeader>
+                      <ContractorBanner contractorId={project.contractor_id} />
                       <div className="flex flex-col md:flex-row justify-between items-start gap-4">
                         <div className="flex-1">
                           <CardTitle className="text-xl mb-2">{project.title}</CardTitle>
