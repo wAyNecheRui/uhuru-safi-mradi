@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { 
   User, Shield, Award, Building, Briefcase, Camera, 
-  MapPin, Phone, Mail, CheckCircle, AlertCircle, Edit3, Image, X
+  MapPin, Phone, Mail, CheckCircle, AlertCircle, Edit3, Image, Trash2, Upload
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
@@ -42,6 +42,7 @@ const UserProfileModal = ({ isOpen, onClose }: UserProfileModalProps) => {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
+  const [photoMenu, setPhotoMenu] = useState<'avatar' | 'cover' | null>(null);
   
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
@@ -257,19 +258,15 @@ const UserProfileModal = ({ isOpen, onClose }: UserProfileModalProps) => {
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0">
-          {/* Facebook-style Cover + Avatar Header */}
+          {/* Cover + Avatar Header */}
           <div className="relative">
             {/* Cover Photo */}
             <div 
               className="h-44 sm:h-52 bg-gradient-to-br from-primary/80 via-primary/60 to-accent/40 relative overflow-hidden cursor-pointer group"
-              onClick={() => coverInputRef.current?.click()}
+              onClick={() => setPhotoMenu('cover')}
             >
               {(userProfile as any)?.cover_url ? (
-                <img 
-                  src={(userProfile as any).cover_url} 
-                  alt="Cover" 
-                  className="w-full h-full object-cover"
-                />
+                <img src={(userProfile as any).cover_url} alt="Cover" className="w-full h-full object-cover" />
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/20 via-primary/10 to-accent/20">
                   <div className="text-center text-primary-foreground/60">
@@ -278,20 +275,11 @@ const UserProfileModal = ({ isOpen, onClose }: UserProfileModalProps) => {
                   </div>
                 </div>
               )}
-              {/* Cover edit overlay */}
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100">
-                <div className="bg-background/90 rounded-full p-2">
-                  <Camera className="h-5 w-5 text-foreground" />
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                <div className="bg-background/80 backdrop-blur-sm rounded-lg px-3 py-1.5 flex items-center gap-1.5 shadow-sm">
+                  <Camera className="h-4 w-4 text-foreground" />
+                  <span className="text-xs font-medium text-foreground">Change Cover</span>
                 </div>
-                {(userProfile as any)?.cover_url && (
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); handleRemoveImage('cover'); }}
-                    className="bg-destructive/90 rounded-full p-2 hover:bg-destructive transition-colors"
-                  >
-                    <X className="h-5 w-5 text-destructive-foreground" />
-                  </button>
-                )}
               </div>
               {uploadingCover && (
                 <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
@@ -299,59 +287,89 @@ const UserProfileModal = ({ isOpen, onClose }: UserProfileModalProps) => {
                 </div>
               )}
             </div>
-            <input 
-              ref={coverInputRef} 
-              type="file" 
-              accept="image/*" 
-              className="hidden" 
-              onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'cover')} 
-            />
+            <input ref={coverInputRef} type="file" accept="image/*" className="hidden" 
+              onChange={(e) => { e.target.files?.[0] && handleImageUpload(e.target.files[0], 'cover'); setPhotoMenu(null); }} />
 
-            {/* Avatar - overlapping the cover */}
+            {/* Avatar */}
             <div className="absolute -bottom-16 left-6 sm:left-8">
               <div 
                 className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full border-4 border-background shadow-lg bg-muted cursor-pointer group overflow-hidden"
-                onClick={() => avatarInputRef.current?.click()}
+                onClick={() => setPhotoMenu('avatar')}
               >
                 {userProfile?.avatar_url ? (
-                  <img 
-                    src={userProfile.avatar_url} 
-                    alt={displayName} 
-                    className="w-full h-full object-cover rounded-full"
-                  />
+                  <img src={userProfile.avatar_url} alt={displayName} className="w-full h-full object-cover rounded-full" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-primary text-primary-foreground text-3xl sm:text-4xl font-bold rounded-full">
                     {displayName.substring(0, 2).toUpperCase()}
                   </div>
                 )}
-                {/* Avatar edit overlay */}
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100 rounded-full">
-                  <Camera className="h-5 w-5 text-white" />
-                  {userProfile?.avatar_url && (
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); handleRemoveImage('avatar'); }}
-                      className="bg-destructive/90 rounded-full p-1 hover:bg-destructive transition-colors"
-                    >
-                      <X className="h-3.5 w-3.5 text-destructive-foreground" />
-                    </button>
-                  )}
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100 rounded-full">
+                  <div className="bg-background/80 backdrop-blur-sm rounded-full p-2 shadow-sm">
+                    <Camera className="h-4 w-4 text-foreground" />
+                  </div>
                 </div>
                 {uploadingAvatar && (
                   <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-full">
-                    <div className="animate-spin h-6 w-6 border-3 border-white border-t-transparent rounded-full" />
+                    <div className="animate-spin h-6 w-6 border-3 border-primary-foreground border-t-transparent rounded-full" />
                   </div>
                 )}
               </div>
-              <input 
-                ref={avatarInputRef} 
-                type="file" 
-                accept="image/*" 
-                className="hidden" 
-                onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'avatar')} 
-              />
+              <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" 
+                onChange={(e) => { e.target.files?.[0] && handleImageUpload(e.target.files[0], 'avatar'); setPhotoMenu(null); }} />
             </div>
           </div>
+
+          {/* Photo Action Menu (Instagram/WhatsApp style) */}
+          {photoMenu && (
+            <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" onClick={() => setPhotoMenu(null)}>
+              <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+              <div 
+                className="relative bg-background rounded-t-2xl sm:rounded-2xl w-full sm:max-w-sm mx-0 sm:mx-4 shadow-xl animate-in slide-in-from-bottom-4 duration-200"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="w-10 h-1 bg-muted-foreground/30 rounded-full mx-auto mt-3 sm:hidden" />
+                <div className="px-4 pt-4 pb-2">
+                  <p className="text-sm font-semibold text-foreground">
+                    {photoMenu === 'avatar' ? 'Profile Photo' : 'Cover Photo'}
+                  </p>
+                </div>
+                <div className="px-2 pb-2">
+                  <button
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-muted transition-colors text-left"
+                    onClick={() => { 
+                      photoMenu === 'avatar' ? avatarInputRef.current?.click() : coverInputRef.current?.click();
+                    }}
+                  >
+                    <Upload className="h-5 w-5 text-primary" />
+                    <div>
+                      <p className="text-sm font-medium text-foreground">Upload Photo</p>
+                      <p className="text-xs text-muted-foreground">Choose from your device</p>
+                    </div>
+                  </button>
+                  {((photoMenu === 'avatar' && userProfile?.avatar_url) || (photoMenu === 'cover' && (userProfile as any)?.cover_url)) && (
+                    <button
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-destructive/10 transition-colors text-left"
+                      onClick={() => { handleRemoveImage(photoMenu); setPhotoMenu(null); }}
+                    >
+                      <Trash2 className="h-5 w-5 text-destructive" />
+                      <div>
+                        <p className="text-sm font-medium text-destructive">Remove Photo</p>
+                        <p className="text-xs text-muted-foreground">Delete current photo</p>
+                      </div>
+                    </button>
+                  )}
+                </div>
+                <div className="px-2 pb-3">
+                  <button
+                    className="w-full py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted rounded-lg transition-colors"
+                    onClick={() => setPhotoMenu(null)}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Profile Info Section */}
           <div className="pt-20 px-6 sm:px-8 pb-2">
