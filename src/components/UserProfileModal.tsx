@@ -279,10 +279,19 @@ const UserProfileModal = ({ isOpen, onClose }: UserProfileModalProps) => {
                 </div>
               )}
               {/* Cover edit overlay */}
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100">
                 <div className="bg-background/90 rounded-full p-2">
                   <Camera className="h-5 w-5 text-foreground" />
                 </div>
+                {(userProfile as any)?.cover_url && (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); handleRemoveImage('cover'); }}
+                    className="bg-destructive/90 rounded-full p-2 hover:bg-destructive transition-colors"
+                  >
+                    <X className="h-5 w-5 text-destructive-foreground" />
+                  </button>
+                )}
               </div>
               {uploadingCover && (
                 <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
