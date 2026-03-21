@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Wallet, Shield, Clock, CheckCircle, AlertTriangle, Link, Loader2, Wallet, ArrowRight, Users, Smartphone } from 'lucide-react';
+import { Wallet, Shield, Clock, CheckCircle, AlertTriangle, Link, Loader2, ArrowRight, Users, Smartphone } from 'lucide-react';
 import { useEscrowManagement } from '@/hooks/useEscrowManagement';
 
 const EscrowManagement = () => {

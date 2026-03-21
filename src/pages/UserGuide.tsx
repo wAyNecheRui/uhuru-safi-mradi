@@ -7,7 +7,7 @@ import {
   Users, Building2, Briefcase, MapPin, FileText, Vote, 
   Shield, Wallet, CheckCircle, ArrowRight, AlertTriangle,
   Phone, Camera, Star, Clock, TrendingUp, Eye, Settings,
-  Home, BookOpen, Wallet, UserCheck, FileSearch, ClipboardList
+  Home, BookOpen, UserCheck, FileSearch, ClipboardList
 } from 'lucide-react';
 import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';

@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   CheckCircle, XCircle, AlertCircle, Clock, Wallet, 
   Users, FileText, Award, TrendingUp, Loader2, RefreshCw,
-  AlertTriangle, MapPin, Camera, Shield, Gavel, Wallet
+  AlertTriangle, MapPin, Camera, Shield, Gavel
 } from 'lucide-react';
 import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
