@@ -469,22 +469,27 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
 
             {/* Location Verification */}
             <div>
-              <p className="text-sm font-medium mb-2">📍 Verify Your Location (Optional)</p>
+              <p className="text-sm font-medium mb-2">📍 Verify Your Location <span className="text-red-500">*Required</span></p>
               <Button
                 variant="outline"
                 onClick={handleGetLocation}
                 disabled={gettingLocation}
-                className="w-full"
+                className={`w-full ${proximityCheck === 'failed' ? 'border-red-400' : proximityCheck === 'passed' ? 'border-green-400' : ''}`}
               >
                 {gettingLocation ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Getting Location...
+                    Checking proximity to project site...
                   </>
-                ) : location ? (
+                ) : proximityCheck === 'passed' && location ? (
                   <>
                     <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
-                    Location Verified ({location.lat.toFixed(4)}, {location.lon.toFixed(4)})
+                    Within range ✅ ({location.lat.toFixed(4)}, {location.lon.toFixed(4)})
+                  </>
+                ) : proximityCheck === 'failed' ? (
+                  <>
+                    <AlertTriangle className="h-4 w-4 mr-2 text-red-600" />
+                    Too far from project site — Tap to retry
                   </>
                 ) : (
                   <>
@@ -493,6 +498,16 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
                   </>
                 )}
               </Button>
+              {proximityCheck === 'failed' && (
+                <p className="text-xs text-red-600 mt-1">
+                  You must be within 10km of the project location to verify. Please visit the site and try again.
+                </p>
+              )}
+              {proximityCheck === 'idle' && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  GPS location is mandatory to prevent fraud. You must be near the project site.
+                </p>
+              )}
             </div>
 
             {/* Rating */}
