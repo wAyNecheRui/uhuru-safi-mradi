@@ -19,6 +19,7 @@ export interface UserProfile {
   phone_verified: boolean;
   profile_completed: boolean;
   avatar_url?: string;
+  cover_url?: string;
   created_at: string;
   updated_at: string;
 }
