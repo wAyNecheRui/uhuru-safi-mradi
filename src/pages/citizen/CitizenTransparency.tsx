@@ -534,7 +534,7 @@ const CitizenTransparency = () => {
                         <Button 
                           variant="outline" 
                           size="sm"
-                          onClick={() => handleDownloadReport(account.project_id)}
+                          onClick={() => handleDownloadReport(account)}
                         >
                           <Download className="h-4 w-4 mr-2" />
                           Download Report
