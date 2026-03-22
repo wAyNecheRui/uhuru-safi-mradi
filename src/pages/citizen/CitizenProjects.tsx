@@ -125,11 +125,23 @@ const CitizenProjects = () => {
     try {
       const { data, error } = await supabase
         .from('projects')
-        .select('*')
+        .select('*, problem_reports!projects_report_id_fkey(category)')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setProjects(data || []);
+      
+      const projectsWithCategory = (data || []).map(p => ({
+        id: p.id,
+        title: p.title,
+        description: p.description,
+        status: p.status || 'planning',
+        budget: p.budget || 0,
+        contractor_id: p.contractor_id,
+        created_at: p.created_at,
+        report_id: p.report_id,
+        category: (p.problem_reports as any)?.category || null,
+      }));
+      setProjects(projectsWithCategory);
 
       // Fetch milestones and escrow info for each project
       for (const project of data || []) {
