@@ -87,7 +87,7 @@ const Landing = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-800 via-slate-700 to-slate-600">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
       {/* Header */}
       <nav className="bg-white/10 backdrop-blur-md border-b border-white/20 sticky top-0 z-50">
         <ResponsiveContainer>
