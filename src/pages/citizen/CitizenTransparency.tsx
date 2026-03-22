@@ -79,25 +79,26 @@ const CitizenTransparency = () => {
 
   const fetchData = async () => {
     try {
-      // Fetch verified contractors
+      // Fetch contractors from PUBLIC view (citizens can't access contractor_profiles directly via RLS)
       const { data: contractorsData } = await supabase
-        .from('contractor_profiles')
-        .select('id, user_id, company_name, verified, specialization, years_in_business')
-        .eq('verified', true);
+        .from('contractor_profiles_public')
+        .select('id, user_id, company_name, verified, specialization, years_in_business, average_rating, previous_projects_count, total_contract_value');
 
-      // For each contractor, fetch actual projects and ratings dynamically
-      const contractorIds = contractorsData?.map(c => c.user_id) || [];
+      const contractorIds = (contractorsData || []).map(c => c.user_id).filter(Boolean);
       
       // Fetch all projects for these contractors
-      const { data: projectsData } = await supabase
-        .from('projects')
-        .select('contractor_id, budget, status')
-        .in('contractor_id', contractorIds)
-        .is('deleted_at', null);
+      const { data: projectsData } = contractorIds.length > 0
+        ? await supabase
+            .from('projects')
+            .select('contractor_id, budget, status')
+            .in('contractor_id', contractorIds)
+            .is('deleted_at', null)
+        : { data: [] };
 
-      // Fetch REAL ratings from milestone_verifications & quality_checkpoints
-      // (contractor_ratings table is empty - ratings come from citizen verifications)
-      const realRatingsData = await fetchContractorRatingsFromVerifications(contractorIds);
+      // Fetch REAL ratings from milestone_verifications
+      const realRatingsData = contractorIds.length > 0
+        ? await fetchContractorRatingsFromVerifications(contractorIds)
+        : {};
 
       // Build stats maps
       const projectStats: Record<string, { count: number; totalValue: number }> = {};
