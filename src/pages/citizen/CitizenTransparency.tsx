@@ -382,11 +382,15 @@ const CitizenTransparency = () => {
                   </CardContent>
                 </Card>
               ) : filteredContractors.length === 0 ? (
-                <Card>
+              <Card>
                   <CardContent className="p-8 text-center">
                     <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-foreground mb-2">No Contractors Found</h3>
-                    <p className="text-muted-foreground">No verified contractors match your search criteria.</p>
+                    <h3 className="text-lg font-semibold text-foreground mb-2">No Contractors Yet</h3>
+                    <p className="text-muted-foreground">
+                      {searchTerm 
+                        ? 'No contractors match your search. Try different keywords.' 
+                        : 'No contractors have registered on the platform yet. Contractors will appear here once they create their profiles.'}
+                    </p>
                   </CardContent>
                 </Card>
               ) : (
