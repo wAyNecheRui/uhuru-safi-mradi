@@ -21,6 +21,7 @@ import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
 import ContractorPortfolioModal from '@/components/transparency/ContractorPortfolioModal';
+import ContractorBanner from '@/components/contractor/ContractorBanner';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { fetchContractorRatingsFromVerifications } from '@/utils/contractorRatingCalculation';
