@@ -398,7 +398,7 @@ const CitizenProjects = () => {
                 const photosCount = projectMilestones.reduce((sum, m) => sum + (m.evidence_urls?.length || 0), 0);
 
                 return (
-                  <Card key={project.id} className="shadow-lg hover:shadow-xl transition-shadow">
+                  <Card id={`project-${project.id}`} key={project.id} className="shadow-lg hover:shadow-xl transition-shadow">
                     <CardHeader>
                       <ContractorBanner contractorId={project.contractor_id} />
                       <div className="flex flex-col md:flex-row justify-between items-start gap-4">
