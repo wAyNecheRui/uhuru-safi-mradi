@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 import { 
   BookOpen, 
   AlertTriangle,
@@ -19,38 +20,27 @@ import {
   Phone,
   PlayCircle,
   Download,
-  ExternalLink
+  ExternalLink,
+  Info
 } from 'lucide-react';
 import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
 
 const CitizenGuide = () => {
+  const navigate = useNavigate();
   const breadcrumbItems = [
     { label: 'Home', href: '/' },
     { label: 'Citizen', href: '/citizen' },
     { label: 'Citizen Guide' }
   ];
 
-  const handleWatchTutorial = (tutorialId: string) => {
-    toast.info('Tutorial video loading... Video tutorials will be available soon.');
-  };
-
-  const handleDownloadPDF = (tutorialId: string) => {
-    toast.success('PDF guide downloading...');
-  };
-
-  const handleViewDocument = (documentTitle: string) => {
-    toast.info(`Opening: ${documentTitle}`);
-  };
-
   const handleContactSupport = () => {
-    window.open('mailto:support@infrastructure.go.ke', '_blank');
-    toast.success('Opening email client...');
+    navigate('/contact');
   };
 
   const handleVisitHelpCenter = () => {
-    toast.info('Help center documentation will open in a new tab.');
+    navigate('/user-guide');
   };
 
   const tutorials = [
