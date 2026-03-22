@@ -13,6 +13,8 @@ import {
   Users, TrendingUp, Eye, ExternalLink, Shield, Clock,
   CheckCircle2, XCircle, AlertCircle, ArrowLeft, Home, BarChart3, Globe, Star
 } from "lucide-react";
+import ContractorBanner from '@/components/contractor/ContractorBanner';
+import ProjectCategoryCarousel from '@/components/citizen/ProjectCategoryCarousel';
 import { format } from "date-fns";
 import { isProjectEffectivelyCompleted, getEffectiveProjectStatus } from "@/utils/progressCalculation";
 import { fetchContractorRatingsFromVerifications } from "@/utils/contractorRatingCalculation";
@@ -322,10 +324,33 @@ export default function PublicTransparencyPortal() {
           </TabsList>
 
           <TabsContent value="projects">
+            {/* Category Carousel View */}
+            {filteredProjects.length > 0 && (
+              <div className="mb-6">
+                <ProjectCategoryCarousel
+                  projects={filteredProjects.map(p => ({
+                    id: p.id,
+                    title: p.title,
+                    description: p.description,
+                    status: p.status,
+                    budget: p.budget || 0,
+                    contractor_id: p.contractor_id || null,
+                    category: p.report?.category || null,
+                    progress: p.milestones_count ? Math.round((p.completed_milestones! / p.milestones_count) * 100) : 0,
+                  }))}
+                  onSelectProject={(projectId) => {
+                    const proj = filteredProjects.find(p => p.id === projectId);
+                    if (proj) setSelectedProject(proj);
+                  }}
+                />
+              </div>
+            )}
+
             <div className="grid gap-4">
               {filteredProjects.map((project) => (
                 <Card key={project.id} className="hover:shadow-md transition-shadow">
                   <CardContent className="p-6">
+                    <ContractorBanner contractorId={project.contractor_id || null} />
                     <div className="flex flex-col lg:flex-row gap-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
@@ -352,19 +377,6 @@ export default function PublicTransparencyPortal() {
                             <Calendar className="h-4 w-4 text-muted-foreground" />
                             {format(new Date(project.created_at), 'PP')}
                           </span>
-                          {project.contractor && (
-                            <span className="flex items-center gap-1">
-                              <Building2 className="h-4 w-4 text-muted-foreground" />
-                              {project.contractor.company_name}
-                              {/* Show REAL rating from verifications */}
-                              {contractorRatings[project.contractor_id || '']?.totalRatings > 0 && (
-                                <span className="flex items-center gap-0.5 ml-1 text-amber-600">
-                                  <Star className="h-3 w-3 fill-current" />
-                                  {contractorRatings[project.contractor_id || ''].averageRating.toFixed(1)}
-                                </span>
-                              )}
-                            </span>
-                          )}
                         </div>
                       </div>
 

@@ -3,11 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog } from '@/components/ui/dialog';
-import { Building, MapPin, Calendar, Wallet, Users, Loader2, FolderOpen, Target, Award, CheckCircle } from 'lucide-react';
+import { Building, MapPin, Calendar, Wallet, Users, Loader2, FolderOpen, Target, Award, CheckCircle, LayoutGrid, List } from 'lucide-react';
 import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
 import ProjectLifecycleTracker from '@/components/workflow/ProjectLifecycleTracker';
 import ProjectCompletionForm from '@/components/government/ProjectCompletionForm';
+import ProjectCategoryCarousel from '@/components/citizen/ProjectCategoryCarousel';
 import { supabase } from '@/integrations/supabase/client';
 import ContractorBanner from '@/components/contractor/ContractorBanner';
 import { useToast } from '@/hooks/use-toast';
@@ -20,6 +21,7 @@ const GovernmentProjects = () => {
   const [loading, setLoading] = useState(true);
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
   const [completionProject, setCompletionProject] = useState<any | null>(null);
+  const [viewMode, setViewMode] = useState<'categories' | 'list'>('categories');
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -120,6 +122,30 @@ const GovernmentProjects = () => {
           <p className="text-gray-600">Monitor and manage all government infrastructure projects across Kenya.</p>
         </div>
 
+        {/* View Toggle */}
+        <div className="flex justify-end mb-4">
+          <div className="flex border rounded-lg overflow-hidden">
+            <Button 
+              variant={viewMode === 'categories' ? 'default' : 'ghost'} 
+              size="sm"
+              className="rounded-none"
+              onClick={() => setViewMode('categories')}
+            >
+              <LayoutGrid className="h-4 w-4 mr-1" />
+              Categories
+            </Button>
+            <Button 
+              variant={viewMode === 'list' ? 'default' : 'ghost'} 
+              size="sm"
+              className="rounded-none"
+              onClick={() => setViewMode('list')}
+            >
+              <List className="h-4 w-4 mr-1" />
+              List
+            </Button>
+          </div>
+        </div>
+
         <div className="space-y-6">
           {projects.length === 0 ? (
             <Card>
@@ -131,9 +157,29 @@ const GovernmentProjects = () => {
                 </p>
               </CardContent>
             </Card>
-          ) : (
-            projects.map((project) => (
-              <Card key={project.id} className="shadow-lg">
+          ) : viewMode === 'categories' ? (
+            <ProjectCategoryCarousel
+              projects={projects.map(p => ({
+                id: p.id,
+                title: p.title,
+                description: p.description,
+                status: p.effectiveStatus || p.status || 'planning',
+                budget: p.budget || 0,
+                contractor_id: p.contractor_id,
+                category: p.problem_reports?.category || null,
+                progress: 0,
+              }))}
+              onSelectProject={(projectId) => {
+                setViewMode('list');
+                setExpandedProject(projectId);
+                setTimeout(() => {
+                  document.getElementById(`gov-project-${projectId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 100);
+              }}
+            />
+          ) : (<>
+            {projects.map((project) => (
+              <Card key={project.id} id={`gov-project-${project.id}`} className="shadow-lg">
                 <CardHeader>
                   <ContractorBanner contractorId={project.contractor_id} />
                   <div className="flex justify-between items-start">
@@ -173,11 +219,9 @@ const GovernmentProjects = () => {
                       </span>
                     </div>
                     <div className="flex items-center">
-                      <Wallet className="h-4 w-4 mr-2 text-gray-500" />
+                      <Calendar className="h-4 w-4 mr-2 text-gray-500" />
                       <span className="text-sm">
-                        <span className="font-medium">Budget:</span> {project.budget 
-                          ? new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES' }).format(project.budget)
-                          : 'To be determined'}
+                        <span className="font-medium">Status:</span> {(project.effectiveStatus || project.status || 'planning').replace('_', ' ')}
                       </span>
                     </div>
                   </div>
@@ -239,8 +283,8 @@ const GovernmentProjects = () => {
                   )}
                 </CardContent>
               </Card>
-            ))
-          )}
+            ))}
+          </>)}
         </div>
       </main>
 

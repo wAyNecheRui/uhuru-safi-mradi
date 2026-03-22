@@ -21,6 +21,7 @@ import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
 import ContractorPortfolioModal from '@/components/transparency/ContractorPortfolioModal';
+import ContractorBanner from '@/components/contractor/ContractorBanner';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { fetchContractorRatingsFromVerifications } from '@/utils/contractorRatingCalculation';
@@ -368,6 +369,7 @@ const CitizenTransparency = () => {
                   {filteredContractors.map((contractor) => (
                     <Card key={contractor.id} className="hover:shadow-lg transition-shadow">
                       <CardContent className="p-6">
+                        <ContractorBanner contractorId={contractor.user_id} />
                         <div className="flex flex-col md:flex-row justify-between items-start gap-4">
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-2">
