@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { KENYA_COUNTIES } from '@/constants/kenyaAdministrativeUnits';
 
 interface MapProject {
   id: string;
@@ -50,10 +51,22 @@ export const useMapProjects = (selectedCounty: string) => {
           contractorData = contractors || [];
         }
 
-        // Filter projects by county if location contains county name
+        // Filter projects by county — match only against official 47 county names
+        const isValidCounty = KENYA_COUNTIES.some(
+          c => c.toLowerCase() === selectedCounty.toLowerCase()
+        );
+        
         const filteredData = data?.filter(project => {
           const location = project.problem_reports?.location;
-          return !location || location.toLowerCase().includes(selectedCounty.toLowerCase());
+          if (!location) return true; // Include projects without location
+          if (!isValidCounty) return true; // If not a valid county, show all
+          
+          // Match county name as a whole word to avoid sub-county confusion
+          const locationLower = location.toLowerCase();
+          const countyLower = selectedCounty.toLowerCase();
+          // Check for exact county match (not substring of a longer name)
+          const countyPattern = new RegExp(`\\b${countyLower.replace(/[-]/g, '[-\\s]?')}\\b`, 'i');
+          return countyPattern.test(locationLower);
         }) || [];
 
         const formattedProjects: MapProject[] = filteredData.map((project, index) => {

@@ -297,16 +297,5 @@ export const useLocationFiltering = () => {
   };
 };
 
-// Kenya counties for dropdown selection
-export const KENYA_COUNTIES = [
-  'Baringo', 'Bomet', 'Bungoma', 'Busia', 'Elgeyo-Marakwet',
-  'Embu', 'Garissa', 'Homa Bay', 'Isiolo', 'Kajiado',
-  'Kakamega', 'Kericho', 'Kiambu', 'Kilifi', 'Kirinyaga',
-  'Kisii', 'Kisumu', 'Kitui', 'Kwale', 'Laikipia',
-  'Lamu', 'Machakos', 'Makueni', 'Mandera', 'Marsabit',
-  'Meru', 'Migori', 'Mombasa', 'Murang\'a', 'Nairobi',
-  'Nakuru', 'Nandi', 'Narok', 'Nyamira', 'Nyandarua',
-  'Nyeri', 'Samburu', 'Siaya', 'Taita-Taveta', 'Tana River',
-  'Tharaka-Nithi', 'Trans-Nzoia', 'Turkana', 'Uasin Gishu',
-  'Vihiga', 'Wajir', 'West Pokot'
-];
+// Re-export from canonical source for backward compatibility
+export { KENYA_COUNTIES } from '@/constants/kenyaAdministrativeUnits';

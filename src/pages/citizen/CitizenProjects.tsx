@@ -16,6 +16,8 @@ import {
   TrendingUp,
   ArrowLeft,
   Target,
+  LayoutGrid,
+  List,
 } from 'lucide-react';
 import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
@@ -26,6 +28,7 @@ import ProjectProgressViewer from '@/components/citizen/ProjectProgressViewer';
 import MilestoneVerificationCard from '@/components/citizen/MilestoneVerificationCard';
 import QualityRatingModal from '@/components/citizen/QualityRatingModal';
 import ProjectIssueReportModal from '@/components/citizen/ProjectIssueReportModal';
+import ProjectCategoryCarousel from '@/components/citizen/ProjectCategoryCarousel';
 import { supabase } from '@/integrations/supabase/client';
 import ContractorBanner from '@/components/contractor/ContractorBanner';
 import { useAuth } from '@/contexts/AuthContext';
@@ -40,6 +43,7 @@ interface Project {
   contractor_id: string | null;
   created_at: string;
   report_id: string | null;
+  category: string | null;
 }
 
 interface Milestone {
@@ -69,6 +73,8 @@ const CitizenProjects = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showMapModal, setShowMapModal] = useState(false);
   const [selectedProjectForProgress, setSelectedProjectForProgress] = useState<Project | null>(null);
+  const [viewMode, setViewMode] = useState<'categories' | 'list'>('categories');
+  const [expandedProjectId, setExpandedProjectId] = useState<string | null>(null);
   
   const [selectedProjectForRating, setSelectedProjectForRating] = useState<Project | null>(null);
   const [selectedProjectForIssue, setSelectedProjectForIssue] = useState<Project | null>(null);
@@ -119,11 +125,23 @@ const CitizenProjects = () => {
     try {
       const { data, error } = await supabase
         .from('projects')
-        .select('*')
+        .select('*, problem_reports!projects_report_id_fkey(category)')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setProjects(data || []);
+      
+      const projectsWithCategory = (data || []).map(p => ({
+        id: p.id,
+        title: p.title,
+        description: p.description,
+        status: p.status || 'planning',
+        budget: p.budget || 0,
+        contractor_id: p.contractor_id,
+        created_at: p.created_at,
+        report_id: p.report_id,
+        category: (p.problem_reports as any)?.category || null,
+      }));
+      setProjects(projectsWithCategory);
 
       // Fetch milestones and escrow info for each project
       for (const project of data || []) {
@@ -304,18 +322,38 @@ const CitizenProjects = () => {
             <p className="text-gray-600">Monitor active infrastructure projects, verify milestones, and track community investments.</p>
           </div>
 
-          {/* Search Only - No Filter Dropdowns */}
+          {/* Search & View Toggle */}
           <Card className="mb-6">
-            <CardContent className="p-6">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  type="text"
-                  placeholder="Search projects by name or description..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex gap-3 items-center">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Search projects by name or description..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <div className="flex border rounded-lg overflow-hidden">
+                  <Button 
+                    variant={viewMode === 'categories' ? 'default' : 'ghost'} 
+                    size="sm"
+                    className="rounded-none"
+                    onClick={() => setViewMode('categories')}
+                  >
+                    <LayoutGrid className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    variant={viewMode === 'list' ? 'default' : 'ghost'} 
+                    size="sm"
+                    className="rounded-none"
+                    onClick={() => setViewMode('list')}
+                  >
+                    <List className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -334,6 +372,23 @@ const CitizenProjects = () => {
                 <p className="text-gray-600">No active projects match your search criteria.</p>
               </CardContent>
             </Card>
+          ) : viewMode === 'categories' ? (
+            <>
+              <ProjectCategoryCarousel
+                projects={filteredProjects.map(p => ({
+                  ...p,
+                  progress: calculateProgress(milestones[p.id] || []),
+                }))}
+                onSelectProject={(projectId) => {
+                  setExpandedProjectId(projectId);
+                  setViewMode('list');
+                  // Scroll to the project after switching view
+                  setTimeout(() => {
+                    document.getElementById(`project-${projectId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }, 100);
+                }}
+              />
+            </>
           ) : (
             <div className="space-y-6">
               {filteredProjects.map((project) => {
@@ -343,7 +398,7 @@ const CitizenProjects = () => {
                 const photosCount = projectMilestones.reduce((sum, m) => sum + (m.evidence_urls?.length || 0), 0);
 
                 return (
-                  <Card key={project.id} className="shadow-lg hover:shadow-xl transition-shadow">
+                  <Card id={`project-${project.id}`} key={project.id} className="shadow-lg hover:shadow-xl transition-shadow">
                     <CardHeader>
                       <ContractorBanner contractorId={project.contractor_id} />
                       <div className="flex flex-col md:flex-row justify-between items-start gap-4">
