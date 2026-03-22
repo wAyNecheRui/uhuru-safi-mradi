@@ -213,8 +213,10 @@ const CitizenProjects = () => {
   };
 
   const handlePhotoEvidence = (projectId: string) => {
-    setSelectedProject(projects.find(p => p.id === projectId) || null);
-    setShowProgressViewer(true);
+    const project = projects.find(p => p.id === projectId);
+    if (project) {
+      setSelectedProjectForProgress(project);
+    }
   };
 
   const handleQRCheckin = async (projectId: string) => {
