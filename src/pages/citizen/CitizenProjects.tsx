@@ -372,6 +372,23 @@ const CitizenProjects = () => {
                 <p className="text-gray-600">No active projects match your search criteria.</p>
               </CardContent>
             </Card>
+          ) : viewMode === 'categories' ? (
+            <>
+              <ProjectCategoryCarousel
+                projects={filteredProjects.map(p => ({
+                  ...p,
+                  progress: calculateProgress(milestones[p.id] || []),
+                }))}
+                onSelectProject={(projectId) => {
+                  setExpandedProjectId(projectId);
+                  setViewMode('list');
+                  // Scroll to the project after switching view
+                  setTimeout(() => {
+                    document.getElementById(`project-${projectId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }, 100);
+                }}
+              />
+            </>
           ) : (
             <div className="space-y-6">
               {filteredProjects.map((project) => {
