@@ -16,6 +16,8 @@ import {
   TrendingUp,
   ArrowLeft,
   Target,
+  LayoutGrid,
+  List,
 } from 'lucide-react';
 import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
@@ -26,6 +28,7 @@ import ProjectProgressViewer from '@/components/citizen/ProjectProgressViewer';
 import MilestoneVerificationCard from '@/components/citizen/MilestoneVerificationCard';
 import QualityRatingModal from '@/components/citizen/QualityRatingModal';
 import ProjectIssueReportModal from '@/components/citizen/ProjectIssueReportModal';
+import ProjectCategoryCarousel from '@/components/citizen/ProjectCategoryCarousel';
 import { supabase } from '@/integrations/supabase/client';
 import ContractorBanner from '@/components/contractor/ContractorBanner';
 import { useAuth } from '@/contexts/AuthContext';
@@ -40,6 +43,7 @@ interface Project {
   contractor_id: string | null;
   created_at: string;
   report_id: string | null;
+  category: string | null;
 }
 
 interface Milestone {
