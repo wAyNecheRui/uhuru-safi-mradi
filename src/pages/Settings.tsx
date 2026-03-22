@@ -601,8 +601,8 @@ const Settings = () => {
               <CardContent className="p-0 divide-y divide-border">
                 {[
                   { label: 'User Guide', icon: <HelpCircle className="h-4 w-4" />, action: () => navigate('/user-guide') },
-                  { label: 'Terms of Service', icon: <FileText className="h-4 w-4" />, action: () => toast.info('Terms of Service coming soon') },
-                  { label: 'Privacy Policy', icon: <Shield className="h-4 w-4" />, action: () => toast.info('Privacy Policy coming soon') },
+                  { label: 'Terms of Service', icon: <FileText className="h-4 w-4" />, action: () => navigate('/terms') },
+                  { label: 'Privacy Policy', icon: <Shield className="h-4 w-4" />, action: () => navigate('/privacy') },
                   { label: 'Contact Support', icon: <Mail className="h-4 w-4" />, action: () => navigate('/contact') },
                   { label: 'Public Transparency Portal', icon: <Globe className="h-4 w-4" />, action: () => navigate('/public/transparency') },
                 ].map(({ label, icon, action }) => (

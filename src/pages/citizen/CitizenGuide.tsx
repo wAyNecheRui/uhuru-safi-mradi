@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 import { 
   BookOpen, 
   AlertTriangle,
@@ -19,38 +20,27 @@ import {
   Phone,
   PlayCircle,
   Download,
-  ExternalLink
+  ExternalLink,
+  Info
 } from 'lucide-react';
 import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
 
 const CitizenGuide = () => {
+  const navigate = useNavigate();
   const breadcrumbItems = [
     { label: 'Home', href: '/' },
     { label: 'Citizen', href: '/citizen' },
     { label: 'Citizen Guide' }
   ];
 
-  const handleWatchTutorial = (tutorialId: string) => {
-    toast.info('Tutorial video loading... Video tutorials will be available soon.');
-  };
-
-  const handleDownloadPDF = (tutorialId: string) => {
-    toast.success('PDF guide downloading...');
-  };
-
-  const handleViewDocument = (documentTitle: string) => {
-    toast.info(`Opening: ${documentTitle}`);
-  };
-
   const handleContactSupport = () => {
-    window.open('mailto:support@infrastructure.go.ke', '_blank');
-    toast.success('Opening email client...');
+    navigate('/contact');
   };
 
   const handleVisitHelpCenter = () => {
-    toast.info('Help center documentation will open in a new tab.');
+    navigate('/user-guide');
   };
 
   const tutorials = [
@@ -296,6 +286,22 @@ const CitizenGuide = () => {
             </TabsContent>
 
             <TabsContent value="data" className="space-y-6">
+              <Card className="border-blue-200 bg-blue-50">
+                <CardContent className="p-4 flex items-start gap-3">
+                  <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-blue-800">
+                    Access real project data, budget allocations, and performance metrics through the{' '}
+                    <button onClick={() => navigate('/citizen/transparency')} className="font-semibold underline hover:text-blue-900">
+                      Transparency Portal
+                    </button>{' '}
+                    and{' '}
+                    <button onClick={() => navigate('/citizen/projects')} className="font-semibold underline hover:text-blue-900">
+                      Projects Dashboard
+                    </button>.
+                  </p>
+                </CardContent>
+              </Card>
+
               {localDataSections.map((section, index) => {
                 const IconComponent = section.icon;
                 return (
@@ -310,15 +316,9 @@ const CitizenGuide = () => {
                     <CardContent>
                       <ul className="space-y-3">
                         {section.items.map((item, itemIndex) => (
-                          <li key={itemIndex} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                          <li key={itemIndex} className="flex items-center p-3 bg-gray-50 rounded-lg">
+                            <CheckCircle className="h-4 w-4 text-green-500 mr-3 flex-shrink-0" />
                             <span className="text-gray-700">{item}</span>
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => handleViewDocument(item)}
-                            >
-                              <ExternalLink className="h-4 w-4" />
-                            </Button>
                           </li>
                         ))}
                       </ul>
@@ -327,7 +327,24 @@ const CitizenGuide = () => {
                 );
               })}
 
-              {/* Contact Information - Removed USSD reference */}
+              <div className="grid md:grid-cols-2 gap-4">
+                <Button 
+                  className="h-auto py-4 bg-green-600 hover:bg-green-700"
+                  onClick={() => navigate('/citizen/transparency')}
+                >
+                  <Wallet className="h-5 w-5 mr-2" />
+                  View Transparency Portal
+                </Button>
+                <Button 
+                  className="h-auto py-4 bg-blue-600 hover:bg-blue-700"
+                  onClick={() => navigate('/citizen/projects')}
+                >
+                  <FileText className="h-5 w-5 mr-2" />
+                  View Active Projects
+                </Button>
+              </div>
+
+              {/* Contact Information */}
               <Card className="border-green-200 bg-green-50">
                 <CardHeader>
                   <CardTitle className="flex items-center text-green-800">
@@ -340,13 +357,13 @@ const CitizenGuide = () => {
                     <div className="p-4 bg-white rounded-lg text-center">
                       <Phone className="h-8 w-8 text-blue-600 mx-auto mb-2" />
                       <h4 className="font-medium mb-1">Support Hotline</h4>
-                      <p className="text-blue-600 font-semibold">0800 123 456</p>
+                      <a href="tel:0800123456" className="text-blue-600 font-semibold hover:underline">0800 123 456</a>
                       <p className="text-sm text-gray-600">Toll-free</p>
                     </div>
                     <div className="p-4 bg-white rounded-lg text-center">
                       <Shield className="h-8 w-8 text-red-600 mx-auto mb-2" />
                       <h4 className="font-medium mb-1">EACC Hotline</h4>
-                      <p className="text-red-600 font-semibold">0800 720 099</p>
+                      <a href="tel:0800720099" className="text-red-600 font-semibold hover:underline">0800 720 099</a>
                       <p className="text-sm text-gray-600">Anonymous</p>
                     </div>
                   </div>

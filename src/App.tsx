@@ -80,6 +80,8 @@ const DisputeResolution = lazy(() => import("./pages/DisputeResolution"));
 
 // Settings
 const SettingsPage = lazy(() => import("./pages/Settings"));
+const Terms = lazy(() => import("./pages/Terms"));
+const Privacy = lazy(() => import("./pages/Privacy"));
 
 // Minimal loader for lazy routes
 const PageLoader = () => (
@@ -118,6 +120,8 @@ const App = () => {
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/user-guide" element={<UserGuide />} />
+                  <Route path="/terms" element={<Terms />} />
+                  <Route path="/privacy" element={<Privacy />} />
                   <Route path="/settings" element={
                     <ProtectedRoute allowedRoles={["citizen", "contractor", "government", "admin"]}>
                       <SettingsPage />
