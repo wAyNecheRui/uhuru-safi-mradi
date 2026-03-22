@@ -13,6 +13,8 @@ import {
   Users, TrendingUp, Eye, ExternalLink, Shield, Clock,
   CheckCircle2, XCircle, AlertCircle, ArrowLeft, Home, BarChart3, Globe, Star
 } from "lucide-react";
+import ContractorBanner from '@/components/contractor/ContractorBanner';
+import ProjectCategoryCarousel from '@/components/citizen/ProjectCategoryCarousel';
 import { format } from "date-fns";
 import { isProjectEffectivelyCompleted, getEffectiveProjectStatus } from "@/utils/progressCalculation";
 import { fetchContractorRatingsFromVerifications } from "@/utils/contractorRatingCalculation";
