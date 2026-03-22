@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { KENYA_COUNTIES } from '@/constants/kenyaAdministrativeUnits';
 
 interface MapProject {
   id: string;
