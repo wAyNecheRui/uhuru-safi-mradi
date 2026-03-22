@@ -73,6 +73,8 @@ const CitizenProjects = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showMapModal, setShowMapModal] = useState(false);
   const [selectedProjectForProgress, setSelectedProjectForProgress] = useState<Project | null>(null);
+  const [viewMode, setViewMode] = useState<'categories' | 'list'>('categories');
+  const [expandedProjectId, setExpandedProjectId] = useState<string | null>(null);
   
   const [selectedProjectForRating, setSelectedProjectForRating] = useState<Project | null>(null);
   const [selectedProjectForIssue, setSelectedProjectForIssue] = useState<Project | null>(null);
