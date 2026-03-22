@@ -369,6 +369,7 @@ const CitizenTransparency = () => {
                   {filteredContractors.map((contractor) => (
                     <Card key={contractor.id} className="hover:shadow-lg transition-shadow">
                       <CardContent className="p-6">
+                        <ContractorBanner contractorId={contractor.user_id} />
                         <div className="flex flex-col md:flex-row justify-between items-start gap-4">
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-2">

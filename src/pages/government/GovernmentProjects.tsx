@@ -179,7 +179,7 @@ const GovernmentProjects = () => {
             />
           ) : (
             projects.map((project) => (
-              <Card key={project.id} className="shadow-lg">
+              <Card key={project.id} id={`gov-project-${project.id}`} className="shadow-lg">
                 <CardHeader>
                   <ContractorBanner contractorId={project.contractor_id} />
                   <div className="flex justify-between items-start">
