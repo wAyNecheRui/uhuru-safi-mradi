@@ -21,6 +21,7 @@ const GovernmentProjects = () => {
   const [loading, setLoading] = useState(true);
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
   const [completionProject, setCompletionProject] = useState<any | null>(null);
+  const [viewMode, setViewMode] = useState<'categories' | 'list'>('categories');
   const { toast } = useToast();
   const navigate = useNavigate();
   
