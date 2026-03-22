@@ -322,18 +322,38 @@ const CitizenProjects = () => {
             <p className="text-gray-600">Monitor active infrastructure projects, verify milestones, and track community investments.</p>
           </div>
 
-          {/* Search Only - No Filter Dropdowns */}
+          {/* Search & View Toggle */}
           <Card className="mb-6">
-            <CardContent className="p-6">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  type="text"
-                  placeholder="Search projects by name or description..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex gap-3 items-center">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Search projects by name or description..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <div className="flex border rounded-lg overflow-hidden">
+                  <Button 
+                    variant={viewMode === 'categories' ? 'default' : 'ghost'} 
+                    size="sm"
+                    className="rounded-none"
+                    onClick={() => setViewMode('categories')}
+                  >
+                    <LayoutGrid className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    variant={viewMode === 'list' ? 'default' : 'ghost'} 
+                    size="sm"
+                    className="rounded-none"
+                    onClick={() => setViewMode('list')}
+                  >
+                    <List className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
