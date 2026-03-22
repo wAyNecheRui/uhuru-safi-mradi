@@ -122,6 +122,30 @@ const GovernmentProjects = () => {
           <p className="text-gray-600">Monitor and manage all government infrastructure projects across Kenya.</p>
         </div>
 
+        {/* View Toggle */}
+        <div className="flex justify-end mb-4">
+          <div className="flex border rounded-lg overflow-hidden">
+            <Button 
+              variant={viewMode === 'categories' ? 'default' : 'ghost'} 
+              size="sm"
+              className="rounded-none"
+              onClick={() => setViewMode('categories')}
+            >
+              <LayoutGrid className="h-4 w-4 mr-1" />
+              Categories
+            </Button>
+            <Button 
+              variant={viewMode === 'list' ? 'default' : 'ghost'} 
+              size="sm"
+              className="rounded-none"
+              onClick={() => setViewMode('list')}
+            >
+              <List className="h-4 w-4 mr-1" />
+              List
+            </Button>
+          </div>
+        </div>
+
         <div className="space-y-6">
           {projects.length === 0 ? (
             <Card>
@@ -133,6 +157,26 @@ const GovernmentProjects = () => {
                 </p>
               </CardContent>
             </Card>
+          ) : viewMode === 'categories' ? (
+            <ProjectCategoryCarousel
+              projects={projects.map(p => ({
+                id: p.id,
+                title: p.title,
+                description: p.description,
+                status: p.effectiveStatus || p.status || 'planning',
+                budget: p.budget || 0,
+                contractor_id: p.contractor_id,
+                category: p.problem_reports?.category || null,
+                progress: 0,
+              }))}
+              onSelectProject={(projectId) => {
+                setViewMode('list');
+                setExpandedProject(projectId);
+                setTimeout(() => {
+                  document.getElementById(`gov-project-${projectId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 100);
+              }}
+            />
           ) : (
             projects.map((project) => (
               <Card key={project.id} className="shadow-lg">
