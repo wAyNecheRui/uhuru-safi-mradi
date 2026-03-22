@@ -245,8 +245,32 @@ const CitizenTransparency = () => {
     window.open('https://eacc.go.ke/default/report-corruption/', '_blank');
   };
 
-  const handleDownloadReport = (projectId: string) => {
-    toast.success('Downloading escrow account report...');
+  const handleDownloadReport = (account: EscrowAccount) => {
+    try {
+      const csvContent = [
+        'Field,Value',
+        `Project,${account.project_title}`,
+        `Status,${account.status}`,
+        `Total Budget,KES ${account.total_amount?.toLocaleString() || 0}`,
+        `Held in Escrow,KES ${account.held_amount?.toLocaleString() || 0}`,
+        `Released,KES ${account.released_amount?.toLocaleString() || 0}`,
+        `Funding Progress,${account.total_amount ? Math.round(((account.held_amount + account.released_amount) / account.total_amount) * 100) : 0}%`,
+        `Report Generated,${new Date().toLocaleString('en-KE')}`
+      ].join('\n');
+      
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `escrow-report-${account.project_title.replace(/\s+/g, '-').toLowerCase()}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success('Report downloaded successfully');
+    } catch {
+      toast.error('Failed to generate report');
+    }
   };
 
   const filteredContractors = contractors.filter(contractor =>
