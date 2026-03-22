@@ -219,11 +219,9 @@ const GovernmentProjects = () => {
                       </span>
                     </div>
                     <div className="flex items-center">
-                      <Wallet className="h-4 w-4 mr-2 text-gray-500" />
+                      <Calendar className="h-4 w-4 mr-2 text-gray-500" />
                       <span className="text-sm">
-                        <span className="font-medium">Budget:</span> {project.budget 
-                          ? new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES' }).format(project.budget)
-                          : 'To be determined'}
+                        <span className="font-medium">Status:</span> {(project.effectiveStatus || project.status || 'planning').replace('_', ' ')}
                       </span>
                     </div>
                   </div>
