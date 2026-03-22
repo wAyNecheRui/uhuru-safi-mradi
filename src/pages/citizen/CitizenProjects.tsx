@@ -213,7 +213,8 @@ const CitizenProjects = () => {
   };
 
   const handlePhotoEvidence = (projectId: string) => {
-    toast.info('Photo evidence viewer coming soon. Project milestones contain evidence uploads.');
+    setSelectedProject(projects.find(p => p.id === projectId) || null);
+    setShowProgressViewer(true);
   };
 
   const handleQRCheckin = async (projectId: string) => {
