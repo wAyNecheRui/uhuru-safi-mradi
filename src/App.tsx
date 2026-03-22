@@ -80,6 +80,8 @@ const DisputeResolution = lazy(() => import("./pages/DisputeResolution"));
 
 // Settings
 const SettingsPage = lazy(() => import("./pages/Settings"));
+const Terms = lazy(() => import("./pages/Terms"));
+const Privacy = lazy(() => import("./pages/Privacy"));
 
 // Minimal loader for lazy routes
 const PageLoader = () => (
