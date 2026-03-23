@@ -168,6 +168,7 @@ const GovernmentProjects = () => {
                 contractor_id: p.contractor_id,
                 category: p.problem_reports?.category || null,
                 progress: 0,
+                photo_url: p.problem_reports?.photo_urls?.[0] || null,
               }))}
               onSelectProject={(projectId) => {
                 setViewMode('list');
