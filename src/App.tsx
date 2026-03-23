@@ -73,6 +73,7 @@ const GovernmentPaymentRelease = lazy(() => import("./pages/government/Governmen
 
 // Public Routes
 const PublicTransparencyPortal = lazy(() => import("./pages/public/PublicTransparencyPortal"));
+const PublicProjects = lazy(() => import("./pages/public/PublicProjects"));
 const UserGuide = lazy(() => import("./pages/UserGuide"));
 
 // Dispute Resolution
@@ -519,6 +520,7 @@ const App = () => {
                   
                   {/* Public Routes */}
                   <Route path="/transparency" element={<PublicTransparencyPortal />} />
+                  <Route path="/projects" element={<PublicProjects />} />
                   
                   {/* Catch-all route */}
                   <Route path="*" element={<NotFound />} />

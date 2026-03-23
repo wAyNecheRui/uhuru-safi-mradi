@@ -358,38 +358,52 @@ const CitizenDashboard = () => {
                 ) : (
                   <div className="space-y-3 sm:space-y-4">
                     {reports.slice(0, 3).map((report) => (
-                      <div key={report.id} className="border border-gray-200 rounded-lg p-3 sm:p-4 hover:bg-gray-50 transition-colors">
-                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2 gap-2">
-                          <div className="flex-1">
-                            <h3 className="font-semibold text-gray-900 text-sm sm:text-base">{report.title}</h3>
-                            <p className="text-xs sm:text-sm text-gray-600 mt-1 line-clamp-2">{report.description}</p>
-                            <div className="flex flex-wrap items-center text-xs sm:text-sm text-gray-500 mt-2 gap-3">
-                              <div className="flex items-center">
-                                <MapPin className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                                {report.location || 'Location not specified'}
-                              </div>
-                              <div className="flex items-center">
-                                <Clock className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                                {formatDate(report.created_at)}
+                      <div key={report.id} className="border border-border rounded-xl overflow-hidden hover:shadow-md transition-all">
+                        {/* Hero photo */}
+                        {report.photo_urls && report.photo_urls.length > 0 ? (
+                          <div className="w-full h-[140px] overflow-hidden bg-muted">
+                            <img 
+                              src={report.photo_urls[0]} 
+                              alt={report.title}
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-full h-[80px] bg-gradient-to-br from-muted to-muted/60 flex items-center justify-center">
+                            <FileText className="h-6 w-6 text-muted-foreground/40" />
+                          </div>
+                        )}
+                        <div className="p-3 sm:p-4">
+                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2 gap-2">
+                            <div className="flex-1">
+                              <h3 className="font-semibold text-foreground text-sm sm:text-base">{report.title}</h3>
+                              <p className="text-xs sm:text-sm text-muted-foreground mt-1 line-clamp-2">{report.description}</p>
+                              <div className="flex flex-wrap items-center text-xs sm:text-sm text-muted-foreground mt-2 gap-3">
+                                <div className="flex items-center">
+                                  <MapPin className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                                  {report.location || 'Location not specified'}
+                                </div>
+                                <div className="flex items-center">
+                                  <Clock className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                                  {formatDate(report.created_at)}
+                                </div>
                               </div>
                             </div>
                           </div>
-                          <Badge variant="outline" className="text-xs font-medium self-start">
-                            {report.id.substring(0, 8)}
-                          </Badge>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          <Badge className={`text-xs ${getStatusColor((report as any).effective_status || report.status || 'pending')}`}>
-                            {((report as any).effective_status || report.status || 'pending').replace(/_/g, ' ').toUpperCase()}
-                          </Badge>
-                          <Badge className={`text-xs ${getPriorityColor(report.priority || 'medium')}`}>
-                            {(report.priority || 'medium').toUpperCase()} Priority
-                          </Badge>
-                          {(report as any).project_id && (
-                            <Badge variant="outline" className="text-xs text-green-600">
-                              Project Active
+                          <div className="flex flex-wrap gap-2">
+                            <Badge className={`text-xs ${getStatusColor((report as any).effective_status || report.status || 'pending')}`}>
+                              {((report as any).effective_status || report.status || 'pending').replace(/_/g, ' ').toUpperCase()}
                             </Badge>
-                          )}
+                            <Badge className={`text-xs ${getPriorityColor(report.priority || 'medium')}`}>
+                              {(report.priority || 'medium').toUpperCase()} Priority
+                            </Badge>
+                            {(report as any).project_id && (
+                              <Badge variant="outline" className="text-xs text-green-600">
+                                Project Active
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                       </div>
                     ))}

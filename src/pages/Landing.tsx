@@ -101,11 +101,11 @@ const Landing = () => {
             </div>
             
             <div className="hidden md:flex items-center gap-1">
-              {['Transparency', 'About', 'How it Works', 'Contact'].map((item) => (
+              {['Projects', 'Transparency', 'About', 'How it Works', 'Contact'].map((item) => (
                 <button 
                   key={item}
                   className="text-white/70 hover:text-white hover:bg-white/10 px-3 py-2 rounded-lg transition-all duration-200 text-sm font-medium"
-                  onClick={() => navigate(`/${item.toLowerCase().replace(/ /g, '-')}`)}
+                  onClick={() => navigate(item === 'Projects' ? '/projects' : `/${item.toLowerCase().replace(/ /g, '-')}`)}
                 >
                   {item}
                 </button>

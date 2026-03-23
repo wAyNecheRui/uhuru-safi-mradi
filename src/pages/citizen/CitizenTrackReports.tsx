@@ -3,9 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, MapPin, Clock, FileText, Eye, Trash2 } from 'lucide-react';
+import { Search, MapPin, Clock, FileText, Eye, Trash2, ImageOff } from 'lucide-react';
 import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
+import ContractorBanner from '@/components/contractor/ContractorBanner';
 import ReportDetailsModal from '@/components/ReportDetailsModal';
 import { useCitizenData } from '@/hooks/useCitizenData';
 import {
@@ -120,12 +121,35 @@ const CitizenTrackReports = () => {
             </Card>
           ) : (
             filteredReports.map((report) => (
-              <Card key={report.id} className="shadow-lg hover:shadow-xl transition-shadow">
+              <Card key={report.id} className="shadow-lg hover:shadow-xl transition-shadow overflow-hidden">
+                {/* Hero Photo */}
+                {report.photo_urls && report.photo_urls.length > 0 ? (
+                  <div className="w-full h-[180px] sm:h-[220px] overflow-hidden bg-muted">
+                    <img 
+                      src={report.photo_urls[0]} 
+                      alt={report.title}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-full h-[100px] bg-gradient-to-br from-muted to-muted/60 flex items-center justify-center">
+                    <ImageOff className="h-8 w-8 text-muted-foreground/40" />
+                  </div>
+                )}
+
+                {/* Contractor Banner if project assigned */}
+                {(report as any).project_id && (
+                  <div className="px-4 pt-3">
+                    <ContractorBanner contractorId={(report as any).contractor_id} compact />
+                  </div>
+                )}
+
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
                       <CardTitle className="text-xl mb-2">{report.title}</CardTitle>
-                      <div className="flex items-center text-sm text-gray-500 space-x-4">
+                      <div className="flex items-center text-sm text-muted-foreground space-x-4">
                         <div className="flex items-center">
                           <MapPin className="h-4 w-4 mr-1" />
                           {report.location}
