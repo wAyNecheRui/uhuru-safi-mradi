@@ -95,11 +95,9 @@
 @layer base {
   * {
     @apply border-border;
-    /* Prevent any element from causing horizontal overflow */
     box-sizing: border-box;
   }
 
-  /* Global overflow protection */
   html {
     font-size: 16px;
     -webkit-text-size-adjust: 100%;
@@ -108,6 +106,7 @@
     overflow-x: hidden;
     width: 100%;
     max-width: 100vw;
+    scroll-behavior: smooth;
   }
 
   body {
@@ -116,6 +115,8 @@
     width: 100%;
     max-width: 100vw;
     position: relative;
+    line-height: 1.6;
+    letter-spacing: -0.01em;
   }
 
   #root {
@@ -124,6 +125,11 @@
     max-width: 100vw;
     min-height: 100vh;
     position: relative;
+  }
+
+  /* Smooth transitions globally */
+  a, button, [role="button"], input, select, textarea {
+    transition: all 0.2s ease;
   }
 
   /* Touch-friendly tap highlight for mobile */
