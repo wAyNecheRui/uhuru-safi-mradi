@@ -44,6 +44,7 @@ interface Project {
   created_at: string;
   report_id: string | null;
   category: string | null;
+  photo_urls: string[] | null;
 }
 
 interface Milestone {
