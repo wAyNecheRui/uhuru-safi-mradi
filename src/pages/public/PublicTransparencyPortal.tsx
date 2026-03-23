@@ -338,6 +338,7 @@ export default function PublicTransparencyPortal() {
                     contractor_id: p.contractor_id || null,
                     category: p.report?.category || null,
                     progress: p.milestones_count ? Math.round((p.completed_milestones! / p.milestones_count) * 100) : 0,
+                    photo_url: p.report?.photo_urls?.[0] || null,
                   }))}
                   onSelectProject={(projectId) => {
                     const proj = filteredProjects.find(p => p.id === projectId);
