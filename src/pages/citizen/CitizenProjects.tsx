@@ -44,6 +44,7 @@ interface Project {
   created_at: string;
   report_id: string | null;
   category: string | null;
+  photo_urls: string[] | null;
 }
 
 interface Milestone {
@@ -125,7 +126,7 @@ const CitizenProjects = () => {
     try {
       const { data, error } = await supabase
         .from('projects')
-        .select('*, problem_reports!projects_report_id_fkey(category)')
+        .select('*, problem_reports!projects_report_id_fkey(category, photo_urls)')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -140,6 +141,7 @@ const CitizenProjects = () => {
         created_at: p.created_at,
         report_id: p.report_id,
         category: (p.problem_reports as any)?.category || null,
+        photo_urls: (p.problem_reports as any)?.photo_urls || null,
       }));
       setProjects(projectsWithCategory);
 
@@ -378,11 +380,11 @@ const CitizenProjects = () => {
                 projects={filteredProjects.map(p => ({
                   ...p,
                   progress: calculateProgress(milestones[p.id] || []),
+                  photo_url: p.photo_urls?.[0] || null,
                 }))}
                 onSelectProject={(projectId) => {
                   setExpandedProjectId(projectId);
                   setViewMode('list');
-                  // Scroll to the project after switching view
                   setTimeout(() => {
                     document.getElementById(`project-${projectId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                   }, 100);
@@ -397,8 +399,19 @@ const CitizenProjects = () => {
                 const progress = calculateProgress(projectMilestones);
                 const photosCount = projectMilestones.reduce((sum, m) => sum + (m.evidence_urls?.length || 0), 0);
 
-                return (
-                  <Card id={`project-${project.id}`} key={project.id} className="shadow-lg hover:shadow-xl transition-shadow">
+                  return (
+                  <Card id={`project-${project.id}`} key={project.id} className="shadow-lg hover:shadow-xl transition-shadow overflow-hidden">
+                    {/* Hero Photo from citizen report */}
+                    {project.photo_urls?.[0] && (
+                      <div className="w-full h-[200px] sm:h-[240px] overflow-hidden">
+                        <img 
+                          src={project.photo_urls[0]} 
+                          alt={project.title}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                      </div>
+                    )}
                     <CardHeader>
                       <ContractorBanner contractorId={project.contractor_id} />
                       <div className="flex flex-col md:flex-row justify-between items-start gap-4">

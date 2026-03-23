@@ -3,11 +3,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { ChevronLeft, ChevronRight, Wallet } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Wallet, ImageOff } from 'lucide-react';
 import ContractorBanner from '@/components/contractor/ContractorBanner';
 import { CATEGORIES } from '@/constants/problemReporting';
 
-interface ProjectWithCategory {
+export interface ProjectWithCategory {
   id: string;
   title: string;
   description: string;
@@ -16,6 +16,7 @@ interface ProjectWithCategory {
   contractor_id: string | null;
   category: string | null;
   progress: number;
+  photo_url?: string | null;
 }
 
 interface ProjectCategoryCarouselProps {
@@ -103,23 +104,35 @@ const CategoryRow = ({
             className="flex-shrink-0 w-[280px] sm:w-[320px] snap-start cursor-pointer"
             onClick={() => onSelectProject(project.id)}
           >
-            <Card className="h-full hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5 border border-border/60">
+            <Card className="h-full hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5 border border-border/60 overflow-hidden">
+              {/* Hero Photo */}
+              {project.photo_url ? (
+                <div className="w-full h-[160px] overflow-hidden bg-muted">
+                  <img 
+                    src={project.photo_url} 
+                    alt={project.title}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                </div>
+              ) : (
+                <div className="w-full h-[100px] bg-gradient-to-br from-muted to-muted/60 flex items-center justify-center">
+                  <ImageOff className="h-8 w-8 text-muted-foreground/40" />
+                </div>
+              )}
+
               {/* Contractor Banner - compact */}
-              <div className="px-3 pt-3">
+              <div className="px-3 pt-2">
                 <ContractorBanner contractorId={project.contractor_id} compact />
               </div>
               
               <CardContent className="p-3 pt-2">
-                <h3 className="font-semibold text-sm text-foreground line-clamp-2 mb-2 min-h-[2.5rem]">
+                <h3 className="font-semibold text-sm text-foreground line-clamp-2 mb-1 min-h-[2.5rem]">
                   {project.title}
                 </h3>
-                
-                <p className="text-xs text-muted-foreground line-clamp-2 mb-3">
-                  {project.description}
-                </p>
 
                 {/* Progress */}
-                <div className="mb-3">
+                <div className="mb-2">
                   <div className="flex justify-between text-xs text-muted-foreground mb-1">
                     <span>Progress</span>
                     <span className="font-semibold text-foreground">{project.progress}%</span>

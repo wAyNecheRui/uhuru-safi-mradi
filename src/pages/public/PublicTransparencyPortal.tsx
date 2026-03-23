@@ -31,6 +31,7 @@ interface Project {
     location: string;
     category: string;
     priority: string;
+    photo_urls?: string[];
   };
   escrow?: {
     total_amount: number;
@@ -86,7 +87,7 @@ export default function PublicTransparencyPortal() {
           if (project.report_id) {
             const { data } = await supabase
               .from('problem_reports')
-              .select('location, category, priority')
+              .select('location, category, priority, photo_urls')
               .eq('id', project.report_id)
               .maybeSingle();
             report = data;
@@ -337,6 +338,7 @@ export default function PublicTransparencyPortal() {
                     contractor_id: p.contractor_id || null,
                     category: p.report?.category || null,
                     progress: p.milestones_count ? Math.round((p.completed_milestones! / p.milestones_count) * 100) : 0,
+                    photo_url: p.report?.photo_urls?.[0] || null,
                   }))}
                   onSelectProject={(projectId) => {
                     const proj = filteredProjects.find(p => p.id === projectId);
@@ -348,7 +350,18 @@ export default function PublicTransparencyPortal() {
 
             <div className="grid gap-4">
               {filteredProjects.map((project) => (
-                <Card key={project.id} className="hover:shadow-md transition-shadow">
+                <Card key={project.id} className="hover:shadow-md transition-shadow overflow-hidden">
+                  {/* Hero Photo */}
+                  {project.report?.photo_urls?.[0] && (
+                    <div className="w-full h-[200px] sm:h-[240px] overflow-hidden">
+                      <img 
+                        src={project.report.photo_urls[0]} 
+                        alt={project.title}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    </div>
+                  )}
                   <CardContent className="p-6">
                     <ContractorBanner contractorId={project.contractor_id || null} />
                     <div className="flex flex-col lg:flex-row gap-4">
