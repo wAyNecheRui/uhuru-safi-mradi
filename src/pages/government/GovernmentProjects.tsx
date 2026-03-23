@@ -180,9 +180,19 @@ const GovernmentProjects = () => {
             />
           ) : (<>
             {projects.map((project) => (
-              <Card key={project.id} id={`gov-project-${project.id}`} className="shadow-lg">
+              <Card key={project.id} id={`gov-project-${project.id}`} className="shadow-lg overflow-hidden">
+                {/* Hero Photo */}
+                {project.problem_reports?.photo_urls?.[0] && (
+                  <div className="w-full h-[200px] sm:h-[240px] overflow-hidden">
+                    <img 
+                      src={project.problem_reports.photo_urls[0]} 
+                      alt={project.title}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                )}
                 <CardHeader>
-                  <ContractorBanner contractorId={project.contractor_id} />
                   <div className="flex justify-between items-start">
                     <div>
                       <CardTitle className="text-xl mb-2">{project.title}</CardTitle>
