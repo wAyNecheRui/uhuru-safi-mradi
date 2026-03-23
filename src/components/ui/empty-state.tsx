@@ -1,7 +1,5 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { LucideIcon, FileX, Users, Building, AlertCircle } from 'lucide-react';
 
 interface EmptyStateProps {
@@ -23,20 +21,18 @@ export const EmptyState = ({
   className = ""
 }: EmptyStateProps) => {
   return (
-    <Card className={`${className}`}>
-      <CardContent className="flex flex-col items-center justify-center py-12 px-6 text-center">
-        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-          <Icon className="h-8 w-8 text-gray-400" />
-        </div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
-        <p className="text-gray-600 mb-6 max-w-sm leading-relaxed">{description}</p>
-        {action && (
-          <Button onClick={action.onClick} className="bg-blue-600 hover:bg-blue-700">
-            {action.label}
-          </Button>
-        )}
-      </CardContent>
-    </Card>
+    <div className={`flex flex-col items-center justify-center py-16 px-6 text-center ${className}`}>
+      <div className="w-14 h-14 bg-muted rounded-2xl flex items-center justify-center mb-4">
+        <Icon className="h-6 w-6 text-muted-foreground" />
+      </div>
+      <h3 className="text-base font-semibold text-foreground mb-1.5">{title}</h3>
+      <p className="text-sm text-muted-foreground mb-6 max-w-xs leading-relaxed">{description}</p>
+      {action && (
+        <Button onClick={action.onClick} size="sm">
+          {action.label}
+        </Button>
+      )}
+    </div>
   );
 };
 
@@ -56,7 +52,7 @@ export const NoUsersFound = ({ onInviteUsers }: { onInviteUsers?: () => void }) 
   <EmptyState
     icon={Users}
     title="No Users Found"
-    description="No users have been registered yet. Invite users to join the platform and start collaborating."
+    description="No users have been registered yet. Invite users to join the platform."
     action={onInviteUsers ? {
       label: "Invite Users",
       onClick: onInviteUsers

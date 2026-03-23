@@ -1,5 +1,4 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp, Users, Briefcase } from 'lucide-react';
 import { useViewport } from '@/hooks/useViewport';
 import { cn } from '@/lib/utils';
@@ -23,7 +22,7 @@ const StatsCards = ({ projectStats, getText }: StatsCardsProps) => {
       value: projectStats.activeProjects,
       subtitle: getText('Ongoing infrastructure work', 'Kazi za miundombinu zinazoendelea'),
       gradient: 'from-green-500 to-green-600',
-      subtitleColor: 'text-green-100'
+      iconBg: 'bg-green-400/20',
     },
     {
       icon: Users,
@@ -31,7 +30,7 @@ const StatsCards = ({ projectStats, getText }: StatsCardsProps) => {
       value: projectStats.citizenReports.toLocaleString(),
       subtitle: getText('Issues reported this month', 'Masuala yaliyoripotiwa mwezi huu'),
       gradient: 'from-blue-500 to-blue-600',
-      subtitleColor: 'text-blue-100'
+      iconBg: 'bg-blue-400/20',
     },
     {
       icon: Briefcase,
@@ -39,52 +38,49 @@ const StatsCards = ({ projectStats, getText }: StatsCardsProps) => {
       value: projectStats.totalFunds,
       subtitle: getText('Allocated this fiscal year', 'Zimegawiwa mwaka huu wa fedha'),
       gradient: 'from-purple-500 to-purple-600',
-      subtitleColor: 'text-purple-100'
+      iconBg: 'bg-purple-400/20',
     }
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5 stagger-children">
       {stats.map((stat, index) => {
         const IconComponent = stat.icon;
         return (
-          <Card 
-            key={index} 
+          <div
+            key={index}
             className={cn(
-              'bg-gradient-to-br text-white',
-              stat.gradient
+              'relative bg-gradient-to-br text-white rounded-2xl overflow-hidden card-hover',
+              stat.gradient,
+              isMobile ? 'p-4' : 'p-5'
             )}
           >
-            <CardHeader className={cn(
-              'pb-1 sm:pb-2',
-              isMobile ? 'p-3' : 'p-4 sm:p-6'
-            )}>
-              <CardTitle className={cn(
-                'font-medium flex items-center',
-                isMobile ? 'text-sm' : 'text-base lg:text-lg'
-              )}>
-                <IconComponent className={cn(
-                  'mr-2 flex-shrink-0',
-                  isMobile ? 'h-4 w-4' : 'h-5 w-5'
-                )} />
-                <span className="truncate">{stat.title}</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className={isMobile ? 'p-3 pt-0' : 'p-4 sm:p-6 pt-0'}>
+            {/* Decorative circle */}
+            <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-white/10" />
+            
+            <div className="relative">
+              <div className="flex items-center justify-between mb-3">
+                <span className={cn(
+                  'font-medium',
+                  isMobile ? 'text-sm' : 'text-sm'
+                )}>
+                  {stat.title}
+                </span>
+                <div className={cn('rounded-xl p-2', stat.iconBg)}>
+                  <IconComponent className="h-4 w-4" />
+                </div>
+              </div>
               <div className={cn(
-                'font-bold',
-                isMobile ? 'text-2xl' : 'text-2xl sm:text-3xl'
+                'font-bold tracking-tight',
+                isMobile ? 'text-2xl' : 'text-3xl'
               )}>
                 {stat.value}
               </div>
-              <p className={cn(
-                stat.subtitleColor,
-                isMobile ? 'text-xs line-clamp-1' : 'text-sm line-clamp-2'
-              )}>
+              <p className="text-white/70 text-xs mt-1 line-clamp-1">
                 {stat.subtitle}
               </p>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         );
       })}
     </div>
