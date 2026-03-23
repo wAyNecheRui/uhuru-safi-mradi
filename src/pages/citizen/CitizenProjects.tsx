@@ -380,11 +380,11 @@ const CitizenProjects = () => {
                 projects={filteredProjects.map(p => ({
                   ...p,
                   progress: calculateProgress(milestones[p.id] || []),
+                  photo_url: p.photo_urls?.[0] || null,
                 }))}
                 onSelectProject={(projectId) => {
                   setExpandedProjectId(projectId);
                   setViewMode('list');
-                  // Scroll to the project after switching view
                   setTimeout(() => {
                     document.getElementById(`project-${projectId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                   }, 100);
