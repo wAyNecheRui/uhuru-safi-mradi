@@ -399,8 +399,19 @@ const CitizenProjects = () => {
                 const progress = calculateProgress(projectMilestones);
                 const photosCount = projectMilestones.reduce((sum, m) => sum + (m.evidence_urls?.length || 0), 0);
 
-                return (
-                  <Card id={`project-${project.id}`} key={project.id} className="shadow-lg hover:shadow-xl transition-shadow">
+                  return (
+                  <Card id={`project-${project.id}`} key={project.id} className="shadow-lg hover:shadow-xl transition-shadow overflow-hidden">
+                    {/* Hero Photo from citizen report */}
+                    {project.photo_urls?.[0] && (
+                      <div className="w-full h-[200px] sm:h-[240px] overflow-hidden">
+                        <img 
+                          src={project.photo_urls[0]} 
+                          alt={project.title}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                      </div>
+                    )}
                     <CardHeader>
                       <ContractorBanner contractorId={project.contractor_id} />
                       <div className="flex flex-col md:flex-row justify-between items-start gap-4">
