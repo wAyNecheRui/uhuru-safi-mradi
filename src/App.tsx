@@ -73,6 +73,7 @@ const GovernmentPaymentRelease = lazy(() => import("./pages/government/Governmen
 
 // Public Routes
 const PublicTransparencyPortal = lazy(() => import("./pages/public/PublicTransparencyPortal"));
+const PublicProjects = lazy(() => import("./pages/public/PublicProjects"));
 const UserGuide = lazy(() => import("./pages/UserGuide"));
 
 // Dispute Resolution
