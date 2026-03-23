@@ -31,6 +31,7 @@ interface Project {
     location: string;
     category: string;
     priority: string;
+    photo_urls?: string[];
   };
   escrow?: {
     total_amount: number;
