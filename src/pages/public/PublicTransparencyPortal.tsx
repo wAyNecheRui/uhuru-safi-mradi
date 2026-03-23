@@ -86,7 +86,7 @@ export default function PublicTransparencyPortal() {
           if (project.report_id) {
             const { data } = await supabase
               .from('problem_reports')
-              .select('location, category, priority')
+              .select('location, category, priority, photo_urls')
               .eq('id', project.report_id)
               .maybeSingle();
             report = data;

@@ -193,6 +193,7 @@ const GovernmentProjects = () => {
                   </div>
                 )}
                 <CardHeader>
+                  <ContractorBanner contractorId={project.contractor_id} />
                   <div className="flex justify-between items-start">
                     <div>
                       <CardTitle className="text-xl mb-2">{project.title}</CardTitle>
