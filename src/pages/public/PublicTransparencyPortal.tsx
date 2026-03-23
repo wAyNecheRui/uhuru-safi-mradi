@@ -349,7 +349,18 @@ export default function PublicTransparencyPortal() {
 
             <div className="grid gap-4">
               {filteredProjects.map((project) => (
-                <Card key={project.id} className="hover:shadow-md transition-shadow">
+                <Card key={project.id} className="hover:shadow-md transition-shadow overflow-hidden">
+                  {/* Hero Photo */}
+                  {project.report?.photo_urls?.[0] && (
+                    <div className="w-full h-[200px] sm:h-[240px] overflow-hidden">
+                      <img 
+                        src={project.report.photo_urls[0]} 
+                        alt={project.title}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    </div>
+                  )}
                   <CardContent className="p-6">
                     <ContractorBanner contractorId={project.contractor_id || null} />
                     <div className="flex flex-col lg:flex-row gap-4">
