@@ -1,10 +1,9 @@
-
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Shield, Users, Building, Eye, Wallet, CheckCircle, TrendingUp, ChevronRight } from 'lucide-react';
+import { Shield, Users, Building, Eye, Wallet, CheckCircle, TrendingUp, ChevronRight, ArrowRight } from 'lucide-react';
 import logoImg from '@/assets/uhuru-safi-logo.png';
 import MobileNavigation from '@/components/MobileNavigation';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
@@ -21,7 +20,6 @@ const Landing = () => {
       description: 'Report infrastructure problems, verify project progress, and register your skills for opportunities.',
       icon: Users,
       color: 'from-slate-600 to-slate-700',
-      hoverColor: 'hover:from-slate-700 hover:to-slate-800',
       detailedDescription: {
         overview: 'Citizens are the backbone of transparent governance, serving as both reporters and verifiers of community infrastructure needs.',
         responsibilities: [
@@ -44,7 +42,6 @@ const Landing = () => {
       description: 'Bid on verified projects, track progress, and receive guaranteed payments through secure escrow.',
       icon: Building,
       color: 'from-slate-600 to-slate-700',
-      hoverColor: 'hover:from-slate-700 hover:to-slate-800',
       detailedDescription: {
         overview: 'Contractors are verified service providers who deliver infrastructure solutions with guaranteed payment security.',
         responsibilities: [
@@ -67,7 +64,6 @@ const Landing = () => {
       description: 'Oversee projects, manage budgets, and ensure transparent allocation of public funds.',
       icon: Shield,
       color: 'from-slate-600 to-slate-700',
-      hoverColor: 'hover:from-slate-700 hover:to-slate-800',
       detailedDescription: {
         overview: 'Government officials ensure responsible stewardship of public resources through transparent project management.',
         responsibilities: [
@@ -86,163 +82,153 @@ const Landing = () => {
     }
   ];
 
+  const features = [
+    { icon: Eye, title: 'Full Transparency', description: 'Real-time project tracking and public fund visibility', color: 'text-amber-400' },
+    { icon: Wallet, title: 'Secure Escrow', description: 'Guaranteed contractor payments upon milestone completion', color: 'text-emerald-400' },
+    { icon: CheckCircle, title: 'Citizen Verification', description: 'Community-validated project needs and progress', color: 'text-blue-400' },
+    { icon: TrendingUp, title: 'Data Analytics', description: 'Comprehensive reporting and performance insights', color: 'text-indigo-400' },
+  ];
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
       {/* Header */}
-      <nav className="bg-white/10 backdrop-blur-md border-b border-white/20 sticky top-0 z-50">
+      <nav className="bg-white/5 backdrop-blur-xl border-b border-white/10 sticky top-0 z-50">
         <ResponsiveContainer>
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-3">
-              <img src={logoImg} alt="Uhuru Safi" className="w-8 h-8 sm:w-10 sm:h-10 object-contain" />
-              <span className="text-white font-bold text-lg sm:text-xl">Uhuru Safi</span>
+          <div className="flex justify-between items-center h-14 sm:h-16">
+            <div className="flex items-center gap-3">
+              <img src={logoImg} alt="Uhuru Safi" className="w-8 h-8 sm:w-9 sm:h-9 object-contain" />
+              <span className="text-white font-bold text-lg">Uhuru Safi</span>
             </div>
             
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-6">
-              <button 
-                className="text-white hover:text-slate-200 transition-colors text-sm lg:text-base"
-                onClick={() => navigate('/transparency')}
-              >
-                Transparency
-              </button>
-              <button 
-                className="text-white hover:text-slate-200 transition-colors text-sm lg:text-base"
-                onClick={() => navigate('/about')}
-              >
-                About
-              </button>
-              <button 
-                className="text-white hover:text-slate-200 transition-colors text-sm lg:text-base"
-                onClick={() => navigate('/how-it-works')}
-              >
-                How it Works
-              </button>
-              <button 
-                className="text-white hover:text-slate-200 transition-colors text-sm lg:text-base"
-                onClick={() => navigate('/contact')}
-              >
-                Contact
-              </button>
+            <div className="hidden md:flex items-center gap-1">
+              {['Transparency', 'About', 'How it Works', 'Contact'].map((item) => (
+                <button 
+                  key={item}
+                  className="text-white/70 hover:text-white hover:bg-white/10 px-3 py-2 rounded-lg transition-all duration-200 text-sm font-medium"
+                  onClick={() => navigate(`/${item.toLowerCase().replace(/ /g, '-')}`)}
+                >
+                  {item}
+                </button>
+              ))}
             </div>
 
-            {/* Mobile Navigation */}
             <MobileNavigation />
           </div>
         </ResponsiveContainer>
       </nav>
 
-      {/* Main Content */}
       <main>
-        <ResponsiveContainer className="py-8 sm:py-12 lg:py-16">
-          <div className="text-center mb-12 lg:mb-16">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 sm:mb-6 leading-tight">
+        {/* Hero */}
+        <ResponsiveContainer className="pt-12 sm:pt-16 lg:pt-20 pb-8 sm:pb-12">
+          <div className="text-center max-w-3xl mx-auto">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4 leading-tight tracking-tight">
               Transparent Government
-              <span className="block text-amber-400 mt-2">Project Delivery</span>
+              <span className="block text-amber-400 mt-1">Project Delivery</span>
             </h1>
-            <p className="text-lg sm:text-xl text-slate-200 mb-6 sm:mb-8 max-w-3xl mx-auto px-4 leading-relaxed">
+            <p className="text-base sm:text-lg text-slate-300 mb-8 max-w-2xl mx-auto leading-relaxed">
               Empowering citizens to identify infrastructure needs, connecting verified contractors, 
-              and ensuring transparent project funding and delivery through innovative escrow mechanisms.
+              and ensuring transparent project funding through innovative escrow mechanisms.
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-4 justify-center px-4">
-              <Button 
-                size={isMobile ? "default" : "lg"}
-                className="bg-amber-500 hover:bg-amber-600 text-white w-full sm:w-auto"
-                onClick={() => navigate('/auth')}
-              >
-                Get Started
-              </Button>
-            </div>
+            <Button 
+              size="lg"
+              className="bg-amber-500 hover:bg-amber-600 text-white rounded-xl px-8 h-12 text-base font-semibold shadow-lg shadow-amber-500/20"
+              onClick={() => navigate('/auth')}
+            >
+              Get Started
+              <ArrowRight className="w-4 h-4 ml-1" />
+            </Button>
           </div>
+        </ResponsiveContainer>
 
-          {/* Role Information Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 mb-12 lg:mb-16 px-4">
+        {/* Role Cards */}
+        <ResponsiveContainer className="pb-12 sm:pb-16">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-6 stagger-children">
             {userTypes.map((userType) => {
               const IconComponent = userType.icon;
               return (
-                <Card key={userType.id} className="group transform transition-all duration-300 hover:scale-105 hover:shadow-xl bg-white/10 backdrop-blur-md border-white/20 hover:bg-white/20">
-                  <CardHeader className="text-center pb-4 p-4 sm:p-6">
-                    <div className={`w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br ${userType.color} rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:shadow-lg transition-all duration-300`}>
-                      <IconComponent className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
+                <Card 
+                  key={userType.id} 
+                  className="group bg-white/[0.07] backdrop-blur-md border-white/10 hover:bg-white/[0.12] transition-all duration-300 card-hover"
+                >
+                  <CardHeader className="text-center pb-3 pt-6">
+                    <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center mx-auto mb-3 group-hover:bg-white/15 transition-colors">
+                      <IconComponent className="h-7 w-7 text-white" />
                     </div>
-                    <CardTitle className="text-xl sm:text-2xl font-bold text-white group-hover:text-amber-400 transition-colors">
+                    <CardTitle className="text-lg font-bold text-white group-hover:text-amber-400 transition-colors">
                       {userType.title}
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="text-center pb-6 sm:pb-8 p-4 sm:p-6">
-                    <p className="text-slate-200 mb-4 sm:mb-6 font-medium text-sm sm:text-base leading-relaxed">
+                  <CardContent className="text-center pb-6">
+                    <p className="text-slate-300 text-sm leading-relaxed mb-5">
                       {userType.description}
                     </p>
                     
-                    <div className="flex flex-col gap-2">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button 
-                            variant="outline" 
-                            size={isMobile ? "sm" : "default"}
-                            className="bg-white/20 border-white/30 text-white hover:bg-white/30 hover:text-amber-400 transition-colors w-full"
-                          >
-                            Learn More
-                            <ChevronRight className="w-4 h-4 ml-2" />
-                          </Button>
-                        </DialogTrigger>
-                      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto mx-4 sm:mx-0">
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className="bg-white/10 border-white/20 text-white hover:bg-white/20 hover:text-amber-400 rounded-lg w-full"
+                        >
+                          Learn More
+                          <ChevronRight className="w-3.5 h-3.5 ml-1" />
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-lg max-h-[85dvh] overflow-y-auto">
                         <DialogHeader>
-                          <DialogTitle className="flex items-center space-x-3 text-xl sm:text-2xl">
-                            <div className={`w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br ${userType.color} rounded-xl flex items-center justify-center`}>
-                              <IconComponent className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                          <DialogTitle className="flex items-center gap-3 text-lg">
+                            <div className={`w-10 h-10 bg-gradient-to-br ${userType.color} rounded-xl flex items-center justify-center`}>
+                              <IconComponent className="h-5 w-5 text-white" />
                             </div>
-                            <span>{userType.title} Role</span>
+                            {userType.title} Role
                           </DialogTitle>
                         </DialogHeader>
                         
-                        <div className="space-y-6 mt-6">
-                          {/* Overview Section */}
-                          <div className="bg-slate-50 rounded-lg p-4 sm:p-6">
-                            <h3 className="text-base sm:text-lg font-semibold text-slate-900 mb-3">Role Overview</h3>
-                            <p className="text-slate-700 leading-relaxed text-sm sm:text-base">
+                        <div className="space-y-5 mt-4">
+                          <div className="bg-muted rounded-xl p-4">
+                            <h3 className="text-sm font-semibold text-foreground mb-2">Overview</h3>
+                            <p className="text-sm text-muted-foreground leading-relaxed">
                               {userType.detailedDescription.overview}
                             </p>
                           </div>
                           
-                          {/* Responsibilities Section */}
                           <div>
-                            <h3 className="text-base sm:text-lg font-semibold text-slate-900 mb-4 flex items-center">
-                              <CheckCircle className="w-5 h-5 text-blue-600 mr-2" />
+                            <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                              <CheckCircle className="w-4 h-4 text-blue-600" />
                               Key Responsibilities
                             </h3>
-                            <div className="space-y-3">
-                              {userType.detailedDescription.responsibilities.map((responsibility, index) => (
-                                <div key={index} className="flex items-start space-x-3 p-3 bg-blue-50 rounded-lg">
-                                  <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                                  <p className="text-slate-700 text-sm leading-relaxed">{responsibility}</p>
+                            <div className="space-y-2">
+                              {userType.detailedDescription.responsibilities.map((r, i) => (
+                                <div key={i} className="flex items-start gap-2.5 p-2.5 bg-blue-50 rounded-lg">
+                                  <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-1.5 shrink-0" />
+                                  <p className="text-sm text-foreground/80 leading-relaxed">{r}</p>
                                 </div>
                               ))}
                             </div>
                           </div>
                           
-                          {/* Benefits Section */}
                           <div>
-                            <h3 className="text-base sm:text-lg font-semibold text-slate-900 mb-4 flex items-center">
-                              <TrendingUp className="w-5 h-5 text-emerald-600 mr-2" />
+                            <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                              <TrendingUp className="w-4 h-4 text-emerald-600" />
                               Key Benefits
                             </h3>
-                            <div className="space-y-3">
-                              {userType.detailedDescription.benefits.map((benefit, index) => (
-                                <div key={index} className="flex items-start space-x-3 p-3 bg-emerald-50 rounded-lg">
-                                  <div className="w-2 h-2 bg-emerald-500 rounded-full mt-2 flex-shrink-0"></div>
-                                  <p className="text-slate-700 text-sm leading-relaxed">{benefit}</p>
+                            <div className="space-y-2">
+                              {userType.detailedDescription.benefits.map((b, i) => (
+                                <div key={i} className="flex items-start gap-2.5 p-2.5 bg-emerald-50 rounded-lg">
+                                  <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full mt-1.5 shrink-0" />
+                                  <p className="text-sm text-foreground/80 leading-relaxed">{b}</p>
                                 </div>
                               ))}
                             </div>
                           </div>
                           
-                          {/* Call to Action */}
-                          <div className="bg-gradient-to-r from-amber-50 to-amber-100 rounded-lg p-4 sm:p-6 text-center">
-                            <h4 className="text-base sm:text-lg font-semibold text-slate-900 mb-2">Ready to Get Started?</h4>
-                            <p className="text-slate-600 mb-4 text-sm sm:text-base">Sign up to access {userType.title.toLowerCase()} features and make a difference.</p>
+                          <div className="bg-amber-50 rounded-xl p-4 text-center">
+                            <h4 className="text-sm font-semibold text-foreground mb-1.5">Ready to Get Started?</h4>
+                            <p className="text-xs text-muted-foreground mb-3">Join as a {userType.title.toLowerCase()} and make a difference.</p>
                             <Button 
-                              className="bg-amber-500 hover:bg-amber-600 text-white w-full sm:w-auto"
+                              size="sm"
+                              className="bg-amber-500 hover:bg-amber-600 text-white"
                               onClick={() => navigate('/auth')}
                             >
                               Sign Up Now
@@ -251,56 +237,54 @@ const Landing = () => {
                         </div>
                       </DialogContent>
                     </Dialog>
-                    </div>
                   </CardContent>
                 </Card>
               );
             })}
           </div>
+        </ResponsiveContainer>
 
-          {/* Features Section */}
-          <div className="text-center mb-12 lg:mb-16 px-4">
-            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-6 sm:mb-8">Key Features</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
-              <div className="text-center p-4">
-                <Eye className="w-10 h-10 sm:w-12 sm:h-12 text-amber-400 mx-auto mb-4" />
-                <h4 className="text-lg font-semibold text-white mb-2">Full Transparency</h4>
-                <p className="text-slate-200 text-sm leading-relaxed">Real-time project tracking and public fund visibility</p>
+        {/* Features */}
+        <ResponsiveContainer className="pb-12 sm:pb-16">
+          <h2 className="text-xl sm:text-2xl font-bold text-white text-center mb-8">Key Features</h2>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 stagger-children">
+            {features.map((f, i) => (
+              <div key={i} className="text-center p-4 sm:p-5 bg-white/[0.05] rounded-2xl border border-white/10 hover:bg-white/[0.08] transition-all duration-200">
+                <div className="w-11 h-11 bg-white/10 rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <f.icon className={`w-5 h-5 ${f.color}`} />
+                </div>
+                <h4 className="text-sm font-semibold text-white mb-1">{f.title}</h4>
+                <p className="text-xs text-slate-400 leading-relaxed">{f.description}</p>
               </div>
-              <div className="text-center p-4">
-                <Wallet className="w-10 h-10 sm:w-12 sm:h-12 text-emerald-400 mx-auto mb-4" />
-                <h4 className="text-lg font-semibold text-white mb-2">Secure Escrow</h4>
-                <p className="text-slate-200 text-sm leading-relaxed">Guaranteed contractor payments upon milestone completion</p>
-              </div>
-              <div className="text-center p-4">
-                <CheckCircle className="w-10 h-10 sm:w-12 sm:h-12 text-blue-400 mx-auto mb-4" />
-                <h4 className="text-lg font-semibold text-white mb-2">Citizen Verification</h4>
-                <p className="text-slate-200 text-sm leading-relaxed">Community-validated project needs and progress</p>
-              </div>
-              <div className="text-center p-4">
-                <TrendingUp className="w-10 h-10 sm:w-12 sm:h-12 text-indigo-400 mx-auto mb-4" />
-                <h4 className="text-lg font-semibold text-white mb-2">Data Analytics</h4>
-                <p className="text-slate-200 text-sm leading-relaxed">Comprehensive reporting and performance insights</p>
-              </div>
-            </div>
+            ))}
           </div>
+        </ResponsiveContainer>
 
-          {/* Call to Action */}
-          <div className="text-center bg-white/10 backdrop-blur-md rounded-2xl p-6 sm:p-8 border border-white/20 mx-4">
-            <h3 className="text-xl sm:text-2xl font-bold text-white mb-4">Explore Platform Features</h3>
-            <p className="text-slate-200 mb-6 text-sm sm:text-base leading-relaxed">Browse through citizen, contractor, and government dashboards to see all features.</p>
+        {/* CTA */}
+        <ResponsiveContainer className="pb-12 sm:pb-16">
+          <div className="text-center bg-white/[0.07] backdrop-blur-md rounded-2xl p-6 sm:p-8 border border-white/10">
+            <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Explore Platform Features</h3>
+            <p className="text-sm text-slate-300 mb-5 max-w-md mx-auto leading-relaxed">
+              Browse through citizen, contractor, and government dashboards to see all features.
+            </p>
+            <Button 
+              variant="outline"
+              className="bg-white/10 border-white/20 text-white hover:bg-white/20 rounded-xl"
+              onClick={() => navigate('/auth')}
+            >
+              Sign In to Explore
+              <ArrowRight className="w-4 h-4 ml-1" />
+            </Button>
           </div>
         </ResponsiveContainer>
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-white/20 bg-white/5 backdrop-blur-md py-6 sm:py-8 mt-12 lg:mt-16">
+      <footer className="border-t border-white/10 bg-white/[0.03] py-6">
         <ResponsiveContainer>
-          <div className="text-center">
-            <p className="text-slate-300 text-xs sm:text-sm leading-relaxed">
-              Built for transparency in Kenyan governance • Empowering communities through technology
-            </p>
-          </div>
+          <p className="text-center text-slate-400 text-xs leading-relaxed">
+            Built for transparency in Kenyan governance • Empowering communities through technology
+          </p>
         </ResponsiveContainer>
       </footer>
     </div>
