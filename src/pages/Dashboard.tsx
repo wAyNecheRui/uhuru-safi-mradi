@@ -28,35 +28,32 @@ const Dashboard = () => {
   const getText = (en: string) => en;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
+    <div className="min-h-screen bg-background">
       <Header />
 
       <main>
-        <ResponsiveContainer className="py-6 sm:py-8">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
+        <ResponsiveContainer className="py-5 sm:py-6">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-5">
             <TabNavigation getText={getText} />
 
-            {/* Overview Tab */}
-            <TabsContent value="overview" className="space-y-4 sm:space-y-6">
+            <TabsContent value="overview" className="space-y-5 mt-0">
               {statsLoading ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                  {[...Array(6)].map((_, i) => (
-                    <div key={i} className="bg-white p-4 rounded-lg shadow animate-pulse">
-                      <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                      <div className="h-6 bg-gray-200 rounded"></div>
-                    </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="h-28 bg-muted rounded-2xl animate-pulse" />
                   ))}
                 </div>
               ) : projectStats ? (
                 <StatsCards projectStats={projectStats} getText={getText} />
               ) : null}
 
-              {/* Map and Recent Issues */}
-              <div className={`grid gap-4 sm:gap-6 ${isMobile ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2'}`}>
-                <Card className="shadow-lg">
-                  <CardHeader>
-                    <CardTitle className="flex items-center text-lg sm:text-xl">
-                      <MapPin className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-green-600" />
+              <div className={`grid gap-5 ${isMobile ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2'}`}>
+                <Card className="shadow-sm">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="flex items-center text-base font-semibold">
+                      <div className="p-1.5 rounded-lg bg-green-50 mr-2.5">
+                        <MapPin className="h-4 w-4 text-green-600" />
+                      </div>
                       Project Map
                     </CardTitle>
                   </CardHeader>
@@ -66,13 +63,10 @@ const Dashboard = () => {
                 </Card>
 
                 {issuesLoading ? (
-                  <div className="bg-white p-6 rounded-lg shadow animate-pulse">
-                    <div className="h-6 bg-gray-200 rounded mb-4"></div>
+                  <div className="bg-card border rounded-xl p-6 animate-pulse space-y-3">
+                    <div className="h-5 bg-muted rounded w-1/3" />
                     {[...Array(3)].map((_, i) => (
-                      <div key={i} className="border-b pb-3 mb-3 last:border-b-0">
-                        <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                        <div className="h-3 bg-gray-200 rounded w-2/3"></div>
-                      </div>
+                      <div key={i} className="h-20 bg-muted rounded-xl" />
                     ))}
                   </div>
                 ) : (
@@ -87,10 +81,6 @@ const Dashboard = () => {
 
             <TabsContent value="offline">
               <OfflineSupport />
-            </TabsContent>
-
-            <TabsContent value="voting">
-              <CommunityVoting />
             </TabsContent>
 
             <TabsContent value="voting">

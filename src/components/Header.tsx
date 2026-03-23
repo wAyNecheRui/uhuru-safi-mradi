@@ -11,23 +11,15 @@ import { cn } from '@/lib/utils';
 const Header = () => {
   const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
-  const { isMobile, isTablet } = useViewport();
+  const { isMobile } = useViewport();
 
   const handleHomeClick = () => {
     if (isAuthenticated && user) {
-      // Navigate to user's respective dashboard
       switch (user.user_type) {
-        case 'citizen':
-          navigate('/citizen');
-          break;
-        case 'contractor':
-          navigate('/contractor');
-          break;
-        case 'government':
-          navigate('/government');
-          break;
-        default:
-          navigate('/');
+        case 'citizen': navigate('/citizen'); break;
+        case 'contractor': navigate('/contractor'); break;
+        case 'government': navigate('/government'); break;
+        default: navigate('/');
       }
     } else {
       navigate('/');
@@ -36,22 +28,16 @@ const Header = () => {
 
   return (
     <header 
-      className={cn(
-        'bg-card shadow-lg border-b-4 sticky top-0 z-50 safe-top',
-        'border-primary'
-      )}
+      className="bg-card/95 backdrop-blur-md shadow-sm border-b sticky top-0 z-50 safe-top"
     >
       <div className={cn(
         'container mx-auto',
-        isMobile ? 'px-3 py-3' : 'px-4 sm:px-6 py-4 sm:py-5'
+        isMobile ? 'px-4 py-3' : 'px-6 py-3.5'
       )}>
-        <div className="flex items-center justify-between gap-2 sm:gap-4">
+        <div className="flex items-center justify-between gap-3">
           {/* Logo and Title */}
           <div 
-            className={cn(
-              'flex items-center flex-1 min-w-0 cursor-pointer',
-              isMobile ? 'gap-2' : 'gap-3 sm:gap-4'
-            )}
+            className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer group"
             onClick={handleHomeClick}
             role="button"
             tabIndex={0}
@@ -59,20 +45,20 @@ const Header = () => {
             aria-label="Go to home"
           >
             <div className={cn(
-              'rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden',
-              isMobile ? 'w-9 h-9' : 'w-10 h-10 sm:w-12 sm:h-12'
+              'rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden transition-transform duration-200 group-hover:scale-105',
+              isMobile ? 'w-9 h-9' : 'w-10 h-10'
             )}>
               <img src={logoImg} alt="Uhuru Safi" className="w-full h-full object-contain" />
             </div>
             <div className="min-w-0 flex-1">
               <h1 className={cn(
-                'font-bold text-foreground truncate',
-                isMobile ? 'text-base' : 'text-lg sm:text-xl lg:text-2xl'
+                'font-bold text-foreground truncate leading-tight',
+                isMobile ? 'text-base' : 'text-lg'
               )}>
                 Uhuru Safi
               </h1>
               {!isMobile && (
-                <p className="text-xs sm:text-sm text-muted-foreground truncate">
+                <p className="text-xs text-muted-foreground truncate">
                   Government Transparency Platform
                 </p>
               )}
@@ -80,18 +66,13 @@ const Header = () => {
           </div>
           
           {/* Actions */}
-          <div className={cn(
-            'flex items-center flex-shrink-0',
-            isMobile ? 'gap-1' : 'gap-2 sm:gap-3'
-          )}>
-            {isAuthenticated && (
-              <>
-                <RealtimeStatusIndicator />
-                <NotificationCenter />
-                <ProfileButton />
-              </>
-            )}
-          </div>
+          {isAuthenticated && (
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+              <RealtimeStatusIndicator />
+              <NotificationCenter />
+              <ProfileButton />
+            </div>
+          )}
         </div>
       </div>
     </header>
