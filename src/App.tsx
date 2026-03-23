@@ -520,6 +520,7 @@ const App = () => {
                   
                   {/* Public Routes */}
                   <Route path="/transparency" element={<PublicTransparencyPortal />} />
+                  <Route path="/projects" element={<PublicProjects />} />
                   
                   {/* Catch-all route */}
                   <Route path="*" element={<NotFound />} />
