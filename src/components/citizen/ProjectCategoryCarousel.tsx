@@ -3,11 +3,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { ChevronLeft, ChevronRight, Wallet } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Wallet, ImageOff } from 'lucide-react';
 import ContractorBanner from '@/components/contractor/ContractorBanner';
 import { CATEGORIES } from '@/constants/problemReporting';
 
-interface ProjectWithCategory {
+export interface ProjectWithCategory {
   id: string;
   title: string;
   description: string;
@@ -16,6 +16,7 @@ interface ProjectWithCategory {
   contractor_id: string | null;
   category: string | null;
   progress: number;
+  photo_url?: string | null;
 }
 
 interface ProjectCategoryCarouselProps {
