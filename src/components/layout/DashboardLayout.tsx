@@ -27,6 +27,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   if (!isAuthenticated) return <>{children}</>;
 
   return (
+    <DashboardLayoutContext.Provider value={true}>
     <SidebarProvider defaultOpen={!isMobile}>
       <div className="min-h-screen flex w-full">
         {/* Desktop sidebar */}
