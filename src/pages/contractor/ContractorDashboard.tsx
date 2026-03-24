@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Briefcase, FileText, Wallet, Clock, TrendingUp, Award, Loader2, Eye, CheckCircle, MessageSquare, BarChart3 } from 'lucide-react';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
-import Header from '@/components/Header';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
 import { useResponsive } from '@/hooks/useResponsive';
 import { useAuth } from '@/contexts/AuthContext';
