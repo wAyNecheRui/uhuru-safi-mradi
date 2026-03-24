@@ -527,6 +527,7 @@ const App = () => {
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>
+              </ConditionalLayout>
               </AppLayout>
             </BrowserRouter>
           </TooltipProvider>
