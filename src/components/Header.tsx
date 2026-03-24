@@ -7,6 +7,7 @@ import NotificationCenter from '@/components/notifications/NotificationCenter';
 import RealtimeStatusIndicator from '@/components/realtime/RealtimeStatusIndicator';
 import { useViewport } from '@/hooks/useViewport';
 import { cn } from '@/lib/utils';
+import { useInDashboardLayout } from '@/components/layout/DashboardLayout';
 
 const Header = () => {
   const { isAuthenticated, user } = useAuth();
