@@ -116,6 +116,7 @@ const App = () => {
                <AppLayout>
                <ConditionalLayout>
               <Suspense fallback={<PageLoader />}>
+                <Routes>
                   <Route path="/" element={<Landing />} />
                   <Route path="/about" element={<About />} />
                   <Route path="/how-it-works" element={<HowItWorks />} />
