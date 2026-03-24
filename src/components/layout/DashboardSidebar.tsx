@@ -168,7 +168,7 @@ export function DashboardSidebar() {
       <SidebarHeader className="p-3">
         <div
           className="flex items-center gap-2.5 cursor-pointer group"
-          onClick={() => navigate(`/${userType === 'admin' ? 'government' : userType}`)}
+          onClick={() => navigate(`/${resolvedType}`)}
         >
           <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 transition-transform group-hover:scale-105">
             <img src={logoImg} alt="Uhuru Safi" className="w-full h-full object-contain" />
