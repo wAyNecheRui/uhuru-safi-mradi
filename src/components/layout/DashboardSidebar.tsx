@@ -155,8 +155,9 @@ export function DashboardSidebar() {
       ? contractorNav
       : citizenNav;
 
+  const resolvedType = userType === 'admin' ? 'government' : userType;
   const isActive = (url: string) => {
-    if (url === `/${userType}` || url === '/government') {
+    if (url === `/${resolvedType}`) {
       return location.pathname === url;
     }
     return location.pathname.startsWith(url);
