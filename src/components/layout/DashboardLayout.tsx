@@ -11,6 +11,10 @@ import { cn } from '@/lib/utils';
 import logoImg from '@/assets/uhuru-safi-logo.png';
 import { useNavigate } from 'react-router-dom';
 
+// Context to signal child components that DashboardLayout is active
+const DashboardLayoutContext = createContext(false);
+export const useInDashboardLayout = () => useContext(DashboardLayoutContext);
+
 interface DashboardLayoutProps {
   children: React.ReactNode;
 }
