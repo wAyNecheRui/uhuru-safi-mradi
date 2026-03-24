@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, FileText, Users, MapPin, Clock, Shield, CheckCircle, Wallet, Loader2, Wrench, Eye, BookOpen, Briefcase, Map } from 'lucide-react';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
-import Header from '@/components/Header';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
 import { useResponsive } from '@/hooks/useResponsive';
 import { useAuth } from '@/contexts/AuthContext';
@@ -181,8 +180,7 @@ const CitizenDashboard = () => {
 
   if (hasError) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
-        <Header />
+      <div className="min-h-screen bg-background">
         <main>
           <ResponsiveContainer className="py-6 sm:py-8">
             <Card className="p-6 text-center">
@@ -209,8 +207,8 @@ const CitizenDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 overflow-x-hidden">
-      <Header />
+    <div className="min-h-screen bg-background overflow-x-hidden">
+
       
       <main className="w-full max-w-full overflow-x-hidden">
         <ResponsiveContainer className="py-4 sm:py-6 lg:py-8">
