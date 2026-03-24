@@ -208,8 +208,8 @@ const CitizenDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 overflow-x-hidden">
-      <Header />
+    <div className="min-h-screen bg-background overflow-x-hidden">
+
       
       <main className="w-full max-w-full overflow-x-hidden">
         <ResponsiveContainer className="py-4 sm:py-6 lg:py-8">

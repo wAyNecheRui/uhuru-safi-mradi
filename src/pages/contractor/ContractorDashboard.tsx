@@ -275,8 +275,8 @@ const ContractorDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
-      <Header />
+    <div className="min-h-screen bg-background">
+
       
       <main>
         <ResponsiveContainer className="py-6 sm:py-8">
