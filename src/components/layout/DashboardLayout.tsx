@@ -73,5 +73,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         <BottomNavBar />
       </div>
     </SidebarProvider>
+    </DashboardLayoutContext.Provider>
   );
 }
