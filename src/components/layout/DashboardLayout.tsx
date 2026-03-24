@@ -39,7 +39,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   <div
                     className="flex items-center gap-2 cursor-pointer"
                     onClick={() => {
-                      const base = user?.user_type === 'admin' ? 'government' : user?.user_type || '';
+                    const ut = (user?.user_type || '') as string;
+                    const base = ut === 'admin' ? 'government' : ut;
                       navigate(`/${base}`);
                     }}
                   >

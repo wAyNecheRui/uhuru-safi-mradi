@@ -43,16 +43,16 @@ export function BottomNavBar() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const userType = user?.user_type || 'citizen';
+  const userType = (user?.user_type || 'citizen') as string;
   const items = userType === 'government' || userType === 'admin'
     ? governmentBottomNav
     : userType === 'contractor'
       ? contractorBottomNav
       : citizenBottomNav;
 
+  const resolvedType = userType === 'admin' ? 'government' : userType;
   const isActive = (url: string) => {
-    const baseUrl = `/${userType === 'admin' ? 'government' : userType}`;
-    if (url === baseUrl) return location.pathname === url;
+    if (url === `/${resolvedType}`) return location.pathname === url;
     return location.pathname.startsWith(url);
   };
 
