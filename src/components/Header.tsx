@@ -10,9 +10,13 @@ import { cn } from '@/lib/utils';
 import { useInDashboardLayout } from '@/components/layout/DashboardLayout';
 
 const Header = () => {
+  const inDashboard = useInDashboardLayout();
   const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const { isMobile } = useViewport();
+
+  // When inside DashboardLayout, the layout provides its own header
+  if (inDashboard) return null;
 
   const handleHomeClick = () => {
     if (isAuthenticated && user) {
