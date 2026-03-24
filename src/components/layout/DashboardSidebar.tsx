@@ -148,7 +148,7 @@ export function DashboardSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const userType = user?.user_type || 'citizen';
+  const userType = (user?.user_type || 'citizen') as string;
   const navGroups = userType === 'government' || userType === 'admin'
     ? governmentNav
     : userType === 'contractor'
