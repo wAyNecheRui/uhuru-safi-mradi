@@ -7,10 +7,10 @@ interface AppFooterProps {
 
 const AppFooter = ({ getText }: AppFooterProps) => {
   return (
-    <footer className="bg-primary py-8 mt-12">
+    <footer className="bg-sidebar border-t border-border py-8 mt-12">
       <div className="container mx-auto px-4 sm:px-6">
         <div className="text-center space-y-4">
-          <p className="text-primary-foreground/90 text-sm leading-relaxed max-w-xl mx-auto">
+          <p className="text-muted-foreground text-sm leading-relaxed max-w-xl mx-auto">
             {getText(
               'Built for transparency in Kenyan governance • Powered by citizen participation',
               'Imejengwa kwa uwazi katika utawala wa Kenya • Inaendeshwa na ushiriki wa wananchi'
@@ -26,7 +26,7 @@ const AppFooter = ({ getText }: AppFooterProps) => {
               <Badge 
                 key={label}
                 variant="outline" 
-                className="bg-primary-foreground/10 text-primary-foreground/80 border-primary-foreground/15 text-[10px] font-normal"
+                className="text-[10px] font-normal"
               >
                 {label}
               </Badge>

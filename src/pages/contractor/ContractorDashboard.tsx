@@ -12,7 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import ContractorLocationSettings from '@/components/contractor/ContractorLocationSettings';
 import { useRealtimeSubscription, REALTIME_PRESETS } from '@/hooks/useRealtimeSubscription';
 import { calculateProjectProgress } from '@/utils/progressCalculation';
-import RealtimeStatusIndicator from '@/components/realtime/RealtimeStatusIndicator';
+
 interface ProjectWithProgress {
   id: string;
   title: string;
@@ -24,409 +24,212 @@ interface ProjectWithProgress {
 }
 
 const ContractorDashboard = () => {
-  const { isMobile, isTablet } = useResponsive();
+  const { isMobile } = useResponsive();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const [selectedCounty, setSelectedCounty] = useState('Nairobi');
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({
-    activeProjects: 0,
-    completedProjects: 0,
-    totalEarnings: 0,
-    successRate: 0
-  });
+  const [stats, setStats] = useState({ activeProjects: 0, completedProjects: 0, totalEarnings: 0, successRate: 0 });
   const [activeProjects, setActiveProjects] = useState<ProjectWithProgress[]>([]);
 
-  // SECURITY: Only use stable user ID after auth is complete
   const stableUserId = !authLoading && user?.id ? user.id : null;
 
-  // Memoize fetch function for real-time subscription
   const fetchDashboardData = useCallback(async () => {
-    // SECURITY: Don't fetch if user not stable
     if (!stableUserId) return;
-    
     try {
       setLoading(true);
-
-      // Fetch projects with milestones to calculate accurate stats
-      // SECURITY: Always filter by the authenticated user's ID
-      const { data: projects } = await supabase
-        .from('projects')
-        .select('*')
-        .eq('contractor_id', stableUserId);
-
-      // Fetch all milestones for this contractor's projects
+      const { data: projects } = await supabase.from('projects').select('*').eq('contractor_id', stableUserId);
       const projectIds = projects?.map(p => p.id) || [];
-      const { data: allMilestones } = projectIds.length > 0 ? await supabase
-        .from('project_milestones')
-        .select('project_id, status, payment_percentage')
-        .in('project_id', projectIds) : { data: [] };
+      const { data: allMilestones } = projectIds.length > 0
+        ? await supabase.from('project_milestones').select('project_id, status, payment_percentage').in('project_id', projectIds)
+        : { data: [] };
 
-      // Group milestones by project and calculate completion
       const milestonesByProject = (allMilestones || []).reduce((acc, m) => {
         if (!acc[m.project_id]) acc[m.project_id] = [];
         acc[m.project_id].push(m);
         return acc;
       }, {} as Record<string, typeof allMilestones>);
 
-      // A project is "completed" if:
-      // 1. status is 'completed' OR
-      // 2. All milestones are in paid/verified/completed status
       const completedProjects: typeof projects = [];
       const activeProjectsRaw: typeof projects = [];
 
       (projects || []).forEach(project => {
         const milestones = milestonesByProject[project.id] || [];
-        const totalMilestones = milestones.length;
-        const completedMilestones = milestones.filter(m => 
-          ['paid', 'verified', 'completed'].includes(m.status || '')
-        ).length;
-
-        // Check if fully completed (all milestones done or status is completed)
-        const isFullyCompleted = project.status === 'completed' || 
-          (totalMilestones > 0 && completedMilestones === totalMilestones);
-
-        if (isFullyCompleted) {
-          completedProjects.push(project);
-        } else if (['in_progress', 'planning', 'active'].includes(project.status || '')) {
-          activeProjectsRaw.push(project);
-        }
+        const completedMilestones = milestones.filter(m => ['paid', 'verified', 'completed'].includes(m.status || '')).length;
+        const isFullyCompleted = project.status === 'completed' || (milestones.length > 0 && completedMilestones === milestones.length);
+        if (isFullyCompleted) completedProjects.push(project);
+        else if (['in_progress', 'planning', 'active'].includes(project.status || '')) activeProjectsRaw.push(project);
       });
 
-      // Calculate progress for active projects using unified utility
-      const activeWithProgress: ProjectWithProgress[] = activeProjectsRaw.map(project => {
-        const milestones = milestonesByProject[project.id] || [];
-        const calculatedProgress = calculateProjectProgress(milestones);
-        return {
-          ...project,
-          progress: calculatedProgress
-        } as ProjectWithProgress;
-      });
+      const activeWithProgress: ProjectWithProgress[] = activeProjectsRaw.map(project => ({
+        ...project,
+        progress: calculateProjectProgress(milestonesByProject[project.id] || [])
+      } as ProjectWithProgress));
 
-      // Calculate total earnings from completed projects
       const totalEarnings = completedProjects.reduce((acc, p) => acc + (p?.budget || 0), 0);
-
-      // Calculate success rate (accepted bids / total bids)
-      // SECURITY: Always filter by authenticated user's ID
-      const { data: bidsData } = await supabase
-        .from('contractor_bids')
-        .select('status')
-        .eq('contractor_id', stableUserId);
-
+      const { data: bidsData } = await supabase.from('contractor_bids').select('status').eq('contractor_id', stableUserId);
       const totalBids = bidsData?.length || 0;
       const acceptedBids = bidsData?.filter(b => b.status === 'accepted' || b.status === 'selected').length || 0;
-
-      const successRate = totalBids > 0 
-        ? Math.round((acceptedBids / totalBids) * 100) 
-        : 0;
 
       setStats({
         activeProjects: activeWithProgress.length,
         completedProjects: completedProjects.length,
-        totalEarnings: totalEarnings,
-        successRate: successRate
+        totalEarnings,
+        successRate: totalBids > 0 ? Math.round((acceptedBids / totalBids) * 100) : 0
       });
-
-      setActiveProjects(activeWithProgress.slice(0, 3)); // Show only top 3
+      setActiveProjects(activeWithProgress.slice(0, 3));
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
       setLoading(false);
     }
-  }, [stableUserId]); // SECURITY: Depend on stableUserId
+  }, [stableUserId]);
 
-  // Set up real-time subscriptions for contractor data
   useRealtimeSubscription({
     subscriptions: REALTIME_PRESETS.contractorDashboard,
     onDataChange: fetchDashboardData,
     channelPrefix: 'contractor-dashboard',
-    enabled: !!stableUserId // SECURITY: Only enable when user is stable
+    enabled: !!stableUserId
   });
 
   useEffect(() => {
-    if (stableUserId) {
-      fetchDashboardData();
-    }
+    if (stableUserId) fetchDashboardData();
   }, [stableUserId, fetchDashboardData]);
 
-
-  const handleCountyChange = (county: string) => {
-    setSelectedCounty(county);
-  };
-
   const formatCurrency = (amount: number) => {
-    if (amount >= 1000000) {
-      return `KES ${(amount / 1000000).toFixed(1)}M`;
-    }
-    if (amount >= 1000) {
-      return `KES ${(amount / 1000).toFixed(0)}K`;
-    }
+    if (amount >= 1000000) return `KES ${(amount / 1000000).toFixed(1)}M`;
+    if (amount >= 1000) return `KES ${(amount / 1000).toFixed(0)}K`;
     return `KES ${amount}`;
   };
 
   const quickActions = [
-    {
-      title: 'Browse Projects',
-      description: 'Find and bid on available government projects',
-      icon: Briefcase,
-      href: '/contractor/bidding',
-      color: 'bg-blue-500 hover:bg-blue-600',
-      iconColor: 'text-blue-600'
-    },
-    {
-      title: 'My Bids',
-      description: 'Track your submitted bids and their status',
-      icon: Eye,
-      href: '/contractor/tracking',
-      color: 'bg-emerald-500 hover:bg-emerald-600',
-      iconColor: 'text-emerald-600'
-    },
-    {
-      title: 'My Projects',
-      description: 'Manage your active and completed projects',
-      icon: FileText,
-      href: '/contractor/projects',
-      color: 'bg-green-500 hover:bg-green-600',
-      iconColor: 'text-green-600'
-    },
-    {
-      title: 'Verification System',
-      description: 'Manage credentials and verification status',
-      icon: Award,
-      href: '/contractor/verification',
-      color: 'bg-purple-500 hover:bg-purple-600',
-      iconColor: 'text-purple-600'
-    },
-    {
-      title: 'Bid Templates',
-      description: 'Access standardized bid templates',
-      icon: FileText,
-      href: '/contractor/templates',
-      color: 'bg-orange-500 hover:bg-orange-600',
-      iconColor: 'text-orange-600'
-    },
-    {
-      title: 'Financials',
-      description: 'Escrow, payments, and financial analytics',
-      icon: Wallet,
-      href: '/contractor/financials',
-      color: 'bg-teal-500 hover:bg-teal-600',
-      iconColor: 'text-teal-600'
-    },
-    {
-      title: 'Quality Assurance',
-      description: 'Quality checklists and compliance monitoring',
-      icon: CheckCircle,
-      href: '/contractor/quality',
-      color: 'bg-indigo-500 hover:bg-indigo-600',
-      iconColor: 'text-indigo-600'
-    },
-    {
-      title: 'Performance',
-      description: 'Scorecard, ratings, and bid analytics',
-      icon: BarChart3,
-      href: '/contractor/performance',
-      color: 'bg-rose-500 hover:bg-rose-600',
-      iconColor: 'text-rose-600'
-    },
-    {
-      title: 'Communications',
-      description: 'Messages, notifications, and disputes',
-      icon: MessageSquare,
-      href: '/contractor/communications',
-      color: 'bg-cyan-500 hover:bg-cyan-600',
-      iconColor: 'text-cyan-600'
-    },
-    {
-      title: 'Job Postings',
-      description: 'Manage jobs and review citizen applicants',
-      icon: Briefcase,
-      href: '/contractor/jobs',
-      color: 'bg-amber-500 hover:bg-amber-600',
-      iconColor: 'text-amber-600'
-    }
+    { title: 'Browse Projects', icon: Briefcase, href: '/contractor/bidding' },
+    { title: 'My Bids', icon: Eye, href: '/contractor/tracking' },
+    { title: 'My Projects', icon: FileText, href: '/contractor/projects' },
+    { title: 'Verification', icon: Award, href: '/contractor/verification' },
+    { title: 'Bid Templates', icon: FileText, href: '/contractor/templates' },
+    { title: 'Financials', icon: Wallet, href: '/contractor/financials' },
+    { title: 'Quality', icon: CheckCircle, href: '/contractor/quality' },
+    { title: 'Performance', icon: BarChart3, href: '/contractor/performance' },
+    { title: 'Communications', icon: MessageSquare, href: '/contractor/communications' },
+    { title: 'Job Postings', icon: Briefcase, href: '/contractor/jobs' },
   ];
 
   const displayStats = [
-    { label: 'Active Projects', value: stats.activeProjects.toString(), icon: Briefcase, color: 'text-blue-600' },
-    { label: 'Completed Projects', value: stats.completedProjects.toString(), icon: Award, color: 'text-green-600' },
-    { label: 'Total Earnings', value: formatCurrency(stats.totalEarnings), icon: Wallet, color: 'text-purple-600' },
-    { label: 'Success Rate', value: `${stats.successRate}%`, icon: TrendingUp, color: 'text-orange-600' }
+    { label: 'Active Projects', value: stats.activeProjects.toString(), color: 'text-primary', bg: 'bg-primary/5' },
+    { label: 'Completed', value: stats.completedProjects.toString(), color: 'text-green-700', bg: 'bg-green-50' },
+    { label: 'Earnings', value: formatCurrency(stats.totalEarnings), color: 'text-purple-700', bg: 'bg-purple-50' },
+    { label: 'Success Rate', value: `${stats.successRate}%`, color: 'text-accent-foreground', bg: 'bg-accent/10' },
   ];
 
-  // SECURITY: Show loading if auth is still resolving or data is loading
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-background">
-        <main className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-            <span className="ml-2">Loading dashboard...</span>
-          </div>
-        </main>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        <span className="ml-2 text-muted-foreground text-sm">Loading dashboard...</span>
       </div>
     );
   }
 
-  // SECURITY: Don't render if user is not authenticated
-  if (!stableUserId) {
-    return null;
-  }
+  if (!stableUserId) return null;
 
   return (
     <div className="min-h-screen bg-background">
-
-      
       <main>
-        <ResponsiveContainer className="py-6 sm:py-8">
+        <ResponsiveContainer className="py-5 sm:py-8">
           <BreadcrumbNav />
-          
-          {/* Welcome Header Card - Government Style */}
-          <Card className="shadow-xl border-t-4 border-t-blue-600 mb-4 sm:mb-6">
-            <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 sm:p-6">
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div className="min-w-0 flex-1">
-                  <CardTitle className="flex items-center text-lg sm:text-xl lg:text-2xl">
-                    <Briefcase className="h-5 w-5 sm:h-6 sm:w-6 mr-2 sm:mr-3 text-blue-600 flex-shrink-0" />
-                    <span className="break-words">Contractor Dashboard</span>
-                  </CardTitle>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Manage your projects, bids, and track your performance.
-                  </p>
-                </div>
-                <Badge className="bg-blue-100 text-blue-800 flex-shrink-0">
-                  Live Dashboard
-                </Badge>
-              </div>
-            </CardHeader>
-          </Card>
 
-          {/* Stats Cards - Government Style */}
-          <Card className="shadow-lg mb-4 sm:mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center text-base sm:text-lg">
-                <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-blue-600 flex-shrink-0" />
-                Performance Overview
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6">
-                {displayStats.map((stat) => {
-                  const bgColors: Record<string, string> = {
-                    'text-blue-600': 'bg-blue-50',
-                    'text-green-600': 'bg-green-50',
-                    'text-purple-600': 'bg-purple-50',
-                    'text-orange-600': 'bg-orange-50'
-                  };
-                  const textColors: Record<string, string> = {
-                    'text-blue-600': 'text-blue-700',
-                    'text-green-600': 'text-green-700',
-                    'text-purple-600': 'text-purple-700',
-                    'text-orange-600': 'text-orange-700'
-                  };
-                  return (
-                    <div key={stat.label} className={`text-center p-4 ${bgColors[stat.color] || 'bg-gray-50'} rounded-lg`}>
-                      <div className={`text-2xl font-bold ${stat.color}`}>{stat.value}</div>
-                      <div className={`text-sm ${textColors[stat.color] || 'text-gray-700'}`}>{stat.label}</div>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
+          {/* Welcome */}
+          <div className="mb-6">
+            <h1 className="text-xl sm:text-2xl font-display font-bold text-foreground">Contractor Dashboard</h1>
+            <p className="text-sm text-muted-foreground mt-1">Manage your projects, bids, and track your performance.</p>
+          </div>
 
-          {/* Quick Actions - Government Button Grid Style */}
-          <Card className="shadow-lg mb-6 sm:mb-8">
-            <CardHeader className="p-4 sm:p-6">
-              <CardTitle className="flex items-center text-base sm:text-lg">
-                <FileText className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-blue-600 flex-shrink-0" />
-                Management Modules
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3">
-                {quickActions.map((action) => {
-                  const IconComponent = action.icon;
-                  return (
-                    <Button
-                      key={action.title}
-                      onClick={() => navigate(action.href)}
-                      className={`${action.color} text-white h-auto py-3 sm:py-4 flex flex-col items-center gap-1 sm:gap-2 text-xs`}
-                    >
-                      <IconComponent className="h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0" />
-                      <span className="text-center leading-tight break-words">{action.title}</span>
-                    </Button>
-                  );
-                })}
+          {/* Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6">
+            {displayStats.map((s) => (
+              <div key={s.label} className={`${s.bg} rounded-xl p-4 text-center border border-transparent`}>
+                <div className={`text-2xl font-bold ${s.color}`}>{s.value}</div>
+                <div className="text-xs text-muted-foreground mt-1">{s.label}</div>
               </div>
-            </CardContent>
-          </Card>
+            ))}
+          </div>
+
+          {/* Quick Actions */}
+          <div className="mb-6">
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Management Modules</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+              {quickActions.map((action) => {
+                const Icon = action.icon;
+                return (
+                  <Card
+                    key={action.title}
+                    className="cursor-pointer hover:shadow-card-hover transition-all duration-200 group border-border/60"
+                    onClick={() => navigate(action.href)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center mb-2.5 group-hover:bg-primary/15 transition-colors">
+                        <Icon className="h-4 w-4 text-primary" />
+                      </div>
+                      <h3 className="font-medium text-sm text-foreground">{action.title}</h3>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
 
           {/* Location Settings */}
           <ContractorLocationSettings />
 
           {/* Active Projects */}
-          <Card className="shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center text-lg sm:text-xl">
-                <Briefcase className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-blue-600" />
+          <Card className="mt-6">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <Briefcase className="h-4 w-4 text-primary" />
                 Active Projects
               </CardTitle>
             </CardHeader>
             <CardContent>
               {activeProjects.length === 0 ? (
-                <div className="text-center py-6 sm:py-8">
-                  <Briefcase className="h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-sm sm:text-base text-gray-500">No active projects yet.</p>
-                  <p className="text-xs sm:text-sm text-gray-400 mt-1">Browse available projects and submit bids to get started.</p>
-                  <Button asChild className="mt-4 bg-blue-600 hover:bg-blue-700" size={isMobile ? "sm" : "default"}>
-                    <Link to="/contractor/bidding">Browse Available Projects</Link>
-                  </Button>
+                <div className="text-center py-8">
+                  <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
+                    <Briefcase className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-3">No active projects yet.</p>
+                  <Button asChild size="sm"><Link to="/contractor/bidding">Browse Available Projects</Link></Button>
                 </div>
               ) : (
-                <div className="space-y-3 sm:space-y-4">
+                <div className="space-y-3">
                   {activeProjects.map((project) => (
-                    <div key={project.id} className="border border-gray-200 rounded-lg p-3 sm:p-4 hover:bg-gray-50 transition-colors">
-                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-3 gap-2">
+                    <div key={project.id} className="border border-border rounded-xl p-4 hover:shadow-card-hover transition-all duration-200">
+                      <div className="flex justify-between items-start mb-3">
                         <div className="flex-1">
-                          <h3 className="font-semibold text-gray-900 text-sm sm:text-base">{project.title}</h3>
-                          <p className="text-xs sm:text-sm text-gray-500">{project.description?.slice(0, 50)}...</p>
+                          <h3 className="font-semibold text-sm text-foreground">{project.title}</h3>
+                          <p className="text-xs text-muted-foreground mt-0.5">{project.description?.slice(0, 60)}...</p>
                         </div>
-                        <div className="text-left sm:text-right">
-                          <p className="font-semibold text-green-600 text-sm sm:text-base">
-                            {formatCurrency(project.budget || 0)}
-                          </p>
-                        </div>
+                        <span className="font-semibold text-sm text-green-700">{formatCurrency(project.budget || 0)}</span>
                       </div>
-                      
                       <div className="mb-3">
-                        <div className="flex justify-between text-xs sm:text-sm mb-1">
-                          <span>Progress</span>
-                          <span>{project.progress || 0}%</span>
+                        <div className="flex justify-between text-xs mb-1">
+                          <span className="text-muted-foreground">Progress</span>
+                          <span className="font-medium text-foreground">{project.progress || 0}%</span>
                         </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-blue-600 h-2 rounded-full" 
-                            style={{ width: `${project.progress || 0}%` }}
-                          ></div>
+                        <div className="w-full bg-muted rounded-full h-2">
+                          <div className="bg-primary h-2 rounded-full transition-all duration-500" style={{ width: `${project.progress || 0}%` }} />
                         </div>
                       </div>
-                      
-                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center text-xs sm:text-sm gap-2">
-                        <div className="flex items-center text-gray-500">
-                          <Clock className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                          Updated: {new Date(project.updated_at).toLocaleDateString()}
-                        </div>
-                        <Badge className="bg-blue-100 text-blue-800 self-start sm:self-center">
-                          {project.status}
-                        </Badge>
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-muted-foreground flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          Updated: {new Date(project.updated_at!).toLocaleDateString()}
+                        </span>
+                        <Badge variant="secondary" className="text-[10px]">{project.status}</Badge>
                       </div>
                     </div>
                   ))}
-                  <div className="text-center pt-4">
-                    <Button variant="outline" asChild size={isMobile ? "sm" : "default"}>
-                      <Link to="/contractor/projects">View All Projects</Link>
-                    </Button>
+                  <div className="text-center pt-2">
+                    <Button variant="outline" size="sm" asChild><Link to="/contractor/projects">View All Projects</Link></Button>
                   </div>
                 </div>
               )}
