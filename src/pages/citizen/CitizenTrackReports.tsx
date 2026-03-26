@@ -71,15 +71,15 @@ const CitizenTrackReports = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
+    <div className="min-h-screen bg-background">
       <Header />
       
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-6 sm:py-8">
         <BreadcrumbNav items={breadcrumbItems} />
         
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Track My Reports</h1>
-          <p className="text-gray-600">Monitor the progress of your submitted infrastructure reports.</p>
+          <h1 className="text-2xl sm:text-3xl font-display font-bold text-foreground mb-2">Track My Reports</h1>
+          <p className="text-muted-foreground">Monitor the progress of your submitted infrastructure reports.</p>
         </div>
 
         {/* Search */}
