@@ -78,7 +78,7 @@ const GovernmentReports = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
+      <div className="min-h-screen bg-background">
         <Header />
         <main className="flex items-center justify-center h-[60vh]">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -88,15 +88,15 @@ const GovernmentReports = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
+    <div className="min-h-screen bg-background">
       <Header />
       
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-6 sm:py-8">
         <BreadcrumbNav items={breadcrumbItems} />
         
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Citizen Reports</h1>
-          <p className="text-gray-600">Review and manage citizen-reported infrastructure issues across all counties.</p>
+          <h1 className="text-2xl sm:text-3xl font-display font-bold text-foreground mb-2">Citizen Reports</h1>
+          <p className="text-muted-foreground">Review and manage citizen-reported infrastructure issues across all counties.</p>
         </div>
 
         <div className="space-y-6">
@@ -109,7 +109,7 @@ const GovernmentReports = () => {
             </Card>
           ) : (
             reports.map((report) => (
-              <Card key={report.id} className="shadow-lg">
+              <Card key={report.id} className="hover:shadow-card-hover transition-shadow">
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <div className="flex-1">

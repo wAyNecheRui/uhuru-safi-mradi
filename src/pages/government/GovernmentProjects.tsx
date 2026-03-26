@@ -101,7 +101,7 @@ const GovernmentProjects = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
+      <div className="min-h-screen bg-background">
         <Header />
         <main className="flex items-center justify-center h-[60vh]">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -111,15 +111,15 @@ const GovernmentProjects = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
+    <div className="min-h-screen bg-background">
       <Header />
       
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-6 sm:py-8">
         <BreadcrumbNav items={breadcrumbItems} />
         
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Government Projects</h1>
-          <p className="text-gray-600">Monitor and manage all government infrastructure projects across Kenya.</p>
+          <h1 className="text-2xl sm:text-3xl font-display font-bold text-foreground mb-2">Government Projects</h1>
+          <p className="text-muted-foreground">Monitor and manage all government infrastructure projects across Kenya.</p>
         </div>
 
         {/* View Toggle */}

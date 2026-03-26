@@ -98,7 +98,7 @@ const PublicProjects = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
+    <div className="min-h-screen bg-gradient-to-br from-[hsl(199,89%,12%)] via-[hsl(199,70%,18%)] to-[hsl(199,50%,22%)]">
       {/* Nav */}
       <nav className="bg-white/5 backdrop-blur-xl border-b border-white/10 sticky top-0 z-50">
         <ResponsiveContainer>
@@ -111,7 +111,7 @@ const PublicProjects = () => {
               <Button variant="ghost" size="sm" className="text-white/70 hover:text-white" onClick={() => navigate('/')}>
                 <ArrowLeft className="w-4 h-4 mr-1" /> Back
               </Button>
-              <Button size="sm" className="bg-amber-500 hover:bg-amber-600 text-white" onClick={() => navigate('/auth')}>
+              <Button size="sm" className="bg-accent hover:bg-accent/90 text-accent-foreground" onClick={() => navigate('/auth')}>
                 Sign In
               </Button>
             </div>
@@ -243,7 +243,7 @@ const PublicProjects = () => {
             <p className="text-sm text-slate-300 mb-4 max-w-md mx-auto">
               Sign up as a citizen to report infrastructure issues, verify progress, and hold contractors accountable.
             </p>
-            <Button className="bg-amber-500 hover:bg-amber-600 text-white" onClick={() => navigate('/auth')}>
+            <Button className="bg-accent hover:bg-accent/90 text-accent-foreground" onClick={() => navigate('/auth')}>
               Get Started Free
             </Button>
           </div>

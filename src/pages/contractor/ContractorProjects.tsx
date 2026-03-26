@@ -292,7 +292,7 @@ const ContractorProjects = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 overflow-x-hidden">
+      <div className="min-h-screen bg-background overflow-x-hidden">
         <Header />
         <main className="w-full max-w-full overflow-x-hidden px-3 sm:px-4 lg:px-8 py-8">
           <div className="flex items-center justify-center py-12">
@@ -305,23 +305,23 @@ const ContractorProjects = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 overflow-x-hidden">
+    <div className="min-h-screen bg-background overflow-x-hidden">
       <Header />
       
       <main className="w-full max-w-full overflow-x-hidden px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8 mx-auto" style={{ maxWidth: 'min(100%, 80rem)' }}>
         <BreadcrumbNav items={breadcrumbItems} />
         
         <div className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">My Projects</h1>
-          <p className="text-sm sm:text-base text-gray-600">Track and manage your active and completed government projects.</p>
+          <h1 className="text-2xl sm:text-3xl font-display font-bold text-foreground mb-2">My Projects</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">Track and manage your active and completed government projects.</p>
         </div>
 
         <Tabs defaultValue="active" className="space-y-4 sm:space-y-6 w-full max-w-full">
-          <TabsList className="w-full bg-white shadow-lg">
-            <TabsTrigger value="active" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-xs sm:text-sm">
+          <TabsList className="w-full bg-muted/50 rounded-xl p-1">
+            <TabsTrigger value="active" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm rounded-lg">
               Active ({activeProjects.length})
             </TabsTrigger>
-            <TabsTrigger value="completed" className="data-[state=active]:bg-green-600 data-[state=active]:text-white text-xs sm:text-sm">
+            <TabsTrigger value="completed" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm rounded-lg">
               Completed ({completedProjects.length})
             </TabsTrigger>
           </TabsList>
