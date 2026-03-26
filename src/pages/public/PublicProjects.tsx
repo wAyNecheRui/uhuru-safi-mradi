@@ -111,7 +111,7 @@ const PublicProjects = () => {
               <Button variant="ghost" size="sm" className="text-white/70 hover:text-white" onClick={() => navigate('/')}>
                 <ArrowLeft className="w-4 h-4 mr-1" /> Back
               </Button>
-              <Button size="sm" className="bg-amber-500 hover:bg-amber-600 text-white" onClick={() => navigate('/auth')}>
+              <Button size="sm" className="bg-accent hover:bg-accent/90 text-accent-foreground" onClick={() => navigate('/auth')}>
                 Sign In
               </Button>
             </div>
