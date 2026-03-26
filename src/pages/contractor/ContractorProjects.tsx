@@ -317,11 +317,11 @@ const ContractorProjects = () => {
         </div>
 
         <Tabs defaultValue="active" className="space-y-4 sm:space-y-6 w-full max-w-full">
-          <TabsList className="w-full bg-white shadow-lg">
-            <TabsTrigger value="active" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-xs sm:text-sm">
+          <TabsList className="w-full bg-muted/50 rounded-xl p-1">
+            <TabsTrigger value="active" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm rounded-lg">
               Active ({activeProjects.length})
             </TabsTrigger>
-            <TabsTrigger value="completed" className="data-[state=active]:bg-green-600 data-[state=active]:text-white text-xs sm:text-sm">
+            <TabsTrigger value="completed" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm rounded-lg">
               Completed ({completedProjects.length})
             </TabsTrigger>
           </TabsList>

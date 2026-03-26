@@ -287,7 +287,7 @@ const CitizenTransparency = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
+    <div className="min-h-screen bg-background">
       <Header />
       
       <main>
@@ -295,56 +295,64 @@ const CitizenTransparency = () => {
           <BreadcrumbNav items={breadcrumbItems} />
           
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-foreground mb-2">Transparency Portal</h1>
+            <h1 className="text-2xl sm:text-3xl font-display font-bold text-foreground mb-2">Transparency Portal</h1>
             <p className="text-muted-foreground">Access public data on projects, contractors, and financial transactions.</p>
           </div>
 
           {/* Summary Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <Card className="bg-gradient-to-br from-green-50 to-green-100">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6">
+            <Card className="border-primary/10 bg-primary/5">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <Wallet className="h-8 w-8 text-green-600" />
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <Wallet className="h-5 w-5 text-primary" />
+                  </div>
                   <div>
-                    <div className="text-2xl font-bold text-green-800">
+                    <div className="text-xl sm:text-2xl font-bold text-primary">
                       KES {(totalEscrowHeld / 1000000).toFixed(1)}M
                     </div>
-                    <div className="text-sm text-green-600">Funds in Escrow</div>
+                    <div className="text-xs text-muted-foreground">Funds in Escrow</div>
                   </div>
                 </div>
               </CardContent>
             </Card>
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
+            <Card className="border-accent/20 bg-accent/5">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <TrendingUp className="h-8 w-8 text-blue-600" />
+                  <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
+                    <TrendingUp className="h-5 w-5 text-accent-foreground" />
+                  </div>
                   <div>
-                    <div className="text-2xl font-bold text-blue-800">
+                    <div className="text-xl sm:text-2xl font-bold text-accent-foreground">
                       KES {(totalEscrowReleased / 1000000).toFixed(1)}M
                     </div>
-                    <div className="text-sm text-blue-600">Released Payments</div>
+                    <div className="text-xs text-muted-foreground">Released Payments</div>
                   </div>
                 </div>
               </CardContent>
             </Card>
-            <Card className="bg-gradient-to-br from-purple-50 to-purple-100">
+            <Card className="border-primary/10 bg-primary/5">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <Building2 className="h-8 w-8 text-purple-600" />
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <Building2 className="h-5 w-5 text-primary" />
+                  </div>
                   <div>
-                    <div className="text-2xl font-bold text-purple-800">{contractors.length}</div>
-                    <div className="text-sm text-purple-600">Verified Contractors</div>
+                    <div className="text-xl sm:text-2xl font-bold text-primary">{contractors.length}</div>
+                    <div className="text-xs text-muted-foreground">Contractors</div>
                   </div>
                 </div>
               </CardContent>
             </Card>
-            <Card className="bg-gradient-to-br from-orange-50 to-orange-100">
+            <Card className="border-accent/20 bg-accent/5">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <FileText className="h-8 w-8 text-orange-600" />
+                  <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
+                    <FileText className="h-5 w-5 text-accent-foreground" />
+                  </div>
                   <div>
-                    <div className="text-2xl font-bold text-orange-800">{escrowAccounts.length}</div>
-                    <div className="text-sm text-orange-600">Active Projects</div>
+                    <div className="text-xl sm:text-2xl font-bold text-accent-foreground">{escrowAccounts.length}</div>
+                    <div className="text-xs text-muted-foreground">Active Projects</div>
                   </div>
                 </div>
               </CardContent>
@@ -352,7 +360,7 @@ const CitizenTransparency = () => {
           </div>
 
           <Tabs defaultValue="contractors" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3 bg-white shadow-lg">
+            <TabsList className="grid w-full grid-cols-3 bg-muted/50 rounded-xl p-1">
               <TabsTrigger value="contractors">Contractor Performance</TabsTrigger>
               <TabsTrigger value="escrow">Escrow Accounts</TabsTrigger>
               <TabsTrigger value="payments">Payment History</TabsTrigger>

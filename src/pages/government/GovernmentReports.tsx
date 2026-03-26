@@ -109,7 +109,7 @@ const GovernmentReports = () => {
             </Card>
           ) : (
             reports.map((report) => (
-              <Card key={report.id} className="shadow-lg">
+              <Card key={report.id} className="hover:shadow-card-hover transition-shadow">
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <div className="flex-1">

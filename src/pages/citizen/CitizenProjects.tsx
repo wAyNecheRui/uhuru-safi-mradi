@@ -305,7 +305,7 @@ const CitizenProjects = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
+    <div className="min-h-screen bg-background">
       <Header />
       
       <main>
@@ -320,8 +320,8 @@ const CitizenProjects = () => {
           <BreadcrumbNav items={breadcrumbItems} />
           
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Live Project Tracker</h1>
-            <p className="text-gray-600">Monitor active infrastructure projects, verify milestones, and track community investments.</p>
+            <h1 className="text-2xl sm:text-3xl font-display font-bold text-foreground mb-2">Live Project Tracker</h1>
+            <p className="text-muted-foreground">Monitor active infrastructure projects, verify milestones, and track community investments.</p>
           </div>
 
           {/* Search & View Toggle */}

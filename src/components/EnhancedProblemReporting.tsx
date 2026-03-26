@@ -62,8 +62,7 @@ const EnhancedProblemReporting = () => {
               Cancel
             </Button>
             <Button 
-              onClick={submitReport} 
-              className="bg-slate-600 hover:bg-slate-700"
+              onClick={submitReport}
               disabled={isSubmitting}
             >
               {isSubmitting ? (

@@ -84,7 +84,7 @@ const BreadcrumbNav = ({ items = [] }: BreadcrumbNavProps) => {
                   </Link>
                 </BreadcrumbLink>
               ) : (
-                <BreadcrumbPage className="text-green-600 font-medium">
+                <BreadcrumbPage className="text-primary font-medium">
                   {breadcrumb.label}
                 </BreadcrumbPage>
               )}

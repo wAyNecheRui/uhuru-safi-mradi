@@ -107,14 +107,14 @@ const CitizenTrackReports = () => {
               </CardContent>
             </Card>
           ) : filteredReports.length === 0 ? (
-            <Card>
+              <Card>
               <CardContent className="text-center py-12">
-                <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No Reports Found</h3>
-                <p className="text-gray-500 mb-4">
+                <FileText className="h-12 w-12 text-muted-foreground/40 mx-auto mb-4" />
+                <h3 className="text-lg font-display font-semibold text-foreground mb-2">No Reports Found</h3>
+                <p className="text-muted-foreground mb-4">
                   {searchTerm ? 'No reports match your search criteria.' : 'You haven\'t submitted any reports yet.'}
                 </p>
-                <Button asChild className="bg-green-600 hover:bg-green-700">
+                <Button asChild>
                   <a href="/citizen/report">Submit Your First Report</a>
                 </Button>
               </CardContent>

@@ -243,7 +243,7 @@ const PublicProjects = () => {
             <p className="text-sm text-slate-300 mb-4 max-w-md mx-auto">
               Sign up as a citizen to report infrastructure issues, verify progress, and hold contractors accountable.
             </p>
-            <Button className="bg-amber-500 hover:bg-amber-600 text-white" onClick={() => navigate('/auth')}>
+            <Button className="bg-accent hover:bg-accent/90 text-accent-foreground" onClick={() => navigate('/auth')}>
               Get Started Free
             </Button>
           </div>

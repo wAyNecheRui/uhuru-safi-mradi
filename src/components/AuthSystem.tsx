@@ -36,27 +36,32 @@ const AuthSystem = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
       {/* Header */}
       <div className="mb-8 text-center">
-        <h1 className="text-2xl font-semibold text-slate-900 mb-2">Uhuru Safi</h1>
-        <p className="text-sm text-slate-600">Kenya's Official Government Project Transparency Platform</p>
+        <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+            <span className="text-primary-foreground font-bold text-sm">US</span>
+          </div>
+        </div>
+        <h1 className="text-2xl font-display font-semibold text-foreground mb-2">Uhuru Safi</h1>
+        <p className="text-sm text-muted-foreground">Kenya's Official Government Project Transparency Platform</p>
       </div>
 
       {/* Auth Card */}
-      <Card className="w-full max-w-md shadow-lg border border-slate-200 bg-white">
-        <CardContent className="p-8">
+      <Card className="w-full max-w-md shadow-card-hover border-border/50">
+        <CardContent className="p-6 sm:p-8">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-2 h-11 bg-slate-100 p-1">
+            <TabsList className="grid w-full grid-cols-2 h-11 bg-muted p-1 rounded-xl">
               <TabsTrigger 
                 value="login" 
-                className="data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm rounded-md font-medium"
+                className="data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm rounded-lg font-medium"
               >
                 Sign in
               </TabsTrigger>
               <TabsTrigger 
                 value="register"
-                className="data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm rounded-md font-medium"
+                className="data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm rounded-lg font-medium"
               >
                 Create account
               </TabsTrigger>
@@ -85,14 +90,14 @@ const AuthSystem = () => {
           variant="ghost"
           onClick={() => navigate('/')}
           disabled={isLoading}
-          className="text-slate-500 hover:text-slate-700 text-sm"
+          className="text-muted-foreground hover:text-foreground text-sm"
         >
           ← Back to home
         </Button>
       </div>
 
       {/* Terms */}
-      <p className="mt-8 text-xs text-slate-500 text-center max-w-sm">
+      <p className="mt-8 text-xs text-muted-foreground text-center max-w-sm">
         By continuing, you agree to the Terms of Service and Privacy Policy of the Government of Kenya.
       </p>
     </div>
