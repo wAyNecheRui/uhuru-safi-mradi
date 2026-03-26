@@ -305,15 +305,15 @@ const ContractorProjects = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 overflow-x-hidden">
+    <div className="min-h-screen bg-background overflow-x-hidden">
       <Header />
       
       <main className="w-full max-w-full overflow-x-hidden px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8 mx-auto" style={{ maxWidth: 'min(100%, 80rem)' }}>
         <BreadcrumbNav items={breadcrumbItems} />
         
         <div className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">My Projects</h1>
-          <p className="text-sm sm:text-base text-gray-600">Track and manage your active and completed government projects.</p>
+          <h1 className="text-2xl sm:text-3xl font-display font-bold text-foreground mb-2">My Projects</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">Track and manage your active and completed government projects.</p>
         </div>
 
         <Tabs defaultValue="active" className="space-y-4 sm:space-y-6 w-full max-w-full">
