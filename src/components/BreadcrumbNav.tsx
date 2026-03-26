@@ -78,7 +78,7 @@ const BreadcrumbNav = ({ items = [] }: BreadcrumbNavProps) => {
             <BreadcrumbItem>
               {breadcrumb.href ? (
                 <BreadcrumbLink asChild>
-                  <Link to={breadcrumb.href} className="flex items-center hover:text-green-600">
+                <Link to={breadcrumb.href} className="flex items-center hover:text-primary transition-colors">
                     {index === 0 && <Home className="h-4 w-4 mr-1" />}
                     {breadcrumb.label}
                   </Link>
