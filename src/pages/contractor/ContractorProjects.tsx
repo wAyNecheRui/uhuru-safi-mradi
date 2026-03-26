@@ -292,7 +292,7 @@ const ContractorProjects = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 overflow-x-hidden">
+      <div className="min-h-screen bg-background overflow-x-hidden">
         <Header />
         <main className="w-full max-w-full overflow-x-hidden px-3 sm:px-4 lg:px-8 py-8">
           <div className="flex items-center justify-center py-12">
