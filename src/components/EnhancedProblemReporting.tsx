@@ -23,13 +23,13 @@ const EnhancedProblemReporting = () => {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <Card className="shadow-xl border-t-4 border-t-slate-600">
-        <CardHeader className="bg-gradient-to-r from-slate-50 to-blue-50">
-          <CardTitle className="flex items-center text-2xl">
-            <AlertTriangle className="h-6 w-6 mr-3 text-slate-600" />
-            Enhanced Problem Reporting System
+      <Card className="shadow-card-hover border-t-4 border-t-primary">
+        <CardHeader className="bg-primary/5">
+          <CardTitle className="flex items-center text-xl sm:text-2xl font-display">
+            <AlertTriangle className="h-6 w-6 mr-3 text-primary" />
+            Problem Reporting System
           </CardTitle>
-          <p className="text-slate-600 mt-2">
+          <p className="text-muted-foreground mt-2">
             Report infrastructure problems in your community with detailed documentation and GPS tracking.
           </p>
         </CardHeader>
