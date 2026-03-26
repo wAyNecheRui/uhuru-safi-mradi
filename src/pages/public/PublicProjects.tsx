@@ -98,7 +98,7 @@ const PublicProjects = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
+    <div className="min-h-screen bg-gradient-to-br from-[hsl(199,89%,12%)] via-[hsl(199,70%,18%)] to-[hsl(199,50%,22%)]">
       {/* Nav */}
       <nav className="bg-white/5 backdrop-blur-xl border-b border-white/10 sticky top-0 z-50">
         <ResponsiveContainer>
