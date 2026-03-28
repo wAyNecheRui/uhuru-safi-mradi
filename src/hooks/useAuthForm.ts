@@ -8,6 +8,7 @@ export interface AuthFormData {
   name: string;
   phone: string;
   type: 'citizen' | 'contractor' | 'government';
+  country: string;
   
   // Kenya-specific identification
   national_id: string;
@@ -51,6 +52,7 @@ export const useAuthForm = () => {
     name: '',
     phone: '',
     type: 'citizen',
+    country: 'KE',
     
     // Kenya ID
     national_id: '',
