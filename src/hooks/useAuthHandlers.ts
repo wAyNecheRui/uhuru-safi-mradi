@@ -1,4 +1,3 @@
-
 import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -15,6 +14,7 @@ export const useAuthHandlers = (
   const { signIn, signUp } = useAuth();
   const { validateForm } = useAuthValidation();
   const [isLoading, setIsLoading] = useState(false);
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
 
   const handleLogin = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,34 +76,30 @@ export const useAuthHandlers = (
         } else {
           toast.error(error.message || "Registration failed. Please try again.");
         }
-        return;
+        // Reset phase on error so user stays on step 1
+        throw error; // re-throw to prevent phase advancement in AuthSystem
       }
       
       console.log('Registration successful');
-      
-      const roleMessage = formData.type !== 'citizen' 
-        ? ` Your ${formData.type} role request is pending admin verification. You will start with citizen access.`
-        : '';
-      
-      toast.success(
-        `Registration successful! Please check your email to verify your account.${roleMessage}`,
-        { duration: 8000 }
-      );
-
-      resetForm();
-      setActiveTab('login');
+      setRegistrationSuccess(true);
+      // Don't switch tabs — let AuthSystem handle phase progression
       
     } catch (error: any) {
-      console.error('Registration exception:', error);
-      toast.error("An unexpected error occurred during registration.");
+      if (!error?.message?.includes('already registered') && !error?.message?.includes('already been registered')) {
+        // Only show generic error if not already handled
+        if (!error?.message) {
+          toast.error("An unexpected error occurred during registration.");
+        }
+      }
     } finally {
       setIsLoading(false);
     }
-  }, [formData, signUp, validateForm, resetForm, setActiveTab]);
+  }, [formData, signUp, validateForm, setActiveTab]);
 
   return {
     handleLogin,
     handleRegister,
-    isLoading
+    isLoading,
+    registrationSuccess
   };
 };
