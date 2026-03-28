@@ -1,5 +1,4 @@
 import React from 'react';
-import { TabsContent } from '@/components/ui/tabs';
 import LoginForm from './LoginForm';
 import type { AuthFormData } from '@/hooks/useAuthForm';
 
@@ -17,14 +16,14 @@ const LoginTabContent: React.FC<LoginTabContentProps> = ({
   onSubmit
 }) => {
   return (
-    <TabsContent value="login" className="mt-6">
+    <div className="mt-2">
       <LoginForm
         formData={formData}
         isLoading={isLoading}
         onInputChange={onInputChange}
         onSubmit={onSubmit}
       />
-    </TabsContent>
+    </div>
   );
 };
 
