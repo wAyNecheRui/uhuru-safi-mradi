@@ -23,7 +23,7 @@ const AuthSystem = () => {
   const [selectedRole, setSelectedRole] = useState<'citizen' | 'contractor' | 'government'>('citizen');
   
   const { formData, handleInputChange, resetForm } = useAuthForm();
-  const { handleLogin, handleRegister, isLoading } = useAuthHandlers(
+  const { handleLogin, handleRegister, isLoading, registrationSuccess } = useAuthHandlers(
     formData,
     resetForm,
     setActiveTab
