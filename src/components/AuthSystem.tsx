@@ -47,17 +47,21 @@ const AuthSystem = () => {
     setRegPhase('step1');
   };
 
-  // Handle step 1 submit — creates account then moves to step 2 or success
+  // Advance phase when registration succeeds
+  useEffect(() => {
+    if (registrationSuccess && regPhase === 'step1') {
+      if (selectedRole === 'citizen') {
+        setRegPhase('success');
+      } else {
+        setRegPhase('step2');
+      }
+    }
+  }, [registrationSuccess, regPhase, selectedRole]);
+
+  // Handle step 1 submit
   const handleStep1Submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Use the existing handleRegister which calls signUp
     await handleRegister(e);
-    // After successful registration, move to step 2 or success
-    if (selectedRole === 'citizen') {
-      setRegPhase('success');
-    } else {
-      setRegPhase('step2');
-    }
   };
 
   // Handle switching to register tab
