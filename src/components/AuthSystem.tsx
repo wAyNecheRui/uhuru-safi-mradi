@@ -36,17 +36,6 @@ const AuthSystem = () => {
     }
   }, [user, authLoading, navigate]);
 
-  if (authLoading || isLoading || user) {
-    return <UnifiedLoader />;
-  }
-
-  // Handle role selection
-  const handleRoleSelect = (role: 'citizen' | 'contractor' | 'government') => {
-    setSelectedRole(role);
-    handleInputChange('type', role);
-    setRegPhase('step1');
-  };
-
   // Advance phase when registration succeeds
   useEffect(() => {
     if (registrationSuccess && regPhase === 'step1') {
@@ -57,6 +46,17 @@ const AuthSystem = () => {
       }
     }
   }, [registrationSuccess, regPhase, selectedRole]);
+
+  if (authLoading || isLoading || user) {
+    return <UnifiedLoader />;
+  }
+
+  // Handle role selection
+  const handleRoleSelect = (role: 'citizen' | 'contractor' | 'government') => {
+    setSelectedRole(role);
+    handleInputChange('type', role);
+    setRegPhase('step1');
+  };
 
   // Handle step 1 submit
   const handleStep1Submit = async (e: React.FormEvent) => {
