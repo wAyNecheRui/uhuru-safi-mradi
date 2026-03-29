@@ -1,38 +1,27 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { calculateProjectProgress } from '@/utils/progressCalculation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
-  MapPin, 
-  Search, 
-  Clock, 
-  Wallet, 
-  CheckCircle,
-  AlertTriangle,
-  Camera,
-  TrendingUp,
-  ArrowLeft,
-  Target,
-  LayoutGrid,
-  List,
+  MapPin, Clock, Wallet, CheckCircle, AlertTriangle, Camera, TrendingUp,
+  ArrowLeft, Target, ImageOff
 } from 'lucide-react';
 import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
 import ProjectMapModal from '@/components/citizen/ProjectMapModal';
 import ProjectProgressViewer from '@/components/citizen/ProjectProgressViewer';
-
 import MilestoneVerificationCard from '@/components/citizen/MilestoneVerificationCard';
 import QualityRatingModal from '@/components/citizen/QualityRatingModal';
 import ProjectIssueReportModal from '@/components/citizen/ProjectIssueReportModal';
-import ProjectCategoryCarousel from '@/components/citizen/ProjectCategoryCarousel';
-import { supabase } from '@/integrations/supabase/client';
+import ProjectBrowser from '@/components/projects/ProjectBrowser';
 import ContractorBanner from '@/components/contractor/ContractorBanner';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import type { ProjectCardData } from '@/components/projects/ProjectCard';
 
 interface Project {
   id: string;
@@ -45,6 +34,7 @@ interface Project {
   report_id: string | null;
   category: string | null;
   photo_urls: string[] | null;
+  location: string | null;
 }
 
 interface Milestone {
@@ -71,14 +61,12 @@ const CitizenProjects = () => {
   const [milestones, setMilestones] = useState<{ [key: string]: Milestone[] }>({});
   const [escrowInfo, setEscrowInfo] = useState<{ [key: string]: EscrowInfo }>({});
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
   const [showMapModal, setShowMapModal] = useState(false);
   const [selectedProjectForProgress, setSelectedProjectForProgress] = useState<Project | null>(null);
-  const [viewMode, setViewMode] = useState<'categories' | 'list'>('categories');
   const [expandedProjectId, setExpandedProjectId] = useState<string | null>(null);
-  
   const [selectedProjectForRating, setSelectedProjectForRating] = useState<Project | null>(null);
   const [selectedProjectForIssue, setSelectedProjectForIssue] = useState<Project | null>(null);
+
   const breadcrumbItems = [
     { label: 'Home', href: '/' },
     { label: 'Citizen', href: '/citizen' },
@@ -87,50 +75,24 @@ const CitizenProjects = () => {
 
   useEffect(() => {
     fetchProjects();
-    
-    // Subscribe to real-time updates for escrow accounts and milestones
-    const escrowChannel = supabase
-      .channel('citizen-escrow-updates')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'escrow_accounts' },
-        () => {
-          console.log('Escrow updated, refreshing data...');
-          fetchProjects();
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'project_milestones' },
-        () => {
-          console.log('Milestone updated, refreshing data...');
-          fetchProjects();
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'payment_transactions' },
-        () => {
-          console.log('Payment transaction updated, refreshing data...');
-          fetchProjects();
-        }
-      )
+    const channel = supabase
+      .channel('citizen-project-updates')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'escrow_accounts' }, () => fetchProjects())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'project_milestones' }, () => fetchProjects())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'payment_transactions' }, () => fetchProjects())
       .subscribe();
-
-    return () => {
-      supabase.removeChannel(escrowChannel);
-    };
+    return () => { supabase.removeChannel(channel); };
   }, []);
 
   const fetchProjects = async () => {
     try {
       const { data, error } = await supabase
         .from('projects')
-        .select('*, problem_reports!projects_report_id_fkey(category, photo_urls)')
+        .select('*, problem_reports!projects_report_id_fkey(category, photo_urls, location)')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      
+
       const projectsWithCategory = (data || []).map(p => ({
         id: p.id,
         title: p.title,
@@ -142,10 +104,10 @@ const CitizenProjects = () => {
         report_id: p.report_id,
         category: (p.problem_reports as any)?.category || null,
         photo_urls: (p.problem_reports as any)?.photo_urls || null,
+        location: (p.problem_reports as any)?.location || null,
       }));
       setProjects(projectsWithCategory);
 
-      // Fetch milestones and escrow info for each project
       for (const project of data || []) {
         const { data: milestonesData } = await supabase
           .from('project_milestones')
@@ -153,15 +115,11 @@ const CitizenProjects = () => {
           .eq('project_id', project.id)
           .order('milestone_number', { ascending: true });
 
-        // Deduplicate milestones by milestone_number - keep only the first one for each number
-        // This prevents showing duplicates when milestones were accidentally created multiple times
         const uniqueMilestones = (milestonesData || []).reduce((acc, milestone) => {
           const existingIndex = acc.findIndex((m: Milestone) => m.milestone_number === milestone.milestone_number);
           if (existingIndex === -1) {
-            // No milestone with this number yet, add it
             acc.push(milestone);
           } else {
-            // Keep the one with more recent updates or verified/paid status
             const existing = acc[existingIndex];
             const existingPriority = ['paid', 'verified', 'submitted', 'in_progress', 'pending'].indexOf(existing.status);
             const newPriority = ['paid', 'verified', 'submitted', 'in_progress', 'pending'].indexOf(milestone.status);
@@ -172,12 +130,8 @@ const CitizenProjects = () => {
           return acc;
         }, [] as Milestone[]);
 
-        setMilestones(prev => ({
-          ...prev,
-          [project.id]: uniqueMilestones
-        }));
+        setMilestones(prev => ({ ...prev, [project.id]: uniqueMilestones }));
 
-        // Fetch escrow info
         const { data: escrowData } = await supabase
           .from('escrow_accounts')
           .select('*')
@@ -185,10 +139,7 @@ const CitizenProjects = () => {
           .single();
 
         if (escrowData) {
-          setEscrowInfo(prev => ({
-            ...prev,
-            [project.id]: escrowData
-          }));
+          setEscrowInfo(prev => ({ ...prev, [project.id]: escrowData }));
         }
       }
     } catch (error: any) {
@@ -200,386 +151,187 @@ const CitizenProjects = () => {
   };
 
   const handleVerifyMilestone = async (milestoneId: string, rating: number) => {
-    if (!user) {
-      toast.error('Please log in to verify milestones');
-      return;
-    }
-
+    if (!user) { toast.error('Please log in to verify milestones'); return; }
     try {
-      const { error } = await supabase
-        .from('milestone_verifications')
-        .insert({
-          milestone_id: milestoneId,
-          verifier_id: user.id,
-          verification_status: 'approved',
-          verification_notes: `Citizen verification with rating: ${rating}/5`
-        });
-
+      const { error } = await supabase.from('milestone_verifications').insert({
+        milestone_id: milestoneId,
+        verifier_id: user.id,
+        verification_status: 'approved',
+        verification_notes: `Citizen verification with rating: ${rating}/5`
+      });
       if (error) throw error;
       toast.success('Milestone verified successfully!');
     } catch (error: any) {
-      console.error('Error verifying milestone:', error);
       toast.error('Failed to verify milestone');
     }
   };
 
-  const handleReportIssue = async (projectId: string, issueType: string) => {
-    if (!user) {
-      toast.error('Please log in to report issues');
-      return;
-    }
-    
-    toast.success(`Quality ${issueType} report submitted for project. Government officials will review this.`);
-  };
-
-  const handlePhotoEvidence = (projectId: string) => {
-    const project = projects.find(p => p.id === projectId);
-    if (project) {
-      setSelectedProjectForProgress(project);
-    }
-  };
-
-  const handleQRCheckin = async (projectId: string) => {
-    if (!user) {
-      toast.error('Please log in to check in');
-      return;
-    }
-    
-    try {
-      await supabase.from('project_progress').insert({
-        project_id: projectId,
-        updated_by: user.id,
-        update_description: 'Citizen site check-in via QR verification',
-        progress_percentage: null,
-        citizen_verified: true
-      });
-      toast.success('Site check-in recorded successfully!');
-    } catch (error) {
-      console.error('Check-in error:', error);
-      toast.error('Failed to record check-in');
-    }
-  };
-
-  const handleRateQuality = (project: Project) => {
-    if (!user) {
-      toast.error('Please log in to rate quality');
-      return;
-    }
-    setSelectedProjectForRating(project);
-  };
-
   const handleReportProjectIssue = (project: Project) => {
-    if (!user) {
-      toast.error('Please log in to report issues');
-      return;
-    }
+    if (!user) { toast.error('Please log in to report issues'); return; }
     setSelectedProjectForIssue(project);
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'completed': return 'bg-green-100 text-green-800';
-      case 'in_progress': return 'bg-blue-100 text-blue-800';
-      case 'planning': return 'bg-yellow-100 text-yellow-800';
-      case 'pending': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
+  const calculateProgress = (projectMilestones: Milestone[]) => calculateProjectProgress(projectMilestones);
 
-  const getMilestoneStatusIcon = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'verified': return <CheckCircle className="h-5 w-5 text-green-600" />;
-      case 'submitted': return <Clock className="h-5 w-5 text-blue-600" />;
-      case 'in_progress': return <TrendingUp className="h-5 w-5 text-orange-600" />;
-      default: return <Clock className="h-5 w-5 text-gray-400" />;
-    }
-  };
-
-  const calculateProgress = (projectMilestones: Milestone[]) => {
-    return calculateProjectProgress(projectMilestones);
-  };
-
-  const filteredProjects = projects.filter(project =>
-    project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    project.description.toLowerCase().includes(searchTerm.toLowerCase())
+  // Transform to ProjectCardData for the browser
+  const cardData: ProjectCardData[] = useMemo(() =>
+    projects.map(p => ({
+      id: p.id,
+      title: p.title,
+      description: p.description,
+      status: p.status,
+      budget: p.budget,
+      progress: calculateProgress(milestones[p.id] || []),
+      photo_url: p.photo_urls?.[0] || null,
+      location: p.location,
+      category: p.category,
+      contractor_id: p.contractor_id,
+      created_at: p.created_at,
+    })),
+    [projects, milestones]
   );
+
+  // When a project is selected from browser, show detail
+  const handleSelectProject = (projectId: string) => {
+    setExpandedProjectId(projectId);
+    setTimeout(() => {
+      document.getElementById(`project-detail-${projectId}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  };
+
+  const expandedProject = expandedProjectId ? projects.find(p => p.id === expandedProjectId) : null;
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
       <main>
         <ResponsiveContainer className="py-6 sm:py-8">
-          <div className="flex items-center gap-4 mb-4">
-            <Button variant="ghost" size="sm" onClick={() => window.history.back()}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
-            </Button>
-          </div>
-          
           <BreadcrumbNav items={breadcrumbItems} />
-          
-          <div className="mb-8">
-            <h1 className="text-2xl sm:text-3xl font-display font-bold text-foreground mb-2">Live Project Tracker</h1>
-            <p className="text-muted-foreground">Monitor active infrastructure projects, verify milestones, and track community investments.</p>
+
+          {/* Project Browser */}
+          <div className="mt-4">
+            <ProjectBrowser
+              projects={cardData}
+              onSelectProject={handleSelectProject}
+              loading={loading}
+              title="Live Project Tracker"
+              subtitle="Monitor active infrastructure projects, verify milestones, and track community investments."
+            />
           </div>
 
-          {/* Search & View Toggle */}
-          <Card className="mb-6">
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex gap-3 items-center">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    type="text"
-                    placeholder="Search projects by name or description..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                <div className="flex border rounded-lg overflow-hidden">
-                  <Button 
-                    variant={viewMode === 'categories' ? 'default' : 'ghost'} 
-                    size="sm"
-                    className="rounded-none"
-                    onClick={() => setViewMode('categories')}
-                  >
-                    <LayoutGrid className="h-4 w-4" />
-                  </Button>
-                  <Button 
-                    variant={viewMode === 'list' ? 'default' : 'ghost'} 
-                    size="sm"
-                    className="rounded-none"
-                    onClick={() => setViewMode('list')}
-                  >
-                    <List className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {loading ? (
-            <Card>
-              <CardContent className="p-8 text-center">
-                <div className="animate-pulse">Loading projects...</div>
-              </CardContent>
-            </Card>
-          ) : filteredProjects.length === 0 ? (
-            <Card>
-              <CardContent className="p-8 text-center">
-                <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No Projects Found</h3>
-                <p className="text-gray-600">No active projects match your search criteria.</p>
-              </CardContent>
-            </Card>
-          ) : viewMode === 'categories' ? (
-            <>
-              <ProjectCategoryCarousel
-                projects={filteredProjects.map(p => ({
-                  ...p,
-                  progress: calculateProgress(milestones[p.id] || []),
-                  photo_url: p.photo_urls?.[0] || null,
-                }))}
-                onSelectProject={(projectId) => {
-                  setExpandedProjectId(projectId);
-                  setViewMode('list');
-                  setTimeout(() => {
-                    document.getElementById(`project-${projectId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                  }, 100);
-                }}
-              />
-            </>
-          ) : (
-            <div className="space-y-6">
-              {filteredProjects.map((project) => {
-                const projectMilestones = milestones[project.id] || [];
-                const projectEscrow = escrowInfo[project.id];
-                const progress = calculateProgress(projectMilestones);
-                const photosCount = projectMilestones.reduce((sum, m) => sum + (m.evidence_urls?.length || 0), 0);
-
-                  return (
-                  <Card id={`project-${project.id}`} key={project.id} className="shadow-lg hover:shadow-xl transition-shadow overflow-hidden">
-                    {/* Hero Photo from citizen report */}
-                    {project.photo_urls?.[0] && (
-                      <div className="w-full h-[200px] sm:h-[240px] overflow-hidden">
-                        <img 
-                          src={project.photo_urls[0]} 
-                          alt={project.title}
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                        />
-                      </div>
+          {/* Expanded Project Detail */}
+          {expandedProject && (
+            <div id={`project-detail-${expandedProject.id}`} className="mt-6 animate-fade-in">
+              <Card className="overflow-hidden border-primary/20 shadow-card-hover">
+                {/* Hero */}
+                {expandedProject.photo_urls?.[0] && (
+                  <div className="w-full h-[200px] sm:h-[280px] overflow-hidden">
+                    <img src={expandedProject.photo_urls[0]} alt={expandedProject.title} className="w-full h-full object-cover" />
+                  </div>
+                )}
+                <CardHeader>
+                  <div className="flex items-center justify-between mb-2">
+                    <Button variant="ghost" size="sm" onClick={() => setExpandedProjectId(null)}>
+                      <ArrowLeft className="h-4 w-4 mr-1" /> Back to list
+                    </Button>
+                  </div>
+                  <ContractorBanner contractorId={expandedProject.contractor_id} />
+                  <CardTitle className="text-xl">{expandedProject.title}</CardTitle>
+                  <p className="text-muted-foreground text-sm">{expandedProject.description}</p>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    <Badge variant="outline"><Wallet className="h-3 w-3 mr-1" />KES {(expandedProject.budget || 0).toLocaleString()}</Badge>
+                    {expandedProject.location && (
+                      <Badge variant="outline"><MapPin className="h-3 w-3 mr-1" />{expandedProject.location}</Badge>
                     )}
-                    <CardHeader>
-                      <ContractorBanner contractorId={project.contractor_id} />
-                      <div className="flex flex-col md:flex-row justify-between items-start gap-4">
-                        <div className="flex-1">
-                          <CardTitle className="text-xl mb-2">{project.title}</CardTitle>
-                          <p className="text-gray-600 mb-3">{project.description}</p>
-                          <div className="flex flex-wrap gap-2">
-                            <Badge className={getStatusColor(project.status)}>
-                              {project.status.replace('_', ' ').toUpperCase()}
-                            </Badge>
-                            <Badge variant="outline" className="text-blue-600">
-                              <Wallet className="h-3 w-3 mr-1" />
-                              KES {(project.budget || 0).toLocaleString()}
-                            </Badge>
-                            {photosCount > 0 && (
-                              <Badge variant="outline" className="text-purple-600">
-                                <Camera className="h-3 w-3 mr-1" />
-                                {photosCount} photos
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-2xl font-bold text-green-600">{progress}%</div>
-                          <div className="text-sm text-gray-600">Complete</div>
-                        </div>
+                  </div>
+                </CardHeader>
+
+                <CardContent className="space-y-6">
+                  {/* Escrow */}
+                  {escrowInfo[expandedProject.id] && (
+                    <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium flex items-center gap-1.5">
+                          <Wallet className="h-4 w-4 text-primary" /> Escrow Status
+                        </span>
+                        <Badge variant={escrowInfo[expandedProject.id].held_amount >= escrowInfo[expandedProject.id].total_amount ? 'success' : 'warning'}>
+                          {escrowInfo[expandedProject.id].held_amount >= escrowInfo[expandedProject.id].total_amount ? 'Fully Funded' : 'Partial'}
+                        </Badge>
                       </div>
-                    </CardHeader>
-                    <CardContent>
-                      {/* Escrow & Funding Status */}
-                      {projectEscrow && (
-                        <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-medium flex items-center gap-1">
-                              <Wallet className="h-4 w-4" />
-                              Escrow Status
-                            </span>
-                            <Badge className={projectEscrow.held_amount >= projectEscrow.total_amount ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
-                              {projectEscrow.held_amount >= projectEscrow.total_amount ? 'Fully Funded' : 'Partial'}
-                            </Badge>
-                          </div>
-                          <div className="grid grid-cols-3 gap-2 text-xs">
-                            <div>
-                              <span className="text-muted-foreground">Total Budget</span>
-                              <p className="font-medium">KES {projectEscrow.total_amount.toLocaleString()}</p>
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground">Held</span>
-                              <p className="font-medium text-blue-600">KES {projectEscrow.held_amount.toLocaleString()}</p>
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground">Released</span>
-                              <p className="font-medium text-green-600">KES {projectEscrow.released_amount.toLocaleString()}</p>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Progress Bar */}
-                      <div className="mb-6">
-                        <div className="flex justify-between text-sm text-gray-600 mb-2">
-                          <span>Project Progress</span>
-                          <span>{progress}%</span>
-                        </div>
-                        <Progress value={progress} className="h-3" />
+                      <div className="grid grid-cols-3 gap-3 text-xs">
+                        <div><span className="text-muted-foreground">Budget</span><p className="font-medium">KES {escrowInfo[expandedProject.id].total_amount.toLocaleString()}</p></div>
+                        <div><span className="text-muted-foreground">Held</span><p className="font-medium text-primary">KES {escrowInfo[expandedProject.id].held_amount.toLocaleString()}</p></div>
+                        <div><span className="text-muted-foreground">Released</span><p className="font-medium text-green-700">KES {escrowInfo[expandedProject.id].released_amount.toLocaleString()}</p></div>
                       </div>
+                    </div>
+                  )}
 
-                      {/* Milestones with Verification Cards */}
-                      {projectMilestones.length > 0 && (
-                        <div className="mb-6">
-                          <div className="flex items-center justify-between mb-4">
-                            <h4 className="font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                              <Target className="h-5 w-5 text-primary" />
-                              Milestones - Verify to Release Payments
-                            </h4>
-                            <Badge variant="outline" className="text-green-600 border-green-300">
-                              {projectMilestones.filter(m => m.status === 'paid').length}/{projectMilestones.length} Paid
-                            </Badge>
-                          </div>
-                          
-                          {/* How It Works Info Box */}
-                          <div className="mb-4 p-4 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-lg border border-green-200 dark:border-green-700">
-                            <h5 className="font-semibold text-green-800 dark:text-green-200 mb-2 flex items-center gap-2">
-                              <CheckCircle className="h-4 w-4" />
-                              How Citizen Verification Works
-                            </h5>
-                            <ol className="text-sm text-green-700 dark:text-green-300 space-y-1 list-decimal list-inside">
-                              <li>Contractor submits milestone with photo evidence</li>
-                              <li><strong>2+ citizens</strong> must verify the work quality</li>
-                              <li>Average rating must be <strong>3+ stars</strong></li>
-                              <li><strong>Payment automatically releases</strong> from escrow to contractor</li>
-                            </ol>
-                          </div>
+                  {/* Progress */}
+                  <div>
+                    <div className="flex justify-between text-sm text-muted-foreground mb-2">
+                      <span>Project Progress</span>
+                      <span className="font-semibold text-foreground">{calculateProgress(milestones[expandedProject.id] || [])}%</span>
+                    </div>
+                    <Progress value={calculateProgress(milestones[expandedProject.id] || [])} className="h-2" />
+                  </div>
 
-                          <div className="space-y-3">
-                            {projectMilestones.map((milestone) => (
-                              <MilestoneVerificationCard
-                                key={milestone.id}
-                                milestone={{
-                                  ...milestone,
-                                  completion_criteria: null
-                                }}
-                                projectId={project.id}
-                                onVerified={fetchProjects}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Verification Actions */}
-                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="text-red-600"
-                          onClick={() => handleReportProjectIssue(project)}
-                        >
-                          <AlertTriangle className="h-4 w-4 mr-2" />
-                          Report Issue
-                        </Button>
+                  {/* Milestones */}
+                  {(milestones[expandedProject.id] || []).length > 0 && (
+                    <div>
+                      <div className="flex items-center justify-between mb-4">
+                        <h4 className="font-display font-semibold text-foreground flex items-center gap-2">
+                          <Target className="h-5 w-5 text-primary" /> Milestones
+                        </h4>
+                        <Badge variant="outline" className="text-green-700 border-green-300">
+                          {(milestones[expandedProject.id] || []).filter(m => m.status === 'paid').length}/{(milestones[expandedProject.id] || []).length} Paid
+                        </Badge>
                       </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+                      <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800 mb-4">
+                        <h5 className="font-semibold text-green-800 dark:text-green-200 mb-2 flex items-center gap-2 text-sm">
+                          <CheckCircle className="h-4 w-4" /> How Citizen Verification Works
+                        </h5>
+                        <ol className="text-xs text-green-700 dark:text-green-300 space-y-1 list-decimal list-inside">
+                          <li>Contractor submits milestone with photo evidence</li>
+                          <li><strong>2+ citizens</strong> must verify the work quality</li>
+                          <li>Average rating must be <strong>3+ stars</strong></li>
+                          <li><strong>Payment automatically releases</strong> from escrow</li>
+                        </ol>
+                      </div>
+                      <div className="space-y-3">
+                        {(milestones[expandedProject.id] || []).map(milestone => (
+                          <MilestoneVerificationCard
+                            key={milestone.id}
+                            milestone={{ ...milestone, completion_criteria: null }}
+                            projectId={expandedProject.id}
+                            onVerified={fetchProjects}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  <div className="pt-2">
+                    <Button variant="outline" size="sm" className="text-destructive" onClick={() => handleReportProjectIssue(expandedProject)}>
+                      <AlertTriangle className="h-4 w-4 mr-2" /> Report Issue
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           )}
         </ResponsiveContainer>
       </main>
 
-      {/* Map Modal */}
-      <ProjectMapModal
-        isOpen={showMapModal}
-        onClose={() => setShowMapModal(false)}
-        projects={filteredProjects}
-      />
-
-      {/* Progress Viewer Modal */}
+      <ProjectMapModal isOpen={showMapModal} onClose={() => setShowMapModal(false)} projects={projects} />
       {selectedProjectForProgress && (
-        <ProjectProgressViewer
-          projectId={selectedProjectForProgress.id}
-          projectTitle={selectedProjectForProgress.title}
-          isOpen={!!selectedProjectForProgress}
-          onClose={() => setSelectedProjectForProgress(null)}
-        />
+        <ProjectProgressViewer projectId={selectedProjectForProgress.id} projectTitle={selectedProjectForProgress.title} isOpen={!!selectedProjectForProgress} onClose={() => setSelectedProjectForProgress(null)} />
       )}
-
-      {/* Quality Rating Modal */}
       {selectedProjectForRating && (
-        <QualityRatingModal
-          isOpen={!!selectedProjectForRating}
-          onClose={() => setSelectedProjectForRating(null)}
-          projectId={selectedProjectForRating.id}
-          projectTitle={selectedProjectForRating.title}
-          onRatingSubmitted={fetchProjects}
-        />
+        <QualityRatingModal isOpen={!!selectedProjectForRating} onClose={() => setSelectedProjectForRating(null)} projectId={selectedProjectForRating.id} projectTitle={selectedProjectForRating.title} onRatingSubmitted={fetchProjects} />
       )}
-
-      {/* Project Issue Report Modal */}
       {selectedProjectForIssue && (
-        <ProjectIssueReportModal
-          isOpen={!!selectedProjectForIssue}
-          onClose={() => setSelectedProjectForIssue(null)}
-          projectId={selectedProjectForIssue.id}
-          projectTitle={selectedProjectForIssue.title}
-          onIssueSubmitted={fetchProjects}
-        />
+        <ProjectIssueReportModal isOpen={!!selectedProjectForIssue} onClose={() => setSelectedProjectForIssue(null)} projectId={selectedProjectForIssue.id} projectTitle={selectedProjectForIssue.title} onIssueSubmitted={fetchProjects} />
       )}
     </div>
   );
