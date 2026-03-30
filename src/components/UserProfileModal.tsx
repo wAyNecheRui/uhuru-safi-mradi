@@ -643,14 +643,6 @@ const UserProfileModal = ({ isOpen, onClose }: UserProfileModalProps) => {
           </div>
         </DialogContent>
       </Dialog>
-
-      <RoleRequestModal 
-        isOpen={isRoleRequestOpen}
-        onClose={() => {
-          setIsRoleRequestOpen(false);
-          loadVerificationRequests();
-        }}
-      />
     </>
   );
 };
