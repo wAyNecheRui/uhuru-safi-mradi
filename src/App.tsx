@@ -131,6 +131,11 @@ const App = () => {
                       <SettingsPage />
                     </ProtectedRoute>
                   } />
+                  <Route path="/profile" element={
+                    <ProtectedRoute allowedRoles={["citizen", "contractor", "government", "admin"]}>
+                      <ProfilePage />
+                    </ProtectedRoute>
+                  } />
                   <Route path="/contractor-database" element={
                     <ProtectedRoute allowedRoles={["government", "admin", "contractor"]}>
                       <ContractorDatabasePage />

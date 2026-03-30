@@ -618,7 +618,7 @@ const UserProfileModal = ({ isOpen, onClose }: UserProfileModalProps) => {
                   </div>
 
                   <div>
-                    <h3 className="text-sm font-semibold mb-3">Verification Requests</h3>
+                    <h3 className="text-sm font-semibold mb-3">Verification Status</h3>
                     {verificationRequests.length > 0 ? (
                       <div className="space-y-2">
                         {verificationRequests.map((request) => (
@@ -637,11 +637,6 @@ const UserProfileModal = ({ isOpen, onClose }: UserProfileModalProps) => {
                       <p className="text-muted-foreground text-sm">No verification requests</p>
                     )}
                   </div>
-
-                  <Button onClick={() => setIsRoleRequestOpen(true)} variant="outline" size="sm">
-                    <Award className="h-4 w-4 mr-2" />
-                    Request Role Upgrade
-                  </Button>
                 </div>
               </TabsContent>
             </Tabs>
