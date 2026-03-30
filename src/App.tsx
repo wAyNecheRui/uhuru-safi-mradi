@@ -80,8 +80,9 @@ const UserGuide = lazy(() => import("./pages/UserGuide"));
 // Dispute Resolution
 const DisputeResolution = lazy(() => import("./pages/DisputeResolution"));
 
-// Settings
+// Settings & Profile
 const SettingsPage = lazy(() => import("./pages/Settings"));
+const ProfilePage = lazy(() => import("./pages/Profile"));
 const Terms = lazy(() => import("./pages/Terms"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 
