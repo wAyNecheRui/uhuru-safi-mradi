@@ -218,7 +218,7 @@ const Settings = () => {
                       {user?.user_type || 'citizen'}
                     </Badge>
                   </div>
-                  <Button variant="outline" size="sm" onClick={() => navigate(getDashboardPath())}>
+                  <Button variant="outline" size="sm" onClick={() => navigate('/profile')}>
                     View Profile
                   </Button>
                 </div>
