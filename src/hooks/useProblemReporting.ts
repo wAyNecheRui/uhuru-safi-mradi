@@ -68,6 +68,21 @@ export const useProblemReporting = () => {
     );
   }, []);
 
+  const getValidationErrors = useCallback((): string[] => {
+    const errors: string[] = [];
+    if (!reportData.title.trim()) errors.push('Problem title is required');
+    if (!reportData.category) errors.push('Category is required');
+    if (!reportData.description.trim()) errors.push('Description is required');
+    if (!reportData.location.trim()) errors.push('Location is required');
+    if (reportData.photos.length === 0) errors.push('At least one photo or video is required');
+    if (!reportData.priority) errors.push('Priority level is required');
+    return errors;
+  }, [reportData]);
+
+  const isFormValid = useCallback(() => {
+    return getValidationErrors().length === 0;
+  }, [getValidationErrors]);
+
   const submitReport = useCallback(async () => {
     if (!user) {
       toast.error('Please log in to submit a report');
@@ -75,12 +90,9 @@ export const useProblemReporting = () => {
       return;
     }
 
-    // Validation
-    const requiredFields = ['title', 'category', 'description', 'location'];
-    const missingFields = requiredFields.filter(field => !reportData[field as keyof ReportData]);
-    
-    if (missingFields.length > 0) {
-      toast.error(`Please fill in: ${missingFields.join(', ')}`);
+    const errors = getValidationErrors();
+    if (errors.length > 0) {
+      toast.error(`Please fix: ${errors[0]}`);
       return;
     }
 
