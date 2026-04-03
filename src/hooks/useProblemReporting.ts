@@ -193,6 +193,8 @@ export const useProblemReporting = () => {
     handleRemovePhoto,
     getCurrentLocation,
     submitReport,
-    isSubmitting
+    isSubmitting,
+    getValidationErrors,
+    isFormValid
   };
 };

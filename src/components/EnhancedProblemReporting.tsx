@@ -2,13 +2,14 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, FileText } from 'lucide-react';
+import { AlertTriangle, FileText, AlertCircle } from 'lucide-react';
 import { useProblemReporting } from '@/hooks/useProblemReporting';
 import BasicInfoSection from '@/components/reporting/BasicInfoSection';
 import LocationSection from '@/components/reporting/LocationSection';
 import PriorityImpactSection from '@/components/reporting/PriorityImpactSection';
 import ImpactAssessmentSection from '@/components/reporting/ImpactAssessmentSection';
 import PhotoUploadSection from '@/components/reporting/PhotoUploadSection';
+import { ValidationTooltip } from '@/components/ui/validation-tooltip';
 
 const EnhancedProblemReporting = () => {
   const {
@@ -18,8 +19,13 @@ const EnhancedProblemReporting = () => {
     handleRemovePhoto,
     getCurrentLocation,
     submitReport,
-    isSubmitting
+    isSubmitting,
+    getValidationErrors,
+    isFormValid
   } = useProblemReporting();
+
+  const validationErrors = getValidationErrors();
+  const formValid = isFormValid();
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -38,6 +44,12 @@ const EnhancedProblemReporting = () => {
             reportData={reportData}
             onInputChange={handleInputChange}
           />
+          {/* Inline validation for title */}
+          {!reportData.title.trim() && reportData.description.trim() && (
+            <p className="text-xs text-destructive flex items-center gap-1 -mt-4">
+              <AlertCircle className="h-3 w-3" /> Problem title is required
+            </p>
+          )}
 
           <LocationSection
             reportData={reportData}
@@ -49,34 +61,69 @@ const EnhancedProblemReporting = () => {
             reportData={reportData}
             onInputChange={handleInputChange}
           />
+          {/* Inline validation for priority */}
+          {!reportData.priority && reportData.title.trim() && (
+            <p className="text-xs text-destructive flex items-center gap-1 -mt-4">
+              <AlertCircle className="h-3 w-3" /> Priority level is required
+            </p>
+          )}
 
-          <PhotoUploadSection
-            photoCount={reportData.photos.length}
-            photos={reportData.photos}
-            onPhotoUpload={handlePhotoUpload}
-            onRemovePhoto={handleRemovePhoto}
-          />
+          <div className="space-y-2">
+            <PhotoUploadSection
+              photoCount={reportData.photos.length}
+              photos={reportData.photos}
+              onPhotoUpload={handlePhotoUpload}
+              onRemovePhoto={handleRemovePhoto}
+            />
+            {/* Mandatory photo requirement */}
+            {reportData.photos.length === 0 && (
+              <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+                <AlertCircle className="h-4 w-4 text-destructive shrink-0" />
+                <p className="text-sm text-destructive font-medium">
+                  At least one photo or video is required to submit a report
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Validation summary */}
+          {validationErrors.length > 0 && (
+            <div className="bg-muted/50 border rounded-lg p-4">
+              <p className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
+                <AlertCircle className="h-4 w-4" />
+                {validationErrors.length} requirement{validationErrors.length > 1 ? 's' : ''} remaining
+              </p>
+              <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
+                {validationErrors.map((err, i) => (
+                  <li key={i}>{err}</li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           <div className="flex justify-end space-x-4">
             <Button variant="outline" onClick={() => window.history.back()}>
               Cancel
             </Button>
-            <Button 
-              onClick={submitReport}
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <>
-                  <span className="animate-spin mr-2">⏳</span>
-                  Submitting...
-                </>
-              ) : (
-                <>
-                  <FileText className="h-4 w-4 mr-2" />
-                  Submit Report
-                </>
-              )}
-            </Button>
+            <ValidationTooltip disabled={!formValid} missingFields={validationErrors}>
+              <Button 
+                onClick={submitReport}
+                disabled={isSubmitting || !formValid}
+                className="w-full sm:w-auto"
+              >
+                {isSubmitting ? (
+                  <>
+                    <span className="animate-spin mr-2">⏳</span>
+                    Submitting...
+                  </>
+                ) : (
+                  <>
+                    <FileText className="h-4 w-4 mr-2" />
+                    Submit Report
+                  </>
+                )}
+              </Button>
+            </ValidationTooltip>
           </div>
         </CardContent>
       </Card>
