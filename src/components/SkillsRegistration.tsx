@@ -138,6 +138,17 @@ const SkillsRegistration = () => {
     }));
   };
 
+  const skillsValidationErrors = (): string[] => {
+    const errors: string[] = [];
+    if (!formData.fullName.trim()) errors.push('Full name is required');
+    if (!formData.phoneNumber.trim()) errors.push('Phone number is required');
+    if (!formData.location.trim()) errors.push('Location is required');
+    if (formData.selectedSkills.length === 0) errors.push('Select at least one skill');
+    return errors;
+  };
+
+  const isSkillsFormValid = skillsValidationErrors().length === 0;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -146,8 +157,9 @@ const SkillsRegistration = () => {
       return;
     }
 
-    if (formData.selectedSkills.length === 0) {
-      toast.error('Please select at least one skill');
+    const errors = skillsValidationErrors();
+    if (errors.length > 0) {
+      toast.error(errors[0]);
       return;
     }
 
@@ -249,8 +261,8 @@ const SkillsRegistration = () => {
 
             <Button 
               type="submit" 
-              className="w-full bg-blue-600 hover:bg-blue-700" 
-              disabled={loading}
+              className="w-full" 
+              disabled={loading || !isSkillsFormValid}
             >
               {loading ? (
                 'Saving...'
@@ -260,6 +272,11 @@ const SkillsRegistration = () => {
                 'Register Basic Profile'
               )}
             </Button>
+            {!isSkillsFormValid && (
+              <p className="text-xs text-muted-foreground text-center mt-2">
+                Complete all required fields to enable submission
+              </p>
+            )}
           </form>
         </CardContent>
       </Card>

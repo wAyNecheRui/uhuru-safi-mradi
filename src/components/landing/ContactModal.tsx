@@ -23,8 +23,14 @@ const ContactModal = ({ isOpen, onClose }: ContactModalProps) => {
     userType: ''
   });
 
+  const isContactValid = formData.name.trim() && formData.email.trim() && formData.subject.trim() && formData.message.trim() && formData.message.trim().length >= 10;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isContactValid) {
+      toast.error('Please fill in all required fields (message must be at least 10 characters)');
+      return;
+    }
     setIsSubmitting(true);
     try {
       const { data, error } = await supabase.functions.invoke('submit-contact', {
@@ -185,7 +191,7 @@ const ContactModal = ({ isOpen, onClose }: ContactModalProps) => {
                   />
                 </div>
 
-                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                <Button type="submit" className="w-full" disabled={isSubmitting || !isContactValid}>
                   {isSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
                   {isSubmitting ? 'Sending...' : 'Send Message'}
                 </Button>

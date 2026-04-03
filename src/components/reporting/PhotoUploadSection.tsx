@@ -30,7 +30,9 @@ const PhotoUploadSection = ({ photoCount, photos = [], onPhotoUpload, onRemovePh
 
   return (
     <div className="space-y-4">
-      <label className="block text-sm font-medium text-gray-700 mb-2">Photo & Video Documentation</label>
+      <label className="block text-sm font-medium text-foreground mb-2">
+        Photo & Video Documentation <span className="text-destructive">*</span>
+      </label>
       
       {/* Upload Area */}
       <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary/50 transition-colors">

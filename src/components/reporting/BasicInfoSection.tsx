@@ -15,7 +15,7 @@ const BasicInfoSection = ({ reportData, onInputChange }: BasicInfoSectionProps) 
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Problem Title *</label>
+          <label className="block text-sm font-medium text-foreground mb-2">Problem Title <span className="text-destructive">*</span></label>
           <Input
             placeholder="Brief description of the problem"
             value={reportData.title}
@@ -23,7 +23,7 @@ const BasicInfoSection = ({ reportData, onInputChange }: BasicInfoSectionProps) 
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Category *</label>
+          <label className="block text-sm font-medium text-foreground mb-2">Category <span className="text-destructive">*</span></label>
           <select
             className="w-full p-2 border border-gray-300 rounded-md"
             value={reportData.category}

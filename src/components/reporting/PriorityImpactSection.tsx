@@ -29,7 +29,7 @@ const PriorityImpactSection = ({ reportData, onInputChange }: PriorityImpactSect
   return (
     <div className="space-y-6">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-3">Priority & Impact Level</label>
+        <label className="block text-sm font-medium text-foreground mb-3">Priority & Impact Level <span className="text-destructive">*</span></label>
         <div className="space-y-3">
           {PRIORITIES.map(priority => (
             <div
