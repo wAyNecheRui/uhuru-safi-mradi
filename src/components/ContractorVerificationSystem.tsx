@@ -2,7 +2,8 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, Loader2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Shield, Loader2, Building, FileText, BarChart3, FolderOpen, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useContractorVerification } from '@/hooks/useContractorVerification';
 import CompanyProfileTab from '@/components/verification/CompanyProfileTab';
@@ -13,39 +14,37 @@ import PerformanceTab from '@/components/verification/PerformanceTab';
 const ContractorVerificationSystem = () => {
   const [activeTab, setActiveTab] = useState('profile');
   const { toast } = useToast();
-  const { verificationData, loading, handleDocumentUpload } = useContractorVerification();
+  const { verificationData, loading, handleDocumentUpload, refetch } = useContractorVerification();
 
   if (loading) {
     return (
-      <div className="max-w-6xl mx-auto space-y-6">
-        <Card className="shadow-xl border-t-4 border-t-blue-600">
-          <CardContent className="p-6 text-center">
-            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-            <p>Loading verification data...</p>
-          </CardContent>
-        </Card>
-      </div>
+      <Card className="border-0 shadow-lg">
+        <CardContent className="p-12 text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+          <p className="text-muted-foreground">Loading verification data...</p>
+        </CardContent>
+      </Card>
     );
   }
 
   if (!verificationData) {
     return (
-      <div className="max-w-6xl mx-auto space-y-6">
-        <Card className="shadow-xl border-t-4 border-t-blue-600">
-          <CardContent className="p-6 text-center">
-            <p>No verification data available. Please complete your profile first.</p>
-          </CardContent>
-        </Card>
-      </div>
+      <Card className="border-0 shadow-lg">
+        <CardContent className="p-12 text-center">
+          <Shield className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+          <h3 className="text-lg font-semibold mb-2">Complete Your Profile</h3>
+          <p className="text-muted-foreground">No verification data available. Please complete your contractor profile first.</p>
+        </CardContent>
+      </Card>
     );
   }
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'verified': return 'bg-green-100 text-green-800 border-green-200';
+      case 'verified': return 'bg-primary/10 text-primary border-primary/20';
       case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'expired': return 'bg-red-100 text-red-800 border-red-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'expired': return 'bg-destructive/10 text-destructive border-destructive/20';
+      default: return 'bg-muted text-muted-foreground border-border';
     }
   };
 
@@ -57,26 +56,83 @@ const ContractorVerificationSystem = () => {
     }).format(amount);
   };
 
+  // Calculate verification completion
+  const totalCerts = verificationData.certifications?.length || 0;
+  const verifiedCerts = verificationData.certifications?.filter((c: any) => c.status === 'verified').length || 0;
+  const pendingCerts = verificationData.certifications?.filter((c: any) => c.status === 'pending').length || 0;
+
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      <Card className="shadow-xl border-t-4 border-t-blue-600">
-        <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50">
-          <CardTitle className="flex items-center text-2xl">
-            <Shield className="h-6 w-6 mr-3 text-blue-600" />
-            Contractor Verification System
-          </CardTitle>
-          <p className="text-gray-600 mt-2">
-            Maintain professional credentials, track performance, and build trust with the community.
-          </p>
-        </CardHeader>
+    <div className="space-y-6">
+      {/* Verification Summary Header */}
+      <Card className="border-0 shadow-lg overflow-hidden">
+        <div className="bg-gradient-to-r from-primary/5 via-primary/3 to-transparent p-6">
+          <div className="flex items-start justify-between flex-wrap gap-4">
+            <div>
+              <h2 className="text-2xl font-bold text-foreground flex items-center gap-3">
+                <Shield className="h-6 w-6 text-primary" />
+                Verification Dashboard
+              </h2>
+              <p className="text-muted-foreground mt-1">
+                Maintain your credentials and track your professional standing.
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Badge className={`${getStatusColor(verificationData.verificationStatus)} px-3 py-1.5 text-sm`}>
+                {verificationData.verificationStatus === 'verified' ? (
+                  <CheckCircle className="h-4 w-4 mr-1.5" />
+                ) : verificationData.verificationStatus === 'pending' ? (
+                  <Clock className="h-4 w-4 mr-1.5" />
+                ) : (
+                  <AlertTriangle className="h-4 w-4 mr-1.5" />
+                )}
+                {verificationData.verificationStatus.charAt(0).toUpperCase() + verificationData.verificationStatus.slice(1)}
+              </Badge>
+            </div>
+          </div>
+          
+          {/* Quick Stats Row */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
+            <div className="bg-background/80 backdrop-blur rounded-lg p-3 text-center border">
+              <p className="text-2xl font-bold text-foreground">{verifiedCerts}</p>
+              <p className="text-xs text-muted-foreground">Verified Credentials</p>
+            </div>
+            <div className="bg-background/80 backdrop-blur rounded-lg p-3 text-center border">
+              <p className="text-2xl font-bold text-yellow-600">{pendingCerts}</p>
+              <p className="text-xs text-muted-foreground">Pending Review</p>
+            </div>
+            <div className="bg-background/80 backdrop-blur rounded-lg p-3 text-center border">
+              <p className="text-2xl font-bold text-foreground">{verificationData.completedProjects}</p>
+              <p className="text-xs text-muted-foreground">Completed Projects</p>
+            </div>
+            <div className="bg-background/80 backdrop-blur rounded-lg p-3 text-center border">
+              <p className="text-2xl font-bold text-foreground">
+                {(verificationData.overallRating || 0).toFixed(1)}
+              </p>
+              <p className="text-xs text-muted-foreground">Rating</p>
+            </div>
+          </div>
+        </div>
       </Card>
 
+      {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4 bg-white shadow-lg">
-          <TabsTrigger value="profile">Company Profile</TabsTrigger>
-          <TabsTrigger value="certifications">Certifications</TabsTrigger>
-          <TabsTrigger value="projects">Project History</TabsTrigger>
-          <TabsTrigger value="performance">Performance</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-4 bg-background border shadow-sm h-auto p-1">
+          <TabsTrigger value="profile" className="flex items-center gap-1.5 text-xs sm:text-sm py-2.5">
+            <Building className="h-4 w-4" />
+            <span className="hidden sm:inline">Company</span> Profile
+          </TabsTrigger>
+          <TabsTrigger value="certifications" className="flex items-center gap-1.5 text-xs sm:text-sm py-2.5">
+            <FileText className="h-4 w-4" />
+            Credentials
+          </TabsTrigger>
+          <TabsTrigger value="projects" className="flex items-center gap-1.5 text-xs sm:text-sm py-2.5">
+            <FolderOpen className="h-4 w-4" />
+            Projects
+          </TabsTrigger>
+          <TabsTrigger value="performance" className="flex items-center gap-1.5 text-xs sm:text-sm py-2.5">
+            <BarChart3 className="h-4 w-4" />
+            Performance
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile" className="space-y-6">
@@ -91,6 +147,7 @@ const ContractorVerificationSystem = () => {
             verificationData={verificationData} 
             getStatusColor={getStatusColor}
             handleDocumentUpload={handleDocumentUpload}
+            onUploadComplete={refetch}
           />
         </TabsContent>
 
