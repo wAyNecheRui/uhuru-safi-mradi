@@ -378,68 +378,74 @@ const GovernmentContractorManagement = () => {
             {/* Pending Verification Tab */}
             <TabsContent value="verification" className="space-y-6">
               {credentials.length === 0 ? (
-                <Card>
-                  <CardContent className="p-8 text-center">
-                    <CheckCircle className="h-12 w-12 mx-auto text-green-500 mb-4" />
-                    <p className="text-gray-600">No pending credential verifications</p>
+                <Card className="border-0 shadow-lg">
+                  <CardContent className="p-12 text-center">
+                    <CheckCircle className="h-16 w-16 mx-auto text-primary/30 mb-4" />
+                    <h3 className="text-lg font-semibold mb-1">All Caught Up</h3>
+                    <p className="text-muted-foreground">No pending credential verifications at this time.</p>
                   </CardContent>
                 </Card>
               ) : (
                 credentials.map((credential) => (
-                  <Card key={credential.id} className="shadow-lg border-l-4 border-l-yellow-500">
+                  <Card key={credential.id} className="shadow-lg border-l-4 border-l-yellow-500 overflow-hidden">
                     <CardContent className="p-6">
                       <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
                         <div>
-                          <h3 className="text-lg font-semibold">{credential.credential_name}</h3>
-                          <p className="text-sm text-gray-500">
+                          <h3 className="text-lg font-semibold text-foreground">{credential.credential_name}</h3>
+                          <p className="text-sm text-muted-foreground">
                             {credential.credential_type} • {credential.issuing_authority}
                           </p>
                           {credential.credential_number && (
-                            <p className="text-sm font-mono mt-1">#{credential.credential_number}</p>
+                            <p className="text-sm font-mono mt-1 text-muted-foreground">#{credential.credential_number}</p>
                           )}
                         </div>
-                        <Badge className="bg-yellow-100 text-yellow-800">Pending Review</Badge>
+                        <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">
+                          <Clock className="h-3 w-3 mr-1" />
+                          Pending Review
+                        </Badge>
                       </div>
 
                       <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
-                        <div>
-                          <span className="text-gray-600">Issue Date:</span>
-                          <span className="ml-2">{credential.issue_date || 'N/A'}</span>
+                        <div className="p-2 rounded bg-muted/30">
+                          <span className="text-muted-foreground block text-xs">Issue Date</span>
+                          <span className="font-medium">{credential.issue_date || 'N/A'}</span>
                         </div>
-                        <div>
-                          <span className="text-gray-600">Expiry Date:</span>
-                          <span className="ml-2">{credential.expiry_date || 'N/A'}</span>
+                        <div className="p-2 rounded bg-muted/30">
+                          <span className="text-muted-foreground block text-xs">Expiry Date</span>
+                          <span className="font-medium">{credential.expiry_date || 'N/A'}</span>
                         </div>
                       </div>
 
                       {credential.document_url && (
-                        <div className="mb-4">
+                        <div className="mb-4 p-3 bg-primary/5 rounded-lg border border-primary/10">
                           <a 
                             href={credential.document_url} 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className="text-blue-600 hover:underline flex items-center gap-2"
+                            className="text-primary hover:underline flex items-center gap-2 font-medium text-sm"
                           >
                             <FileText className="h-4 w-4" />
-                            View Document
+                            View Uploaded Document
                           </a>
                         </div>
                       )}
 
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 pt-2 border-t">
                         <Button 
                           onClick={() => handleVerifyCredential(credential.id, 'verified')}
+                          size="sm"
                           className="bg-green-600 hover:bg-green-700"
                         >
-                          <CheckCircle className="h-4 w-4 mr-2" />
-                          Verify
+                          <CheckCircle className="h-4 w-4 mr-1.5" />
+                          Approve
                         </Button>
                         <Button 
                           onClick={() => handleVerifyCredential(credential.id, 'rejected')}
                           variant="outline"
-                          className="border-red-500 text-red-700 hover:bg-red-50"
+                          size="sm"
+                          className="border-destructive/50 text-destructive hover:bg-destructive/5"
                         >
-                          <XCircle className="h-4 w-4 mr-2" />
+                          <XCircle className="h-4 w-4 mr-1.5" />
                           Reject
                         </Button>
                       </div>
