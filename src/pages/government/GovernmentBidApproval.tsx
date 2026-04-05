@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   CheckCircle, XCircle, AlertCircle, Clock, Wallet, 
   Users, FileText, Award, TrendingUp, Loader2, RefreshCw,
-  AlertTriangle, MapPin, Camera, Shield, Gavel
+  AlertTriangle, MapPin, Camera, Shield, Gavel, Download
 } from 'lucide-react';
 import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
@@ -18,6 +18,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { BiddingWorkflowService, BidRequirements, TopBid } from '@/services/BiddingWorkflowService';
 import { EscrowWorkflowService } from '@/services/EscrowWorkflowService';
+import { LPOGenerationService } from '@/services/LPOGenerationService';
 import {
   Dialog,
   DialogContent,
@@ -133,12 +134,35 @@ const GovernmentBidApproval = () => {
         // Create escrow account for the project
         const escrowCreated = await EscrowWorkflowService.createEscrowForProject(selectedProject.id);
         
-        toast({
-          title: "Contractor Selected Successfully!",
-          description: escrowCreated 
-            ? "Escrow account created. Please proceed to fund the project before work can begin."
-            : "The winning contractor has been selected. Please set up escrow funding."
-        });
+        // Get project ID for LPO
+        const { data: project } = await supabase
+          .from('projects')
+          .select('id')
+          .eq('report_id', selectedProject.id)
+          .single();
+
+        // Generate LPO automatically
+        if (project) {
+          const lpoGenerated = await LPOGenerationService.createAndDownloadLPO(
+            selectedProject.id,
+            project.id,
+            selectedBid.bid_id
+          );
+          
+          toast({
+            title: "Contractor Selected & LPO Generated!",
+            description: lpoGenerated
+              ? "LPO has been downloaded. Please proceed to fund the escrow."
+              : "Contractor selected. LPO generation will be available from the project page."
+          });
+        } else {
+          toast({
+            title: "Contractor Selected Successfully!",
+            description: escrowCreated 
+              ? "Escrow account created. Please proceed to fund the project."
+              : "The winning contractor has been selected."
+          });
+        }
         
         setShowApprovalDialog(false);
         setSelectedProject(null);
