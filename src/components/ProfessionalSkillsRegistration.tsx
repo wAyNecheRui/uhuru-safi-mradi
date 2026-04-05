@@ -18,11 +18,13 @@ import {
   User,
   Calendar,
   FileText,
-  Shield
+  Shield,
+  CheckCircle
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import DocumentUploadSection from '@/components/skills/DocumentUploadSection';
 
 const skillCategories = [
   {
@@ -155,6 +157,7 @@ const ProfessionalSkillsRegistration = () => {
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [existingRegistration, setExistingRegistration] = useState<any>(null);
+  const [uploadedDocuments, setUploadedDocuments] = useState<any[]>([]);
 
   const counties = [
     'Baringo', 'Bomet', 'Bungoma', 'Busia', 'Elgeyo-Marakwet', 'Embu', 'Garissa',
@@ -432,6 +435,12 @@ const ProfessionalSkillsRegistration = () => {
                     {formData.availableForWork ? '✓ Available for Work' : 'Not Available'}
                   </Badge>
                 </div>
+                {uploadedDocuments.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    <span className="text-sm text-green-700">{uploadedDocuments.length} document(s) uploaded</span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -719,6 +728,15 @@ const ProfessionalSkillsRegistration = () => {
                 </Label>
               </div>
             </div>
+
+            {/* Document Uploads */}
+            {user && (
+              <DocumentUploadSection
+                userId={user.id}
+                documents={uploadedDocuments}
+                onDocumentsChange={setUploadedDocuments}
+              />
+            )}
 
             <div className="flex justify-end space-x-4 pt-6 border-t">
               <Button 
