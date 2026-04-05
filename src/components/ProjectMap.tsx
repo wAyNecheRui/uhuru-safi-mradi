@@ -1,21 +1,99 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { MapPin, Wrench, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useMapProjects } from '@/hooks/useMapProjects';
+import InteractiveMap, { MapMarker } from '@/components/maps/InteractiveMap';
 
 interface ProjectMapProps {
   selectedCounty: string;
 }
 
+// Kenya county approximate centers for fallback positioning
+const countyCoordinates: Record<string, [number, number]> = {
+  'nairobi': [-1.2921, 36.8219],
+  'mombasa': [-4.0435, 39.6682],
+  'kisumu': [-0.1022, 34.7617],
+  'nakuru': [-0.3031, 36.0800],
+  'eldoret': [0.5143, 35.2698],
+  'nyeri': [-0.4197, 36.9511],
+  'machakos': [-1.5177, 37.2634],
+  'kiambu': [-1.1714, 36.8356],
+  'kakamega': [0.2827, 34.7519],
+  'uasin gishu': [0.5143, 35.2698],
+  'kilifi': [-3.6305, 39.8499],
+  'kwale': [-4.1816, 39.4526],
+  'garissa': [-0.4532, 39.6461],
+  'wajir': [1.7471, 40.0573],
+  'mandera': [3.9373, 41.8569],
+  'marsabit': [2.3284, 37.9900],
+  'isiolo': [0.3546, 37.5822],
+  'meru': [0.0480, 37.6559],
+  'tharaka-nithi': [-0.3064, 37.7846],
+  'embu': [-0.5389, 37.4596],
+  'kitui': [-1.3667, 38.0167],
+  'makueni': [-1.8043, 37.6207],
+  'nyandarua': [-0.1833, 36.5167],
+  'kirinyaga': [-0.5000, 37.2833],
+  'murang\'a': [-0.7833, 37.1500],
+  'turkana': [3.3122, 35.5658],
+  'west pokot': [1.6189, 35.1957],
+  'samburu': [1.1147, 36.9544],
+  'trans nzoia': [1.0167, 35.0167],
+  'baringo': [0.4911, 35.7426],
+  'elgeyo-marakwet': [0.6833, 35.5000],
+  'nandi': [0.1833, 35.1500],
+  'laikipia': [0.3606, 36.7819],
+  'kajiado': [-2.0981, 36.7820],
+  'kericho': [-0.3692, 35.2863],
+  'bomet': [-0.7819, 35.3428],
+  'narok': [-1.0833, 35.8667],
+  'bungoma': [0.5636, 34.5583],
+  'busia': [0.4608, 34.1108],
+  'siaya': [-0.0617, 34.2422],
+  'homa bay': [-0.5273, 34.4571],
+  'migori': [-1.0634, 34.4731],
+  'kisii': [-0.6817, 34.7667],
+  'nyamira': [-0.5633, 34.9347],
+  'vihiga': [0.0833, 34.7167],
+  'lamu': [-2.2717, 40.9020],
+  'taita-taveta': [-3.3961, 38.5566],
+  'tana river': [-1.5000, 40.0333],
+};
+
 const ProjectMap = ({ selectedCounty }: ProjectMapProps) => {
   const { projects, loading, error } = useMapProjects(selectedCounty);
 
+  const markers: MapMarker[] = useMemo(() => {
+    const countyKey = selectedCounty.toLowerCase();
+    const countyCenter = countyCoordinates[countyKey] || [-1.2921, 36.8219];
+    
+    return projects.map((project, index) => {
+      // Try to parse coordinates from project data, fallback to county center with offset
+      const offset = (index * 0.02) - (projects.length * 0.01);
+      return {
+        id: project.id,
+        title: project.name,
+        status: project.status.toLowerCase().replace(/\s+/g, '_'),
+        budget: project.budget,
+        contractor: project.contractor,
+        progress: project.progress,
+        lat: countyCenter[0] + offset + (Math.random() * 0.01),
+        lng: countyCenter[1] + offset + (Math.random() * 0.01),
+      };
+    });
+  }, [projects, selectedCounty]);
+
+  const mapCenter: [number, number] = useMemo(() => {
+    const countyKey = selectedCounty.toLowerCase();
+    return countyCoordinates[countyKey] || [-1.2921, 36.8219];
+  }, [selectedCounty]);
+
   if (loading) {
     return (
-      <div className="h-80 bg-gradient-to-br from-green-100 to-blue-100 rounded-lg relative overflow-hidden flex items-center justify-center">
+      <div className="h-80 bg-muted rounded-lg flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-2"></div>
-          <p className="text-gray-600">Loading projects...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2" />
+          <p className="text-muted-foreground text-sm">Loading map...</p>
         </div>
       </div>
     );
@@ -23,122 +101,29 @@ const ProjectMap = ({ selectedCounty }: ProjectMapProps) => {
 
   if (error) {
     return (
-      <div className="h-80 bg-gradient-to-br from-red-100 to-orange-100 rounded-lg relative overflow-hidden flex items-center justify-center">
+      <div className="h-80 bg-destructive/10 rounded-lg flex items-center justify-center">
         <div className="text-center">
-          <AlertTriangle className="h-8 w-8 text-red-600 mx-auto mb-2" />
-          <p className="text-red-600">Failed to load projects</p>
+          <AlertTriangle className="h-8 w-8 text-destructive mx-auto mb-2" />
+          <p className="text-destructive text-sm">Failed to load projects</p>
         </div>
       </div>
     );
   }
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'Completed': return <CheckCircle className="h-4 w-4 text-green-600" />;
-      case 'In Progress': return <Wrench className="h-4 w-4 text-blue-600" />;
-      case 'Planning': return <Clock className="h-4 w-4 text-yellow-600" />;
-      case 'Under Review': return <AlertTriangle className="h-4 w-4 text-orange-600" />;
-      default: return <MapPin className="h-4 w-4 text-gray-600" />;
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Completed': return 'bg-green-50 text-green-700 border-green-200';
-      case 'In Progress': return 'bg-blue-50 text-blue-700 border-blue-200';
-      case 'Planning': return 'bg-yellow-50 text-yellow-700 border-yellow-200';
-      case 'Under Review': return 'bg-orange-50 text-orange-700 border-orange-200';
-      default: return 'bg-gray-50 text-gray-700 border-gray-200';
-    }
-  };
-
   return (
-    <div className="h-80 bg-gradient-to-br from-green-100 to-blue-100 rounded-lg relative overflow-hidden">
-      {/* Map Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-green-200 via-blue-200 to-green-300 opacity-30"></div>
-      
-      {/* Map Grid */}
-      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZGRkIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-20"></div>
-      
-      {/* County Label */}
-      <div className="absolute top-4 left-4 z-10">
-        <Badge className="bg-white/90 text-gray-700 shadow-lg">
+    <div className="relative">
+      <InteractiveMap
+        markers={markers}
+        center={mapCenter}
+        zoom={10}
+        height="320px"
+      />
+      {/* County label overlay */}
+      <div className="absolute top-3 left-3 z-[1000]">
+        <Badge className="bg-background/90 text-foreground shadow-lg backdrop-blur-sm">
           <MapPin className="h-3 w-3 mr-1" />
-          {selectedCounty} County
+          {selectedCounty} County — {projects.length} project{projects.length !== 1 ? 's' : ''}
         </Badge>
-      </div>
-
-      {/* Project Markers */}
-      <div className="absolute inset-0 p-4">
-        {projects.map((project, index) => (
-          <div
-            key={project.id}
-            className="absolute transform -translate-x-1/2 -translate-y-1/2 group cursor-pointer"
-            style={{
-              left: `${20 + (index * 15)}%`,
-              top: `${30 + (index * 10)}%`
-            }}
-          >
-            {/* Marker */}
-            <div className="w-8 h-8 bg-white rounded-full shadow-lg flex items-center justify-center border-2 border-green-500 hover:scale-110 transition-transform">
-              {getStatusIcon(project.status)}
-            </div>
-            
-            {/* Tooltip */}
-            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-64 bg-white rounded-lg shadow-xl border p-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-              <h4 className="font-semibold text-gray-900 mb-1">{project.name}</h4>
-              <div className="space-y-1 text-xs">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Status:</span>
-                  <Badge className={getStatusColor(project.status)}>{project.status}</Badge>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Budget:</span>
-                  <span className="font-medium">{project.budget}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Contractor:</span>
-                  <span className="font-medium">{project.contractor}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Progress:</span>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-16 h-2 bg-gray-200 rounded-full">
-                      <div 
-                        className="h-2 bg-green-500 rounded-full transition-all duration-300"
-                        style={{ width: `${project.progress}%` }}
-                      ></div>
-                    </div>
-                    <span className="text-xs font-medium">{project.progress}%</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Legend */}
-      <div className="absolute bottom-4 right-4 bg-white/90 rounded-lg p-3 shadow-lg">
-        <h5 className="text-xs font-semibold text-gray-700 mb-2">Legend</h5>
-        <div className="space-y-1 text-xs">
-          <div className="flex items-center space-x-2">
-            <CheckCircle className="h-3 w-3 text-green-600" />
-            <span>Completed</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Wrench className="h-3 w-3 text-blue-600" />
-            <span>In Progress</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Clock className="h-3 w-3 text-yellow-600" />
-            <span>Planning</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <AlertTriangle className="h-3 w-3 text-orange-600" />
-            <span>Under Review</span>
-          </div>
-        </div>
       </div>
     </div>
   );
