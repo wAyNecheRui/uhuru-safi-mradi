@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Wallet } from 'lucide-react';
+import InteractiveMap, { MapMarker } from '@/components/maps/InteractiveMap';
 
 interface Project {
   id: string;
@@ -26,27 +27,22 @@ interface ProjectMapModalProps {
 }
 
 const ProjectMapModal = ({ isOpen, onClose, projects }: ProjectMapModalProps) => {
-  // Get projects with coordinates
-  const projectsWithCoords = projects.filter(p => p.coordinates);
-  
-  // Calculate center from first project or default to Nairobi
-  const getMapCenter = () => {
-    if (projectsWithCoords.length > 0 && projectsWithCoords[0].coordinates) {
-      const [lat, lng] = projectsWithCoords[0].coordinates.split(',').map(s => parseFloat(s.trim()));
-      return { lat, lng };
-    }
-    return { lat: -1.2921, lng: 36.8219 }; // Nairobi default
-  };
-
-  const center = getMapCenter();
-  
-  // Create multi-marker map URL
-  const getMapUrl = () => {
-    const baseUrl = 'https://www.openstreetmap.org/export/embed.html';
-    const zoom = 11;
-    const bbox = `${center.lng - 0.1}%2C${center.lat - 0.1}%2C${center.lng + 0.1}%2C${center.lat + 0.1}`;
-    return `${baseUrl}?bbox=${bbox}&layer=mapnik`;
-  };
+  const markers: MapMarker[] = useMemo(() => {
+    return projects
+      .filter(p => p.coordinates)
+      .map(p => {
+        const [lat, lng] = (p.coordinates || '0,0').split(',').map(s => parseFloat(s.trim()));
+        return {
+          id: p.id,
+          title: p.title,
+          description: p.description,
+          status: p.status,
+          budget: p.budget,
+          lat: isNaN(lat) ? -1.2921 : lat,
+          lng: isNaN(lng) ? 36.8219 : lng,
+        };
+      });
+  }, [projects]);
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -71,16 +67,12 @@ const ProjectMapModal = ({ isOpen, onClose, projects }: ProjectMapModalProps) =>
         </DialogHeader>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Map View */}
-          <div className="lg:col-span-2 rounded-lg overflow-hidden border bg-muted">
-            <iframe
-              src={getMapUrl()}
-              width="100%"
-              height="400"
-              style={{ border: 0 }}
-              loading="lazy"
-              title="Projects Map"
-              className="rounded-lg"
+          {/* Interactive Leaflet Map */}
+          <div className="lg:col-span-2">
+            <InteractiveMap
+              markers={markers}
+              height="400px"
+              zoom={markers.length > 0 ? 10 : 7}
             />
           </div>
 
