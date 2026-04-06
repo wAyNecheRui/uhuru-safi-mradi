@@ -349,13 +349,13 @@ const ContractorProjects = () => {
                  return (
                  <div key={project.id} className="space-y-4">
                    
-                   <Card className="shadow-lg">
+                   <Card>
                    {/* Escrow Status Alert */}
                    {!project.canWork && (
-                     <Alert className="m-4 mb-0 border-yellow-300 bg-yellow-50">
-                       <Lock className="h-4 w-4 text-yellow-600" />
-                       <AlertTitle className="text-yellow-800">Awaiting Escrow Funding</AlertTitle>
-                       <AlertDescription className="text-yellow-700">
+                     <Alert className="m-4 mb-0 border-warning/30 bg-warning/10">
+                       <Lock className="h-4 w-4 text-warning-foreground" />
+                       <AlertTitle className="text-foreground">Awaiting Escrow Funding</AlertTitle>
+                       <AlertDescription className="text-muted-foreground">
                          {project.workBlockedReason || 'Government must fund the escrow before work can begin.'}
                        </AlertDescription>
                      </Alert>
