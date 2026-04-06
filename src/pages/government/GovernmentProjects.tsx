@@ -148,7 +148,7 @@ const GovernmentProjects = () => {
               <div className="flex flex-wrap gap-2">
                 <Button size="sm" variant="outline" onClick={() => setExpandedProject(null)}>Hide Details</Button>
                 {(selectedProject.effectiveStatus === 'in_progress' || (selectedProject.effectiveStatus === 'completed' && selectedProject.status !== 'completed')) && (
-                  <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={() => setCompletionProject(selectedProject)}>
+                  <Button size="sm" onClick={() => setCompletionProject(selectedProject)}>
                     <Award className="h-4 w-4 mr-1" />
                     {selectedProject.status !== 'completed' && selectedProject.effectiveStatus === 'completed' ? 'Finalize' : 'Complete'}
                   </Button>

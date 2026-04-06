@@ -49,106 +49,50 @@ const ContractorPerformance = () => {
   ];
 
   useEffect(() => {
-    if (user) {
-      fetchPerformanceData();
-    }
+    if (user) fetchPerformanceData();
   }, [user]);
 
   const fetchPerformanceData = async () => {
     try {
       setLoading(true);
-      
-      // Fetch contractor bids
-      const { data: bids } = await supabase
-        .from('contractor_bids')
-        .select('id, bid_amount, status')
-        .eq('contractor_id', user?.id);
-
-      // Fetch REAL ratings from milestone_verifications & quality_checkpoints
-      // (contractor_ratings table is empty - ratings come from citizen verifications)
+      const { data: bids } = await supabase.from('contractor_bids').select('id, bid_amount, status').eq('contractor_id', user?.id);
       const realRatingsData = await fetchContractorRatingsFromVerifications([user?.id || '']);
       const myRealRatings = realRatingsData[user?.id || ''];
-
-      // Fetch completed projects
-      const { data: projects } = await supabase
-        .from('projects')
-        .select('id, status, budget, created_at, updated_at')
-        .eq('contractor_id', user?.id);
-
-      // Fetch milestones for all projects
+      const { data: projects } = await supabase.from('projects').select('id, status, budget, created_at, updated_at').eq('contractor_id', user?.id);
       const projectIds = projects?.map(p => p.id) || [];
-      const { data: milestones } = projectIds.length > 0 ? await supabase
-        .from('project_milestones')
-        .select('project_id, status')
-        .in('project_id', projectIds) : { data: [] };
+      const { data: milestones } = projectIds.length > 0 ? await supabase.from('project_milestones').select('project_id, status').in('project_id', projectIds) : { data: [] };
 
-      // Group milestones by project
       const milestonesByProject: Record<string, {status: string}[]> = {};
       (milestones || []).forEach(m => {
-        if (!milestonesByProject[m.project_id]) {
-          milestonesByProject[m.project_id] = [];
-        }
+        if (!milestonesByProject[m.project_id]) milestonesByProject[m.project_id] = [];
         milestonesByProject[m.project_id].push({ status: m.status });
       });
 
-      // Calculate bid analytics
       const totalBids = bids?.length || 0;
       const wonBids = bids?.filter(b => b.status === 'selected').length || 0;
       const lostBids = bids?.filter(b => b.status === 'rejected' || b.status === 'not_selected').length || 0;
       const pendingBids = bids?.filter(b => b.status === 'submitted' || b.status === 'under_review').length || 0;
       const avgBidAmount = bids?.reduce((sum, b) => sum + (b.bid_amount || 0), 0) / (totalBids || 1);
 
-      setBidAnalytics({
-        totalBids,
-        wonBids,
-        lostBids,
-        pendingBids,
-        winRate: totalBids > 0 ? (wonBids / totalBids) * 100 : 0,
-        avgBidAmount
-      });
+      setBidAnalytics({ totalBids, wonBids, lostBids, pendingBids, winRate: totalBids > 0 ? (wonBids / totalBids) * 100 : 0, avgBidAmount });
 
-      // Calculate performance metrics from actual data - use milestone-based completion
-      const completedProjects = projects?.filter(p => 
-        isProjectEffectivelyCompleted(p.status, milestonesByProject[p.id] || [])
-      ) || [];
-      
-      // Use REAL ratings from citizen verifications
+      const completedProjects = projects?.filter(p => isProjectEffectivelyCompleted(p.status, milestonesByProject[p.id] || [])) || [];
       const avgRating = myRealRatings?.averageRating || 0;
       const totalRatingCount = myRealRatings?.totalRatings || 0;
-      
-      // Calculate scores from real ratings
-      // Since quality checkpoints have detailed category scores, we use the overall rating
-      // and calculate reasonable estimates for individual categories
       const satisfactionScore = avgRating > 0 ? Math.round((avgRating / 5) * 100) : 0;
-      
-      // For timeliness, quality, cost - use milestone completion rates and satisfaction as proxy
-      const projectCompletionRate = projects?.length 
-        ? (completedProjects.length / projects.length) * 100 
-        : 0;
-      
-      // Timeliness: based on milestone completion and rating
-      const timelinessScore = totalRatingCount > 0 
-        ? Math.round((satisfactionScore * 0.7) + (projectCompletionRate * 0.3))
-        : 0;
-      
-      // Quality: heavily based on ratings
+      const projectCompletionRate = projects?.length ? (completedProjects.length / projects.length) * 100 : 0;
+      const timelinessScore = totalRatingCount > 0 ? Math.round((satisfactionScore * 0.7) + (projectCompletionRate * 0.3)) : 0;
       const qualityScore = satisfactionScore;
-      
-      // Cost control: based on project completion (delivered within budget implied by completion)
-      const costScore = completedProjects.length > 0 
-        ? Math.round(projectCompletionRate)
-        : 0;
-      
+      const costScore = completedProjects.length > 0 ? Math.round(projectCompletionRate) : 0;
+
       const performanceMetrics: PerformanceMetric[] = [
-        { name: 'Timeliness', value: timelinessScore, target: 90, trend: timelinessScore >= 70 ? 'up' : timelinessScore > 0 ? 'stable' : 'stable' },
-        { name: 'Quality', value: qualityScore, target: 85, trend: qualityScore >= 70 ? 'up' : qualityScore > 0 ? 'stable' : 'stable' },
-        { name: 'Cost Control', value: costScore, target: 80, trend: costScore >= 70 ? 'up' : costScore > 0 ? 'stable' : 'stable' },
-        { name: 'Community Satisfaction', value: satisfactionScore, target: 80, trend: satisfactionScore >= 70 ? 'up' : satisfactionScore > 0 ? 'stable' : 'stable' },
+        { name: 'Timeliness', value: timelinessScore, target: 90, trend: timelinessScore >= 70 ? 'up' : 'stable' },
+        { name: 'Quality', value: qualityScore, target: 85, trend: qualityScore >= 70 ? 'up' : 'stable' },
+        { name: 'Cost Control', value: costScore, target: 80, trend: costScore >= 70 ? 'up' : 'stable' },
+        { name: 'Community Satisfaction', value: satisfactionScore, target: 80, trend: satisfactionScore >= 70 ? 'up' : 'stable' },
       ];
 
       setMetrics(performanceMetrics);
-      
-      // Transform real ratings for display
       const displayRatings = myRealRatings?.ratings?.map(r => ({
         rating: r.rating,
         source: r.source === 'milestone_verification' ? 'Milestone Verification' : 'Quality Review',
@@ -156,14 +100,10 @@ const ContractorPerformance = () => {
         projectId: r.projectId
       })) || [];
       setRatings(displayRatings);
-      
-      // Calculate overall score - only if there's actual data
-      const metricsWithData = performanceMetrics.filter(m => m.value > 0);
-      const overall = metricsWithData.length > 0 
-        ? metricsWithData.reduce((sum, m) => sum + m.value, 0) / metricsWithData.length 
-        : 0;
-      setOverallScore(Math.round(overall));
 
+      const metricsWithData = performanceMetrics.filter(m => m.value > 0);
+      const overall = metricsWithData.length > 0 ? metricsWithData.reduce((sum, m) => sum + m.value, 0) / metricsWithData.length : 0;
+      setOverallScore(Math.round(overall));
     } catch (error) {
       console.error('Error fetching performance data:', error);
     } finally {
@@ -171,139 +111,111 @@ const ContractorPerformance = () => {
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-KE', {
-      style: 'currency',
-      currency: 'KES',
-      minimumFractionDigits: 0
-    }).format(amount);
-  };
+  const formatCurrency = (amount: number) => new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES', minimumFractionDigits: 0 }).format(amount);
 
   const getScoreColor = (score: number) => {
-    if (score >= 90) return 'text-green-600';
-    if (score >= 70) return 'text-blue-600';
-    if (score >= 50) return 'text-yellow-600';
-    return 'text-red-600';
+    if (score >= 90) return 'text-success';
+    if (score >= 70) return 'text-primary';
+    if (score >= 50) return 'text-warning-foreground';
+    return 'text-destructive';
   };
 
   const getTrendIcon = (trend: string) => {
     switch (trend) {
-      case 'up': return <TrendingUp className="h-4 w-4 text-green-600" />;
-      case 'down': return <TrendingUp className="h-4 w-4 text-red-600 rotate-180" />;
-      default: return <span className="h-4 w-4 text-gray-600">—</span>;
+      case 'up': return <TrendingUp className="h-4 w-4 text-success" />;
+      case 'down': return <TrendingUp className="h-4 w-4 text-destructive rotate-180" />;
+      default: return <span className="h-4 w-4 text-muted-foreground">—</span>;
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
+      <div className="min-h-screen bg-background">
         <Header />
-        <main className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-            <span className="ml-2">Loading performance data...</span>
-          </div>
+        <main className="flex items-center justify-center py-12">
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          <span className="ml-2 text-sm text-muted-foreground">Loading performance data...</span>
         </main>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
+    <div className="min-h-screen bg-background">
       <Header />
-      
       <main>
-        <ResponsiveContainer className="py-6 sm:py-8">
+        <ResponsiveContainer className="py-5 sm:py-8">
           <div className="flex items-center gap-4 mb-4">
             <Button variant="ghost" size="sm" onClick={() => window.history.back()}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
+              <ArrowLeft className="h-4 w-4 mr-2" />Back
             </Button>
           </div>
-          
           <BreadcrumbNav items={breadcrumbItems} />
-          
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Performance Analytics</h1>
-            <p className="text-gray-600">Track your performance metrics, bid success rate, and contractor scorecard.</p>
+
+          <div className="mb-6">
+            <h1 className="text-xl sm:text-2xl font-display font-bold text-foreground mb-1">Performance Analytics</h1>
+            <p className="text-sm text-muted-foreground">Track your performance metrics, bid success rate, and contractor scorecard.</p>
           </div>
 
-          {/* Overall Performance Card */}
-          <Card className="shadow-xl mb-8 border-t-4 border-t-blue-600">
-            <CardContent className="p-8">
-              <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+          {/* Overall Score */}
+          <Card className="mb-6 border-l-4 border-l-primary">
+            <CardContent className="p-5 sm:p-6">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-5">
                 <div className="text-center md:text-left">
-                  <h2 className="text-xl font-semibold text-gray-700 mb-2">Overall Performance Score</h2>
-                  <p className="text-gray-500">Based on timeliness, quality, cost control, and satisfaction</p>
+                  <h2 className="text-base sm:text-lg font-semibold text-foreground mb-1">Overall Performance Score</h2>
+                  <p className="text-xs text-muted-foreground">Based on timeliness, quality, cost control, and satisfaction</p>
                 </div>
                 <div className="relative">
-                  <div className="w-32 h-32 rounded-full border-8 border-gray-200 flex items-center justify-center">
-                    <div className={`text-4xl font-bold ${getScoreColor(overallScore)}`}>
-                      {overallScore}
-                    </div>
+                  <div className="w-28 h-28 rounded-full border-[6px] border-muted flex items-center justify-center">
+                    <div className={`text-3xl font-bold ${getScoreColor(overallScore)}`}>{overallScore}</div>
                   </div>
-                  <Badge className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-blue-600">
+                  <Badge className="absolute -bottom-2 left-1/2 transform -translate-x-1/2">
                     {overallScore >= 80 ? 'Excellent' : overallScore >= 60 ? 'Good' : 'Needs Improvement'}
                   </Badge>
                 </div>
                 <div className="grid grid-cols-2 gap-4 text-center">
                   <div>
-                    <Award className="h-8 w-8 text-yellow-500 mx-auto mb-1" />
-                    <p className="text-2xl font-bold">{bidAnalytics.wonBids}</p>
-                    <p className="text-sm text-gray-500">Projects Won</p>
+                    <Award className="h-6 w-6 text-accent mx-auto mb-1" />
+                    <p className="text-xl font-bold text-foreground">{bidAnalytics.wonBids}</p>
+                    <p className="text-xs text-muted-foreground">Projects Won</p>
                   </div>
                   <div>
-                    <Star className="h-8 w-8 text-purple-500 mx-auto mb-1" />
-                    <p className="text-2xl font-bold">{ratings.length > 0 ? (ratings.reduce((sum, r) => sum + (r.rating || 0), 0) / ratings.length).toFixed(1) : 'N/A'}</p>
-                    <p className="text-sm text-gray-500">Avg Rating</p>
+                    <Star className="h-6 w-6 text-accent mx-auto mb-1" />
+                    <p className="text-xl font-bold text-foreground">{ratings.length > 0 ? (ratings.reduce((sum, r) => sum + (r.rating || 0), 0) / ratings.length).toFixed(1) : 'N/A'}</p>
+                    <p className="text-xs text-muted-foreground">Avg Rating</p>
                   </div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Tabs defaultValue="scorecard" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4 bg-white shadow-lg">
-              <TabsTrigger value="scorecard" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
-                Scorecard
-              </TabsTrigger>
-              <TabsTrigger value="bids" className="data-[state=active]:bg-green-600 data-[state=active]:text-white">
-                Bid Analytics
-              </TabsTrigger>
-              <TabsTrigger value="benchmarks" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white">
-                Benchmarks
-              </TabsTrigger>
-              <TabsTrigger value="ratings" className="data-[state=active]:bg-orange-600 data-[state=active]:text-white">
-                Ratings
-              </TabsTrigger>
+          <Tabs defaultValue="scorecard" className="space-y-5">
+            <TabsList className="w-full bg-muted/50 flex-wrap h-auto p-1 rounded-xl">
+              <TabsTrigger value="scorecard" className="text-xs sm:text-sm rounded-lg">Scorecard</TabsTrigger>
+              <TabsTrigger value="bids" className="text-xs sm:text-sm rounded-lg">Bid Analytics</TabsTrigger>
+              <TabsTrigger value="benchmarks" className="text-xs sm:text-sm rounded-lg">Benchmarks</TabsTrigger>
+              <TabsTrigger value="ratings" className="text-xs sm:text-sm rounded-lg">Ratings</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="scorecard" className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <TabsContent value="scorecard" className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {metrics.map((metric) => (
-                  <Card key={metric.name} className="shadow-lg">
+                  <Card key={metric.name}>
                     <CardHeader className="pb-2">
-                      <CardTitle className="flex items-center justify-between text-lg">
+                      <CardTitle className="flex items-center justify-between text-sm font-semibold">
                         <span>{metric.name}</span>
                         {getTrendIcon(metric.trend)}
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="flex items-end gap-4 mb-4">
-                        <span className={`text-4xl font-bold ${getScoreColor(metric.value)}`}>
-                          {metric.value}%
-                        </span>
-                        <span className="text-sm text-gray-500 mb-1">
-                          Target: {metric.target}%
-                        </span>
+                      <div className="flex items-end gap-3 mb-3">
+                        <span className={`text-3xl font-bold ${getScoreColor(metric.value)}`}>{metric.value}%</span>
+                        <span className="text-xs text-muted-foreground mb-1">Target: {metric.target}%</span>
                       </div>
-                      <Progress 
-                        value={metric.value} 
-                        className="h-3"
-                      />
-                      <div className="mt-2 text-sm text-gray-500">
-                        {metric.value >= metric.target 
-                          ? `✓ Exceeds target by ${metric.value - metric.target}%` 
+                      <Progress value={metric.value} className="h-2" />
+                      <div className="mt-2 text-xs text-muted-foreground">
+                        {metric.value >= metric.target
+                          ? `✓ Exceeds target by ${metric.value - metric.target}%`
                           : `↑ ${metric.target - metric.value}% to reach target`}
                       </div>
                     </CardContent>
@@ -311,31 +223,29 @@ const ContractorPerformance = () => {
                 ))}
               </div>
 
-              <Card className="shadow-lg">
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Target className="h-5 w-5 mr-2 text-blue-600" />
-                    Score Breakdown
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center text-base font-semibold">
+                    <Target className="h-4 w-4 mr-2 text-primary" />Score Breakdown
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {metrics.map((metric, index) => {
                       const weights = [40, 30, 20, 10];
                       const weight = weights[index] || 10;
                       const actualScore = Math.round((metric.value / 100) * weight);
                       const icons = [Clock, Star, Wallet, ThumbsUp];
-                      const colors = ['blue', 'green', 'yellow', 'purple'];
                       const Icon = icons[index] || ThumbsUp;
-                      const color = colors[index] || 'gray';
-                      
                       return (
-                        <div key={metric.name} className={`flex items-center justify-between p-4 bg-${color}-50 rounded-lg`}>
+                        <div key={metric.name} className="flex items-center justify-between p-3 bg-muted/50 rounded-xl">
                           <div className="flex items-center gap-3">
-                            <Icon className={`h-6 w-6 text-${color}-600`} />
+                            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                              <Icon className="h-4 w-4 text-primary" />
+                            </div>
                             <div>
-                              <p className="font-semibold">{metric.name} ({weight}%)</p>
-                              <p className="text-sm text-gray-500">
+                              <p className="font-medium text-sm text-foreground">{metric.name} ({weight}%)</p>
+                              <p className="text-xs text-muted-foreground">
                                 {index === 0 && 'On-time project completion rate'}
                                 {index === 1 && 'Work quality and standards compliance'}
                                 {index === 2 && 'Budget adherence and efficiency'}
@@ -343,16 +253,14 @@ const ContractorPerformance = () => {
                               </p>
                             </div>
                           </div>
-                          <span className={`text-2xl font-bold text-${color}-600`}>
-                            {actualScore}/{weight}
-                          </span>
+                          <span className="text-lg font-bold text-primary">{actualScore}/{weight}</span>
                         </div>
                       );
                     })}
                     {metrics.length === 0 && (
-                      <div className="text-center py-8 text-gray-500">
-                        <Target className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                        <p>Complete projects to see your score breakdown</p>
+                      <div className="text-center py-8 text-muted-foreground">
+                        <Target className="h-10 w-10 mx-auto mb-3 opacity-50" />
+                        <p className="text-sm">Complete projects to see your score breakdown</p>
                       </div>
                     )}
                   </div>
@@ -360,205 +268,102 @@ const ContractorPerformance = () => {
               </Card>
             </TabsContent>
 
-            <TabsContent value="bids" className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <Card className="shadow-lg">
-                  <CardContent className="p-6 text-center">
-                    <BarChart3 className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-                    <p className="text-3xl font-bold text-gray-900">{bidAnalytics.totalBids}</p>
-                    <p className="text-sm text-gray-500">Total Bids</p>
-                  </CardContent>
-                </Card>
-                <Card className="shadow-lg">
-                  <CardContent className="p-6 text-center">
-                    <Award className="h-8 w-8 text-green-600 mx-auto mb-2" />
-                    <p className="text-3xl font-bold text-green-600">{bidAnalytics.wonBids}</p>
-                    <p className="text-sm text-gray-500">Won</p>
-                  </CardContent>
-                </Card>
-                <Card className="shadow-lg">
-                  <CardContent className="p-6 text-center">
-                    <Clock className="h-8 w-8 text-yellow-600 mx-auto mb-2" />
-                    <p className="text-3xl font-bold text-yellow-600">{bidAnalytics.pendingBids}</p>
-                    <p className="text-sm text-gray-500">Pending</p>
-                  </CardContent>
-                </Card>
-                <Card className="shadow-lg">
-                  <CardContent className="p-6 text-center">
-                    <TrendingUp className="h-8 w-8 text-purple-600 mx-auto mb-2" />
-                    <p className="text-3xl font-bold text-purple-600">{bidAnalytics.winRate.toFixed(1)}%</p>
-                    <p className="text-sm text-gray-500">Win Rate</p>
-                  </CardContent>
-                </Card>
+            <TabsContent value="bids" className="space-y-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {[
+                  { label: 'Total Bids', value: bidAnalytics.totalBids, icon: BarChart3, color: 'text-primary' },
+                  { label: 'Won', value: bidAnalytics.wonBids, icon: Award, color: 'text-success' },
+                  { label: 'Pending', value: bidAnalytics.pendingBids, icon: Clock, color: 'text-warning-foreground' },
+                  { label: 'Win Rate', value: `${bidAnalytics.winRate.toFixed(1)}%`, icon: TrendingUp, color: 'text-accent-foreground' },
+                ].map((s) => (
+                  <Card key={s.label}>
+                    <CardContent className="p-4 text-center">
+                      <s.icon className={`h-6 w-6 ${s.color} mx-auto mb-2`} />
+                      <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
+                      <p className="text-xs text-muted-foreground">{s.label}</p>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
 
-              <Card className="shadow-lg">
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <PieChart className="h-5 w-5 mr-2 text-blue-600" />
-                    Bid Success Analysis
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center text-base font-semibold">
+                    <PieChart className="h-4 w-4 mr-2 text-primary" />Bid Distribution
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <h4 className="font-semibold text-gray-900">Win Rate by Project Type</h4>
-                      <div className="space-y-3">
-                        <div>
-                          <div className="flex justify-between text-sm mb-1">
-                            <span>Road Construction</span>
-                            <span className="font-bold">45%</span>
-                          </div>
-                          <Progress value={45} className="h-2" />
+                  <div className="space-y-3">
+                    {[
+                      { label: 'Won', value: bidAnalytics.wonBids, total: bidAnalytics.totalBids, color: 'bg-success' },
+                      { label: 'Pending', value: bidAnalytics.pendingBids, total: bidAnalytics.totalBids, color: 'bg-warning' },
+                      { label: 'Lost', value: bidAnalytics.lostBids, total: bidAnalytics.totalBids, color: 'bg-destructive' },
+                    ].map((item) => (
+                      <div key={item.label}>
+                        <div className="flex justify-between text-xs mb-1">
+                          <span className="text-muted-foreground">{item.label}</span>
+                          <span className="font-medium text-foreground">{item.value} / {item.total}</span>
                         </div>
-                        <div>
-                          <div className="flex justify-between text-sm mb-1">
-                            <span>Water Projects</span>
-                            <span className="font-bold">60%</span>
-                          </div>
-                          <Progress value={60} className="h-2" />
-                        </div>
-                        <div>
-                          <div className="flex justify-between text-sm mb-1">
-                            <span>Building Construction</span>
-                            <span className="font-bold">35%</span>
-                          </div>
-                          <Progress value={35} className="h-2" />
-                        </div>
+                        <Progress value={item.total > 0 ? (item.value / item.total) * 100 : 0} className="h-2" />
                       </div>
-                    </div>
-                    <div className="space-y-4">
-                      <h4 className="font-semibold text-gray-900">Average Bid Statistics</h4>
-                      <div className="space-y-3">
-                        <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                          <span>Average Bid Amount</span>
-                          <span className="font-bold text-green-600">{formatCurrency(bidAnalytics.avgBidAmount)}</span>
-                        </div>
-                        <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                          <span>Bids This Month</span>
-                          <span className="font-bold">{Math.min(bidAnalytics.totalBids, 5)}</span>
-                        </div>
-                        <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                          <span>AGPO Bonus Utilized</span>
-                          <span className="font-bold text-purple-600">+5%</span>
-                        </div>
-                      </div>
-                    </div>
+                    ))}
+                  </div>
+                  <div className="mt-4 p-3 bg-muted/50 rounded-xl text-center">
+                    <p className="text-xs text-muted-foreground">Average Bid Amount</p>
+                    <p className="text-lg font-bold text-foreground">{formatCurrency(bidAnalytics.avgBidAmount)}</p>
                   </div>
                 </CardContent>
               </Card>
             </TabsContent>
 
-            <TabsContent value="benchmarks" className="space-y-6">
-              <Card className="shadow-lg">
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Users className="h-5 w-5 mr-2 text-purple-600" />
-                    Performance Benchmarks
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-6">
-                    <div>
-                      <h4 className="font-semibold mb-3">Your Performance vs. Benchmarks</h4>
-                      <div className="space-y-4">
-                        <div className="p-4 border rounded-lg">
-                          <div className="flex justify-between items-center mb-2">
-                            <span className="font-medium">vs. County Average</span>
-                            <Badge className="bg-green-100 text-green-800">+12% above</Badge>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm text-gray-500">You: {overallScore}%</span>
-                            <Progress value={overallScore} className="flex-1 h-2" />
-                          </div>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-sm text-gray-500">Avg: {overallScore - 12}%</span>
-                            <Progress value={overallScore - 12} className="flex-1 h-2 bg-gray-300" />
-                          </div>
-                        </div>
-                        <div className="p-4 border rounded-lg">
-                          <div className="flex justify-between items-center mb-2">
-                            <span className="font-medium">vs. Similar-Sized Contractors</span>
-                            <Badge className="bg-blue-100 text-blue-800">+8% above</Badge>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm text-gray-500">You: {overallScore}%</span>
-                            <Progress value={overallScore} className="flex-1 h-2" />
-                          </div>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-sm text-gray-500">Avg: {overallScore - 8}%</span>
-                            <Progress value={overallScore - 8} className="flex-1 h-2 bg-gray-300" />
-                          </div>
-                        </div>
-                        <div className="p-4 border rounded-lg">
-                          <div className="flex justify-between items-center mb-2">
-                            <span className="font-medium">vs. Your Previous Quarter</span>
-                            <Badge className="bg-green-100 text-green-800">+5% improvement</Badge>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm text-gray-500">Current: {overallScore}%</span>
-                            <Progress value={overallScore} className="flex-1 h-2" />
-                          </div>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-sm text-gray-500">Previous: {overallScore - 5}%</span>
-                            <Progress value={overallScore - 5} className="flex-1 h-2 bg-gray-300" />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+            <TabsContent value="benchmarks" className="space-y-4">
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <BarChart3 className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                  <h3 className="font-semibold text-sm mb-1">Benchmarks Coming Soon</h3>
+                  <p className="text-xs text-muted-foreground">Compare your performance with industry averages once more data is available.</p>
                 </CardContent>
               </Card>
             </TabsContent>
 
-            <TabsContent value="ratings" className="space-y-6">
-              <Card className="shadow-lg">
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Star className="h-5 w-5 mr-2 text-yellow-500" />
-                    Recent Ratings & Reviews
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {ratings.length === 0 ? (
-                    <div className="text-center py-8">
-                      <Star className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <p className="text-gray-600">No ratings received yet.</p>
+            <TabsContent value="ratings" className="space-y-4">
+              {ratings.length === 0 ? (
+                <Card>
+                  <CardContent className="p-8 text-center">
+                    <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
+                      <Star className="h-5 w-5 text-muted-foreground" />
                     </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {ratings.map((rating, idx) => (
-                        <div key={idx} className="p-4 border rounded-lg">
-                          <div className="flex items-start justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                              {[...Array(5)].map((_, i) => (
-                                <Star
-                                  key={i}
-                                  className={`h-5 w-5 ${
-                                    i < (rating.rating || 0) ? 'text-yellow-500 fill-yellow-500' : 'text-gray-300'
-                                  }`}
-                                />
-                              ))}
-                              <span className="font-bold ml-2">{rating.rating}/5</span>
+                    <h3 className="font-semibold text-sm mb-1">No Ratings Yet</h3>
+                    <p className="text-xs text-muted-foreground">Complete milestones to receive citizen verification ratings.</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-3">
+                  {ratings.map((rating, idx) => (
+                    <Card key={idx}>
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center">
+                              <Star className="h-4 w-4 text-accent" />
                             </div>
-                            <span className="text-sm text-gray-500">
-                              {new Date(rating.created_at).toLocaleDateString()}
-                            </span>
+                            <div>
+                              <p className="font-medium text-sm text-foreground">{rating.source}</p>
+                              <p className="text-xs text-muted-foreground">{new Date(rating.date).toLocaleDateString()}</p>
+                            </div>
                           </div>
-                          {rating.review && (
-                            <p className="text-gray-600 italic">"{rating.review}"</p>
-                          )}
-                          <div className="flex gap-4 mt-3 text-sm">
-                            <span className="text-blue-600">Quality: {rating.work_quality || 'N/A'}/5</span>
-                            <span className="text-green-600">Timeliness: {rating.completion_timeliness || 'N/A'}/5</span>
-                            <span className="text-purple-600">Communication: {rating.communication || 'N/A'}/5</span>
+                          <div className="flex items-center gap-1">
+                            {[...Array(5)].map((_, i) => (
+                              <span key={i} className={`text-sm ${i < Math.floor(rating.rating) ? 'text-accent' : 'text-muted-foreground/30'}`}>★</span>
+                            ))}
+                            <span className="ml-1 text-sm font-bold text-foreground">{rating.rating.toFixed(1)}</span>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </ResponsiveContainer>
