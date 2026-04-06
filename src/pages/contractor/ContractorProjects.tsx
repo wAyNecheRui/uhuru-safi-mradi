@@ -328,12 +328,14 @@ const ContractorProjects = () => {
 
           <TabsContent value="active" className="space-y-6">
             {activeProjects.length === 0 ? (
-              <Card className="shadow-lg">
+              <Card>
                 <CardContent className="p-8 text-center">
-                  <Briefcase className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No Active Projects</h3>
-                  <p className="text-gray-600 mb-4">You don't have any active projects yet. Browse available projects and submit bids to get started.</p>
-                  <Button asChild className="bg-blue-600 hover:bg-blue-700">
+                  <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
+                    <Briefcase className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <h3 className="text-base font-semibold text-foreground mb-2">No Active Projects</h3>
+                  <p className="text-sm text-muted-foreground mb-4">You don't have any active projects yet. Browse available projects and submit bids to get started.</p>
+                  <Button asChild size="sm">
                     <a href="/contractor/bidding">Browse Projects</a>
                   </Button>
                 </CardContent>
@@ -361,13 +363,13 @@ const ContractorProjects = () => {
                    
                    {/* Escrow Funding Progress */}
                    {project.escrow && (
-                     <div className="mx-4 mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                     <div className="mx-4 mt-4 p-3 bg-primary/5 rounded-xl">
                        <div className="flex items-center justify-between mb-2">
                          <span className="text-sm font-medium flex items-center gap-1">
                            <Wallet className="h-4 w-4" />
                            Escrow Funding
                          </span>
-                         <Badge className={project.escrow.held_amount >= project.escrow.total_amount ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
+                         <Badge className={project.escrow.held_amount >= project.escrow.total_amount ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning-foreground'}>
                            {project.escrow.held_amount >= project.escrow.total_amount ? 'Fully Funded' : `${Math.round((project.escrow.held_amount / project.escrow.total_amount) * 100)}% Funded`}
                          </Badge>
                        </div>
@@ -383,8 +385,8 @@ const ContractorProjects = () => {
                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
                        <div className="min-w-0 flex-1">
                          <CardTitle className="text-base sm:text-lg lg:text-xl mb-2 break-words">{project.title}</CardTitle>
-                         <p className="text-sm text-gray-600 break-words">{project.description}</p>
-                         <div className="flex flex-col sm:flex-row sm:items-center text-xs sm:text-sm text-gray-500 mt-2 gap-2 sm:gap-4">
+                         <p className="text-sm text-muted-foreground break-words">{project.description}</p>
+                         <div className="flex flex-col sm:flex-row sm:items-center text-xs sm:text-sm text-muted-foreground mt-2 gap-2 sm:gap-4">
                            <div className="flex items-center min-w-0">
                              <MapPin className="h-3 w-3 sm:h-4 sm:w-4 mr-1 flex-shrink-0" />
                              <span className="truncate">{project.problem_reports?.location || 'Location not specified'}</span>
@@ -396,7 +398,7 @@ const ContractorProjects = () => {
                          </div>
                        </div>
                        <div className="text-left sm:text-right flex-shrink-0">
-                         <div className="text-lg sm:text-xl lg:text-2xl font-bold text-green-600 mb-1">
+                          <div className="text-lg sm:text-xl lg:text-2xl font-bold text-success mb-1">
                            {formatCurrency(project.budget || 0)}
                          </div>
                         </div>
@@ -410,12 +412,12 @@ const ContractorProjects = () => {
                          <span className="font-medium">Project Progress</span>
                          <span className="font-bold">{project.progress || 0}%</span>
                        </div>
-                       <div className="w-full bg-gray-200 rounded-full h-3">
-                         <div 
-                           className="bg-blue-600 h-3 rounded-full transition-all duration-300" 
-                           style={{ width: `${project.progress || 0}%` }}
-                         ></div>
-                       </div>
+                        <div className="w-full bg-muted rounded-full h-2.5">
+                          <div 
+                            className="bg-primary h-2.5 rounded-full transition-all duration-300" 
+                            style={{ width: `${project.progress || 0}%` }}
+                          ></div>
+                        </div>
                      </div>
 
                      {/* Milestones Section */}
@@ -442,13 +444,13 @@ const ContractorProjects = () => {
                            {project.milestones.map((milestone) => (
                              <div key={milestone.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-2 sm:p-3 bg-background rounded border">
                                <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                                 <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-medium flex-shrink-0 ${
-                                   milestone.status === 'paid' ? 'bg-green-100 text-green-700' :
-                                   milestone.status === 'verified' ? 'bg-blue-100 text-blue-700' :
-                                   milestone.status === 'submitted' ? 'bg-amber-100 text-amber-700' :
-                                   milestone.status === 'in_progress' ? 'bg-purple-100 text-purple-700' :
-                                   'bg-muted text-muted-foreground'
-                                 }`}>
+                                  <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-medium flex-shrink-0 ${
+                                    milestone.status === 'paid' ? 'bg-success/10 text-success' :
+                                    milestone.status === 'verified' ? 'bg-primary/10 text-primary' :
+                                    milestone.status === 'submitted' ? 'bg-warning/10 text-warning-foreground' :
+                                    milestone.status === 'in_progress' ? 'bg-accent/10 text-accent-foreground' :
+                                    'bg-muted text-muted-foreground'
+                                  }`}>
                                    {milestone.milestone_number}
                                  </div>
                                  <div className="min-w-0 flex-1">
@@ -463,13 +465,13 @@ const ContractorProjects = () => {
                                      {milestone.evidence_urls.length}
                                    </Badge>
                                  )}
-                                 <Badge className={`text-xs ${
-                                   milestone.status === 'paid' ? 'bg-green-100 text-green-800' :
-                                   milestone.status === 'verified' ? 'bg-blue-100 text-blue-800' :
-                                   milestone.status === 'submitted' ? 'bg-amber-100 text-amber-800' :
-                                   milestone.status === 'in_progress' ? 'bg-purple-100 text-purple-800' :
-                                   'bg-muted text-muted-foreground'
-                                 }`}>
+                                  <Badge className={`text-xs ${
+                                    milestone.status === 'paid' ? 'bg-success/10 text-success' :
+                                    milestone.status === 'verified' ? 'bg-primary/10 text-primary' :
+                                    milestone.status === 'submitted' ? 'bg-warning/10 text-warning-foreground' :
+                                    milestone.status === 'in_progress' ? 'bg-accent/10 text-accent-foreground' :
+                                    'bg-muted text-muted-foreground'
+                                  }`}>
                                    {milestone.status === 'paid' && <CheckCircle className="h-3 w-3 mr-1" />}
                                    {milestone.status}
                                  </Badge>
@@ -480,40 +482,40 @@ const ContractorProjects = () => {
                        </div>
                      ) : (
                        /* No Milestones - Show Configure Button */
-                       <Alert className="border-orange-300 bg-orange-50">
-                         <AlertCircle className="h-4 w-4 text-orange-600 flex-shrink-0" />
-                         <div className="flex-1 min-w-0">
-                           <AlertTitle className="text-orange-800 text-sm sm:text-base">Milestones Required</AlertTitle>
-                           <AlertDescription className="text-orange-700 text-xs sm:text-sm">
-                             <span className="block mb-2">Configure your project milestones to define payment schedules and track progress.</span>
-                             <Button
-                               size="sm"
-                               variant="outline"
-                               className="border-orange-400 text-orange-700 hover:bg-orange-100 w-full sm:w-auto text-xs sm:text-sm"
-                               onClick={() => handleConfigureMilestones(project)}
-                             >
-                               <Settings className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                               Configure Milestones
-                             </Button>
-                           </AlertDescription>
-                         </div>
-                       </Alert>
+                        <Alert className="border-warning/30 bg-warning/10">
+                          <AlertCircle className="h-4 w-4 text-warning-foreground flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <AlertTitle className="text-foreground text-sm sm:text-base">Milestones Required</AlertTitle>
+                            <AlertDescription className="text-muted-foreground text-xs sm:text-sm">
+                              <span className="block mb-2">Configure your project milestones to define payment schedules and track progress.</span>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="w-full sm:w-auto text-xs sm:text-sm"
+                                onClick={() => handleConfigureMilestones(project)}
+                              >
+                                <Settings className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                                Configure Milestones
+                              </Button>
+                            </AlertDescription>
+                          </div>
+                        </Alert>
                      )}
                      
                      {/* Milestone Progress Block Alert */}
                      {(() => {
                        if (!progressStatus.allowed && progressStatus.reason && project.canWork && project.milestones && project.milestones.length > 0) {
                          return (
-                           <Alert className="border-blue-300 bg-blue-50">
-                             <Info className="h-4 w-4 text-blue-600" />
-                             <AlertTitle className="text-blue-800">Progress Update Blocked</AlertTitle>
-                              <AlertDescription className="text-blue-700">
-                                {progressStatus.reason}
-                                {progressStatus.suggestedAction !== 'configure_milestones' && (
-                                  <>. Complete the current milestone cycle before updating the next one.</>
-                                )}
-                              </AlertDescription>
-                           </Alert>
+                            <Alert className="border-info/30 bg-info/10">
+                              <Info className="h-4 w-4 text-info" />
+                              <AlertTitle className="text-foreground">Progress Update Blocked</AlertTitle>
+                               <AlertDescription className="text-muted-foreground">
+                                 {progressStatus.reason}
+                                 {progressStatus.suggestedAction !== 'configure_milestones' && (
+                                   <>. Complete the current milestone cycle before updating the next one.</>
+                                 )}
+                               </AlertDescription>
+                            </Alert>
                          );
                        }
                        return null;
@@ -611,7 +613,7 @@ const ContractorProjects = () => {
                         </div>
                       </div>
                       <div className="text-left sm:text-right flex-shrink-0">
-                        <div className="text-lg sm:text-xl lg:text-2xl font-bold text-green-600 mb-1">
+                        <div className="text-lg sm:text-xl lg:text-2xl font-bold text-success mb-1">
                           {formatCurrency(project.budget || 0)}
                         </div>
                        </div>
@@ -641,7 +643,7 @@ const ContractorProjects = () => {
                           </div>
                         )}
                       </div>
-                      <Badge className="bg-green-100 text-green-800 w-fit">
+                      <Badge className="bg-success/10 text-success w-fit">
                         Completed
                       </Badge>
                     </div>
@@ -669,7 +671,7 @@ const ContractorProjects = () => {
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           {project.milestones.map((milestone) => (
                             <div key={milestone.id} className="flex items-center gap-2 p-2 bg-background rounded border">
-                              <div className="w-6 h-6 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-xs font-medium flex-shrink-0">
+                              <div className="w-6 h-6 rounded-full bg-success/10 text-success flex items-center justify-center text-xs font-medium flex-shrink-0">
                                 <CheckCircle className="h-3 w-3" />
                               </div>
                               <div className="flex-1 min-w-0">
