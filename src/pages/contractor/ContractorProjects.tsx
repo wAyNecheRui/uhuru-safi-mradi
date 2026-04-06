@@ -624,7 +624,7 @@ const ContractorProjects = () => {
                     {/* Rating Section */}
                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                       <div className="flex items-center flex-wrap gap-2">
-                        <Award className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-500 flex-shrink-0" />
+                        <Award className="h-4 w-4 sm:h-5 sm:w-5 text-accent flex-shrink-0" />
                         <span className="font-medium text-sm sm:text-base">Rating: {project.rating?.toFixed(1) || 'N/A'}/5.0</span>
                         {project.rating > 0 && (
                           <div className="flex">
