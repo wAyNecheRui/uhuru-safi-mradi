@@ -17,9 +17,18 @@ function generateDemoB2CRef(): string {
   return `WB2C${timestamp}${random}`;
 }
 
+const MAX_BODY_SIZE = 51200; // 50KB
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
+  }
+
+  if (req.method !== 'POST') {
+    return new Response(
+      JSON.stringify({ error: 'Method not allowed' }),
+      { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
   }
 
   try {
@@ -53,7 +62,26 @@ serve(async (req) => {
       )
     }
 
-    const { worker_id, job_id, record_ids } = await req.json()
+    // SECURITY: Body size validation before parsing
+    const rawBody = await req.text()
+    if (rawBody.length > MAX_BODY_SIZE) {
+      return new Response(
+        JSON.stringify({ error: 'Payload too large' }),
+        { status: 413, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    let requestData: any
+    try {
+      requestData = JSON.parse(rawBody)
+    } catch {
+      return new Response(
+        JSON.stringify({ error: 'Invalid JSON' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const { worker_id, job_id, record_ids } = requestData
 
     if (!worker_id || !job_id || !record_ids?.length) {
       return new Response(

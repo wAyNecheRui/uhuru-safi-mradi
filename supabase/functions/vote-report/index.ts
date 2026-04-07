@@ -10,26 +10,6 @@ const corsHeaders = {
   'Cache-Control': 'no-store',
 }
 
-// Rate limiting map
-const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
-
-function checkRateLimit(clientIP: string, maxRequests = 30, windowMs = 60000): { allowed: boolean; retryAfter?: number } {
-  const now = Date.now();
-  const clientData = rateLimitMap.get(clientIP);
-
-  if (!clientData || now > clientData.resetTime) {
-    rateLimitMap.set(clientIP, { count: 1, resetTime: now + windowMs });
-    return { allowed: true };
-  }
-
-  if (clientData.count >= maxRequests) {
-    return { allowed: false, retryAfter: Math.ceil((clientData.resetTime - now) / 1000) };
-  }
-
-  clientData.count++;
-  return { allowed: true };
-}
-
 // UUID validation
 function isValidUUID(uuid: string): boolean {
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -57,38 +37,46 @@ function validateVoteData(data: any): { valid: boolean; error?: string } {
   return { valid: true };
 }
 
+const MAX_BODY_SIZE = 10240; // 10KB — vote payloads are tiny
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
+  if (req.method !== 'POST') {
+    return new Response(
+      JSON.stringify({ error: 'Method not allowed' }),
+      { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+
   try {
-    // Check rate limit
+    // Create admin client for DB-backed rate limiting
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    )
+
+    // DB-backed rate limiting (shared across all function instances)
     const clientIP = req.headers.get('x-forwarded-for') || req.headers.get('cf-connecting-ip') || 'unknown';
-    const rateCheck = checkRateLimit(clientIP);
-    if (!rateCheck.allowed) {
+    const { data: rateLimitAllowed } = await supabaseAdmin.rpc('check_rate_limit', {
+      p_key: `vote:${clientIP}`,
+      p_max_requests: 30,
+      p_window_seconds: 60
+    })
+    if (rateLimitAllowed === false) {
       return new Response(
         JSON.stringify({ error: 'Too many requests. Please try again later.' }),
-        { 
-          status: 429, 
-          headers: { 
-            ...corsHeaders, 
-            'Content-Type': 'application/json',
-            'Retry-After': String(rateCheck.retryAfter)
-          } 
-        }
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': '60' } }
       )
     }
 
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false
-        }
-      }
+      { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
     const authHeader = req.headers.get('Authorization')
@@ -109,7 +97,24 @@ serve(async (req) => {
       )
     }
 
-    const voteData = await req.json()
+    // SECURITY: Body size validation before parsing
+    const rawBody = await req.text()
+    if (rawBody.length > MAX_BODY_SIZE) {
+      return new Response(
+        JSON.stringify({ error: 'Payload too large' }),
+        { status: 413, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    let voteData: any
+    try {
+      voteData = JSON.parse(rawBody)
+    } catch {
+      return new Response(
+        JSON.stringify({ error: 'Invalid JSON' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
     // Validate input
     const validation = validateVoteData(voteData);
