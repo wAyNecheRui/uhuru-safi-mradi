@@ -10,26 +10,6 @@ const corsHeaders = {
   'Cache-Control': 'no-store',
 }
 
-// Rate limiting map
-const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
-
-function checkRateLimit(clientIP: string, maxRequests = 30, windowMs = 60000): { allowed: boolean; retryAfter?: number } {
-  const now = Date.now();
-  const clientData = rateLimitMap.get(clientIP);
-
-  if (!clientData || now > clientData.resetTime) {
-    rateLimitMap.set(clientIP, { count: 1, resetTime: now + windowMs });
-    return { allowed: true };
-  }
-
-  if (clientData.count >= maxRequests) {
-    return { allowed: false, retryAfter: Math.ceil((clientData.resetTime - now) / 1000) };
-  }
-
-  clientData.count++;
-  return { allowed: true };
-}
-
 // UUID validation
 function isValidUUID(uuid: string): boolean {
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
