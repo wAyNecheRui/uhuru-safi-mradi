@@ -10,13 +10,41 @@ const corsHeaders = {
   "Cache-Control": "no-store",
 };
 
+const MAX_BODY_SIZE = 51200; // 50KB
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
+  if (req.method !== "POST") {
+    return new Response(
+      JSON.stringify({ error: "Method not allowed" }),
+      { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
   try {
-    const { name, email, user_type, subject, message } = await req.json();
+    // SECURITY: Body size validation before parsing
+    const rawBody = await req.text();
+    if (rawBody.length > MAX_BODY_SIZE) {
+      return new Response(
+        JSON.stringify({ error: "Payload too large" }),
+        { status: 413, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    let parsed: any;
+    try {
+      parsed = JSON.parse(rawBody);
+    } catch {
+      return new Response(
+        JSON.stringify({ error: "Invalid JSON" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const { name, email, user_type, subject, message } = parsed;
 
     // Validate required fields
     if (!name || !email || !subject || !message) {

@@ -134,7 +134,24 @@ serve(async (req) => {
       )
     }
 
-    const verificationData = await req.json()
+    // SECURITY: Read raw body and enforce size limit
+    const rawBody = await req.text()
+    if (rawBody.length > 10240) {
+      return new Response(
+        JSON.stringify({ error: 'Payload too large' }),
+        { status: 413, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    let verificationData: any
+    try {
+      verificationData = JSON.parse(rawBody)
+    } catch {
+      return new Response(
+        JSON.stringify({ error: 'Invalid JSON' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
     // Validate input
     const validation = validateVerificationData(verificationData);
