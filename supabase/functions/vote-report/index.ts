@@ -52,32 +52,31 @@ serve(async (req) => {
   }
 
   try {
-    // Check rate limit
+    // Create admin client for DB-backed rate limiting
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    )
+
+    // DB-backed rate limiting (shared across all function instances)
     const clientIP = req.headers.get('x-forwarded-for') || req.headers.get('cf-connecting-ip') || 'unknown';
-    const rateCheck = checkRateLimit(clientIP);
-    if (!rateCheck.allowed) {
+    const { data: rateLimitAllowed } = await supabaseAdmin.rpc('check_rate_limit', {
+      p_key: `vote:${clientIP}`,
+      p_max_requests: 30,
+      p_window_seconds: 60
+    })
+    if (rateLimitAllowed === false) {
       return new Response(
         JSON.stringify({ error: 'Too many requests. Please try again later.' }),
-        { 
-          status: 429, 
-          headers: { 
-            ...corsHeaders, 
-            'Content-Type': 'application/json',
-            'Retry-After': String(rateCheck.retryAfter)
-          } 
-        }
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': '60' } }
       )
     }
 
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false
-        }
-      }
+      { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
     const authHeader = req.headers.get('Authorization')
