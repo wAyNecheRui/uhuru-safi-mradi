@@ -10,26 +10,6 @@ const corsHeaders = {
   'Cache-Control': 'no-store',
 }
 
-// Rate limiting map
-const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
-
-function checkRateLimit(clientIP: string, maxRequests = 5, windowMs = 60000): { allowed: boolean; retryAfter?: number } {
-  const now = Date.now();
-  const clientData = rateLimitMap.get(clientIP);
-
-  if (!clientData || now > clientData.resetTime) {
-    rateLimitMap.set(clientIP, { count: 1, resetTime: now + windowMs });
-    return { allowed: true };
-  }
-
-  if (clientData.count >= maxRequests) {
-    return { allowed: false, retryAfter: Math.ceil((clientData.resetTime - now) / 1000) };
-  }
-
-  clientData.count++;
-  return { allowed: true };
-}
-
 // Input sanitization
 function sanitizeInput(input: string): string {
   return input
@@ -79,20 +59,24 @@ serve(async (req) => {
   }
 
   try {
-    // Check rate limit (stricter for verification endpoints)
+    // Create admin client for DB-backed rate limiting
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    )
+
+    // DB-backed rate limiting (stricter for verification: 5 req/min)
     const clientIP = req.headers.get('x-forwarded-for') || req.headers.get('cf-connecting-ip') || 'unknown';
-    const rateCheck = checkRateLimit(clientIP, 5, 60000); // 5 requests per minute
-    if (!rateCheck.allowed) {
+    const { data: rateLimitAllowed } = await supabaseAdmin.rpc('check_rate_limit', {
+      p_key: `kra_verify:${clientIP}`,
+      p_max_requests: 5,
+      p_window_seconds: 60
+    })
+    if (rateLimitAllowed === false) {
       return new Response(
         JSON.stringify({ error: 'Too many verification requests. Please try again later.' }),
-        { 
-          status: 429, 
-          headers: { 
-            ...corsHeaders, 
-            'Content-Type': 'application/json',
-            'Retry-After': String(rateCheck.retryAfter)
-          } 
-        }
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': '60' } }
       )
     }
 
