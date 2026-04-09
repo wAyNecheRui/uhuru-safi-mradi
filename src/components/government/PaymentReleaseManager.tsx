@@ -102,11 +102,18 @@ const PaymentReleaseManager: React.FC<PaymentReleaseManagerProps> = ({
   const handleReleasePayment = async () => {
     if (!selectedMilestone || !escrow || !user) return;
 
+    // IDEMPOTENCY: Prevent double-clicks
+    if (processing) return;
+
     setProcessing(true);
     try {
+      // Generate idempotency key to prevent duplicate payments
+      const idempotencyKey = `release-${selectedMilestone.id}-${user.id}-${Date.now()}`;
+
       // Call the edge function to release payment
       const { data, error } = await supabase.functions.invoke('release-milestone-payment', {
-        body: { milestoneId: selectedMilestone.id }
+        body: { milestoneId: selectedMilestone.id },
+        headers: { 'X-Idempotency-Key': idempotencyKey }
       });
 
       if (error) throw error;
