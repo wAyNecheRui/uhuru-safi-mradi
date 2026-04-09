@@ -10,7 +10,6 @@ const corsHeaders = {
   'Cache-Control': 'no-store',
 }
 
-// Input sanitization
 function sanitizeInput(input: string): string {
   return input
     .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
@@ -20,36 +19,52 @@ function sanitizeInput(input: string): string {
     .trim();
 }
 
-// Validate KRA PIN format (Kenya)
+// Validate KRA PIN format (Kenya): starts with P or A, 9 digits, ends with letter
 function isValidKRAPin(pin: string): boolean {
-  // KRA PIN format: P followed by 9 digits and ending with a letter
   const kraRegex = /^[PA]\d{9}[A-Z]$/;
   return kraRegex.test(pin);
 }
 
-// Validate verification data
+// Validate National ID format (Kenya): 7-8 digits
+function isValidNationalId(id: string): boolean {
+  const idRegex = /^\d{7,8}$/;
+  return idRegex.test(id);
+}
+
 function validateVerificationData(data: any): { valid: boolean; error?: string } {
-  if (!data.pin_number || typeof data.pin_number !== 'string') {
-    return { valid: false, error: 'PIN number is required' };
+  if (!data.verification_type || !['kra_pin', 'national_id'].includes(data.verification_type)) {
+    return { valid: false, error: 'Invalid verification type. Must be kra_pin or national_id.' };
   }
-  
-  const sanitizedPin = data.pin_number.trim().toUpperCase();
-  if (sanitizedPin.length > 20) {
-    return { valid: false, error: 'PIN number is too long' };
+
+  if (data.verification_type === 'kra_pin') {
+    if (!data.pin_number || typeof data.pin_number !== 'string') {
+      return { valid: false, error: 'KRA PIN number is required' };
+    }
+    const sanitizedPin = data.pin_number.trim().toUpperCase();
+    if (sanitizedPin.length > 20) {
+      return { valid: false, error: 'PIN number is too long' };
+    }
+    if (!isValidKRAPin(sanitizedPin)) {
+      return { valid: false, error: 'Invalid KRA PIN format. Expected format: P123456789A (starts with P or A, 9 digits, ends with a letter)' };
+    }
+    if (!data.taxpayer_name || typeof data.taxpayer_name !== 'string' || data.taxpayer_name.length < 2 || data.taxpayer_name.length > 200) {
+      return { valid: false, error: 'Taxpayer name is required (2-200 characters)' };
+    }
   }
-  
-  if (!isValidKRAPin(sanitizedPin)) {
-    return { valid: false, error: 'Invalid KRA PIN format. Expected format: P123456789A' };
+
+  if (data.verification_type === 'national_id') {
+    if (!data.id_number || typeof data.id_number !== 'string') {
+      return { valid: false, error: 'National ID number is required' };
+    }
+    const sanitizedId = data.id_number.trim();
+    if (!isValidNationalId(sanitizedId)) {
+      return { valid: false, error: 'Invalid National ID format. Must be 7-8 digits.' };
+    }
+    if (!data.holder_name || typeof data.holder_name !== 'string' || data.holder_name.length < 2 || data.holder_name.length > 200) {
+      return { valid: false, error: 'ID holder name is required (2-200 characters)' };
+    }
   }
-  
-  if (!data.taxpayer_name || typeof data.taxpayer_name !== 'string') {
-    return { valid: false, error: 'Taxpayer name is required' };
-  }
-  
-  if (data.taxpayer_name.length < 2 || data.taxpayer_name.length > 200) {
-    return { valid: false, error: 'Taxpayer name must be between 2 and 200 characters' };
-  }
-  
+
   return { valid: true };
 }
 
@@ -59,17 +74,16 @@ serve(async (req) => {
   }
 
   try {
-    // Create admin client for DB-backed rate limiting
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    // DB-backed rate limiting (stricter for verification: 5 req/min)
+    // DB-backed rate limiting (5 req/min for verification)
     const clientIP = req.headers.get('x-forwarded-for') || req.headers.get('cf-connecting-ip') || 'unknown';
     const { data: rateLimitAllowed } = await supabaseAdmin.rpc('check_rate_limit', {
-      p_key: `kra_verify:${clientIP}`,
+      p_key: `credential_verify:${clientIP}`,
       p_max_requests: 5,
       p_window_seconds: 60
     })
@@ -82,22 +96,18 @@ serve(async (req) => {
 
     // Check content length
     const contentLength = req.headers.get('content-length');
-    if (contentLength && parseInt(contentLength) > 10240) { // 10KB limit
+    if (contentLength && parseInt(contentLength) > 10240) {
       return new Response(
         JSON.stringify({ error: 'Request payload too large' }),
         { status: 413, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
+    // Auth
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false
-        }
-      }
+      { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
     const authHeader = req.headers.get('Authorization')
@@ -118,7 +128,7 @@ serve(async (req) => {
       )
     }
 
-    // SECURITY: Read raw body and enforce size limit
+    // Parse body
     const rawBody = await req.text()
     if (rawBody.length > 10240) {
       return new Response(
@@ -137,7 +147,7 @@ serve(async (req) => {
       )
     }
 
-    // Validate input
+    // Validate
     const validation = validateVerificationData(verificationData);
     if (!validation.valid) {
       return new Response(
@@ -146,56 +156,177 @@ serve(async (req) => {
       )
     }
 
-    // Sanitize inputs
-    const pin_number = verificationData.pin_number.trim().toUpperCase();
-    const taxpayer_name = sanitizeInput(verificationData.taxpayer_name);
+    const verificationType = verificationData.verification_type;
 
-    // KRA API integration would go here
-    // For now, we'll simulate the verification process
-    const kraApiResponse = await simulateKRAVerification(pin_number, taxpayer_name)
+    if (verificationType === 'kra_pin') {
+      const pin_number = verificationData.pin_number.trim().toUpperCase();
+      const taxpayer_name = sanitizeInput(verificationData.taxpayer_name);
 
-    // Create verification record
-    const { data: verification, error: verificationError } = await supabaseClient
-      .from('verification_records')
-      .insert({
+      // Check for duplicate KRA PIN already verified for another user
+      const { data: existingVerified } = await supabaseAdmin
+        .from('user_verifications')
+        .select('user_id')
+        .eq('verification_type', 'kra_pin')
+        .eq('reference_number', pin_number)
+        .eq('status', 'verified')
+        .neq('user_id', user.id)
+        .limit(1);
+
+      if (existingVerified && existingVerified.length > 0) {
+        return new Response(
+          JSON.stringify({ error: 'This KRA PIN is already registered to another account. If this is an error, contact support.' }),
+          { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
+      // Upsert verification record - status is pending until government reviews
+      const { data: verification, error: verificationError } = await supabaseAdmin
+        .from('user_verifications')
+        .upsert({
+          user_id: user.id,
+          verification_type: 'kra_pin',
+          reference_number: pin_number,
+          status: 'pending',
+          verification_data: {
+            pin_number,
+            taxpayer_name,
+            submitted_at: new Date().toISOString(),
+            format_validated: true,
+          },
+          verification_notes: `KRA PIN format validated. Taxpayer: ${taxpayer_name}. Awaiting government review.`,
+        }, { onConflict: 'user_id,verification_type' })
+        .select()
+        .single();
+
+      if (verificationError) {
+        // Fallback: insert without upsert
+        const { data: insertedVerification, error: insertError } = await supabaseAdmin
+          .from('user_verifications')
+          .insert({
+            user_id: user.id,
+            verification_type: 'kra_pin',
+            reference_number: pin_number,
+            status: 'pending',
+            verification_data: {
+              pin_number,
+              taxpayer_name,
+              submitted_at: new Date().toISOString(),
+              format_validated: true,
+            },
+            verification_notes: `KRA PIN format validated. Taxpayer: ${taxpayer_name}. Awaiting government review.`,
+          })
+          .select()
+          .single();
+
+        if (insertError) {
+          console.error('Database error:', insertError);
+          return new Response(
+            JSON.stringify({ error: 'Failed to record verification' }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
+
+        // Notify
+        await supabaseAdmin.from('notifications').insert({
+          user_id: user.id,
+          title: 'KRA PIN Submitted',
+          message: `Your KRA PIN ${pin_number} has been submitted for verification. A government official will review it within 24-48 hours.`,
+          type: 'info',
+          category: 'verification'
+        });
+
+        return new Response(
+          JSON.stringify({ success: true, verification: insertedVerification, message: 'KRA PIN submitted for verification' }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
+      // Notify user
+      await supabaseAdmin.from('notifications').insert({
         user_id: user.id,
-        verification_type: 'kra_pin',
-        reference_number: pin_number,
-        status: kraApiResponse.status === 'active' ? 'verified' : 'failed',
-        verification_data: kraApiResponse,
-        verified_at: kraApiResponse.status === 'active' ? new Date().toISOString() : null
-      })
-      .select()
-      .single()
+        title: 'KRA PIN Submitted',
+        message: `Your KRA PIN ${pin_number} has been submitted for verification. A government official will review it within 24-48 hours.`,
+        type: 'info',
+        category: 'verification'
+      });
 
-    if (verificationError) {
-      console.error('Database error:', verificationError);
       return new Response(
-        JSON.stringify({ error: 'Failed to record verification' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ success: true, verification, message: 'KRA PIN submitted for verification' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Create notification
-    await supabaseClient
-      .from('notifications')
-      .insert({
+    if (verificationType === 'national_id') {
+      const id_number = verificationData.id_number.trim();
+      const holder_name = sanitizeInput(verificationData.holder_name);
+
+      // Check for duplicate National ID already verified for another user
+      const { data: existingVerified } = await supabaseAdmin
+        .from('user_verifications')
+        .select('user_id')
+        .eq('verification_type', 'national_id')
+        .eq('reference_number', id_number)
+        .eq('status', 'verified')
+        .neq('user_id', user.id)
+        .limit(1);
+
+      if (existingVerified && existingVerified.length > 0) {
+        return new Response(
+          JSON.stringify({ error: 'This National ID is already registered to another account. If this is an error, contact support.' }),
+          { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
+      // Insert verification record
+      const { data: verification, error: verificationError } = await supabaseAdmin
+        .from('user_verifications')
+        .insert({
+          user_id: user.id,
+          verification_type: 'national_id',
+          reference_number: id_number,
+          status: 'pending',
+          verification_data: {
+            id_number,
+            holder_name,
+            submitted_at: new Date().toISOString(),
+            format_validated: true,
+          },
+          verification_notes: `National ID format validated (${id_number.length} digits). Holder: ${holder_name}. Awaiting review.`,
+        })
+        .select()
+        .single();
+
+      if (verificationError) {
+        console.error('Database error:', verificationError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to record verification' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
+      // Update user_profiles with national_id
+      await supabaseAdmin
+        .from('user_profiles')
+        .update({ national_id: id_number })
+        .eq('user_id', user.id);
+
+      await supabaseAdmin.from('notifications').insert({
         user_id: user.id,
-        title: 'KRA PIN Verification',
-        message: kraApiResponse.status === 'active' 
-          ? `KRA PIN ${pin_number} verified successfully.`
-          : `KRA PIN ${pin_number} verification failed.`,
-        type: kraApiResponse.status === 'active' ? 'success' : 'error',
+        title: 'National ID Submitted',
+        message: `Your National ID has been submitted for verification. It will be reviewed within 24-48 hours.`,
+        type: 'info',
         category: 'verification'
-      })
+      });
+
+      return new Response(
+        JSON.stringify({ success: true, verification, message: 'National ID submitted for verification' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        verification,
-        message: 'KRA PIN verification completed' 
-      }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: 'Unsupported verification type' }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 
   } catch (error) {
@@ -206,19 +337,3 @@ serve(async (req) => {
     )
   }
 })
-
-// Simulate KRA API response
-async function simulateKRAVerification(pinNumber: string, taxpayerName: string) {
-  // Simulate API call delay
-  await new Promise(resolve => setTimeout(resolve, 1000))
-  
-  // PIN is already validated at this point, so return success
-  return {
-    pin_number: pinNumber,
-    taxpayer_name: taxpayerName,
-    registration_date: '2018-03-15',
-    status: 'active',
-    compliance_status: 'compliant',
-    last_return_date: '2024-06-30'
-  }
-}
