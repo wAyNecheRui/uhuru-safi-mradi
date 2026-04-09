@@ -1,6 +1,8 @@
 import React from 'react';
 import { OfflineBanner } from '@/components/layout/OfflineBanner';
 import { cn } from '@/lib/utils';
+import { useIdleTimeout } from '@/hooks/useIdleTimeout';
+import FeedbackButton from '@/components/feedback/FeedbackButton';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -13,6 +15,8 @@ interface AppLayoutProps {
  * - Live announcer for screen readers
  */
 export function AppLayout({ children, className }: AppLayoutProps) {
+  useIdleTimeout();
+
   return (
     <>
       {/* Offline status banner */}
@@ -35,6 +39,9 @@ export function AppLayout({ children, className }: AppLayoutProps) {
         aria-atomic="true"
         className="sr-only"
       />
+
+      {/* In-app feedback button */}
+      <FeedbackButton />
     </>
   );
 }
