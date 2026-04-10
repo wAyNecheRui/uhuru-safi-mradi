@@ -2,31 +2,34 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Camera, Upload, X, FileVideo, FileImage } from 'lucide-react';
+import WebCameraCapture from '@/components/camera/WebCameraCapture';
 
 interface PhotoUploadSectionProps {
   photoCount: number;
   photos?: File[];
   onPhotoUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onRemovePhoto?: (index: number) => void;
+  onCameraCapture?: (file: File) => void;
 }
 
-const PhotoUploadSection = ({ photoCount, photos = [], onPhotoUpload, onRemovePhoto }: PhotoUploadSectionProps) => {
+const PhotoUploadSection = ({ photoCount, photos = [], onPhotoUpload, onRemovePhoto, onCameraCapture }: PhotoUploadSectionProps) => {
   const [previews, setPreviews] = useState<{ url: string; type: string; name: string }[]>([]);
 
   useEffect(() => {
-    // Generate previews for uploaded files
     const newPreviews = photos.map(file => ({
       url: URL.createObjectURL(file),
       type: file.type.startsWith('video/') ? 'video' : 'image',
       name: file.name
     }));
     setPreviews(newPreviews);
-
-    // Cleanup URLs on unmount
-    return () => {
-      newPreviews.forEach(preview => URL.revokeObjectURL(preview.url));
-    };
+    return () => { newPreviews.forEach(preview => URL.revokeObjectURL(preview.url)); };
   }, [photos]);
+
+  const handleCameraCapture = (file: File) => {
+    if (onCameraCapture) {
+      onCameraCapture(file);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -34,24 +37,13 @@ const PhotoUploadSection = ({ photoCount, photos = [], onPhotoUpload, onRemovePh
         Photo & Video Documentation <span className="text-destructive">*</span>
       </label>
       
-      {/* Upload Area */}
-      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
-        <Camera className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-        <p className="text-gray-600 mb-2">Upload photos or videos to document the problem</p>
-        <p className="text-xs text-muted-foreground mb-4">Supports images and videos (max 10 files)</p>
-        <input
-          type="file"
-          multiple
-          accept="image/*,video/*"
-          onChange={onPhotoUpload}
-          className="hidden"
-          id="photo-upload"
-        />
-        <Button variant="outline" onClick={() => document.getElementById('photo-upload')?.click()}>
-          <Upload className="h-4 w-4 mr-2" />
-          Choose Files
-        </Button>
-      </div>
+      {/* Camera + Upload */}
+      <WebCameraCapture
+        onCapture={handleCameraCapture}
+        maxFiles={10}
+        capturedCount={photoCount}
+        inline
+      />
 
       {/* File Previews */}
       {previews.length > 0 && (
