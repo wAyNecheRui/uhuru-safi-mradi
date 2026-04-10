@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, FileText, Users, MapPin, Clock, Shield, CheckCircle, Wallet, Loader2, Wrench, Eye, BookOpen, Briefcase, Map } from 'lucide-react';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
+import { ModernDashboard } from '@/components/dashboard/ModernDashboard';
 import { useResponsive } from '@/hooks/useResponsive';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCitizenData } from '@/hooks/useCitizenData';
@@ -76,6 +77,9 @@ const CitizenDashboard = () => {
         <ResponsiveContainer className="py-5 sm:py-8">
           <BreadcrumbNav />
           
+          {/* Modern Dashboard with Charts */}
+          <ModernDashboard />
+
           {/* Welcome Header */}
           <div className="mb-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">

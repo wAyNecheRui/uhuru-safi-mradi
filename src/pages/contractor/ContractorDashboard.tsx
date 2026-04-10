@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Briefcase, FileText, Wallet, Clock, TrendingUp, Award, Loader2, Eye, CheckCircle, MessageSquare, BarChart3 } from 'lucide-react';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
+import { ModernDashboard } from '@/components/dashboard/ModernDashboard';
 import { useResponsive } from '@/hooks/useResponsive';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -138,6 +139,9 @@ const ContractorDashboard = () => {
       <main>
         <ResponsiveContainer className="py-5 sm:py-8">
           <BreadcrumbNav />
+
+          {/* Modern Dashboard with Charts */}
+          <ModernDashboard />
 
           {/* Welcome */}
           <div className="mb-6">

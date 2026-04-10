@@ -22,7 +22,7 @@ import {
   Shield,
   FolderOpen
 } from 'lucide-react';
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, PieChart as RechartsPieChart, Pie, Cell } from 'recharts';
 
 // Mock data - replace with real Supabase queries
 const mockActivityData = [
@@ -282,7 +282,7 @@ export function ModernDashboard() {
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={350}>
-                  <PieChart>
+                  <RechartsPieChart>
                     <Pie
                       data={mockStatusData}
                       cx="50%"
@@ -298,7 +298,7 @@ export function ModernDashboard() {
                       ))}
                     </Pie>
                     <Tooltip />
-                  </PieChart>
+                  </RechartsPieChart>
                 </ResponsiveContainer>
               </CardContent>
             </Card>
