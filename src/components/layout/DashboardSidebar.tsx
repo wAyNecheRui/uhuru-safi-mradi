@@ -16,130 +16,9 @@ import {
   SidebarSeparator,
   useSidebar,
 } from '@/components/ui/sidebar';
-import {
-  LayoutDashboard, AlertTriangle, FileText, Users, Map, Wallet, Wrench, Briefcase, Eye, BookOpen,
-  Award, TrendingUp, CheckCircle, MessageSquare, BarChart3, ClipboardList,
-  Shield, Building2, CreditCard, Link2, Landmark, UserCheck, FolderOpen,
-  Scale, Bell, Settings, LogOut, Milestone
-} from 'lucide-react';
+import { Settings, LogOut } from 'lucide-react';
+import { dashboardNavMap, type DashboardRole } from '@/config/dashboardRoutes';
 import { cn } from '@/lib/utils';
-
-interface NavItem {
-  title: string;
-  url: string;
-  icon: React.ComponentType<{ className?: string }>;
-}
-
-interface NavGroup {
-  label: string;
-  items: NavItem[];
-}
-
-const citizenNav: NavGroup[] = [
-  {
-    label: 'Main',
-    items: [
-      { title: 'Dashboard', url: '/citizen', icon: LayoutDashboard },
-      { title: 'Report Issue', url: '/citizen/report', icon: AlertTriangle },
-      { title: 'Track Reports', url: '/citizen/track', icon: FileText },
-      { title: 'Monitor Projects', url: '/citizen/projects', icon: Map },
-    ],
-  },
-  {
-    label: 'Community',
-    items: [
-      { title: 'Community Voting', url: '/citizen/voting', icon: Users },
-      { title: 'Transparency', url: '/citizen/transparency', icon: Eye },
-    ],
-  },
-  {
-    label: 'Work & Skills',
-    items: [
-      { title: 'My Jobs', url: '/citizen/my-jobs', icon: Wallet },
-      { title: 'Skills Registration', url: '/citizen/skills', icon: Wrench },
-      { title: 'Job Opportunities', url: '/citizen/workforce', icon: Briefcase },
-    ],
-  },
-  {
-    label: 'Help',
-    items: [
-      { title: 'Citizen Guide', url: '/citizen/guide', icon: BookOpen },
-    ],
-  },
-];
-
-const contractorNav: NavGroup[] = [
-  {
-    label: 'Main',
-    items: [
-      { title: 'Dashboard', url: '/contractor', icon: LayoutDashboard },
-      { title: 'Browse Projects', url: '/contractor/bidding', icon: Briefcase },
-      { title: 'My Bids', url: '/contractor/tracking', icon: Eye },
-      { title: 'My Projects', url: '/contractor/projects', icon: FolderOpen },
-    ],
-  },
-  {
-    label: 'Operations',
-    items: [
-      { title: 'Financials', url: '/contractor/financials', icon: Wallet },
-      { title: 'Bid Templates', url: '/contractor/templates', icon: ClipboardList },
-      { title: 'Quality', url: '/contractor/quality', icon: CheckCircle },
-      { title: 'Job Postings', url: '/contractor/jobs', icon: Briefcase },
-    ],
-  },
-  {
-    label: 'Performance',
-    items: [
-      { title: 'Performance', url: '/contractor/performance', icon: BarChart3 },
-      { title: 'Communications', url: '/contractor/communications', icon: MessageSquare },
-      { title: 'Verification', url: '/contractor/verification', icon: Award },
-    ],
-  },
-];
-
-const governmentNav: NavGroup[] = [
-  {
-    label: 'Main',
-    items: [
-      { title: 'Dashboard', url: '/government', icon: LayoutDashboard },
-      { title: 'Projects', url: '/government/projects', icon: FolderOpen },
-      { title: 'Reports', url: '/government/reports', icon: FileText },
-      { title: 'Approvals', url: '/government/approvals', icon: CheckCircle },
-    ],
-  },
-  {
-    label: 'Finance',
-    items: [
-      { title: 'Escrow', url: '/government/escrow', icon: Shield },
-      { title: 'Escrow Funding', url: '/government/escrow-funding', icon: CreditCard },
-      { title: 'Payments', url: '/government/payments', icon: Wallet },
-      { title: 'Payment Release', url: '/government/payment-release', icon: CreditCard },
-      { title: 'Milestones', url: '/government/milestones', icon: Milestone },
-      { title: 'LPO', url: '/government/lpo', icon: ClipboardList },
-    ],
-  },
-  {
-    label: 'Oversight',
-    items: [
-      { title: 'Bid Approval', url: '/government/bid-approval', icon: Scale },
-      { title: 'Contractors', url: '/government/contractors', icon: Building2 },
-      { title: 'Verification', url: '/government/verification', icon: UserCheck },
-      { title: 'Verification Requests', url: '/government/verification-requests', icon: UserCheck },
-      { title: 'Blockchain', url: '/government/blockchain', icon: Link2 },
-      { title: 'EACC', url: '/government/eacc', icon: Landmark },
-    ],
-  },
-  {
-    label: 'Analytics',
-    items: [
-      { title: 'Analytics', url: '/government/analytics', icon: BarChart3 },
-      { title: 'Portfolio', url: '/government/portfolio', icon: TrendingUp },
-      { title: 'Benchmarks', url: '/government/benchmarks', icon: Award },
-      { title: 'Compliance', url: '/government/compliance', icon: Shield },
-      { title: 'User Management', url: '/government/users', icon: Users },
-    ],
-  },
-];
 
 export function DashboardSidebar() {
   const { user, signOut } = useAuth();
@@ -148,13 +27,8 @@ export function DashboardSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const userType = (user?.user_type || 'citizen') as string;
-  const navGroups = userType === 'government' || userType === 'admin'
-    ? governmentNav
-    : userType === 'contractor'
-      ? contractorNav
-      : citizenNav;
-
+  const userType = (user?.user_type || 'citizen') as DashboardRole;
+  const navGroups = dashboardNavMap[userType];
   const resolvedType = userType === 'admin' ? 'government' : userType;
   const isActive = (url: string) => {
     if (url === `/${resolvedType}`) {

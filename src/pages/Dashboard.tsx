@@ -15,6 +15,7 @@ import RecentIssues from '@/components/RecentIssues';
 import AppFooter from '@/components/AppFooter';
 import TabNavigation from '@/components/TabNavigation';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
+import { ModernDashboard } from '@/components/dashboard/ModernDashboard';
 import { useResponsive } from '@/hooks/useResponsive';
 import { useProjectStats } from '@/hooks/useProjectStats';
 import { useRecentIssues } from '@/hooks/useRecentIssues';
@@ -37,42 +38,7 @@ const Dashboard = () => {
             <TabNavigation getText={getText} />
 
             <TabsContent value="overview" className="space-y-5 mt-0">
-              {statsLoading ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {[...Array(3)].map((_, i) => (
-                    <div key={i} className="h-28 bg-muted rounded-2xl animate-pulse" />
-                  ))}
-                </div>
-              ) : projectStats ? (
-                <StatsCards projectStats={projectStats} getText={getText} />
-              ) : null}
-
-              <div className={`grid gap-5 ${isMobile ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2'}`}>
-                <Card className="shadow-sm">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="flex items-center text-base font-semibold">
-                      <div className="p-1.5 rounded-lg bg-green-50 mr-2.5">
-                        <MapPin className="h-4 w-4 text-green-600" />
-                      </div>
-                      Project Map
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <ProjectMap selectedCounty="Nairobi" />
-                  </CardContent>
-                </Card>
-
-                {issuesLoading ? (
-                  <div className="bg-card border rounded-xl p-6 animate-pulse space-y-3">
-                    <div className="h-5 bg-muted rounded w-1/3" />
-                    {[...Array(3)].map((_, i) => (
-                      <div key={i} className="h-20 bg-muted rounded-xl" />
-                    ))}
-                  </div>
-                ) : (
-                  <RecentIssues issues={recentIssues} getText={getText} />
-                )}
-              </div>
+              <ModernDashboard />
             </TabsContent>
 
             <TabsContent value="simple-report">
