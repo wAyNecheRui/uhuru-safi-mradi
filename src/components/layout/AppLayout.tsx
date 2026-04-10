@@ -1,47 +1,52 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { OfflineBanner } from '@/components/layout/OfflineBanner';
 import { cn } from '@/lib/utils';
 import { useIdleTimeout } from '@/hooks/useIdleTimeout';
 import FeedbackButton from '@/components/feedback/FeedbackButton';
+import OnboardingWizard from '@/components/onboarding/OnboardingWizard';
 
 interface AppLayoutProps {
   children: React.ReactNode;
   className?: string;
+  userType?: 'citizen' | 'contractor' | 'government';
+  userName?: string;
 }
 
-/**
- * Main application layout wrapper that provides:
- * - Offline status banner
- * - Live announcer for screen readers
- */
-export function AppLayout({ children, className }: AppLayoutProps) {
+export function AppLayout({ children, className, userType, userName }: AppLayoutProps) {
   useIdleTimeout();
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  useEffect(() => {
+    if (!userType) return;
+    const key = `onboarding_wizard_${userType}_completed`;
+    if (!localStorage.getItem(key)) {
+      setShowOnboarding(true);
+    }
+  }, [userType]);
+
+  const handleOnboardingComplete = () => {
+    if (userType) {
+      localStorage.setItem(`onboarding_wizard_${userType}_completed`, 'true');
+    }
+    setShowOnboarding(false);
+  };
 
   return (
     <>
-      {/* Offline status banner */}
       <OfflineBanner />
-      
-      {/* Main content */}
-      <div
-        className={cn(
-          'min-h-screen w-full overflow-x-hidden',
-          className
-        )}
-      >
+      <div className={cn('min-h-screen w-full overflow-x-hidden', className)}>
         {children}
       </div>
-
-      {/* Live announcer for screen readers */}
-      <div
-        id="live-announcer"
-        aria-live="polite"
-        aria-atomic="true"
-        className="sr-only"
-      />
-
-      {/* In-app feedback button */}
+      <div id="live-announcer" aria-live="polite" aria-atomic="true" className="sr-only" />
       <FeedbackButton />
+      {showOnboarding && userType && (
+        <OnboardingWizard
+          userType={userType}
+          userName={userName || ''}
+          onComplete={handleOnboardingComplete}
+          onSkip={handleOnboardingComplete}
+        />
+      )}
     </>
   );
 }

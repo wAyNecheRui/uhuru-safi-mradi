@@ -116,7 +116,7 @@ const ProjectMap = ({ selectedCounty }: ProjectMapProps) => {
         markers={markers}
         center={mapCenter}
         zoom={10}
-        height="320px"
+        height="480px"
       />
       {/* County label overlay */}
       <div className="absolute top-3 left-3 z-[1000]">
