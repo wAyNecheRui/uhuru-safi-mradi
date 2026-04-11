@@ -22,6 +22,8 @@ import GovernmentJurisdictionSettings from '@/components/government/GovernmentJu
 import { WorkflowGuardService, WORKFLOW_STATUS, MIN_VOTES_THRESHOLD } from '@/services/WorkflowGuardService';
 import { LiveNotificationService } from '@/services/LiveNotificationService';
 import { supabase } from '@/integrations/supabase/client';
+import BulkApprovalPanel from '@/components/government/BulkApprovalPanel';
+import BulkBiddingPanel from '@/components/government/BulkBiddingPanel';
 
 // Component for Approved Reports that are ready to open for bidding
 const ApprovedReportsSection = ({ openBidding }: { openBidding: (reportId: string) => Promise<boolean> }) => {
