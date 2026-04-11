@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Wallet, Loader2, FolderOpen, MapPin, Calendar } from 'lucide-react';
+import { Wallet, Loader2, FolderOpen, MapPin, Calendar, AlertTriangle } from 'lucide-react';
 import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
 import PaymentReleaseManager from '@/components/government/PaymentReleaseManager';
+import BulkPaymentRelease from '@/components/government/BulkPaymentRelease';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -89,7 +90,35 @@ const GovernmentPaymentRelease = () => {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">Payment Release</h1>
           <p className="text-muted-foreground">Review verified milestones and release payments to contractors.</p>
+          <div className="mt-3 flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <AlertTriangle className="h-4 w-4 text-yellow-600 shrink-0" />
+            <p className="text-sm text-yellow-800">
+              <strong>Demo Mode:</strong> All M-Pesa payments are simulated. No real money is transferred.
+            </p>
+          </div>
         </div>
+
+        {/* Bulk release for verified milestones across all projects */}
+        {(() => {
+          const releasableMilestones = projects.flatMap(project => {
+            const milestones = project.project_milestones || [];
+            const escrowTotal = project.budget || 0;
+            return milestones
+              .filter((m: any) => m.status === 'verified')
+              .map((m: any) => ({
+                id: m.id,
+                title: m.title,
+                projectTitle: project.title,
+                amount: (escrowTotal * (m.payment_percentage || 0)) / 100,
+                paymentPercentage: m.payment_percentage || 0
+              }));
+          });
+          return releasableMilestones.length > 0 ? (
+            <div className="mb-6">
+              <BulkPaymentRelease milestones={releasableMilestones} onComplete={fetchProjects} />
+            </div>
+          ) : null;
+        })()}
 
         <div className="space-y-4">
           {projects.length === 0 ? (

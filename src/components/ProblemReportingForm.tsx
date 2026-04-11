@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import DuplicateReportDetector from '@/components/reporting/DuplicateReportDetector';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -200,6 +201,20 @@ const ProblemReportingForm = () => {
                   className="focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
+
+              {/* Duplicate report detector */}
+              {formData.title.length >= 10 && (
+                <div className="md:col-span-2">
+                  <DuplicateReportDetector
+                    title={formData.title}
+                    location={formData.location}
+                    category={formData.category}
+                    onLinkToExisting={(reportId) => {
+                      navigate(`/citizen/community-voting?highlight=${reportId}`);
+                    }}
+                  />
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Category *</label>

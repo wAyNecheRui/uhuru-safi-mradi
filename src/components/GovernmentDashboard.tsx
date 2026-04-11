@@ -22,6 +22,8 @@ import GovernmentJurisdictionSettings from '@/components/government/GovernmentJu
 import { WorkflowGuardService, WORKFLOW_STATUS, MIN_VOTES_THRESHOLD } from '@/services/WorkflowGuardService';
 import { LiveNotificationService } from '@/services/LiveNotificationService';
 import { supabase } from '@/integrations/supabase/client';
+import BulkApprovalPanel from '@/components/government/BulkApprovalPanel';
+import BulkBiddingPanel from '@/components/government/BulkBiddingPanel';
 
 // Component for Approved Reports that are ready to open for bidding
 const ApprovedReportsSection = ({ openBidding }: { openBidding: (reportId: string) => Promise<boolean> }) => {
@@ -285,55 +287,62 @@ const GovernmentDashboard = () => {
           {pendingApprovals.length === 0 ? (
             <Card>
               <CardContent className="p-8 text-center">
-                <div className="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <CheckCircle className="h-5 w-5 text-green-600" />
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <CheckCircle className="h-5 w-5 text-primary" />
                 </div>
                 <h3 className="font-semibold text-sm mb-1">No Reports Pending Approval</h3>
                 <p className="text-xs text-muted-foreground">Reports with {MIN_VOTES_THRESHOLD}+ votes will appear here.</p>
               </CardContent>
             </Card>
           ) : (
-            <div className="grid gap-4">
-              {pendingApprovals.map((project: any) => (
-                <Card key={project.id} className="border-l-4 border-l-primary">
-                  <CardContent className="p-5">
-                    <div className="space-y-3">
-                      <div className="flex flex-wrap items-start justify-between gap-2">
-                        <h3 className="font-semibold text-foreground">{project.title}</h3>
-                        <div className="flex gap-1.5">
-                          <Badge variant="secondary" className="text-[10px]">Under Review</Badge>
-                          <Badge variant={project.priority === 'urgent' || project.priority === 'high' ? 'destructive' : 'outline'} className="text-[10px]">
-                            {(project.priority || 'medium').toUpperCase()}
-                          </Badge>
+            <>
+              {/* Bulk approval panel when 2+ reports */}
+              {pendingApprovals.length >= 2 && (
+                <BulkApprovalPanel reports={pendingApprovals} onComplete={() => window.location.reload()} />
+              )}
+
+              <div className="grid gap-4">
+                {pendingApprovals.map((project: any) => (
+                  <Card key={project.id} className="border-l-4 border-l-primary">
+                    <CardContent className="p-5">
+                      <div className="space-y-3">
+                        <div className="flex flex-wrap items-start justify-between gap-2">
+                          <h3 className="font-semibold text-foreground">{project.title}</h3>
+                          <div className="flex gap-1.5">
+                            <Badge variant="secondary" className="text-[10px]">Under Review</Badge>
+                            <Badge variant={project.priority === 'urgent' || project.priority === 'high' ? 'destructive' : 'outline'} className="text-[10px]">
+                              {(project.priority || 'medium').toUpperCase()}
+                            </Badge>
+                          </div>
+                        </div>
+                        <p className="text-sm text-muted-foreground">{project.description}</p>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                          <div><span className="text-muted-foreground">Location:</span><div className="font-medium text-foreground mt-0.5">{project.location || 'N/A'}</div></div>
+                          <div><span className="text-muted-foreground">Estimated Cost:</span><div className="font-medium text-foreground mt-0.5">KES {project.estimated_cost?.toLocaleString() || 'TBD'}</div></div>
+                          <div><span className="text-muted-foreground">Votes:</span><div className="font-medium text-foreground mt-0.5">{project.verified_votes || 0}</div></div>
+                          <div><span className="text-muted-foreground">Category:</span><div className="font-medium text-foreground mt-0.5">{project.category || 'General'}</div></div>
+                        </div>
+                        {project.photo_urls?.length > 0 && (
+                          <div className="flex gap-2 overflow-x-auto py-1">
+                            {project.photo_urls.slice(0, 3).map((url: string, i: number) => (
+                              <img key={i} src={url} alt="" className="h-20 w-28 rounded-lg object-cover border border-border shrink-0" loading="lazy" />
+                            ))}
+                          </div>
+                        )}
+                        <div className="flex gap-2 pt-1">
+                          <Button size="sm" onClick={() => handleApproveClick(project)}>
+                            <CheckCircle className="h-3.5 w-3.5 mr-1.5" />Approve
+                          </Button>
+                          <Button size="sm" variant="destructive" onClick={() => handleRejectClick(project)}>
+                            <XCircle className="h-3.5 w-3.5 mr-1.5" />Reject
+                          </Button>
                         </div>
                       </div>
-                      <p className="text-sm text-muted-foreground">{project.description}</p>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-                        <div><span className="text-muted-foreground">Location:</span><div className="font-medium text-foreground mt-0.5">{project.location || 'N/A'}</div></div>
-                        <div><span className="text-muted-foreground">Estimated Cost:</span><div className="font-medium text-foreground mt-0.5">KES {project.estimated_cost?.toLocaleString() || 'TBD'}</div></div>
-                        <div><span className="text-muted-foreground">Votes:</span><div className="font-medium text-foreground mt-0.5">{project.verified_votes || 0}</div></div>
-                        <div><span className="text-muted-foreground">Category:</span><div className="font-medium text-foreground mt-0.5">{project.category || 'General'}</div></div>
-                      </div>
-                      {project.photo_urls?.length > 0 && (
-                        <div className="flex gap-2 overflow-x-auto py-1">
-                          {project.photo_urls.slice(0, 3).map((url: string, i: number) => (
-                            <img key={i} src={url} alt="" className="h-20 w-28 rounded-lg object-cover border border-border shrink-0" loading="lazy" />
-                          ))}
-                        </div>
-                      )}
-                      <div className="flex gap-2 pt-1">
-                        <Button size="sm" onClick={() => handleApproveClick(project)}>
-                          <CheckCircle className="h-3.5 w-3.5 mr-1.5" />Approve
-                        </Button>
-                        <Button size="sm" variant="destructive" onClick={() => handleRejectClick(project)}>
-                          <XCircle className="h-3.5 w-3.5 mr-1.5" />Reject
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </>
           )}
 
           <ApprovedReportsSection openBidding={openBidding} />

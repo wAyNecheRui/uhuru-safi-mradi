@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, FileText, AlertCircle } from 'lucide-react';
@@ -10,8 +11,10 @@ import PriorityImpactSection from '@/components/reporting/PriorityImpactSection'
 import ImpactAssessmentSection from '@/components/reporting/ImpactAssessmentSection';
 import PhotoUploadSection from '@/components/reporting/PhotoUploadSection';
 import { ValidationTooltip } from '@/components/ui/validation-tooltip';
+import DuplicateReportDetector from '@/components/reporting/DuplicateReportDetector';
 
 const EnhancedProblemReporting = () => {
+  const navigate = useNavigate();
   const {
     reportData,
     handleInputChange,
@@ -44,6 +47,17 @@ const EnhancedProblemReporting = () => {
             reportData={reportData}
             onInputChange={handleInputChange}
           />
+          {/* Duplicate report detector */}
+          {reportData.title.length >= 10 && (
+            <DuplicateReportDetector
+              title={reportData.title}
+              location={reportData.location}
+              category={reportData.category}
+              onLinkToExisting={(reportId) => {
+                navigate(`/citizen/community-voting?highlight=${reportId}`);
+              }}
+            />
+          )}
           {/* Inline validation for title */}
           {!reportData.title.trim() && reportData.description.trim() && (
             <p className="text-xs text-destructive flex items-center gap-1 -mt-4">
