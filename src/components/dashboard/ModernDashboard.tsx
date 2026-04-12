@@ -78,21 +78,120 @@ function StatCard({ title, value, description, icon: Icon, trend }: StatCardProp
 export function ModernDashboard() {
   const { user } = useAuth();
 
-  // Mock queries - replace with real Supabase data
-  const { data: stats } = useQuery({
-    queryKey: ['dashboard-stats', user?.user_type],
+  const { data: dashboardData, isLoading } = useQuery({
+    queryKey: ['dashboard-visuals-real', user?.user_type],
     queryFn: async () => {
-      // Replace with actual Supabase queries
+      // Fetch projects
+      const { data: projects } = await supabase.from('projects').select('id, status, created_at, title');
+      // Fetch reports
+      const { data: reports } = await supabase.from('problem_reports').select('id, status, created_at, title, category');
+      // Fetch bids
+      const { data: bids } = await supabase.from('contractor_bids').select('id, status, created_at');
+      // Fetch users
+      // Use a valid table, or just static depending on what defines a "user_count" here.
+      // E.g., const { count: usersCount } = await supabase.from('citizen_workers').select('*', { count: 'exact', head: true });
+      const usersCount = 0;
+
+      const safeProjects = projects || [];
+      const safeReports = reports || [];
+
+      // Calculate stats
+      const totalReports = safeReports.length;
+      const activeProjects = safeProjects.filter(p => ['in_progress', 'active'].includes(p.status || '')).length;
+      const completedProjects = safeProjects.filter(p => ['completed', 'verified'].includes(p.status || '')).length;
+      const pendingApprovals = (bids || []).filter(b => ['pending', 'submitted'].includes(b.status || '')).length;
+      const totalUsers = usersCount || 0;
+
+      // Group projects by status for PieChart
+      let statusPending = 0;
+      let statusInProgress = 0;
+      let statusCompleted = 0;
+
+      safeProjects.forEach(p => {
+        const s = p.status?.toLowerCase() || '';
+        if (s.includes('complet') || s.includes('verif')) statusCompleted++;
+        else if (s.includes('progress') || s.includes('activ')) statusInProgress++;
+        else statusPending++; // planning, pending, etc.
+      });
+
+      const statusData = [
+        { name: 'Pending/Planning', value: statusPending, color: '#f59e0b' },
+        { name: 'In Progress', value: statusInProgress, color: '#3b82f6' },
+        { name: 'Completed', value: statusCompleted, color: '#10b981' },
+      ].filter(item => item.value > 0);
+
+      // Group by month for ActivityData (last 6 months)
+      const months = [];
+      const now = new Date();
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        months.push({
+          name: d.toLocaleString('default', { month: 'short' }),
+          month: d.getMonth(),
+          year: d.getFullYear(),
+          reports: 0,
+          projects: 0
+        });
+      }
+
+      safeReports.forEach(r => {
+        if (!r.created_at) return;
+        const d = new Date(r.created_at);
+        const match = months.find(m => m.month === d.getMonth() && m.year === d.getFullYear());
+        if (match) match.reports++;
+      });
+
+      safeProjects.forEach(p => {
+        if (!p.created_at) return;
+        const d = new Date(p.created_at);
+        const match = months.find(m => m.month === d.getMonth() && m.year === d.getFullYear());
+        if (match) match.projects++;
+      });
+
+      const activityData = months.map(m => ({ name: m.name, reports: m.reports, projects: m.projects }));
+
+      // Recent Activity Feed
+      const recentFeed: any[] = [];
+      safeProjects.slice(0, 20).forEach(p => {
+        recentFeed.push({
+          title: `Project: ${p.title || 'Unknown'} updated to ${p.status}`,
+          time: p.created_at,
+          type: p.status === 'completed' ? 'success' : 'info',
+          source: 'project'
+        });
+      });
+      safeReports.slice(0, 20).forEach(r => {
+        recentFeed.push({
+          title: `Report: ${r.title || r.category || 'Issue'} is ${r.status}`,
+          time: r.created_at,
+          type: r.status === 'resolved' ? 'success' : 'warning',
+          source: 'report'
+        });
+      });
+
+      // Sort descending
+      recentFeed.sort((a, b) => new Date(b.time || 0).getTime() - new Date(a.time || 0).getTime());
+
+      const formattedFeed = recentFeed.slice(0, 10).map(f => {
+        const hours = Math.floor((Date.now() - new Date(f.time!).getTime()) / (1000 * 60 * 60));
+        let timeStr = hours < 1 ? 'Just now' : hours < 24 ? `${hours} hours ago` : `${Math.floor(hours / 24)} days ago`;
+        return { ...f, timeStr };
+      });
+
       return {
-        totalReports: 1247,
-        activeProjects: 89,
-        pendingApprovals: 23,
-        completedProjects: 156,
-        totalUsers: 5432,
-        monthlyGrowth: 12.5
+        stats: { totalReports, activeProjects, pendingApprovals, completedProjects, totalUsers, monthlyGrowth: 0 },
+        statusData: statusData.length > 0 ? statusData : mockStatusData,
+        activityData: activityData,
+        recentFeed: formattedFeed
       };
     }
   });
+
+  const stats = dashboardData?.stats;
+  const currentActivityData = dashboardData?.activityData || mockActivityData;
+  const currentStatusData = dashboardData?.statusData || mockStatusData;
+  const currentRecentFeed = dashboardData?.recentFeed || [];
+
 
   const getStatsForRole = () => {
     const baseStats = stats || {
@@ -248,7 +347,7 @@ export function ModernDashboard() {
               </CardHeader>
               <CardContent className="pl-2">
                 <ResponsiveContainer width="100%" height={350}>
-                  <LineChart data={mockActivityData}>
+                  <LineChart data={currentActivityData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
                     <YAxis />
@@ -283,7 +382,7 @@ export function ModernDashboard() {
                 <ResponsiveContainer width="100%" height={350}>
                   <RechartsPieChart>
                     <Pie
-                      data={mockStatusData}
+                      data={currentStatusData}
                       cx="50%"
                       cy="50%"
                       labelLine={false}
@@ -292,8 +391,8 @@ export function ModernDashboard() {
                       fill="#8884d8"
                       dataKey="value"
                     >
-                      {mockStatusData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      {currentStatusData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
                     <Tooltip />
@@ -313,27 +412,23 @@ export function ModernDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {[
-                  { title: 'New project approved', time: '2 hours ago', type: 'success' },
-                  { title: 'Contractor bid submitted', time: '4 hours ago', type: 'info' },
-                  { title: 'Citizen report resolved', time: '1 day ago', type: 'success' },
-                  { title: 'Payment milestone reached', time: '2 days ago', type: 'warning' },
-                ].map((activity, index) => (
+                {currentRecentFeed.length > 0 ? currentRecentFeed.slice(0, 4).map((activity, index) => (
                   <div key={index} className="flex items-center space-x-4">
-                    <div className={`w-2 h-2 rounded-full ${
-                      activity.type === 'success' ? 'bg-green-500' :
+                    <div className={`w-2 h-2 rounded-full ${activity.type === 'success' ? 'bg-green-500' :
                       activity.type === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'
-                    }`} />
+                      }`} />
                     <div className="flex-1 space-y-1">
                       <p className="text-sm font-medium leading-none">
                         {activity.title}
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        {activity.time}
+                        {activity.timeStr}
                       </p>
                     </div>
                   </div>
-                ))}
+                )) : (
+                  <p className="text-sm text-muted-foreground">No recent activity found.</p>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -349,7 +444,7 @@ export function ModernDashboard() {
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={400}>
-                <BarChart data={mockActivityData}>
+                <BarChart data={currentActivityData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" />
                   <YAxis />
@@ -372,27 +467,30 @@ export function ModernDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {Array.from({ length: 10 }, (_, i) => (
+                {currentRecentFeed.length > 0 ? currentRecentFeed.map((activity, i) => (
                   <div key={i} className="flex items-start space-x-4 p-4 border rounded-lg">
-                    <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                      <Activity className="w-4 h-4" />
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${activity.type === 'success' ? 'bg-green-100' :
+                      activity.type === 'warning' ? 'bg-yellow-100' : 'bg-blue-100'
+                      }`}>
+                      <Activity className={`w-4 h-4 ${activity.type === 'success' ? 'text-green-600' :
+                        activity.type === 'warning' ? 'text-yellow-600' : 'text-blue-600'
+                        }`} />
                     </div>
                     <div className="flex-1">
                       <p className="text-sm font-medium">
-                        System activity #{i + 1}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Description of the activity that occurred in the system.
+                        {activity.title}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        {Math.floor(Math.random() * 24)} hours ago
+                        {activity.timeStr}
                       </p>
                     </div>
-                    <Badge variant="secondary">
-                      {['Info', 'Success', 'Warning'][Math.floor(Math.random() * 3)]}
+                    <Badge variant={activity.type === 'success' ? 'default' : 'secondary'} className={activity.type === 'success' ? 'bg-green-500 hover:bg-green-600' : ''}>
+                      {activity.source === 'project' ? 'Project' : 'Report'}
                     </Badge>
                   </div>
-                ))}
+                )) : (
+                  <p className="text-sm text-muted-foreground p-4">No system activity available to display.</p>
+                )}
               </div>
             </CardContent>
           </Card>
