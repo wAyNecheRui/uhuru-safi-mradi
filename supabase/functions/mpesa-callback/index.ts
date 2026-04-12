@@ -504,7 +504,7 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('[M-Pesa Callback] Error:', error);
-    await logCallback(supabaseClient, callbackData, sourceIP, 'error', error.message);
+    await logCallback(supabaseClient, callbackData, sourceIP, 'error', (error as Error).message);
     return new Response(
       JSON.stringify({ error: 'Internal error' }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
