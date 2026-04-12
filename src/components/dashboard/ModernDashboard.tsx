@@ -23,6 +23,13 @@ import {
   FolderOpen
 } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, PieChart as RechartsPieChart, Pie, Cell } from 'recharts';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarUI } from '@/components/ui/calendar';
+import { DateRange } from 'react-day-picker';
+
+const formatDate = (date: Date) => {
+  return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(date);
+};
 
 // Mock data - replace with real Supabase queries
 const mockActivityData = [
@@ -77,29 +84,58 @@ function StatCard({ title, value, description, icon: Icon, trend }: StatCardProp
 
 export function ModernDashboard() {
   const { user } = useAuth();
+  const [date, setDate] = React.useState<DateRange | undefined>();
 
   const { data: dashboardData, isLoading } = useQuery({
-    queryKey: ['dashboard-visuals-real', user?.user_type],
+    queryKey: ['dashboard-visuals-real', user?.user_type, date],
     queryFn: async () => {
       // Fetch projects
-      const { data: projects } = await supabase.from('projects').select('id, status, created_at, title');
+      const { data: projectsResult } = await supabase.from('projects').select('id, status, created_at, title');
       // Fetch reports
-      const { data: reports } = await supabase.from('problem_reports').select('id, status, created_at, title, category');
+      const { data: reportsResult } = await supabase.from('problem_reports').select('id, status, created_at, title, category');
       // Fetch bids
-      const { data: bids } = await supabase.from('contractor_bids').select('id, status, created_at');
+      const { data: bidsResult } = await supabase.from('contractor_bids').select('id, status, created_at');
       // Fetch users
       // Use a valid table, or just static depending on what defines a "user_count" here.
       // E.g., const { count: usersCount } = await supabase.from('citizen_workers').select('*', { count: 'exact', head: true });
       const usersCount = 0;
 
-      const safeProjects = projects || [];
-      const safeReports = reports || [];
+      let safeProjects = projectsResult || [];
+      let safeReports = reportsResult || [];
+      let safeBids = bidsResult || [];
+
+      // Apply Optional Date Range Filter
+      if (date?.from || date?.to) {
+        const fromTime = date.from ? new Date(date.from).getTime() : 0;
+        // set 'to' time boundary at the end of the day if from/to are provided
+        const toTime = date.to
+          ? new Date(new Date(date.to).setHours(23, 59, 59, 999)).getTime()
+          : Infinity;
+
+        safeProjects = safeProjects.filter(p => {
+          if (!p.created_at) return true;
+          const time = new Date(p.created_at).getTime();
+          return time >= fromTime && time <= toTime;
+        });
+
+        safeReports = safeReports.filter(r => {
+          if (!r.created_at) return true;
+          const time = new Date(r.created_at).getTime();
+          return time >= fromTime && time <= toTime;
+        });
+
+        safeBids = safeBids.filter(b => {
+          if (!b.created_at) return true;
+          const time = new Date(b.created_at).getTime();
+          return time >= fromTime && time <= toTime;
+        });
+      }
 
       // Calculate stats
       const totalReports = safeReports.length;
       const activeProjects = safeProjects.filter(p => ['in_progress', 'active'].includes(p.status || '')).length;
       const completedProjects = safeProjects.filter(p => ['completed', 'verified'].includes(p.status || '')).length;
-      const pendingApprovals = (bids || []).filter(b => ['pending', 'submitted'].includes(b.status || '')).length;
+      const pendingApprovals = safeBids.filter(b => ['pending', 'submitted'].includes(b.status || '')).length;
       const totalUsers = usersCount || 0;
 
       // Group projects by status for PieChart
@@ -314,10 +350,32 @@ export function ModernDashboard() {
           Welcome back, {user?.name || 'User'}
         </h2>
         <div className="flex items-center space-x-2">
-          <Button>
-            <Calendar className="mr-2 h-4 w-4" />
-            View Calendar
-          </Button>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="justify-start text-left font-normal" id="date-range-picker">
+                <Calendar className="mr-2 h-4 w-4" />
+                {date?.from ? (
+                  date.to ? (
+                    `${formatDate(date.from)} - ${formatDate(date.to)}`
+                  ) : (
+                    formatDate(date.from)
+                  )
+                ) : (
+                  <span>View Calendar</span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              <CalendarUI
+                initialFocus
+                mode="range"
+                defaultMonth={date?.from}
+                selected={date}
+                onSelect={setDate}
+                numberOfMonths={2}
+              />
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
 
