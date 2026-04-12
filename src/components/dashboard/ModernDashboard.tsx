@@ -170,7 +170,6 @@ export function ModernDashboard() {
         ];
 
       case 'government':
-      case 'admin':
         return [
           {
             title: 'Total Projects',
