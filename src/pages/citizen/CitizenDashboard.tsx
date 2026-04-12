@@ -6,7 +6,6 @@ import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, FileText, Users, MapPin, Clock, Shield, CheckCircle, Wallet, Loader2, Wrench, Eye, BookOpen, Briefcase, Map } from 'lucide-react';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
-import { ModernDashboard } from '@/components/dashboard/ModernDashboard';
 import { useResponsive } from '@/hooks/useResponsive';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCitizenData } from '@/hooks/useCitizenData';
@@ -30,6 +29,7 @@ const CitizenDashboard = () => {
     { title: 'Skills Registration', description: 'Register your skills for project opportunities', icon: Wrench, href: '/citizen/skills' },
     { title: 'Job Opportunities', description: 'Find and apply for local workforce jobs', icon: Briefcase, href: '/citizen/workforce' },
     { title: 'Transparency Portal', description: 'View public data, budgets, and contractor ratings', icon: Eye, href: '/citizen/transparency' },
+    { title: 'System Visuals', description: 'View detailed performance charts and graphs', icon: BarChart3, href: '/visuals' },
     { title: 'Citizen Guide', description: 'Learn how to use the platform effectively', icon: BookOpen, href: '/citizen/guide' },
   ];
 
@@ -76,9 +76,6 @@ const CitizenDashboard = () => {
       <main className="w-full max-w-full overflow-x-hidden">
         <ResponsiveContainer className="py-5 sm:py-8">
           <BreadcrumbNav />
-          
-          {/* Modern Dashboard with Charts */}
-          <ModernDashboard />
 
           {/* Welcome Header */}
           <div className="mb-6">

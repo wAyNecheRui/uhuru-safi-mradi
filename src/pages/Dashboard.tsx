@@ -15,7 +15,6 @@ import RecentIssues from '@/components/RecentIssues';
 import AppFooter from '@/components/AppFooter';
 import TabNavigation from '@/components/TabNavigation';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
-import { ModernDashboard } from '@/components/dashboard/ModernDashboard';
 import { useResponsive } from '@/hooks/useResponsive';
 import { useProjectStats } from '@/hooks/useProjectStats';
 import { useRecentIssues } from '@/hooks/useRecentIssues';
@@ -38,7 +37,15 @@ const Dashboard = () => {
             <TabNavigation getText={getText} />
 
             <TabsContent value="overview" className="space-y-5 mt-0">
-              <ModernDashboard />
+              <div className="flex flex-col items-center justify-center py-12 text-center bg-card rounded-lg border shadow-sm">
+                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                  <MapPin className="h-8 w-8 text-primary" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">Welcome to Uhuru Safi Mradi</h3>
+                <p className="text-muted-foreground max-w-md mx-auto mb-6">
+                  Select a module from the tabs above to manage community voting, simple reports, escrow, or specific roles.
+                </p>
+              </div>
             </TabsContent>
 
             <TabsContent value="simple-report">

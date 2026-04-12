@@ -55,6 +55,7 @@ export const citizenDashboardRoutes: DashboardNavGroup[] = [
     items: [
       { title: 'Community Voting', url: '/citizen/voting', icon: Users },
       { title: 'Transparency', url: '/citizen/transparency', icon: Eye },
+      { title: 'System Visuals', url: '/visuals', icon: BarChart3 },
     ],
   },
   {
@@ -96,6 +97,7 @@ export const contractorDashboardRoutes: DashboardNavGroup[] = [
     label: 'Performance',
     items: [
       { title: 'Performance', url: '/contractor/performance', icon: BarChart3 },
+      { title: 'System Visuals', url: '/visuals', icon: TrendingUp },
       { title: 'Communications', url: '/contractor/communications', icon: MessageSquare },
       { title: 'Verification', url: '/contractor/verification', icon: Award },
     ],
@@ -138,6 +140,7 @@ export const governmentDashboardRoutes: DashboardNavGroup[] = [
     label: 'Analytics',
     items: [
       { title: 'Analytics', url: '/government/analytics', icon: BarChart3 },
+      { title: 'System Visuals', url: '/visuals', icon: TrendingUp },
       { title: 'Portfolio', url: '/government/portfolio', icon: TrendingUp },
       { title: 'Benchmarks', url: '/government/benchmarks', icon: Award },
       { title: 'Compliance', url: '/government/compliance', icon: Shield },
