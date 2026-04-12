@@ -51,6 +51,7 @@ const EnhancedProblemReporting = () => {
           {reportData.title.length >= 10 && (
             <DuplicateReportDetector
               title={reportData.title}
+              description={reportData.description}
               location={reportData.location}
               category={reportData.category}
               onLinkToExisting={(reportId) => {
@@ -120,7 +121,7 @@ const EnhancedProblemReporting = () => {
               Cancel
             </Button>
             <ValidationTooltip disabled={!formValid} missingFields={validationErrors}>
-              <Button 
+              <Button
                 onClick={submitReport}
                 disabled={isSubmitting || !formValid}
                 className="w-full sm:w-auto"

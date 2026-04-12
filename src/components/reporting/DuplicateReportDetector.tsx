@@ -10,14 +10,18 @@ interface SimilarReport {
   title: string;
   location: string | null;
   status: string | null;
+  status: string | null;
   category: string | null;
   created_at: string | null;
+  photo_urls: string[] | null;
+  description: string | null;
   similarity: 'high' | 'medium';
   verified_votes: number | null;
 }
 
 interface DuplicateReportDetectorProps {
   title: string;
+  description: string;
   location: string;
   category: string;
   onLinkToExisting?: (reportId: string) => void;
@@ -25,6 +29,7 @@ interface DuplicateReportDetectorProps {
 
 const DuplicateReportDetector: React.FC<DuplicateReportDetectorProps> = ({
   title,
+  description,
   location,
   category,
   onLinkToExisting
@@ -35,7 +40,7 @@ const DuplicateReportDetector: React.FC<DuplicateReportDetectorProps> = ({
 
   useEffect(() => {
     if (title.length < 10 || dismissed) return;
-    
+
     const debounce = setTimeout(() => {
       detectDuplicates();
     }, 800);
@@ -52,12 +57,13 @@ const DuplicateReportDetector: React.FC<DuplicateReportDetectorProps> = ({
         'of', 'with', 'by', 'from', 'and', 'or', 'not', 'this', 'that', 'it', 'has',
         'have', 'been', 'our', 'we', 'they', 'there', 'here', 'which', 'what', 'when'
       ]);
-      
-      const keywords = title
-        .toLowerCase()
+
+      const combinedText = `${title} ${description}`.toLowerCase();
+
+      const keywords = combinedText
         .split(/\s+/)
         .filter(w => w.length > 3 && !stopWords.has(w))
-        .slice(0, 5);
+        .slice(0, 8); // Gather top 8 keywords from title & description
 
       if (keywords.length === 0) {
         setSimilarReports([]);
@@ -65,12 +71,12 @@ const DuplicateReportDetector: React.FC<DuplicateReportDetectorProps> = ({
         return;
       }
 
-      // Build OR filter for matching keywords in title
-      const orFilters = keywords.map(kw => `title.ilike.%${kw}%`).join(',');
+      // Build OR filter for matching keywords in title or description
+      const orFilters = keywords.map(kw => `title.ilike.%${kw}%,description.ilike.%${kw}%`).join(',');
 
       let query = supabase
         .from('problem_reports')
-        .select('id, title, location, status, category, created_at, verified_votes')
+        .select('id, title, description, location, status, category, created_at, verified_votes, photo_urls')
         .or(orFilters)
         .not('status', 'eq', 'rejected')
         .is('deleted_at', null)
@@ -95,23 +101,24 @@ const DuplicateReportDetector: React.FC<DuplicateReportDetectorProps> = ({
       const scored = (data || []).map(report => {
         let score = 0;
         const rTitle = report.title.toLowerCase();
+        const rDesc = (report.description || '').toLowerCase();
         const rLocation = (report.location || '').toLowerCase();
         const inputLocation = location.toLowerCase();
 
-        // Keyword match scoring
+        // Keyword match scoring in title and description
         keywords.forEach(kw => {
-          if (rTitle.includes(kw)) score += 2;
+          if (rTitle.includes(kw)) score += 3;
+          if (rDesc.includes(kw)) score += 2;
         });
 
-        // Location proximity scoring
+        // Location proximity scoring (reduced weight)
         if (inputLocation && rLocation) {
-          // Extract county/ward/constituency from both
           const locParts = inputLocation.split(',').map(p => p.trim().toLowerCase());
           const rLocParts = rLocation.split(',').map(p => p.trim().toLowerCase());
-          
+
           locParts.forEach(part => {
-            if (rLocParts.some(rp => rp.includes(part) || part.includes(rp))) {
-              score += 3;
+            if (part && rLocParts.some(rp => rp.includes(part) || part.includes(rp))) {
+              score += 1;
             }
           });
         }
@@ -119,13 +126,13 @@ const DuplicateReportDetector: React.FC<DuplicateReportDetectorProps> = ({
         // Category match
         if (category && report.category === category) score += 1;
 
-        const similarity: 'high' | 'medium' = score >= 6 ? 'high' : 'medium';
+        const similarity: 'high' | 'medium' = score >= 8 ? 'high' : 'medium';
 
         return { ...report, similarity, _score: score };
       })
-      .filter(r => r._score >= 3)
-      .sort((a, b) => b._score - a._score)
-      .slice(0, 5);
+        .filter(r => r._score >= 4)
+        .sort((a, b) => b._score - a._score)
+        .slice(0, 5);
 
       setSimilarReports(scored);
     } catch (error) {
@@ -167,8 +174,20 @@ const DuplicateReportDetector: React.FC<DuplicateReportDetectorProps> = ({
             <div className="space-y-2">
               {similarReports.map(report => (
                 <div key={report.id} className="flex items-start gap-3 p-2 bg-white rounded-lg border border-yellow-200">
+                  {report.photo_urls && report.photo_urls.length > 0 && (
+                    <div className="shrink-0">
+                      <img
+                        src={report.photo_urls[0]}
+                        alt="Report evidence"
+                        className="w-16 h-16 object-cover rounded-md border"
+                      />
+                    </div>
+                  )}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{report.title}</p>
+                    {report.description && (
+                      <p className="text-xs text-muted-foreground line-clamp-1 italic">"{report.description}"</p>
+                    )}
                     <div className="flex flex-wrap items-center gap-2 mt-1">
                       {report.location && (
                         <span className="text-xs text-muted-foreground flex items-center gap-1">
