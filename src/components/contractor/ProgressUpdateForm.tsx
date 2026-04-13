@@ -472,7 +472,6 @@ const ProgressUpdateForm: React.FC<ProgressUpdateFormProps> = ({
                   ref={fileInputRef}
                   type="file"
                   accept="image/*"
-                  capture="environment"
                   multiple
                   onChange={handlePhotoSelect}
                   className="hidden"
@@ -480,26 +479,15 @@ const ProgressUpdateForm: React.FC<ProgressUpdateFormProps> = ({
                 <div className="flex justify-center gap-2">
                   <Button
                     variant="outline"
-                    onClick={() => {
-                      if (fileInputRef.current) {
-                        fileInputRef.current.removeAttribute('capture');
-                        fileInputRef.current.click();
-                      }
-                    }}
-                    className="border-blue-300 text-blue-700 hover:bg-blue-50"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="border-primary/30 text-primary hover:bg-primary/5"
                   >
                     <Upload className="h-4 w-4 mr-2" />
                     Choose Photos
                   </Button>
                   <Button
                     variant="default"
-                    onClick={() => {
-                      if (fileInputRef.current) {
-                        fileInputRef.current.setAttribute('capture', 'environment');
-                        fileInputRef.current.click();
-                      }
-                    }}
-                    className="bg-blue-600 hover:bg-blue-700"
+                    onClick={() => setCameraOpen(true)}
                   >
                     <Camera className="h-4 w-4 mr-2" />
                     Take Photo
