@@ -199,6 +199,7 @@ export const useProblemReporting = () => {
     handleInputChange,
     handlePhotoUpload,
     handleRemovePhoto,
+    handleCameraCapture,
     getCurrentLocation,
     submitReport,
     isSubmitting,
