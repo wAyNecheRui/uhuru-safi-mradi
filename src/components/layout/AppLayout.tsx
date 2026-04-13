@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { OfflineBanner } from '@/components/layout/OfflineBanner';
 import { cn } from '@/lib/utils';
 import { useIdleTimeout } from '@/hooks/useIdleTimeout';
+import { useAuth } from '@/contexts/AuthContext';
 import FeedbackButton from '@/components/feedback/FeedbackButton';
 import OnboardingWizard from '@/components/onboarding/OnboardingWizard';
 
@@ -12,8 +13,13 @@ interface AppLayoutProps {
   userName?: string;
 }
 
-export function AppLayout({ children, className, userType, userName }: AppLayoutProps) {
+export function AppLayout({ children, className, userType: propUserType, userName: propUserName }: AppLayoutProps) {
   useIdleTimeout();
+  const { user } = useAuth();
+
+  const userType = propUserType || user?.user_type;
+  const userName = propUserName || user?.name;
+
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
