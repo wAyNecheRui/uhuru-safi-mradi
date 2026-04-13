@@ -4,12 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
-import { 
-  ThumbsUp, 
-  ThumbsDown, 
-  MapPin, 
-  Clock, 
-  Users, 
+import {
+  ThumbsUp,
+  ThumbsDown,
+  MapPin,
+  Clock,
+  Users,
   AlertTriangle,
   CheckCircle,
   TrendingUp,
@@ -57,7 +57,7 @@ const CommunityValidation = () => {
   const [loadingCounty, setLoadingCounty] = useState(false);
   const [votingState, setVotingState] = useState<{ [key: string]: boolean }>({});
   const [activeTab, setActiveTab] = useState('all');
-  
+
   const {
     userLocation,
     isLocating,
@@ -309,7 +309,7 @@ const CommunityValidation = () => {
 
       // Check if this vote triggers a status change (reaches 50 votes threshold)
       const statusResult = await WorkflowGuardService.checkAndUpdateStatusAfterVote(reportId);
-      
+
       if (statusResult.statusChanged) {
         toast.success('Vote submitted! This report has reached the review threshold and will now be reviewed by government officials.', {
           duration: 5000
@@ -339,7 +339,7 @@ const CommunityValidation = () => {
     try {
       const { error } = await supabase
         .from('problem_reports')
-        .update({ 
+        .update({
           status: action === 'verify' ? 'verified' : 'flagged',
           updated_at: new Date().toISOString()
         })
@@ -399,7 +399,7 @@ const CommunityValidation = () => {
           <p className="text-gray-600">
             Help validate and prioritize community-reported problems in your area. Your votes help determine which issues get addressed first.
           </p>
-          
+
           {/* Location Status */}
           <div className="mt-4 flex flex-wrap items-center gap-3">
             {isLocating ? (
@@ -431,8 +431,8 @@ const CommunityValidation = () => {
           <TabsTrigger value="all" className="data-[state=active]:bg-gray-900 data-[state=active]:text-white">
             All Reports ({allReports.length})
           </TabsTrigger>
-          <TabsTrigger 
-            value="county" 
+          <TabsTrigger
+            value="county"
             className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
             disabled={!userLocation}
           >
@@ -454,7 +454,7 @@ const CommunityValidation = () => {
             <CheckCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 mb-2">No Reports in This Category</h3>
             <p className="text-gray-600">
-              {activeTab === 'all' 
+              {activeTab === 'all'
                 ? "You haven't validated any reports yet. Vote on a report in 'My County' to see it here."
                 : `No reports found near you yet.`}
             </p>
@@ -478,8 +478,8 @@ const CommunityValidation = () => {
                           {report.distance_km !== undefined && report.distance_km !== null && (
                             <Badge className={
                               report.distance_category === 'urgent' ? 'bg-red-100 text-red-800' :
-                              report.distance_category === 'nearby' ? 'bg-yellow-100 text-yellow-800' :
-                              'bg-blue-100 text-blue-800'
+                                report.distance_category === 'nearby' ? 'bg-yellow-100 text-yellow-800' :
+                                  'bg-blue-100 text-blue-800'
                             }>
                               <Navigation className="h-3 w-3 mr-1" />
                               {formatDistance(report.distance_km)}
@@ -538,51 +538,51 @@ const CommunityValidation = () => {
                   </div>
 
                   {/* Voting Section */}
-          <div className="lg:w-64 border-t lg:border-t-0 lg:border-l border-gray-200 pt-4 lg:pt-0 lg:pl-6">
-            <div className="text-center mb-4">
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <TrendingUp className="h-4 w-4 text-blue-600" />
-                <div className="text-lg font-bold text-gray-900">
-                  {report.priority_score}
-                </div>
-              </div>
-              <div className="text-xs text-gray-600">Priority Score</div>
-              <div className="flex justify-center gap-4 mt-2 text-xs">
-                <div className="text-green-600 flex items-center">
-                  <ThumbsUp className="h-3 w-3 mr-1" />
-                  {report.upvotes}
-                </div>
-                <div className="text-red-600 flex items-center">
-                  <ThumbsDown className="h-3 w-3 mr-1" />
-                  {report.downvotes}
-                </div>
-              </div>
-              
-              {/* Vote Progress & Dynamic Workflow Status */}
-              <div className="mt-3 space-y-1">
-                {report.status === 'pending' ? (
-                  <>
-                    <div className="flex justify-between text-xs text-gray-600">
-                      <span>Progress to Review</span>
-                      <span>{Math.min(report.upvotes + report.downvotes, MIN_VOTES_THRESHOLD)}/{MIN_VOTES_THRESHOLD}</span>
+                  <div className="lg:w-64 border-t lg:border-t-0 lg:border-l border-gray-200 pt-4 lg:pt-0 lg:pl-6">
+                    <div className="text-center mb-4">
+                      <div className="flex items-center justify-center gap-2 mb-2">
+                        <TrendingUp className="h-4 w-4 text-blue-600" />
+                        <div className="text-lg font-bold text-gray-900">
+                          {report.priority_score}
+                        </div>
+                      </div>
+                      <div className="text-xs text-gray-600">Priority Score</div>
+                      <div className="flex justify-center gap-4 mt-2 text-xs">
+                        <div className="text-green-600 flex items-center">
+                          <ThumbsUp className="h-3 w-3 mr-1" />
+                          {report.upvotes}
+                        </div>
+                        <div className="text-red-600 flex items-center">
+                          <ThumbsDown className="h-3 w-3 mr-1" />
+                          {report.downvotes}
+                        </div>
+                      </div>
+
+                      {/* Vote Progress & Dynamic Workflow Status */}
+                      <div className="mt-3 space-y-1">
+                        {report.status === 'pending' ? (
+                          <>
+                            <div className="flex justify-between text-xs text-gray-600">
+                              <span>Progress to Review</span>
+                              <span>{Math.min(report.upvotes + report.downvotes, MIN_VOTES_THRESHOLD)}/{MIN_VOTES_THRESHOLD}</span>
+                            </div>
+                            <Progress
+                              value={Math.min(((report.upvotes + report.downvotes) / MIN_VOTES_THRESHOLD) * 100, 100)}
+                              className="h-2"
+                            />
+                            <p className="text-xs text-gray-500">
+                              {report.upvotes + report.downvotes >= MIN_VOTES_THRESHOLD
+                                ? '✓ Ready for government review'
+                                : `${MIN_VOTES_THRESHOLD - (report.upvotes + report.downvotes)} more votes needed`}
+                            </p>
+                          </>
+                        ) : (
+                          <div className={`text-xs px-2 py-1.5 rounded border ${getWorkflowStageDisplay(report.status).colorClass}`}>
+                            {getWorkflowStageDisplay(report.status).label}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <Progress 
-                      value={Math.min(((report.upvotes + report.downvotes) / MIN_VOTES_THRESHOLD) * 100, 100)} 
-                      className="h-2"
-                    />
-                    <p className="text-xs text-gray-500">
-                      {report.upvotes + report.downvotes >= MIN_VOTES_THRESHOLD 
-                        ? '✓ Ready for government review' 
-                        : `${MIN_VOTES_THRESHOLD - (report.upvotes + report.downvotes)} more votes needed`}
-                    </p>
-                  </>
-                ) : (
-                  <div className={`text-xs px-2 py-1.5 rounded border ${getWorkflowStageDisplay(report.status).colorClass}`}>
-                    {getWorkflowStageDisplay(report.status).label}
-                  </div>
-                )}
-              </div>
-            </div>
 
                     <div className="space-y-3">
                       {/* Already voted notice */}
@@ -594,10 +594,17 @@ const CommunityValidation = () => {
                       )}
                       {/* Vote eligibility notice */}
                       {!report.user_vote && report.can_vote === false && (
-                        <div className="text-xs text-amber-600 bg-amber-50 p-2 rounded">
-                          <AlertTriangle className="h-3 w-3 inline mr-1" />
-                          You must be within 50km to vote on this issue
-                        </div>
+                        report.reported_by === user?.id ? (
+                          <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded flex flex-col items-center justify-center text-center">
+                            <span><Info className="h-3 w-3 inline mr-1" /> You automatically support your own report</span>
+                            <span className="text-[10px] opacity-80">(No additional votes needed from you)</span>
+                          </div>
+                        ) : (
+                          <div className="text-xs text-amber-600 bg-amber-50 p-2 rounded">
+                            <AlertTriangle className="h-3 w-3 inline mr-1" />
+                            You must be within 50km to vote on this issue
+                          </div>
+                        )
                       )}
                       <div className="flex gap-2">
                         <Button
