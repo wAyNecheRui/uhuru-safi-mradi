@@ -192,6 +192,13 @@ const ProgressUpdateForm: React.FC<ProgressUpdateFormProps> = ({
     e.target.value = '';
   };
 
+  const handleCameraCapture = (file: File) => {
+    if (photos.length >= 5) return;
+    setPhotos(prev => [...prev, file]);
+    const url = URL.createObjectURL(file);
+    setPhotoUrls(prev => [...prev, url]);
+  };
+
   const removePhoto = (index: number) => {
     setPhotos(photos.filter((_, i) => i !== index));
     URL.revokeObjectURL(photoUrls[index]);
