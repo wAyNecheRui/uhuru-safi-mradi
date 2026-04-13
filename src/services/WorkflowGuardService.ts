@@ -303,7 +303,6 @@ export class WorkflowGuardService {
       .single();
 
     // Trigger notification
-    const { data: userData } = await supabase.auth.getUser();
     if (report) {
       await LiveNotificationService.onBiddingOpened(
         reportId,
