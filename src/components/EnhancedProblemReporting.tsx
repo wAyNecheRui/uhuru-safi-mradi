@@ -20,6 +20,7 @@ const EnhancedProblemReporting = () => {
     handleInputChange,
     handlePhotoUpload,
     handleRemovePhoto,
+    handleCameraCapture,
     getCurrentLocation,
     submitReport,
     isSubmitting,
@@ -89,6 +90,7 @@ const EnhancedProblemReporting = () => {
               photos={reportData.photos}
               onPhotoUpload={handlePhotoUpload}
               onRemovePhoto={handleRemovePhoto}
+              onCameraCapture={handleCameraCapture}
             />
             {/* Mandatory photo requirement */}
             {reportData.photos.length === 0 && (

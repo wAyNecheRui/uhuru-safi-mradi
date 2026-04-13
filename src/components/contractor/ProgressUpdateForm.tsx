@@ -10,6 +10,7 @@ import {
   CheckCircle, AlertCircle, Clock, Info
 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import GrokCameraModal from '@/components/camera/GrokCameraModal';
 import {
   Dialog,
   DialogContent,
@@ -67,6 +68,7 @@ const ProgressUpdateForm: React.FC<ProgressUpdateFormProps> = ({
   const [gettingLocation, setGettingLocation] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
 
   // Deduplicate milestones by ID to prevent showing same milestone twice
   const uniqueMilestones = milestones.reduce((acc, milestone) => {
@@ -188,6 +190,13 @@ const ProgressUpdateForm: React.FC<ProgressUpdateFormProps> = ({
 
     // Reset input so user can select the same file again
     e.target.value = '';
+  };
+
+  const handleCameraCapture = (file: File) => {
+    if (photos.length >= 5) return;
+    setPhotos(prev => [...prev, file]);
+    const url = URL.createObjectURL(file);
+    setPhotoUrls(prev => [...prev, url]);
   };
 
   const removePhoto = (index: number) => {
@@ -463,7 +472,6 @@ const ProgressUpdateForm: React.FC<ProgressUpdateFormProps> = ({
                   ref={fileInputRef}
                   type="file"
                   accept="image/*"
-                  capture="environment"
                   multiple
                   onChange={handlePhotoSelect}
                   className="hidden"
@@ -471,26 +479,15 @@ const ProgressUpdateForm: React.FC<ProgressUpdateFormProps> = ({
                 <div className="flex justify-center gap-2">
                   <Button
                     variant="outline"
-                    onClick={() => {
-                      if (fileInputRef.current) {
-                        fileInputRef.current.removeAttribute('capture');
-                        fileInputRef.current.click();
-                      }
-                    }}
-                    className="border-blue-300 text-blue-700 hover:bg-blue-50"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="border-primary/30 text-primary hover:bg-primary/5"
                   >
                     <Upload className="h-4 w-4 mr-2" />
                     Choose Photos
                   </Button>
                   <Button
                     variant="default"
-                    onClick={() => {
-                      if (fileInputRef.current) {
-                        fileInputRef.current.setAttribute('capture', 'environment');
-                        fileInputRef.current.click();
-                      }
-                    }}
-                    className="bg-blue-600 hover:bg-blue-700"
+                    onClick={() => setCameraOpen(true)}
                   >
                     <Camera className="h-4 w-4 mr-2" />
                     Take Photo
@@ -605,6 +602,15 @@ const ProgressUpdateForm: React.FC<ProgressUpdateFormProps> = ({
           )}
         </Button>
       </DialogFooter>
+
+      {/* Grok Camera Modal */}
+      <GrokCameraModal
+        open={cameraOpen}
+        onClose={() => setCameraOpen(false)}
+        onCapture={handleCameraCapture}
+        maxFiles={5}
+        capturedCount={photos.length}
+      />
     </DialogContent>
   );
 };
