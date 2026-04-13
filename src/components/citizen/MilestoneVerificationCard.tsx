@@ -56,7 +56,7 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
   onVerified
 }) => {
   const { user } = useAuth();
-  const { profile: userProfile } = useProfile();
+  const { userProfile } = useProfile();
   const { toast } = useToast();
 
   const [showVerifyDialog, setShowVerifyDialog] = useState(false);
