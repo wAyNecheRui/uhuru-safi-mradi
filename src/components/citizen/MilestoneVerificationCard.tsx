@@ -20,6 +20,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { useProfile } from '@/hooks/useProfile';
 import { MilestonePaymentService, REQUIRED_CITIZEN_VERIFICATIONS } from '@/services/MilestonePaymentService';
 import { canVerifyMilestone, getCurrentPosition, haversineDistanceKm } from '@/utils/geoUtils';
 import { WorkflowGuardService } from '@/services/WorkflowGuardService';
@@ -55,6 +56,7 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
   onVerified
 }) => {
   const { user } = useAuth();
+  const { profile: userProfile } = useProfile();
   const { toast } = useToast();
 
   const [showVerifyDialog, setShowVerifyDialog] = useState(false);
@@ -225,13 +227,14 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
     }
   };
 
-  const canVerify = (milestone.status === 'submitted' || milestone.status === 'in_progress') && user && !hasUserVerified;
+  const isCitizen = userProfile?.user_type === 'citizen';
+  const canVerify = (milestone.status === 'submitted' || milestone.status === 'in_progress') && user && !hasUserVerified && isCitizen;
   const isPaid = milestone.status === 'paid' || milestone.status === 'payment_processing';
   const isVerified = milestone.status === 'verified';
 
   // Recovery: if milestone is 'verified' but not yet paid, attempt auto-payment
   useEffect(() => {
-    if (isVerified && currentVerificationStatus?.canRelease && user) {
+    if (isVerified && currentVerificationStatus?.canRelease && user && isCitizen) {
       console.log('[MilestoneVerification] Recovery: milestone verified but not paid, triggering auto-payment');
       MilestonePaymentService.triggerAutomatedPayment(milestone.id)
         .then(result => {
@@ -245,7 +248,7 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
         })
         .catch(err => console.error('[MilestoneVerification] Recovery payment failed:', err));
     }
-  }, [isVerified, currentVerificationStatus?.canRelease]);
+  }, [isVerified, currentVerificationStatus?.canRelease, isCitizen]);
   const verificationProgress = currentVerificationStatus
     ? (currentVerificationStatus.approvedCount / currentVerificationStatus.requiredCount) * 100
     : 0;
@@ -360,6 +363,12 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
                   <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                   Verify Work
                 </Button>
+              )}
+
+              {user && !isCitizen && (milestone.status === 'submitted' || milestone.status === 'in_progress') && !hasUserVerified && (
+                <Badge variant="secondary" className="text-xs bg-slate-100 text-slate-500 border-slate-200">
+                  Standard Citizen only
+                </Badge>
               )}
 
               {hasUserVerified && !isPaid && !isVerified && (

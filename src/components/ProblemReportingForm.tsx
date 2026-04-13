@@ -14,18 +14,20 @@ import { useProjects } from '@/hooks/useProjects';
 import { useSecurityEnhanced } from '@/hooks/useSecurityEnhanced';
 import { enhancedReportValidationSchema } from '@/utils/securityEnhanced';
 
+import { CATEGORIES, PRIORITIES } from '@/constants/problemReporting';
+
 const ProblemReportingForm = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
   const { addProject } = useProjects();
-  const { 
-    csrfToken, 
-    isRateLimited, 
-    checkRateLimit, 
-    validateFile, 
+  const {
+    csrfToken,
+    isRateLimited,
+    checkRateLimit,
+    validateFile,
     sanitizeAndValidateInput,
-    secureSubmit 
+    secureSubmit
   } = useSecurityEnhanced();
 
   const [formData, setFormData] = useState({
@@ -38,23 +40,9 @@ const ProblemReportingForm = () => {
     images: []
   });
 
-  const categories = [
-    'Roads & Transportation',
-    'Water & Sanitation',
-    'Healthcare Facilities',
-    'Education Infrastructure',
-    'Public Safety',
-    'Energy & Utilities',
-    'Environmental',
-    'Other'
-  ];
-
-  const priorities = [
-    { value: 'low', color: 'bg-green-100 text-green-800' },
-    { value: 'medium', color: 'bg-blue-100 text-blue-800' },
-    { value: 'high', color: 'bg-orange-100 text-orange-800' },
-    { value: 'urgent', color: 'bg-red-100 text-red-800' }
-  ];
+  // Using canonical categories from constants
+  const categories = CATEGORIES;
+  const priorities = PRIORITIES;
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -62,11 +50,27 @@ const ProblemReportingForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!user) {
       toast({
         title: "Authentication Required",
         description: "Please log in to submit a problem report.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Authenticity check: Ensure user is a standard citizen
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('user_type')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (profile?.user_type !== 'citizen') {
+      toast({
+        title: "Standard Citizens Only",
+        description: "Only standard citizen accounts can report new infrastructure problems.",
         variant: "destructive"
       });
       return;
@@ -226,7 +230,7 @@ const ProblemReportingForm = () => {
                 >
                   <option value="">Select a category</option>
                   {categories.map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
+                    <option key={cat.value} value={cat.value}>{cat.icon} {cat.label}</option>
                   ))}
                 </select>
               </div>
@@ -237,15 +241,14 @@ const ProblemReportingForm = () => {
                   {priorities.map(priority => (
                     <div
                       key={priority.value}
-                      className={`p-3 border rounded-lg cursor-pointer transition-all duration-200 ${
-                        formData.priority === priority.value
-                          ? 'border-blue-500 bg-gradient-to-r from-blue-50 to-green-50 shadow-md'
-                          : 'border-gray-200 hover:border-blue-300 hover:shadow-sm'
-                      }`}
+                      className={`p-3 border rounded-lg cursor-pointer transition-all duration-200 ${formData.priority === priority.value
+                        ? 'border-blue-500 bg-gradient-to-r from-blue-50 to-green-50 shadow-md'
+                        : 'border-gray-200 hover:border-blue-300 hover:shadow-sm'
+                        }`}
                       onClick={() => handleInputChange('priority', priority.value)}
                     >
                       <Badge className={priority.color}>
-                        {priority.value}
+                        {priority.label}
                       </Badge>
                     </div>
                   ))}
@@ -303,10 +306,10 @@ const ProblemReportingForm = () => {
                   <Camera className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-600 mb-2">Click to upload images or videos</p>
                   <p className="text-sm text-gray-500">Max 5 files, 10MB each (JPEG, PNG, WebP, PDF only)</p>
-                  <input 
-                    type="file" 
-                    multiple 
-                    accept="image/jpeg,image/png,image/webp,application/pdf" 
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/jpeg,image/png,image/webp,application/pdf"
                     className="hidden"
                     onChange={async (e) => {
                       const files = Array.from(e.target.files || []);
@@ -334,7 +337,7 @@ const ProblemReportingForm = () => {
                 <div>
                   <h4 className="font-medium text-blue-900 mb-1">Community Review Process</h4>
                   <p className="text-sm text-blue-700">
-                    Your report will be reviewed by community members and local officials. 
+                    Your report will be reviewed by community members and local officials.
                     Projects with higher community support and clear documentation are prioritized for funding.
                   </p>
                 </div>
@@ -348,7 +351,7 @@ const ProblemReportingForm = () => {
                 <div>
                   <h4 className="font-medium text-green-900 mb-1">Secure Submission</h4>
                   <p className="text-sm text-green-700">
-                    Your data is protected with encryption and security validation. 
+                    Your data is protected with encryption and security validation.
                     All inputs are sanitized and validated before submission.
                   </p>
                 </div>
@@ -356,8 +359,8 @@ const ProblemReportingForm = () => {
             </div>
 
             <div className="flex space-x-4">
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 className="flex-1 bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white"
               >
                 <FileText className="w-4 w-4 mr-2" />

@@ -69,7 +69,7 @@ const WorkforceIntegration = () => {
   const [showJobModal, setShowJobModal] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
   const [citizenProfile, setCitizenProfile] = useState<CitizenProfile | null>(null);
-  
+
   // Skills registration form state
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [experience, setExperience] = useState('');
@@ -225,6 +225,15 @@ const WorkforceIntegration = () => {
       return;
     }
 
+    if (!citizenProfile?.skills || citizenProfile.skills.length === 0) {
+      toast({
+        title: "Skills Profile Incomplete",
+        description: "Please register your skills in the 'Skills Registry' tab before applying for jobs.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsApplying(true);
     try {
       // Build rich application message from profile data
@@ -281,7 +290,7 @@ const WorkforceIntegration = () => {
   };
 
   const handleSkillToggle = (skill: string) => {
-    setSelectedSkills(prev => 
+    setSelectedSkills(prev =>
       prev.includes(skill) ? prev.filter(s => s !== skill) : [...prev, skill]
     );
   };
@@ -487,13 +496,20 @@ const WorkforceIntegration = () => {
                               View My Jobs
                             </Button>
                           ) : (
-                            <Button
-                              onClick={() => handleJobApplication(job.id)}
-                              className="bg-green-600 hover:bg-green-700"
-                              disabled={hasApplied || isApplying}
-                            >
-                              {hasApplied ? 'Pending Review' : 'Apply Now'}
-                            </Button>
+                            <div className="flex flex-col gap-1">
+                              <Button
+                                onClick={() => handleJobApplication(job.id)}
+                                className="bg-green-600 hover:bg-green-700"
+                                disabled={hasApplied || isApplying}
+                              >
+                                {hasApplied ? 'Pending Review' : 'Apply Now'}
+                              </Button>
+                              {!citizenProfile?.skills?.length && !hasApplied && (
+                                <span className="text-[10px] text-amber-600 font-medium text-center">
+                                  Skills registration required
+                                </span>
+                              )}
+                            </div>
                           )}
                           <Button variant="outline" size="sm" onClick={() => handleViewJobDetails(job)}>
                             View Details
@@ -555,8 +571,8 @@ const WorkforceIntegration = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium mb-1">Years of Experience</label>
-                    <Input 
-                      placeholder="e.g., 5" 
+                    <Input
+                      placeholder="e.g., 5"
                       type="number"
                       value={experience}
                       onChange={(e) => setExperience(e.target.value)}
@@ -572,7 +588,7 @@ const WorkforceIntegration = () => {
                     <p className="text-xs text-muted-foreground mt-1">Pre-filled from your registration</p>
                   </div>
                 </div>
-                <Button 
+                <Button
                   className="mt-4 bg-green-600 hover:bg-green-700"
                   onClick={handleUpdateSkillsProfile}
                   disabled={isSaving || selectedSkills.length === 0}

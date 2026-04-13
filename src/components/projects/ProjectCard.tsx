@@ -44,13 +44,15 @@ const getStatusConfig = (status: string) => {
 };
 
 const getCategoryIcon = (category: string | null) => {
-  const found = CATEGORIES.find(c => c.value === category);
+  if (!category) return '🏗️';
+  const found = CATEGORIES.find(c => c.value === category || c.label === category);
   return found?.icon || '🏗️';
 };
 
 const getCategoryLabel = (category: string | null) => {
-  const found = CATEGORIES.find(c => c.value === category);
-  return found?.label || 'Infrastructure';
+  if (!category) return 'Infrastructure';
+  const found = CATEGORIES.find(c => c.value === category || c.label === category);
+  return found?.label || category;
 };
 
 const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick, className, compact = false }) => {

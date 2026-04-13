@@ -101,12 +101,17 @@ export const AGPO_CATEGORIES = [
   { value: 'not_applicable', label: 'Not Applicable' }
 ] as const;
 
-// Contractor Specializations aligned with government procurement categories
+// Contractor Specializations aligned with unified project categories
 export const CONTRACTOR_SPECIALIZATIONS = [
-  'Roads and Bridges Construction',
+  'Roads & Transportation',
+  'Water & Sanitation',
   'Building Construction',
-  'Water and Sanitation',
-  'Electrical and Power Installation',
+  'Electricity & Lighting',
+  'Healthcare Facilities',
+  'Education Infrastructure',
+  'Waste Management',
+  'Security Infrastructure',
+  'Other Infrastructure',
   'Telecommunications Infrastructure',
   'Environmental Services',
   'Mechanical Engineering',
@@ -114,14 +119,9 @@ export const CONTRACTOR_SPECIALIZATIONS = [
   'Plumbing and Drainage',
   'Painting and Decorating',
   'Landscaping and Fencing',
-  'Waste Management',
-  'Security Infrastructure',
-  'Healthcare Facility Construction',
-  'Educational Facility Construction',
   'General Supplies',
   'Consultancy Services',
-  'IT and Software Services',
-  'Other'
+  'IT and Software Services'
 ] as const;
 
 // ID Types recognized in Kenya

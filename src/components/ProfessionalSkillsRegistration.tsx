@@ -7,14 +7,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Wrench, 
-  Plus, 
-  X, 
-  Award, 
-  Building, 
-  MapPin, 
-  Phone, 
+import {
+  Wrench,
+  Plus,
+  X,
+  Award,
+  Building,
+  MapPin,
+  Phone,
   User,
   Calendar,
   FileText,
@@ -29,10 +29,10 @@ import DocumentUploadSection from '@/components/skills/DocumentUploadSection';
 const skillCategories = [
   {
     id: 'construction',
-    name: 'Construction & Infrastructure',
+    name: 'Building Construction',
     skills: [
       'Masonry & Stonework',
-      'Concrete Work & Foundations', 
+      'Concrete Work & Foundations',
       'Steel Construction & Welding',
       'Roofing & Waterproofing',
       'Flooring & Tiling',
@@ -56,7 +56,7 @@ const skillCategories = [
   },
   {
     id: 'water',
-    name: 'Water & Sanitation Systems',
+    name: 'Water & Sanitation',
     skills: [
       'Plumbing & Pipe Installation',
       'Water Treatment Systems',
@@ -69,7 +69,7 @@ const skillCategories = [
   },
   {
     id: 'electrical',
-    name: 'Electrical & Power Systems',
+    name: 'Electricity & Lighting',
     skills: [
       'Electrical Installation & Wiring',
       'Solar Power Systems',
@@ -82,7 +82,7 @@ const skillCategories = [
   },
   {
     id: 'healthcare',
-    name: 'Healthcare Infrastructure',
+    name: 'Healthcare Facilities',
     skills: [
       'Medical Equipment Installation',
       'Hospital & Clinic Construction',
@@ -252,7 +252,7 @@ const ProfessionalSkillsRegistration = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!user) {
       toast.error('Please log in to register your skills');
       return;
@@ -310,7 +310,7 @@ const ProfessionalSkillsRegistration = () => {
       // ALSO create/update citizen_workers record so worker appears in workforce system
       // This ensures workers who register skills can apply for jobs and be found by contractors
       const allSkills = [...formData.selectedSkills, ...formData.customSkills].filter(Boolean);
-      
+
       // Check if citizen_workers record exists
       const { data: existingWorker } = await supabase
         .from('citizen_workers')
@@ -347,11 +347,11 @@ const ProfessionalSkillsRegistration = () => {
           });
       }
 
-      toast.success(existingRegistration 
-        ? 'Professional skills profile updated successfully!' 
+      toast.success(existingRegistration
+        ? 'Professional skills profile updated successfully!'
         : 'Professional skills profile registered successfully!'
       );
-      
+
       loadExistingRegistration();
     } catch (error: any) {
       console.error('Registration error:', error);
@@ -465,8 +465,8 @@ const ProfessionalSkillsRegistration = () => {
               </div>
             )}
 
-            <Button 
-              onClick={() => setExistingRegistration(null)} 
+            <Button
+              onClick={() => setExistingRegistration(null)}
               className="bg-blue-600 hover:bg-blue-700"
             >
               Update Profile
@@ -486,11 +486,11 @@ const ProfessionalSkillsRegistration = () => {
             Professional Skills & Workforce Registration
           </CardTitle>
           <p className="text-gray-600 mt-2">
-            Register your professional skills and expertise to be considered for infrastructure 
+            Register your professional skills and expertise to be considered for infrastructure
             development projects in Kenya.
           </p>
         </CardHeader>
-        
+
         <CardContent className="p-6">
           <form onSubmit={handleSubmit} className="space-y-8">
             {/* Personal Information */}
@@ -499,7 +499,7 @@ const ProfessionalSkillsRegistration = () => {
                 <User className="h-5 w-5 mr-2" />
                 Personal Information
               </h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div>
                   <Label htmlFor="fullName">Full Name *</Label>
@@ -511,7 +511,7 @@ const ProfessionalSkillsRegistration = () => {
                     placeholder="Your full legal name"
                   />
                 </div>
-                
+
                 <div>
                   <Label htmlFor="phoneNumber">Phone Number *</Label>
                   <Input
@@ -523,7 +523,7 @@ const ProfessionalSkillsRegistration = () => {
                     placeholder="0700 000 000"
                   />
                 </div>
-                
+
                 <div>
                   <Label htmlFor="email">Email Address</Label>
                   <Input
@@ -544,7 +544,7 @@ const ProfessionalSkillsRegistration = () => {
                 <MapPin className="h-5 w-5 mr-2" />
                 Location Information
               </h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                   <Label htmlFor="county">County *</Label>
@@ -561,7 +561,7 @@ const ProfessionalSkillsRegistration = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 <div>
                   <Label htmlFor="subCounty">Sub-County/Constituency</Label>
                   <Input
@@ -571,7 +571,7 @@ const ProfessionalSkillsRegistration = () => {
                     placeholder="Your sub-county or constituency"
                   />
                 </div>
-                
+
                 <div>
                   <Label htmlFor="ward">Ward</Label>
                   <Input
@@ -590,7 +590,7 @@ const ProfessionalSkillsRegistration = () => {
                 <Building className="h-5 w-5 mr-2" />
                 Professional Information
               </h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <Label htmlFor="organization">Organization/Company</Label>
@@ -601,7 +601,7 @@ const ProfessionalSkillsRegistration = () => {
                     placeholder="Current employer or business name"
                   />
                 </div>
-                
+
                 <div>
                   <Label htmlFor="yearsExperience">Years of Experience</Label>
                   <Select value={formData.yearsExperience} onValueChange={(value) => setFormData(prev => ({ ...prev, yearsExperience: value }))}>
@@ -630,7 +630,7 @@ const ProfessionalSkillsRegistration = () => {
                     rows={3}
                   />
                 </div>
-                
+
                 <div>
                   <Label htmlFor="portfolio">Portfolio/Website</Label>
                   <Textarea
@@ -650,7 +650,7 @@ const ProfessionalSkillsRegistration = () => {
                 <Wrench className="h-5 w-5 mr-2" />
                 Professional Skills *
               </h3>
-              
+
               {skillCategories.map((category) => (
                 <Card key={category.id} className="border-l-4 border-l-blue-500">
                   <CardHeader className="pb-3">
@@ -692,14 +692,14 @@ const ProfessionalSkillsRegistration = () => {
                       <Plus className="h-4 w-4" />
                     </Button>
                   </div>
-                  
+
                   {formData.customSkills.length > 0 && (
                     <div className="flex flex-wrap gap-2">
                       {formData.customSkills.map((skill) => (
                         <Badge key={skill} variant="secondary" className="flex items-center gap-1">
                           {skill}
-                          <X 
-                            className="h-3 w-3 cursor-pointer" 
+                          <X
+                            className="h-3 w-3 cursor-pointer"
                             onClick={() => removeCustomSkill(skill)}
                           />
                         </Badge>
@@ -716,7 +716,7 @@ const ProfessionalSkillsRegistration = () => {
                 <Calendar className="h-5 w-5 mr-2" />
                 Work Availability
               </h3>
-              
+
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="availableForWork"
@@ -739,9 +739,9 @@ const ProfessionalSkillsRegistration = () => {
             )}
 
             <div className="flex justify-end space-x-4 pt-6 border-t">
-              <Button 
-                type="submit" 
-                className="bg-blue-600 hover:bg-blue-700 px-8" 
+              <Button
+                type="submit"
+                className="bg-blue-600 hover:bg-blue-700 px-8"
                 disabled={loading}
               >
                 {loading ? (

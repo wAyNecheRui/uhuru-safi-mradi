@@ -75,13 +75,14 @@ export const BID_TEMPLATES: BidTemplate[] = [
 ];
 
 export const TEMPLATE_CATEGORIES = [
-  'all', 
-  'Roads & Transportation', 
-  'Water & Sanitation', 
+  'all',
+  'Roads & Transportation',
+  'Water & Sanitation',
   'Healthcare Facilities',
   'Education Infrastructure',
-  'Electricity & Lighting', 
+  'Electricity & Lighting',
   'Waste Management',
   'Security Infrastructure',
+  'Building Construction',
   'Other Infrastructure'
 ] as const;

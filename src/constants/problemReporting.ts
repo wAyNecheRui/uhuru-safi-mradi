@@ -9,6 +9,7 @@ export const CATEGORIES: Category[] = [
   { value: 'electricity', label: 'Electricity & Lighting', icon: '⚡' },
   { value: 'waste', label: 'Waste Management', icon: '🗑️' },
   { value: 'security', label: 'Security Infrastructure', icon: '🛡️' },
+  { value: 'buildings', label: 'Building Construction', icon: '🏢' }, // Added building construction
   { value: 'other', label: 'Other Infrastructure', icon: '🏗️' }
 ];
 

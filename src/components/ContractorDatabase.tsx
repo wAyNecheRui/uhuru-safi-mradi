@@ -7,6 +7,7 @@ import SearchFilters from '@/components/contractor-database/SearchFilters';
 import ContractorCard from '@/components/contractor-database/ContractorCard';
 import EmptyState from '@/components/contractor-database/EmptyState';
 import { CATEGORIES, LOCATIONS } from '@/constants/contractorDatabase';
+import { CATEGORIES as APP_CATEGORIES } from '@/constants/problemReporting';
 import { fetchContractorRatingsFromVerifications } from '@/utils/contractorRatingCalculation';
 
 const ContractorDatabase = () => {
@@ -18,18 +19,25 @@ const ContractorDatabase = () => {
     selectedLocation: 'all'
   });
 
+  // Helper to map specialized strings to canonical labels
+  const getCanonicalLabel = (cat: string) => {
+    if (!cat) return 'General Construction';
+    const found = APP_CATEGORIES.find(c => c.value === cat || c.label === cat);
+    return found?.label || cat;
+  };
+
   // Fetch contractors using contractor_profiles for accurate data
   useEffect(() => {
     const fetchContractors = async () => {
       try {
         setLoading(true);
-        
+
         // Fetch verified contractor profiles
         const { data: contractorData, error: contractorError } = await supabase
           .from('contractor_profiles')
           .select('*')
           .eq('verified', true);
-        
+
         if (contractorError) {
           console.error('Error fetching contractors:', contractorError);
           toast.error('Failed to load contractors');
@@ -44,7 +52,6 @@ const ContractorDatabase = () => {
           .is('deleted_at', null);
 
         // Fetch REAL ratings from milestone_verifications & quality_checkpoints
-        // (contractor_ratings table is empty - ratings come from citizen verifications)
         const contractorIds = (contractorData || []).map(c => c.user_id);
         const realRatingsData = await fetchContractorRatingsFromVerifications(contractorIds);
 
@@ -70,7 +77,7 @@ const ContractorDatabase = () => {
           return {
             id: profile.id,
             name: profile.company_name || 'Contractor',
-            category: profile.specialization?.[0] || 'General Construction',
+            category: getCanonicalLabel(profile.specialization?.[0]),
             location: profile.registered_counties?.[0] || 'Kenya',
             rating: avgRating,
             reviewCount: realRating?.totalRatings || 0,
@@ -103,10 +110,13 @@ const ContractorDatabase = () => {
   // Filter contractors based on search and filters
   const filteredContractors = contractors.filter(contractor => {
     const matchesSearch = contractor.name.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-                         contractor.specializations.some((spec: string) => spec.toLowerCase().includes(filters.searchTerm.toLowerCase()));
+      contractor.specializations.some((spec: string) => spec.toLowerCase().includes(filters.searchTerm.toLowerCase()));
+
+    // selectedCategory is a label (e.g. 'Roads & Transportation')
+    // contractor.category is already transformed to a canonical label or same value
     const matchesCategory = filters.selectedCategory === 'all' || contractor.category === filters.selectedCategory;
     const matchesLocation = filters.selectedLocation === 'all' || contractor.location === filters.selectedLocation;
-    
+
     return matchesSearch && matchesCategory && matchesLocation;
   });
 
@@ -151,7 +161,7 @@ const ContractorDatabase = () => {
         </CardContent>
       </Card>
 
-      <SearchFilters 
+      <SearchFilters
         filters={filters}
         onFiltersChange={updateFilters}
         categories={CATEGORIES}

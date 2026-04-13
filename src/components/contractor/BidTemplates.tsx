@@ -8,30 +8,31 @@ import { BID_TEMPLATES, TEMPLATE_CATEGORIES, type BidTemplate } from '@/constant
 import { useToast } from '@/hooks/use-toast';
 
 const BidTemplates = () => {
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [previewTemplate, setPreviewTemplate] = useState<BidTemplate | null>(null);
-  const { toast } = useToast();
+   const [selectedCategory, setSelectedCategory] = useState('all');
+   const [previewTemplate, setPreviewTemplate] = useState<BidTemplate | null>(null);
+   const { toast } = useToast();
 
-  const filteredTemplates = selectedCategory === 'all' 
-    ? BID_TEMPLATES 
-    : BID_TEMPLATES.filter(template => template.category === selectedCategory);
+   const filteredTemplates = selectedCategory === 'all'
+      ? BID_TEMPLATES
+      : BID_TEMPLATES.filter(template => template.category === selectedCategory);
 
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case 'Roads & Transportation': return 'bg-blue-100 text-blue-800';
-      case 'Water & Sanitation': return 'bg-cyan-100 text-cyan-800';
-      case 'Healthcare Facilities': return 'bg-red-100 text-red-800';
-      case 'Education Infrastructure': return 'bg-green-100 text-green-800';
-      case 'Electricity & Lighting': return 'bg-yellow-100 text-yellow-800';
-      case 'Waste Management': return 'bg-orange-100 text-orange-800';
-      case 'Security Infrastructure': return 'bg-purple-100 text-purple-800';
-      case 'Other Infrastructure': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
+   const getCategoryColor = (category: string) => {
+      switch (category) {
+         case 'Roads & Transportation': return 'bg-blue-100 text-blue-800';
+         case 'Water & Sanitation': return 'bg-cyan-100 text-cyan-800';
+         case 'Healthcare Facilities': return 'bg-red-100 text-red-800';
+         case 'Education Infrastructure': return 'bg-green-100 text-green-800';
+         case 'Electricity & Lighting': return 'bg-yellow-100 text-yellow-800';
+         case 'Waste Management': return 'bg-orange-100 text-orange-800';
+         case 'Security Infrastructure': return 'bg-purple-100 text-purple-800';
+         case 'Building Construction': return 'bg-amber-100 text-amber-800';
+         case 'Other Infrastructure': return 'bg-gray-100 text-gray-800';
+         default: return 'bg-gray-100 text-gray-800';
+      }
+   };
 
-  const getTemplateContent = (template: BidTemplate): string => {
-    const header = `
+   const getTemplateContent = (template: BidTemplate): string => {
+      const header = `
 ================================================================================
                           BID PROPOSAL TEMPLATE
 ================================================================================
@@ -78,8 +79,8 @@ Estimated Duration (Days): __________________________________
 ================================================================================
 `;
 
-    const sectionContents: Record<string, string> = {
-      'Technical Approach': `
+      const sectionContents: Record<string, string> = {
+         'Technical Approach': `
 ================================================================================
                           TECHNICAL APPROACH
 ================================================================================
@@ -121,7 +122,7 @@ Estimated Duration (Days): __________________________________
    Qualifications: ______________________________________________
    Years Experience: ____________________________________________
 `,
-      'Materials Specification': `
+         'Materials Specification': `
 ================================================================================
                           MATERIALS SPECIFICATION
 ================================================================================
@@ -145,7 +146,7 @@ Estimated Duration (Days): __________________________________
    _________________________________________________________________
    _________________________________________________________________
 `,
-      'Timeline': `
+         'Timeline': `
 ================================================================================
                           PROJECT TIMELINE
 ================================================================================
@@ -176,7 +177,7 @@ Duration: _____________ to _____________
 
 GANTT CHART (Attach separately)
 `,
-      'Safety Plan': `
+         'Safety Plan': `
 ================================================================================
                           SAFETY PLAN
 ================================================================================
@@ -206,7 +207,7 @@ GANTT CHART (Attach separately)
    [ ] Waste management plan
    [ ] Water protection measures
 `,
-      'Quality Assurance': `
+         'Quality Assurance': `
 ================================================================================
                           QUALITY ASSURANCE
 ================================================================================
@@ -229,7 +230,7 @@ GANTT CHART (Attach separately)
    Period: _______________ months
    Warranty coverage: _____________________________________________
 `,
-      'Traffic Management': `
+         'Traffic Management': `
 ================================================================================
                           TRAFFIC MANAGEMENT PLAN
 ================================================================================
@@ -248,7 +249,7 @@ GANTT CHART (Attach separately)
    [ ] Barriers
    [ ] Traffic cones
 `,
-      'System Design': `
+         'System Design': `
 ================================================================================
                           SYSTEM DESIGN
 ================================================================================
@@ -264,7 +265,7 @@ GANTT CHART (Attach separately)
    _________________________________________________________________
    _________________________________________________________________
 `,
-      'Environmental Impact': `
+         'Environmental Impact': `
 ================================================================================
                           ENVIRONMENTAL IMPACT ASSESSMENT
 ================================================================================
@@ -282,7 +283,7 @@ GANTT CHART (Attach separately)
 4. MONITORING PLAN
    _________________________________________________________________
 `,
-      'Community Engagement': `
+         'Community Engagement': `
 ================================================================================
                           COMMUNITY ENGAGEMENT PLAN
 ================================================================================
@@ -301,7 +302,7 @@ GANTT CHART (Attach separately)
    Phone: _______________________________________________________
    Email: _______________________________________________________
 `,
-      'Testing Protocols': `
+         'Testing Protocols': `
 ================================================================================
                           TESTING PROTOCOLS
 ================================================================================
@@ -318,7 +319,7 @@ GANTT CHART (Attach separately)
 4. ACCEPTANCE CRITERIA
    _________________________________________________________________
 `,
-      'Water Quality Standards': `
+         'Water Quality Standards': `
 ================================================================================
                           WATER QUALITY STANDARDS
 ================================================================================
@@ -335,7 +336,7 @@ GANTT CHART (Attach separately)
 3. COMPLIANCE CERTIFICATION
    _________________________________________________________________
 `,
-      'Medical Equipment Integration': `
+         'Medical Equipment Integration': `
 ================================================================================
                           MEDICAL EQUIPMENT INTEGRATION
 ================================================================================
@@ -349,7 +350,7 @@ GANTT CHART (Attach separately)
 3. POWER AND UTILITIES
    _________________________________________________________________
 `,
-      'Hygiene Standards': `
+         'Hygiene Standards': `
 ================================================================================
                           HYGIENE STANDARDS
 ================================================================================
@@ -363,7 +364,7 @@ GANTT CHART (Attach separately)
 3. CLEANING PROTOCOLS
    _________________________________________________________________
 `,
-      'Accessibility Compliance': `
+         'Accessibility Compliance': `
 ================================================================================
                           ACCESSIBILITY COMPLIANCE
 ================================================================================
@@ -380,7 +381,7 @@ GANTT CHART (Attach separately)
 3. EMERGENCY EVACUATION
    _________________________________________________________________
 `,
-      'Emergency Systems': `
+         'Emergency Systems': `
 ================================================================================
                           EMERGENCY SYSTEMS
 ================================================================================
@@ -398,7 +399,7 @@ GANTT CHART (Attach separately)
    [ ] PA system
    [ ] Emergency phones
 `,
-      'Building Design': `
+         'Building Design': `
 ================================================================================
                           BUILDING DESIGN
 ================================================================================
@@ -411,7 +412,7 @@ GANTT CHART (Attach separately)
 3. BUILDING MATERIALS
    _________________________________________________________________
 `,
-      'Safety Standards': `
+         'Safety Standards': `
 ================================================================================
                           SAFETY STANDARDS
 ================================================================================
@@ -424,7 +425,7 @@ GANTT CHART (Attach separately)
 2. CHILD SAFETY (for educational facilities)
    _________________________________________________________________
 `,
-      'Learning Environment': `
+         'Learning Environment': `
 ================================================================================
                           LEARNING ENVIRONMENT
 ================================================================================
@@ -438,7 +439,7 @@ GANTT CHART (Attach separately)
 2. ACOUSTICS
    _________________________________________________________________
 `,
-      'Playground & Recreation': `
+         'Playground & Recreation': `
 ================================================================================
                           PLAYGROUND & RECREATION
 ================================================================================
@@ -452,7 +453,7 @@ GANTT CHART (Attach separately)
 3. FENCING
    _________________________________________________________________
 `,
-      'Electrical Design': `
+         'Electrical Design': `
 ================================================================================
                           ELECTRICAL DESIGN
 ================================================================================
@@ -468,7 +469,7 @@ GANTT CHART (Attach separately)
    [ ] Lightning protection
    [ ] Surge protection
 `,
-      'Maintenance Plan': `
+         'Maintenance Plan': `
 ================================================================================
                           MAINTENANCE PLAN
 ================================================================================
@@ -482,7 +483,7 @@ GANTT CHART (Attach separately)
 3. SPARE PARTS
    _________________________________________________________________
 `,
-      'Warranty Terms': `
+         'Warranty Terms': `
 ================================================================================
                           WARRANTY TERMS
 ================================================================================
@@ -500,7 +501,7 @@ GANTT CHART (Attach separately)
 4. CLAIM PROCEDURE
    _________________________________________________________________
 `,
-      'Energy Efficiency': `
+         'Energy Efficiency': `
 ================================================================================
                           ENERGY EFFICIENCY
 ================================================================================
@@ -513,7 +514,7 @@ GANTT CHART (Attach separately)
 2. ESTIMATED SAVINGS
    _________________________________________________________________
 `,
-      'Collection System Design': `
+         'Collection System Design': `
 ================================================================================
                           WASTE COLLECTION SYSTEM DESIGN
 ================================================================================
@@ -527,7 +528,7 @@ GANTT CHART (Attach separately)
 3. SCHEDULE
    _________________________________________________________________
 `,
-      'Environmental Compliance': `
+         'Environmental Compliance': `
 ================================================================================
                           ENVIRONMENTAL COMPLIANCE
 ================================================================================
@@ -541,7 +542,7 @@ GANTT CHART (Attach separately)
 3. MONITORING
    _________________________________________________________________
 `,
-      'Recycling Facilities': `
+         'Recycling Facilities': `
 ================================================================================
                           RECYCLING FACILITIES
 ================================================================================
@@ -555,7 +556,7 @@ GANTT CHART (Attach separately)
 3. OUTPUT MATERIALS
    _________________________________________________________________
 `,
-      'Community Awareness': `
+         'Community Awareness': `
 ================================================================================
                           COMMUNITY AWARENESS
 ================================================================================
@@ -569,7 +570,7 @@ GANTT CHART (Attach separately)
 3. FEEDBACK MECHANISM
    _________________________________________________________________
 `,
-      'Health & Safety': `
+         'Health & Safety': `
 ================================================================================
                           HEALTH & SAFETY
 ================================================================================
@@ -583,7 +584,7 @@ GANTT CHART (Attach separately)
 3. EMERGENCY PROCEDURES
    _________________________________________________________________
 `,
-      'Security Assessment': `
+         'Security Assessment': `
 ================================================================================
                           SECURITY ASSESSMENT
 ================================================================================
@@ -597,7 +598,7 @@ GANTT CHART (Attach separately)
 3. RISK MITIGATION
    _________________________________________________________________
 `,
-      'Integration Plan': `
+         'Integration Plan': `
 ================================================================================
                           SYSTEM INTEGRATION PLAN
 ================================================================================
@@ -611,7 +612,7 @@ GANTT CHART (Attach separately)
 3. TESTING
    _________________________________________________________________
 `,
-      'Monitoring Setup': `
+         'Monitoring Setup': `
 ================================================================================
                           MONITORING SETUP
 ================================================================================
@@ -625,7 +626,7 @@ GANTT CHART (Attach separately)
 3. STAFFING
    _________________________________________________________________
 `,
-      'Maintenance Schedule': `
+         'Maintenance Schedule': `
 ================================================================================
                           MAINTENANCE SCHEDULE
 ================================================================================
@@ -639,7 +640,7 @@ GANTT CHART (Attach separately)
 3. MONTHLY INSPECTIONS
    _________________________________________________________________
 `,
-      'Project Overview': `
+         'Project Overview': `
 ================================================================================
                           PROJECT OVERVIEW
 ================================================================================
@@ -654,7 +655,7 @@ GANTT CHART (Attach separately)
 3. DELIVERABLES
    _________________________________________________________________
 `,
-      'Materials & Equipment': `
+         'Materials & Equipment': `
 ================================================================================
                           MATERIALS & EQUIPMENT
 ================================================================================
@@ -668,7 +669,7 @@ GANTT CHART (Attach separately)
 3. PROCUREMENT PLAN
    _________________________________________________________________
 `,
-      'Risk Management': `
+         'Risk Management': `
 ================================================================================
                           RISK MANAGEMENT
 ================================================================================
@@ -681,7 +682,7 @@ GANTT CHART (Attach separately)
 2. CONTINGENCY PLANS
    _________________________________________________________________
 `,
-      'Accessibility': `
+         'Accessibility': `
 ================================================================================
                           ACCESSIBILITY
 ================================================================================
@@ -692,7 +693,7 @@ GANTT CHART (Attach separately)
 2. SPECIAL NEEDS PROVISIONS
    _________________________________________________________________
 `,
-      'Safety Compliance': `
+         'Safety Compliance': `
 ================================================================================
                           SAFETY COMPLIANCE
 ================================================================================
@@ -706,9 +707,9 @@ GANTT CHART (Attach separately)
 3. INSPECTION SCHEDULE
    _________________________________________________________________
 `,
-    };
+      };
 
-    const footer = `
+      const footer = `
 
 ================================================================================
                           DECLARATION
@@ -755,8 +756,8 @@ Company Stamp:
 ================================================================================
 `;
 
-    const sectionContent = template.sections
-      .map(section => sectionContents[section] || `
+      const sectionContent = template.sections
+         .map(section => sectionContents[section] || `
 ================================================================================
                           ${section.toUpperCase()}
 ================================================================================
@@ -766,170 +767,170 @@ _________________________________________________________________
 _________________________________________________________________
 _________________________________________________________________
 `)
-      .join('\n');
+         .join('\n');
 
-    return header + sectionContent + footer;
-  };
+      return header + sectionContent + footer;
+   };
 
-  const handleDownload = (template: BidTemplate) => {
-    const content = getTemplateContent(template);
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${template.name.replace(/\s+/g, '_')}_Template.txt`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+   const handleDownload = (template: BidTemplate) => {
+      const content = getTemplateContent(template);
+      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${template.name.replace(/\s+/g, '_')}_Template.txt`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
 
-    toast({
-      title: "Template Downloaded",
-      description: `${template.name} has been downloaded. Fill out the template and submit with your bid.`,
-    });
-  };
+      toast({
+         title: "Template Downloaded",
+         description: `${template.name} has been downloaded. Fill out the template and submit with your bid.`,
+      });
+   };
 
-  const handlePreview = (template: BidTemplate) => {
-    setPreviewTemplate(template);
-  };
+   const handlePreview = (template: BidTemplate) => {
+      setPreviewTemplate(template);
+   };
 
-  return (
-    <div className="space-y-6">
-      <Card className="shadow-lg border-t-4 border-t-primary">
-        <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10">
-          <CardTitle className="flex items-center text-xl">
-            <FileText className="h-5 w-5 mr-2 text-primary" />
-            Standardized Bid Templates
-          </CardTitle>
-          <p className="text-muted-foreground mt-2">
-            Download professional bid templates to ensure consistency and completeness in your proposals. 
-            Fill out the downloaded template and attach it to your bid submission.
-          </p>
-        </CardHeader>
-      </Card>
+   return (
+      <div className="space-y-6">
+         <Card className="shadow-lg border-t-4 border-t-primary">
+            <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10">
+               <CardTitle className="flex items-center text-xl">
+                  <FileText className="h-5 w-5 mr-2 text-primary" />
+                  Standardized Bid Templates
+               </CardTitle>
+               <p className="text-muted-foreground mt-2">
+                  Download professional bid templates to ensure consistency and completeness in your proposals.
+                  Fill out the downloaded template and attach it to your bid submission.
+               </p>
+            </CardHeader>
+         </Card>
 
-      {/* Category Filter */}
-      <div className="flex flex-wrap gap-2">
-        {TEMPLATE_CATEGORIES.map((category) => (
-          <Button
-            key={category}
-            variant={selectedCategory === category ? "default" : "outline"}
-            size="sm"
-            onClick={() => setSelectedCategory(category)}
-          >
-            {category === 'all' ? 'All Categories' : category}
-          </Button>
-        ))}
-      </div>
+         {/* Category Filter */}
+         <div className="flex flex-wrap gap-2">
+            {TEMPLATE_CATEGORIES.map((category) => (
+               <Button
+                  key={category}
+                  variant={selectedCategory === category ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setSelectedCategory(category)}
+               >
+                  {category === 'all' ? 'All Categories' : category}
+               </Button>
+            ))}
+         </div>
 
-      {/* Templates Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {filteredTemplates.map((template) => (
-          <Card key={template.id} className="shadow-lg hover:shadow-xl transition-shadow">
-            <CardContent className="p-6">
-              <div className="space-y-4">
-                <div className="flex justify-between items-start">
-                  <h3 className="text-lg font-semibold">{template.name}</h3>
-                  <Badge className={getCategoryColor(template.category)}>
-                    {template.category}
-                  </Badge>
-                </div>
-                
-                <p className="text-muted-foreground text-sm">{template.description}</p>
-                
-                <div className="space-y-2">
-                  <h4 className="text-sm font-medium">Template Sections:</h4>
-                  <div className="flex flex-wrap gap-1">
-                    {template.sections.map((section, index) => (
-                      <Badge key={index} variant="outline" className="text-xs">
-                        {section}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-                
-                <div className="flex justify-between items-center text-xs text-muted-foreground pt-4 border-t">
-                  <span>Updated: {new Date(template.lastUpdated).toLocaleDateString()}</span>
-                </div>
-                
-                <div className="flex gap-2">
-                  <Button 
-                    size="sm" 
-                    className="flex-1"
-                    onClick={() => handleDownload(template)}
-                  >
-                    <Download className="h-4 w-4 mr-1" />
-                    Download
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    className="flex-1"
-                    onClick={() => handlePreview(template)}
-                  >
-                    <Eye className="h-4 w-4 mr-1" />
-                    Preview
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-      
-      {filteredTemplates.length === 0 && (
-        <div className="text-center py-8">
-          <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground">No templates found for the selected category.</p>
-        </div>
-      )}
+         {/* Templates Grid */}
+         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {filteredTemplates.map((template) => (
+               <Card key={template.id} className="shadow-lg hover:shadow-xl transition-shadow">
+                  <CardContent className="p-6">
+                     <div className="space-y-4">
+                        <div className="flex justify-between items-start">
+                           <h3 className="text-lg font-semibold">{template.name}</h3>
+                           <Badge className={getCategoryColor(template.category)}>
+                              {template.category}
+                           </Badge>
+                        </div>
 
-      {/* Preview Modal */}
-      <Dialog open={!!previewTemplate} onOpenChange={() => setPreviewTemplate(null)}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center justify-between">
-              <span>{previewTemplate?.name}</span>
-              <Badge className={previewTemplate ? getCategoryColor(previewTemplate.category) : ''}>
-                {previewTemplate?.category}
-              </Badge>
-            </DialogTitle>
-          </DialogHeader>
-          
-          {previewTemplate && (
-            <div className="space-y-6">
-              <div className="bg-muted p-4 rounded-lg">
-                <h3 className="font-semibold mb-2">Template Description</h3>
-                <p className="text-muted-foreground">{previewTemplate.description}</p>
-              </div>
+                        <p className="text-muted-foreground text-sm">{template.description}</p>
 
-              <div className="bg-background border rounded-lg p-6">
-                <pre className="whitespace-pre-wrap font-mono text-xs bg-muted p-4 rounded-lg overflow-x-auto">
-                  {getTemplateContent(previewTemplate)}
-                </pre>
-              </div>
+                        <div className="space-y-2">
+                           <h4 className="text-sm font-medium">Template Sections:</h4>
+                           <div className="flex flex-wrap gap-1">
+                              {template.sections.map((section, index) => (
+                                 <Badge key={index} variant="outline" className="text-xs">
+                                    {section}
+                                 </Badge>
+                              ))}
+                           </div>
+                        </div>
 
-              <div className="flex gap-2 pt-4 border-t">
-                <Button 
-                  className="flex-1"
-                  onClick={() => handleDownload(previewTemplate)}
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Download Template
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={() => setPreviewTemplate(null)}
-                >
-                  Close Preview
-                </Button>
-              </div>
+                        <div className="flex justify-between items-center text-xs text-muted-foreground pt-4 border-t">
+                           <span>Updated: {new Date(template.lastUpdated).toLocaleDateString()}</span>
+                        </div>
+
+                        <div className="flex gap-2">
+                           <Button
+                              size="sm"
+                              className="flex-1"
+                              onClick={() => handleDownload(template)}
+                           >
+                              <Download className="h-4 w-4 mr-1" />
+                              Download
+                           </Button>
+                           <Button
+                              size="sm"
+                              variant="outline"
+                              className="flex-1"
+                              onClick={() => handlePreview(template)}
+                           >
+                              <Eye className="h-4 w-4 mr-1" />
+                              Preview
+                           </Button>
+                        </div>
+                     </div>
+                  </CardContent>
+               </Card>
+            ))}
+         </div>
+
+         {filteredTemplates.length === 0 && (
+            <div className="text-center py-8">
+               <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+               <p className="text-muted-foreground">No templates found for the selected category.</p>
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
+         )}
+
+         {/* Preview Modal */}
+         <Dialog open={!!previewTemplate} onOpenChange={() => setPreviewTemplate(null)}>
+            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+               <DialogHeader>
+                  <DialogTitle className="flex items-center justify-between">
+                     <span>{previewTemplate?.name}</span>
+                     <Badge className={previewTemplate ? getCategoryColor(previewTemplate.category) : ''}>
+                        {previewTemplate?.category}
+                     </Badge>
+                  </DialogTitle>
+               </DialogHeader>
+
+               {previewTemplate && (
+                  <div className="space-y-6">
+                     <div className="bg-muted p-4 rounded-lg">
+                        <h3 className="font-semibold mb-2">Template Description</h3>
+                        <p className="text-muted-foreground">{previewTemplate.description}</p>
+                     </div>
+
+                     <div className="bg-background border rounded-lg p-6">
+                        <pre className="whitespace-pre-wrap font-mono text-xs bg-muted p-4 rounded-lg overflow-x-auto">
+                           {getTemplateContent(previewTemplate)}
+                        </pre>
+                     </div>
+
+                     <div className="flex gap-2 pt-4 border-t">
+                        <Button
+                           className="flex-1"
+                           onClick={() => handleDownload(previewTemplate)}
+                        >
+                           <Download className="h-4 w-4 mr-2" />
+                           Download Template
+                        </Button>
+                        <Button
+                           variant="outline"
+                           onClick={() => setPreviewTemplate(null)}
+                        >
+                           Close Preview
+                        </Button>
+                     </div>
+                  </div>
+               )}
+            </DialogContent>
+         </Dialog>
+      </div>
+   );
 };
 
 export default BidTemplates;

@@ -10,6 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { Camera, MapPin, Upload, Send, Check, Globe } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
+import { CATEGORIES, PRIORITIES } from '@/constants/problemReporting';
+
 const IssueReportingForm = () => {
   const [formData, setFormData] = useState({
     title: '',
@@ -19,34 +21,20 @@ const IssueReportingForm = () => {
     location: '',
     county: '',
     ward: '',
-    gpsCoordinates: null as {lat: number, lng: number} | null,
+    gpsCoordinates: null as { lat: number, lng: number } | null,
     photos: [] as File[],
     reporterName: '',
     reporterPhone: '',
     reporterNationalId: ''
   });
-  
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [gpsLoading, setGpsLoading] = useState(false);
   const { toast } = useToast();
 
-  const categories = [
-    'Roads & Transportation',
-    'Water & Sanitation',
-    'Electricity & Power',
-    'Healthcare Facilities',
-    'Education Infrastructure',
-    'Public Safety',
-    'Waste Management',
-    'Other'
-  ];
+  const categories = CATEGORIES;
 
-  const urgencyLevels = [
-    { value: 'low', label: 'Low Priority', color: 'bg-green-50 text-green-700 border-green-200' },
-    { value: 'medium', label: 'Medium Priority', color: 'bg-blue-50 text-blue-700 border-blue-200' },
-    { value: 'high', label: 'High Priority', color: 'bg-orange-50 text-orange-700 border-orange-200' },
-    { value: 'urgent', label: 'Urgent/Emergency', color: 'bg-red-50 text-red-700 border-red-200' }
-  ];
+  const urgencyLevels = PRIORITIES;
 
   const kenyanCounties = [
     'Nairobi', 'Mombasa', 'Kisumu', 'Nakuru', 'Eldoret', 'Meru', 'Nyeri', 'Machakos',
@@ -99,7 +87,7 @@ const IssueReportingForm = () => {
       });
       return;
     }
-    
+
     setFormData(prev => ({ ...prev, photos: [...prev.photos, ...files] }));
     toast({
       title: "Files uploaded",
@@ -165,7 +153,7 @@ const IssueReportingForm = () => {
             Report Infrastructure Issue
           </CardTitle>
           <p className="text-gray-600 mt-2">
-            Help improve Kenya's infrastructure by reporting issues in your community. 
+            Help improve Kenya's infrastructure by reporting issues in your community.
             Your report will be verified and prioritized by citizen voting.
           </p>
         </CardHeader>
@@ -196,9 +184,12 @@ const IssueReportingForm = () => {
                       <SelectValue placeholder="Select issue category" />
                     </SelectTrigger>
                     <SelectContent>
-                      {categories.map((category) => (
-                        <SelectItem key={category} value={category}>
-                          {category}
+                      {categories.map((cat) => (
+                        <SelectItem key={cat.value} value={cat.value}>
+                          <div className="flex items-center gap-2">
+                            <span>{cat.icon}</span>
+                            <span>{cat.label}</span>
+                          </div>
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -295,7 +286,7 @@ const IssueReportingForm = () => {
               <div className="flex-1">
                 <h4 className="font-medium text-blue-900">GPS Location</h4>
                 <p className="text-sm text-blue-700">
-                  {formData.gpsCoordinates 
+                  {formData.gpsCoordinates
                     ? `Lat: ${formData.gpsCoordinates.lat.toFixed(6)}, Lng: ${formData.gpsCoordinates.lng.toFixed(6)}`
                     : 'No GPS coordinates captured yet'
                   }

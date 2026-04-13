@@ -5,7 +5,9 @@ import { Badge } from '@/components/ui/badge';
 import { MapPin, Clock, Wallet, Users, Briefcase } from 'lucide-react';
 import { useWorkforce } from '@/hooks/useWorkforce';
 import { useAuth } from '@/contexts/AuthContext';
+import { useProfile } from '@/hooks/useProfile';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useState } from 'react';
@@ -13,7 +15,9 @@ import { useState } from 'react';
 const WorkforcePlatform = () => {
   const { jobs, loading, applyForJob, createJob } = useWorkforce();
   const { user } = useAuth();
-  const userProfile = { user_type: 'citizen' }; // Temporary - will be enhanced later
+  const { userProfile, contractorProfile, workerProfile } = useProfile();
+  const { toast } = useToast();
+
   const [applicationMessage, setApplicationMessage] = useState('');
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [showCreateJob, setShowCreateJob] = useState(false);
@@ -30,6 +34,16 @@ const WorkforcePlatform = () => {
 
   const handleApply = async () => {
     if (!selectedJobId) return;
+
+    if (!workerProfile?.skills || workerProfile.skills.length === 0) {
+      toast({
+        title: "Skills Profile Required",
+        description: "Please register your skills profile in the Workforce Integration page before applying.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     await applyForJob(selectedJobId, applicationMessage);
     setApplicationMessage('');
     setSelectedJobId(null);
@@ -42,7 +56,7 @@ const WorkforcePlatform = () => {
       wage_max: newJob.wage_max ? parseFloat(newJob.wage_max) : undefined,
       duration_days: newJob.duration_days ? parseInt(newJob.duration_days) : undefined,
     };
-    
+
     await createJob(jobData);
     setNewJob({
       title: '',
@@ -74,7 +88,7 @@ const WorkforcePlatform = () => {
             Connect with local infrastructure projects and find skilled workers
           </p>
         </div>
-        
+
         {userProfile?.user_type === 'contractor' && (
           <Dialog open={showCreateJob} onOpenChange={setShowCreateJob}>
             <DialogTrigger asChild>
@@ -91,37 +105,37 @@ const WorkforcePlatform = () => {
                 <Input
                   placeholder="Job Title"
                   value={newJob.title}
-                  onChange={(e) => setNewJob({...newJob, title: e.target.value})}
+                  onChange={(e) => setNewJob({ ...newJob, title: e.target.value })}
                 />
                 <Textarea
                   placeholder="Job Description"
                   value={newJob.description}
-                  onChange={(e) => setNewJob({...newJob, description: e.target.value})}
+                  onChange={(e) => setNewJob({ ...newJob, description: e.target.value })}
                 />
                 <Input
                   placeholder="Location"
                   value={newJob.location}
-                  onChange={(e) => setNewJob({...newJob, location: e.target.value})}
+                  onChange={(e) => setNewJob({ ...newJob, location: e.target.value })}
                 />
                 <div className="grid grid-cols-2 gap-4">
                   <Input
                     placeholder="Min Wage (KES)"
                     type="number"
                     value={newJob.wage_min}
-                    onChange={(e) => setNewJob({...newJob, wage_min: e.target.value})}
+                    onChange={(e) => setNewJob({ ...newJob, wage_min: e.target.value })}
                   />
                   <Input
                     placeholder="Max Wage (KES)"
                     type="number"
                     value={newJob.wage_max}
-                    onChange={(e) => setNewJob({...newJob, wage_max: e.target.value})}
+                    onChange={(e) => setNewJob({ ...newJob, wage_max: e.target.value })}
                   />
                 </div>
                 <Input
                   placeholder="Duration (days)"
                   type="number"
                   value={newJob.duration_days}
-                  onChange={(e) => setNewJob({...newJob, duration_days: e.target.value})}
+                  onChange={(e) => setNewJob({ ...newJob, duration_days: e.target.value })}
                 />
                 <Button onClick={handleCreateJob} className="w-full">
                   Create Job Posting
@@ -134,41 +148,41 @@ const WorkforcePlatform = () => {
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {jobs.map((job) => (
-          <Card key={job.id} className="hover:shadow-lg transition-shadow">
+          <Card key={job.id} className="hover:shadow-lg transition-shadow flex flex-col">
             <CardHeader>
               <div className="flex justify-between items-start">
                 <CardTitle className="text-lg">{job.title}</CardTitle>
                 <Badge variant="secondary">Open</Badge>
               </div>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 flex-1 flex flex-col">
               <p className="text-sm text-muted-foreground line-clamp-3">
                 {job.description}
               </p>
-              
+
               <div className="space-y-2">
                 <div className="flex items-center text-sm text-muted-foreground">
                   <MapPin className="h-4 w-4 mr-2" />
                   {job.location}
                 </div>
-                
+
                 {job.duration_days && (
                   <div className="flex items-center text-sm text-muted-foreground">
                     <Clock className="h-4 w-4 mr-2" />
                     {job.duration_days} days
                   </div>
                 )}
-                
+
                 {(job.wage_min || job.wage_max) && (
                   <div className="flex items-center text-sm text-muted-foreground">
                     <Wallet className="h-4 w-4 mr-2" />
-                    KES {job.wage_min && job.wage_max 
+                    KES {job.wage_min && job.wage_max
                       ? `${job.wage_min.toLocaleString()} - ${job.wage_max.toLocaleString()}`
                       : job.wage_min?.toLocaleString() || job.wage_max?.toLocaleString()
                     }
                   </div>
                 )}
-                
+
                 <div className="flex items-center text-sm text-muted-foreground">
                   <Users className="h-4 w-4 mr-2" />
                   {job.positions_available} position{job.positions_available !== 1 ? 's' : ''} available
@@ -190,34 +204,43 @@ const WorkforcePlatform = () => {
                 </div>
               )}
 
-              {userProfile?.user_type === 'citizen' && (
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button 
-                      className="w-full"
-                      onClick={() => setSelectedJobId(job.id)}
-                    >
-                      Apply Now
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Apply for {job.title}</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <Textarea
-                        placeholder="Why are you interested in this position? Describe your relevant experience..."
-                        value={applicationMessage}
-                        onChange={(e) => setApplicationMessage(e.target.value)}
-                        rows={4}
-                      />
-                      <Button onClick={handleApply} className="w-full">
-                        Submit Application
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              )}
+              <div className="mt-auto pt-4">
+                {userProfile?.user_type === 'citizen' && (
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <div className="flex flex-col gap-1">
+                        <Button
+                          className="w-full"
+                          onClick={() => setSelectedJobId(job.id)}
+                        >
+                          Apply Now
+                        </Button>
+                        {(!workerProfile?.skills || workerProfile.skills.length === 0) && (
+                          <span className="text-[10px] text-amber-600 font-medium text-center">
+                            Skills registration required
+                          </span>
+                        )}
+                      </div>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Apply for {job.title}</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <Textarea
+                          placeholder="Why are you interested in this position? Describe your relevant experience..."
+                          value={applicationMessage}
+                          onChange={(e) => setApplicationMessage(e.target.value)}
+                          rows={4}
+                        />
+                        <Button onClick={handleApply} className="w-full">
+                          Submit Application
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                )}
+              </div>
             </CardContent>
           </Card>
         ))}

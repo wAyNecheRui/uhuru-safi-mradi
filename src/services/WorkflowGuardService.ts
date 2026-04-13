@@ -199,6 +199,18 @@ export class WorkflowGuardService {
     }
 
     const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) return { success: false, error: 'Authentication required' };
+
+    // Authenticity check: Only government users can approve
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('user_type')
+      .eq('user_id', userData.user.id)
+      .maybeSingle();
+
+    if (profile?.user_type !== 'government') {
+      return { success: false, error: 'Unauthorized: Only government officials can approve reports' };
+    }
 
     const { error } = await supabase
       .from('problem_reports')
@@ -249,6 +261,19 @@ export class WorkflowGuardService {
         success: false,
         error: `Cannot open bidding: Report must be in 'approved' status (current: ${requirements.currentStatus})`
       };
+    }
+
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) return { success: false, error: 'Authentication required' };
+
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('user_type')
+      .eq('user_id', userData.user.id)
+      .maybeSingle();
+
+    if (profile?.user_type !== 'government') {
+      return { success: false, error: 'Unauthorized: Only government officials can open bidding' };
     }
 
     const startDate = new Date();
@@ -488,6 +513,17 @@ export class WorkflowGuardService {
   ): Promise<{ success: boolean; error?: string; paymentTriggered?: boolean }> {
     const verificationStatus = rating >= 3 ? 'approved' : 'rejected';
     const formattedNotes = `Rating: ${rating}/5. ${notes}`;
+
+    // 0. Authenticity check: Only standard citizens can verify milestones
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('user_type')
+      .eq('user_id', citizenId)
+      .maybeSingle();
+
+    if (profile?.user_type !== 'citizen') {
+      return { success: false, error: 'Unauthorized: Only standard citizens can verify project milestones' };
+    }
 
     // 1. Record verification
     const { error: verifyError } = await supabase

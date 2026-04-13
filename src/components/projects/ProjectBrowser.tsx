@@ -61,7 +61,11 @@ const ProjectBrowser: React.FC<ProjectBrowserProps> = ({
 
     // Category filter
     if (filterCategory !== 'all') {
-      result = result.filter(p => p.category === filterCategory);
+      result = result.filter(p => {
+        if (!p.category) return false;
+        const cat = CATEGORIES.find(c => c.value === filterCategory);
+        return p.category === filterCategory || (cat && p.category === cat.label);
+      });
     }
 
     // Search

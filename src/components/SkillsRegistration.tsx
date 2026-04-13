@@ -6,13 +6,13 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { 
-  Wrench, 
-  Plus, 
-  X, 
-  Star, 
-  MapPin, 
-  Phone, 
+import {
+  Wrench,
+  Plus,
+  X,
+  Star,
+  MapPin,
+  Phone,
   Mail,
   Building,
   Award
@@ -24,7 +24,7 @@ import { toast } from 'sonner';
 const skillCategories = [
   {
     id: 'construction',
-    name: 'Construction & Masonry',
+    name: 'Building Construction',
     skills: ['Masonry', 'Concrete Work', 'Steel Construction', 'Roofing', 'Flooring', 'Painting']
   },
   {
@@ -39,12 +39,12 @@ const skillCategories = [
   },
   {
     id: 'electrical',
-    name: 'Electrical & Power',
+    name: 'Electricity & Lighting',
     skills: ['Electrical Wiring', 'Solar Installation', 'Power Systems', 'Street Lighting', 'Generators']
   },
   {
     id: 'healthcare',
-    name: 'Healthcare Infrastructure',
+    name: 'Healthcare Facilities',
     skills: ['Medical Equipment Installation', 'Hospital Construction', 'Laboratory Setup', 'HVAC Systems']
   },
   {
@@ -151,7 +151,7 @@ const SkillsRegistration = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!user) {
       toast.error('Please log in to register your skills');
       return;
@@ -190,11 +190,11 @@ const SkillsRegistration = () => {
 
       if (result.error) throw result.error;
 
-      toast.success(existingRegistration 
-        ? 'Basic profile updated successfully! Extended skills features coming soon.' 
+      toast.success(existingRegistration
+        ? 'Basic profile updated successfully! Extended skills features coming soon.'
         : 'Basic profile registered successfully! Extended skills features coming soon.'
       );
-      
+
       loadExistingRegistration();
     } catch (error: any) {
       console.error('Registration error:', error);
@@ -204,7 +204,7 @@ const SkillsRegistration = () => {
     }
   };
 
-  
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <Card className="border-t-4 border-t-blue-600">
@@ -215,7 +215,7 @@ const SkillsRegistration = () => {
           </CardTitle>
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-4">
             <p className="text-yellow-800 text-sm">
-              <strong>Note:</strong> Extended skills registration features are coming soon. 
+              <strong>Note:</strong> Extended skills registration features are coming soon.
               For now, you can update your basic profile information.
             </p>
           </div>
@@ -259,9 +259,9 @@ const SkillsRegistration = () => {
               </div>
             </div>
 
-            <Button 
-              type="submit" 
-              className="w-full" 
+            <Button
+              type="submit"
+              className="w-full"
               disabled={loading || !isSkillsFormValid}
             >
               {loading ? (
