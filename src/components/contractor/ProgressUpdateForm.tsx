@@ -10,6 +10,7 @@ import {
   CheckCircle, AlertCircle, Clock, Info
 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import GrokCameraModal from '@/components/camera/GrokCameraModal';
 import {
   Dialog,
   DialogContent,
