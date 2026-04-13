@@ -602,6 +602,15 @@ const ProgressUpdateForm: React.FC<ProgressUpdateFormProps> = ({
           )}
         </Button>
       </DialogFooter>
+
+      {/* Grok Camera Modal */}
+      <GrokCameraModal
+        open={cameraOpen}
+        onClose={() => setCameraOpen(false)}
+        onCapture={handleCameraCapture}
+        maxFiles={5}
+        capturedCount={photos.length}
+      />
     </DialogContent>
   );
 };
