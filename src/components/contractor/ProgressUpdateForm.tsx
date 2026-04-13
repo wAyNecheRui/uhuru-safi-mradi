@@ -178,13 +178,16 @@ const ProgressUpdateForm: React.FC<ProgressUpdateFormProps> = ({
     if (!files) return;
 
     const newFiles = Array.from(files).slice(0, 5 - photos.length);
-    setPhotos([...photos, ...newFiles]);
+    setPhotos(prev => [...prev, ...newFiles]);
 
     // Create preview URLs
     newFiles.forEach(file => {
       const url = URL.createObjectURL(file);
       setPhotoUrls(prev => [...prev, url]);
     });
+
+    // Reset input so user can select the same file again
+    e.target.value = '';
   };
 
   const removePhoto = (index: number) => {
