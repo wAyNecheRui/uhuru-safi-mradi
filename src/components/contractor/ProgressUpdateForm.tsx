@@ -68,6 +68,7 @@ const ProgressUpdateForm: React.FC<ProgressUpdateFormProps> = ({
   const [gettingLocation, setGettingLocation] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
 
   // Deduplicate milestones by ID to prevent showing same milestone twice
   const uniqueMilestones = milestones.reduce((acc, milestone) => {
