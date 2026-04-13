@@ -47,6 +47,14 @@ export const useProblemReporting = () => {
     toast.success('File removed');
   }, []);
 
+  const handleCameraCapture = useCallback((file: File) => {
+    if (reportData.photos.length >= 10) {
+      toast.error('Maximum 10 photos/videos allowed');
+      return;
+    }
+    setReportData(prev => ({ ...prev, photos: [...prev.photos, file] }));
+  }, [reportData.photos.length]);
+
   const getCurrentLocation = useCallback(() => {
     if (!navigator.geolocation) {
       toast.error('GPS not supported on this device');
