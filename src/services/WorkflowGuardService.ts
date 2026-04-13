@@ -14,10 +14,12 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import LiveNotificationService from './LiveNotificationService';
+import { MilestonePaymentService } from './MilestonePaymentService';
 
 export const WORKFLOW_STATUS = {
   PENDING: 'pending',
-  UNDER_REVIEW: 'under_review', 
+  UNDER_REVIEW: 'under_review',
   APPROVED: 'approved',
   BIDDING_OPEN: 'bidding_open',
   CONTRACTOR_SELECTED: 'contractor_selected',
@@ -103,8 +105,8 @@ export class WorkflowGuardService {
     const hasGPS = !!(report.gps_coordinates || report.coordinates);
     const hasMedia = (report.photo_urls?.length > 0) || (report.video_urls?.length > 0);
     // Can approve only if in under_review status and meets all requirements
-    const canApprove = report.status === WORKFLOW_STATUS.UNDER_REVIEW && 
-                       meetsVoteThreshold && hasGPS && hasMedia;
+    const canApprove = report.status === WORKFLOW_STATUS.UNDER_REVIEW &&
+      meetsVoteThreshold && hasGPS && hasMedia;
 
     // Can open bidding only if already approved
     const canOpenBidding = report.status === WORKFLOW_STATUS.APPROVED;
@@ -133,12 +135,12 @@ export class WorkflowGuardService {
     const requirements = await this.getWorkflowRequirements(reportId);
 
     // If pending and meets vote threshold, transition to under_review
-    if (requirements.currentStatus === WORKFLOW_STATUS.PENDING && 
-        requirements.meetsVoteThreshold) {
-      
+    if (requirements.currentStatus === WORKFLOW_STATUS.PENDING &&
+      requirements.meetsVoteThreshold) {
+
       const { error } = await supabase
         .from('problem_reports')
-        .update({ 
+        .update({
           status: WORKFLOW_STATUS.UNDER_REVIEW,
           updated_at: new Date().toISOString()
         })
@@ -148,6 +150,20 @@ export class WorkflowGuardService {
         console.error('Failed to update status:', error);
         return { statusChanged: false };
       }
+
+      // Fetch report title for notification
+      const { data: report } = await supabase
+        .from('problem_reports')
+        .select('title')
+        .eq('id', reportId)
+        .single();
+
+      // Trigger notification
+      await LiveNotificationService.onThresholdReached(
+        reportId,
+        report?.title || 'Unknown Report',
+        requirements.voteCount
+      );
 
       return { statusChanged: true, newStatus: WORKFLOW_STATUS.UNDER_REVIEW };
     }
@@ -199,6 +215,23 @@ export class WorkflowGuardService {
       return { success: false, error: error.message };
     }
 
+    // Fetch report details for notification
+    const { data: report } = await supabase
+      .from('problem_reports')
+      .select('title, reported_by')
+      .eq('id', reportId)
+      .single();
+
+    // Trigger notification
+    if (report) {
+      await LiveNotificationService.onReportApproved(
+        reportId,
+        userData.user?.id || '',
+        report.title,
+        report.reported_by
+      );
+    }
+
     return { success: true };
   }
 
@@ -235,6 +268,24 @@ export class WorkflowGuardService {
 
     if (error) {
       return { success: false, error: error.message };
+    }
+
+    // Fetch report details for notification
+    const { data: report } = await supabase
+      .from('problem_reports')
+      .select('title, reported_by')
+      .eq('id', reportId)
+      .single();
+
+    // Trigger notification
+    const { data: userData } = await supabase.auth.getUser();
+    if (report) {
+      await LiveNotificationService.onBiddingOpened(
+        reportId,
+        userData.user?.id || '',
+        report.title,
+        report.reported_by
+      );
     }
 
     return { success: true };
@@ -283,7 +334,7 @@ export class WorkflowGuardService {
     // Select the winning bid
     await supabase
       .from('contractor_bids')
-      .update({ 
+      .update({
         status: 'selected',
         selected_at: new Date().toISOString()
       })
@@ -299,25 +350,255 @@ export class WorkflowGuardService {
       })
       .eq('id', reportId);
 
-    // Create project
-    const { data: project, error: projectError } = await supabase
-      .from('projects')
+    // Create approval audit record (Blockchain audit trail)
+    const { data: userData } = await supabase.auth.getUser();
+    await supabase
+      .from('project_approval_audit')
       .insert({
         report_id: reportId,
-        title: report.title,
-        description: report.description,
-        budget: report.budget_allocated || bid.bid_amount,
-        contractor_id: bid.contractor_id,
-        status: 'planning'
-      })
-      .select()
+        winning_bid_id: bidId,
+        approved_by: userData.user?.id,
+        approval_action: 'approve',
+        justification: 'Contractor selected via automated threshold evaluation',
+        bid_count: 0, // Placeholder, can be improved
+        agpo_compliant: true
+      });
+
+    // Check if project already exists for this report
+    const { data: existingProject } = await supabase
+      .from('projects')
+      .select('id')
+      .eq('report_id', reportId)
       .single();
+
+    let project = null;
+    let projectError = null;
+
+    if (existingProject) {
+      // Update existing project with contractor
+      const { data: updated, error } = await supabase
+        .from('projects')
+        .update({
+          contractor_id: bid.contractor_id,
+          budget: report.budget_allocated || bid.bid_amount,
+          status: 'planning',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existingProject.id)
+        .select()
+        .single();
+      project = updated;
+      projectError = error;
+    } else {
+      // Create new project
+      const { data: created, error } = await supabase
+        .from('projects')
+        .insert({
+          report_id: reportId,
+          title: report.title,
+          description: report.description,
+          budget: report.budget_allocated || bid.bid_amount,
+          contractor_id: bid.contractor_id,
+          status: 'planning'
+        })
+        .select()
+        .single();
+      project = created;
+      projectError = error;
+    }
 
     if (projectError) {
       console.error('Failed to create project:', projectError);
     }
 
+    // Trigger notification for bid selection
+    const { data: contractorProfile } = await supabase
+      .from('contractor_profiles')
+      .select('company_name')
+      .eq('user_id', bid.contractor_id)
+      .single();
+
+    if (project) {
+      await LiveNotificationService.onBidSelected(
+        project.id,
+        bid.contractor_id,
+        contractorProfile?.company_name || 'Selected Contractor',
+        bid.bid_amount,
+        userData.user?.id || ''
+      );
+    }
+
     return { success: true, projectId: project?.id };
+  }
+
+  /**
+   * Submit milestone evidence (Contractor action)
+   */
+  static async submitMilestone(
+    projectId: string,
+    milestoneId: string,
+    milestoneTitle: string,
+    contractorId: string,
+    photoUrls: string[],
+    description: string
+  ): Promise<{ success: boolean; error?: string }> {
+    const { error } = await supabase
+      .from('project_milestones')
+      .update({
+        status: 'submitted',
+        evidence_urls: photoUrls,
+        submitted_at: new Date().toISOString()
+      })
+      .eq('id', milestoneId);
+
+    if (error) return { success: false, error: error.message };
+
+    // Record progress update
+    await supabase.from('project_progress').insert({
+      project_id: projectId,
+      milestone_id: milestoneId,
+      updated_by: contractorId,
+      update_description: description,
+      photo_urls: photoUrls
+    });
+
+    // Send notifications
+    await LiveNotificationService.onMilestoneProgressSubmitted(
+      projectId,
+      milestoneId,
+      milestoneTitle,
+      contractorId,
+      description
+    );
+
+    return { success: true };
+  }
+
+  /**
+   * Verify milestone (Citizen action)
+   */
+  static async verifyMilestone(
+    milestoneId: string,
+    projectId: string,
+    citizenId: string,
+    rating: number,
+    notes: string,
+    milestoneTitle: string,
+    location?: { lat: number; lon: number }
+  ): Promise<{ success: boolean; error?: string; paymentTriggered?: boolean }> {
+    const verificationStatus = rating >= 3 ? 'approved' : 'rejected';
+    const formattedNotes = `Rating: ${rating}/5. ${notes}`;
+
+    // 1. Record verification
+    const { error: verifyError } = await supabase
+      .from('milestone_verifications')
+      .insert({
+        milestone_id: milestoneId,
+        verifier_id: citizenId,
+        rating,
+        verification_notes: formattedNotes,
+        verification_status: verificationStatus,
+        verification_photos: location ? [`GPS: ${location.lat}, ${location.lon}`] : null
+      });
+
+    // 2. Log to verification audit trail (Phase D Sync)
+    await supabase.from('verification_audit_log' as any).insert({
+      action_type: 'milestone_verify',
+      user_id: citizenId,
+      milestone_id: milestoneId,
+      gps_latitude: location?.lat,
+      gps_longitude: location?.lon,
+      result: verifyError ? (verifyError.code === '23505' ? 'denied_duplicate' : 'error') : 'allowed',
+      metadata: { rating, verification_status: verificationStatus }
+    });
+
+    if (verifyError) {
+      if (verifyError.code === '23505') return { success: false, error: 'ALREADY_VERIFIED' };
+      return { success: false, error: verifyError.message };
+    }
+
+    // 3. Check if threshold reached for payment
+    const check = await MilestonePaymentService.checkVerificationStatus(milestoneId);
+
+    // 4. Send notifications
+    await LiveNotificationService.onMilestoneVerified(
+      milestoneId,
+      projectId,
+      citizenId,
+      rating,
+      milestoneTitle,
+      check.approvedCount,
+      check.requiredCount
+    );
+
+    let paymentTriggered = false;
+    if (check.canRelease) {
+      const result = await MilestonePaymentService.triggerAutomatedPayment(milestoneId);
+      paymentTriggered = result.success;
+
+      // After payment, check if project is fully completed
+      if (paymentTriggered) {
+        await this.checkProjectCompletion(projectId);
+      }
+    }
+
+    return { success: true, paymentTriggered };
+  }
+
+  /**
+   * Check if all milestones are paid and mark project as completed
+   */
+  static async checkProjectCompletion(projectId: string): Promise<boolean> {
+    // Get all milestones for this project
+    const { data: milestones, error } = await supabase
+      .from('project_milestones')
+      .select('status')
+      .eq('project_id', projectId);
+
+    if (error || !milestones || milestones.length === 0) return false;
+
+    // Check if all are paid or completed
+    const allPaid = milestones.every(m => m.status === 'paid' || m.status === 'completed');
+
+    if (allPaid) {
+      const { error: updateError } = await supabase
+        .from('projects')
+        .update({
+          status: 'completed',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', projectId);
+
+      if (!updateError) {
+        // Find report for this project to update its status too
+        const { data: project } = await supabase
+          .from('projects')
+          .select('report_id, title')
+          .eq('id', projectId)
+          .single();
+
+        if (project?.report_id) {
+          await supabase
+            .from('problem_reports')
+            .update({ status: 'resolved' })
+            .eq('id', project.report_id);
+        }
+
+        // Notify stakeholders of project completion
+        await LiveNotificationService.notify({
+          userId: 'broadcast', // Hypothetical broadcast or specific logic
+          title: '🎊 Project Completed!',
+          message: `Work on "${project?.title || 'Project'}" has been fully verified and paid. Progress finalized!`,
+          type: 'success',
+          category: 'project',
+          actionUrl: '/public/projects'
+        });
+
+        return true;
+      }
+    }
+
+    return false;
   }
 
   /**
@@ -325,15 +606,15 @@ export class WorkflowGuardService {
    */
   static getStatusLabel(status: string): string {
     const labels: Record<string, string> = {
-      [WORKFLOW_STATUS.PENDING]: 'Pending Review',
-      [WORKFLOW_STATUS.UNDER_REVIEW]: 'Under Community Review',
-      [WORKFLOW_STATUS.APPROVED]: 'Approved - Awaiting Bidding',
-      [WORKFLOW_STATUS.BIDDING_OPEN]: 'Open for Bidding',
+      [WORKFLOW_STATUS.PENDING]: 'Pending Community Votes',
+      [WORKFLOW_STATUS.UNDER_REVIEW]: 'Under Government Review',
+      [WORKFLOW_STATUS.APPROVED]: 'Approved - Bidding Pending',
+      [WORKFLOW_STATUS.BIDDING_OPEN]: 'Bidding Open',
       [WORKFLOW_STATUS.CONTRACTOR_SELECTED]: 'Contractor Selected',
-      [WORKFLOW_STATUS.IN_PROGRESS]: 'In Progress',
-      [WORKFLOW_STATUS.UNDER_VERIFICATION]: 'Under Verification',
-      [WORKFLOW_STATUS.COMPLETED]: 'Completed',
-      [WORKFLOW_STATUS.REJECTED]: 'Rejected',
+      [WORKFLOW_STATUS.IN_PROGRESS]: 'Work In Progress',
+      [WORKFLOW_STATUS.UNDER_VERIFICATION]: 'Milestone Verification',
+      [WORKFLOW_STATUS.COMPLETED]: 'Project Completed',
+      [WORKFLOW_STATUS.REJECTED]: 'Report Rejected',
     };
     return labels[status] || status;
   }

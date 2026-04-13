@@ -9,6 +9,7 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import { MIN_VOTES_THRESHOLD } from './WorkflowGuardService';
 
 // ============================================================================
 // CYCLE 1: CITIZEN PROBLEM IDENTIFICATION
@@ -111,7 +112,7 @@ export class CitizenProblemCycle {
 
       // Get verified voters count
       const uniqueVoters = new Set(votes?.map(v => v.user_id) || []);
-      
+
       // Get comments
       const comments = votes
         ?.filter(v => v.comment)
@@ -120,8 +121,6 @@ export class CitizenProblemCycle {
           comment: v.comment || '',
           timestamp: v.created_at
         })) || [];
-
-      const MIN_VOTES_THRESHOLD = 50;
 
       return {
         reportId,
@@ -490,11 +489,11 @@ export class WorkforceIntegrationCycle {
       const matches: JobMatch[] = jobs.map(job => {
         const workerSkills = new Set(worker.skills || []);
         const requiredSkills = job.required_skills || [];
-        
+
         // Calculate skill match percentage
         const matchedSkills = requiredSkills.filter((s: string) => workerSkills.has(s)).length;
-        const skillMatch = requiredSkills.length > 0 
-          ? (matchedSkills / requiredSkills.length) * 100 
+        const skillMatch = requiredSkills.length > 0
+          ? (matchedSkills / requiredSkills.length) * 100
           : 50;
 
         // Check location match
@@ -590,8 +589,8 @@ export class WorkforceIntegrationCycle {
         return {
           ...worker,
           skillMatchCount: matchedSkills.length,
-          skillMatchPercent: requiredSkills.length > 0 
-            ? (matchedSkills.length / requiredSkills.length) * 100 
+          skillMatchPercent: requiredSkills.length > 0
+            ? (matchedSkills.length / requiredSkills.length) * 100
             : 0
         };
       })
@@ -670,7 +669,7 @@ export class AccountabilityTransparencyCycle {
       const totalBudget = projects?.reduce((acc, p) => acc + (p.budget || 0), 0) || 0;
       const fundsReleased = escrows?.reduce((acc, e) => acc + (e.released_amount || 0), 0) || 0;
       const completedProjects = projects?.filter(p => p.status === 'completed') || [];
-      const citizensImpacted = projects?.reduce((acc, p) => 
+      const citizensImpacted = projects?.reduce((acc, p) =>
         acc + (p.problem_reports?.affected_population || 0), 0) || 0;
 
       // Group by status
@@ -735,7 +734,7 @@ export class AccountabilityTransparencyCycle {
         const location = project.problem_reports?.location || '';
         // Simple extraction - look for known county names or use first word
         const countyMatch = location.split(',').pop()?.trim() || 'Unknown';
-        
+
         if (!countyStats[countyMatch]) {
           countyStats[countyMatch] = {
             county: countyMatch,
@@ -754,14 +753,14 @@ export class AccountabilityTransparencyCycle {
         stats.totalProjects++;
         stats.totalBudget += project.budget || 0;
         stats.citizensImpacted += project.problem_reports?.affected_population || 0;
-        
+
         if (project.status === 'completed') {
           stats.completedProjects++;
         }
 
         // escrow_accounts is an array from the join - take the first one if exists
-        const escrow = Array.isArray(project.escrow_accounts) 
-          ? project.escrow_accounts[0] 
+        const escrow = Array.isArray(project.escrow_accounts)
+          ? project.escrow_accounts[0]
           : project.escrow_accounts;
         if (escrow) {
           stats.fundsReleased += escrow.released_amount || 0;
@@ -802,10 +801,10 @@ export class AccountabilityTransparencyCycle {
       if (!project) return null;
 
       const report = project.problem_reports;
-      
+
       // Calculate impact score based on multiple factors
       let impactScore = 0;
-      
+
       // Budget impact (up to 30 points)
       if (project.budget) {
         if (project.budget >= 100000000) impactScore += 30;

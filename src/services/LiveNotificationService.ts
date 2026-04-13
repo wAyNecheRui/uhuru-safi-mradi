@@ -60,10 +60,10 @@ export class LiveNotificationService {
     try {
       // Group by unique content key
       const groups = new Map<string, { userIds: string[]; payload: NotificationPayload }>();
-      
+
       for (const payload of payloads) {
         const key = `${payload.title}|${payload.message}|${payload.type}|${payload.category}|${payload.actionUrl || ''}`;
-        
+
         if (groups.has(key)) {
           groups.get(key)!.userIds.push(payload.userId);
         } else {
@@ -206,6 +206,47 @@ export class LiveNotificationService {
         category: 'vote',
         actionUrl: '/citizen/track'
       });
+    }
+  }
+
+  /**
+   * When a report reaches the voting threshold and moves to review
+   */
+  static async onThresholdReached(
+    reportId: string,
+    reportTitle: string,
+    voterCount: number
+  ): Promise<void> {
+    // Get report owner
+    const { data: report } = await supabase
+      .from('problem_reports')
+      .select('reported_by')
+      .eq('id', reportId)
+      .single();
+
+    if (report) {
+      await this.notify({
+        userId: report.reported_by,
+        title: '🎯 Review Threshold Reached!',
+        message: `Your report "${reportTitle}" has reached ${voterCount} community votes and is now being reviewed by the government.`,
+        type: 'success',
+        category: 'report',
+        actionUrl: '/citizen/track'
+      });
+    }
+
+    // Also notify government officials that a report is ready for review
+    const govUserIds = await this.getGovernmentUserIds();
+    if (govUserIds.length > 0) {
+      const notifications = govUserIds.slice(0, 10).map(userId => ({
+        userId,
+        title: '📊 Report Ready for Review',
+        message: `"${reportTitle}" has reached the community threshold (${voterCount} votes) and requires government review.`,
+        type: 'info' as NotificationType,
+        category: 'report',
+        actionUrl: '/government/reports'
+      }));
+      await this.notifyMany(notifications);
     }
   }
 
@@ -512,10 +553,10 @@ export class LiveNotificationService {
     // === PRIORITY 2: Notify ALL citizens in the same county (for verification) ===
     // This ensures multiple citizens can verify (minimum 2 required)
     const citizenIds = await this.getCitizenUserIds(projectCounty || undefined);
-    
+
     // Filter out the reporter (already notified separately with priority message)
     const otherCitizens = citizenIds.filter(id => id !== stakeholders.reporterId);
-    
+
     // Notify up to 50 nearby citizens
     otherCitizens.slice(0, 50).forEach(citizenId => {
       notifications.push({

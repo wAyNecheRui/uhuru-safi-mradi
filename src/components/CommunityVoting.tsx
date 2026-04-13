@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ThumbsUp, ThumbsDown, Users, MapPin, Clock, AlertTriangle, Camera, MessageSquare, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { MIN_VOTES_THRESHOLD } from '@/services/WorkflowGuardService';
+import { MIN_VOTES_THRESHOLD, WorkflowGuardService } from '@/services/WorkflowGuardService';
 
 interface PendingReport {
   id: string;
@@ -80,7 +80,7 @@ const CommunityVoting = () => {
           id, title, description, budget, status, created_at,
           problem_reports(location, priority_score)
         `)
-        .in('status', ['planning', 'bidding', 'in_progress'])
+        .in('status', ['planning', 'contractor_selected', 'in_progress'])
         .order('created_at', { ascending: false });
 
       if (projectsError) throw projectsError;
@@ -100,7 +100,7 @@ const CommunityVoting = () => {
 
   const handleVote = async (reportId: string, voteType: 'up' | 'down') => {
     const currentVote = votes[reportId];
-    
+
     try {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) {
@@ -138,10 +138,27 @@ const CommunityVoting = () => {
           }, { onConflict: 'report_id,user_id' });
 
         setVotes(prev => ({ ...prev, [reportId]: voteType }));
-        toast({
-          title: "Vote recorded",
-          description: `You voted ${voteType === 'up' ? 'to prioritize' : 'against'} this issue.`,
-        });
+
+        // Check if this vote triggers the workflow threshold
+        try {
+          const statusResult = await WorkflowGuardService.checkAndUpdateStatusAfterVote(reportId);
+          if (statusResult.statusChanged) {
+            toast({
+              title: "Review Threshold Reached!",
+              description: `This report has reached ${MIN_VOTES_THRESHOLD}+ votes and is now under government review.`,
+            });
+          } else {
+            toast({
+              title: "Vote recorded",
+              description: `You voted ${voteType === 'up' ? 'to prioritize' : 'against'} this issue.`,
+            });
+          }
+        } catch {
+          toast({
+            title: "Vote recorded",
+            description: `You voted ${voteType === 'up' ? 'to prioritize' : 'against'} this issue.`,
+          });
+        }
       }
 
       // Refresh data
@@ -158,7 +175,7 @@ const CommunityVoting = () => {
 
   const getUrgencyColor = (urgency: string) => {
     switch (urgency?.toLowerCase()) {
-      case 'urgent': 
+      case 'urgent':
       case 'critical': return 'bg-red-100 text-red-800 border-red-200';
       case 'high': return 'bg-orange-100 text-orange-800 border-orange-200';
       case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
@@ -188,7 +205,7 @@ const CommunityVoting = () => {
     const date = new Date(dateString);
     const now = new Date();
     const diffHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
-    
+
     if (diffHours < 1) return 'Just now';
     if (diffHours < 24) return `${diffHours}h ago`;
     const diffDays = Math.floor(diffHours / 24);
@@ -221,14 +238,14 @@ const CommunityVoting = () => {
 
       <Tabs defaultValue="pending" className="space-y-6">
         <TabsList className="grid w-full grid-cols-2 bg-white shadow-lg">
-          <TabsTrigger 
-            value="pending" 
+          <TabsTrigger
+            value="pending"
             className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
           >
             Pending Issues ({pendingReports.length})
           </TabsTrigger>
-          <TabsTrigger 
-            value="approved" 
+          <TabsTrigger
+            value="approved"
             className="data-[state=active]:bg-green-600 data-[state=active]:text-white"
           >
             Approved Projects ({approvedProjects.length})
@@ -248,7 +265,7 @@ const CommunityVoting = () => {
               {pendingReports.map((issue) => {
                 const userVote = votes[issue.id];
                 const votePercentage = calculateVotePercentage(issue.upvotes, issue.downvotes);
-                
+
                 return (
                   <Card key={issue.id} className="shadow-lg hover:shadow-xl transition-shadow">
                     <CardContent className="p-6">
@@ -307,15 +324,15 @@ const CommunityVoting = () => {
                         <div className="lg:w-80 space-y-4">
                           <div className="p-4 bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg">
                             <h4 className="font-semibold text-gray-900 mb-3">Community Priority</h4>
-                            
+
                             <div className="space-y-3">
                               <div className="flex justify-between text-sm">
                                 <span>Support: {issue.upvotes}</span>
                                 <span>Against: {issue.downvotes}</span>
                               </div>
-                              
+
                               <Progress value={votePercentage} className="h-2" />
-                              
+
                               <div className="text-center text-sm text-gray-600">
                                 {votePercentage}% community support ({issue.totalVotes} votes)
                               </div>
@@ -325,24 +342,22 @@ const CommunityVoting = () => {
                               <Button
                                 onClick={() => handleVote(issue.id, 'up')}
                                 variant={userVote === 'up' ? 'default' : 'outline'}
-                                className={`flex-1 ${
-                                  userVote === 'up' 
-                                    ? 'bg-green-600 hover:bg-green-700 text-white' 
-                                    : 'border-green-300 text-green-700 hover:bg-green-50'
-                                }`}
+                                className={`flex-1 ${userVote === 'up'
+                                  ? 'bg-green-600 hover:bg-green-700 text-white'
+                                  : 'border-green-300 text-green-700 hover:bg-green-50'
+                                  }`}
                               >
                                 <ThumbsUp className="h-4 w-4 mr-2" />
                                 Prioritize
                               </Button>
-                              
+
                               <Button
                                 onClick={() => handleVote(issue.id, 'down')}
                                 variant={userVote === 'down' ? 'default' : 'outline'}
-                                className={`flex-1 ${
-                                  userVote === 'down' 
-                                    ? 'bg-red-600 hover:bg-red-700 text-white' 
-                                    : 'border-red-300 text-red-700 hover:bg-red-50'
-                                }`}
+                                className={`flex-1 ${userVote === 'down'
+                                  ? 'bg-red-600 hover:bg-red-700 text-white'
+                                  : 'border-red-300 text-red-700 hover:bg-red-50'
+                                  }`}
                               >
                                 <ThumbsDown className="h-4 w-4 mr-2" />
                                 Not Priority
@@ -400,7 +415,7 @@ const CommunityVoting = () => {
                         <div>
                           <span className="font-medium text-gray-700">Budget:</span>
                           <div className="text-green-600 font-semibold">
-                            {project.budget 
+                            {project.budget
                               ? new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES' }).format(project.budget)
                               : 'TBD'}
                           </div>

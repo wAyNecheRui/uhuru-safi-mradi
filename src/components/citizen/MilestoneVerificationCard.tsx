@@ -4,8 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
-import { 
-  CheckCircle, XCircle, Star, Camera, 
+import {
+  CheckCircle, XCircle, Star, Camera,
   MapPin, Loader2, AlertTriangle, Eye,
   Users, Wallet, Clock, Shield
 } from 'lucide-react';
@@ -22,7 +22,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { MilestonePaymentService, REQUIRED_CITIZEN_VERIFICATIONS } from '@/services/MilestonePaymentService';
 import { canVerifyMilestone, getCurrentPosition, haversineDistanceKm } from '@/utils/geoUtils';
-import { LiveNotificationService } from '@/services/LiveNotificationService';
+import { WorkflowGuardService } from '@/services/WorkflowGuardService';
 
 interface Milestone {
   id: string;
@@ -56,7 +56,7 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
 }) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  
+
   const [showVerifyDialog, setShowVerifyDialog] = useState(false);
   const [showEvidenceDialog, setShowEvidenceDialog] = useState(false);
   const [rating, setRating] = useState(0);
@@ -65,7 +65,7 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
   const [verificationStatus, setVerificationStatus] = useState<'approved' | 'rejected' | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [gettingLocation, setGettingLocation] = useState(false);
-  const [location, setLocation] = useState<{lat: number, lon: number} | null>(null);
+  const [location, setLocation] = useState<{ lat: number, lon: number } | null>(null);
   const [currentVerificationStatus, setCurrentVerificationStatus] = useState<VerificationStatus | null>(null);
   const [hasUserVerified, setHasUserVerified] = useState(false);
   const [checkingStatus, setCheckingStatus] = useState(true);
@@ -92,7 +92,7 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
           .eq('milestone_id', milestone.id)
           .eq('verifier_id', user.id)
           .single();
-        
+
         setHasUserVerified(!!data);
       }
     } catch (error) {
@@ -111,7 +111,7 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
 
       // Server-side proximity check (10km radius)
       const allowed = await canVerifyMilestone(pos.lat, pos.lon, milestone.id);
-      
+
       if (allowed) {
         setProximityCheck('passed');
         toast({
@@ -166,37 +166,18 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
 
     setSubmitting(true);
     try {
-      // Build verification notes - ALWAYS include the rating in a parseable format
-      // Format: "User notes... Rating: X/5" - this is required for auto-payment calculation
-      const formattedNotes = notes 
-        ? `${notes.trim()} - Rating: ${rating}/5` 
-        : `Citizen verification - Rating: ${rating}/5`;
+      const result = await WorkflowGuardService.verifyMilestone(
+        milestone.id,
+        projectId,
+        user.id,
+        rating,
+        notes,
+        milestone.title,
+        location || undefined
+      );
 
-      // Insert verification record (unique constraint prevents duplicates)
-      const { error } = await supabase
-        .from('milestone_verifications')
-        .insert({
-          milestone_id: milestone.id,
-          verifier_id: user.id,
-          verification_status: verificationStatus,
-          verification_notes: formattedNotes,
-          verification_photos: location ? [`GPS: ${location.lat}, ${location.lon}`] : null
-        });
-
-      // Log to verification audit trail (Phase D)
-      await supabase.from('verification_audit_log' as any).insert({
-        action_type: 'milestone_verify',
-        user_id: user.id,
-        milestone_id: milestone.id,
-        gps_latitude: location?.lat,
-        gps_longitude: location?.lon,
-        result: error ? (error.code === '23505' ? 'denied_duplicate' : 'error') : 'allowed',
-        metadata: { rating, verification_status: verificationStatus, proximity_check: proximityCheck }
-      });
-
-      if (error) {
-        // Handle unique constraint violation
-        if (error.code === '23505') {
+      if (!result.success) {
+        if (result.error === 'ALREADY_VERIFIED') {
           setHasUserVerified(true);
           toast({
             title: "Already Verified",
@@ -206,12 +187,12 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
           setShowVerifyDialog(false);
           return;
         }
-        throw error;
+        throw new Error(result.error);
       }
 
       toast({
         title: "Verification Submitted",
-        description: verificationStatus === 'approved' 
+        description: rating >= 3
           ? "Thank you for verifying this milestone!"
           : "Your feedback has been recorded."
       });
@@ -219,59 +200,24 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
       setShowVerifyDialog(false);
       setHasUserVerified(true);
 
-      // Re-check verification status
+      // Re-fetch status to update UI
       const newStatus = await MilestonePaymentService.checkVerificationStatus(milestone.id);
       setCurrentVerificationStatus(newStatus);
 
-      // Send live notification about milestone verification
-      await LiveNotificationService.onMilestoneVerified(
-        milestone.id,
-        projectId,
-        user.id,
-        rating,
-        milestone.title,
-        newStatus.approvedCount,
-        newStatus.requiredCount
-      );
-      
-      // Check if payment threshold is reached
-      if (newStatus.canRelease) {
+      if (result.paymentTriggered) {
         toast({
-          title: "🎉 Verification Threshold Reached!",
-          description: "Triggering automated payment release..."
+          title: "💰 Payment Released!",
+          description: "Verification threshold reached and funds have been released to the contractor.",
+          variant: "default"
         });
-
-        // Trigger automated payment (DB trigger already set milestone to 'verified')
-        try {
-          const paymentResult = await MilestonePaymentService.triggerAutomatedPayment(milestone.id);
-          
-          if (paymentResult.success) {
-            toast({
-              title: "💰 Payment Released!",
-              description: paymentResult.message
-            });
-          } else {
-            toast({
-              title: "Payment Pending",
-              description: paymentResult.message,
-              variant: paymentResult.error ? "destructive" : "default"
-            });
-          }
-        } catch (paymentError) {
-          console.error('[MilestoneVerification] Auto-payment call failed, DB trigger has milestone as verified:', paymentError);
-          toast({
-            title: "Payment Queued",
-            description: "Verification recorded. Payment will be processed automatically.",
-          });
-        }
       }
 
       onVerified();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error submitting verification:', error);
       toast({
         title: "Error",
-        description: "Failed to submit verification",
+        description: error.message || "Failed to submit verification",
         variant: "destructive"
       });
     } finally {
@@ -300,8 +246,8 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
         .catch(err => console.error('[MilestoneVerification] Recovery payment failed:', err));
     }
   }, [isVerified, currentVerificationStatus?.canRelease]);
-  const verificationProgress = currentVerificationStatus 
-    ? (currentVerificationStatus.approvedCount / currentVerificationStatus.requiredCount) * 100 
+  const verificationProgress = currentVerificationStatus
+    ? (currentVerificationStatus.approvedCount / currentVerificationStatus.requiredCount) * 100
     : 0;
 
   return (
@@ -321,7 +267,7 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
                 <span className="font-medium text-sm sm:text-base break-words">{milestone.title}</span>
               </div>
               <p className="text-xs sm:text-sm text-muted-foreground mb-2 break-words">{milestone.description}</p>
-              
+
               {milestone.completion_criteria && (
                 <div className="text-sm bg-gray-50 dark:bg-gray-800 p-2 rounded mb-2">
                   <strong>Criteria:</strong> {milestone.completion_criteria}
@@ -332,9 +278,9 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
               <div className="flex flex-wrap items-center gap-2 mt-2">
                 <Badge className={
                   isPaid ? 'bg-green-600 text-white' :
-                  isVerified ? 'bg-blue-600 text-white' :
-                  milestone.status === 'submitted' ? 'bg-yellow-500 text-white' :
-                  'bg-gray-100 text-gray-800'
+                    isVerified ? 'bg-blue-600 text-white' :
+                      milestone.status === 'submitted' ? 'bg-yellow-500 text-white' :
+                        'bg-gray-100 text-gray-800'
                 }>
                   {isPaid && <Wallet className="h-3 w-3 mr-1" />}
                   {isVerified && <CheckCircle className="h-3 w-3 mr-1" />}
@@ -359,10 +305,10 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
                     </span>
                   </div>
                   <Progress value={Math.min(verificationProgress, 100)} className="h-2 mb-2" />
-                  
+
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span>
-                      {currentVerificationStatus.averageRating > 0 
+                      {currentVerificationStatus.averageRating > 0
                         ? `Avg Rating: ${currentVerificationStatus.averageRating.toFixed(1)}/5 ⭐`
                         : 'No ratings yet'}
                     </span>
@@ -444,7 +390,7 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
                 <div className="text-sm">
                   <p className="font-medium text-blue-800 dark:text-blue-200">Your verification matters!</p>
                   <p className="text-blue-700 dark:text-blue-300 mt-1">
-                    Once {REQUIRED_CITIZEN_VERIFICATIONS} citizens approve this milestone with a rating of 3+, 
+                    Once {REQUIRED_CITIZEN_VERIFICATIONS} citizens approve this milestone with a rating of 3+,
                     payment will be <strong>automatically released</strong> to the contractor.
                   </p>
                 </div>
@@ -457,7 +403,7 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
                 <p className="text-sm font-medium mb-2">📷 Submitted Evidence:</p>
                 <div className="grid grid-cols-3 gap-2">
                   {milestone.evidence_urls.slice(0, 3).map((url, index) => (
-                    <a 
+                    <a
                       key={index}
                       href={url}
                       target="_blank"
@@ -534,12 +480,11 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
                     onMouseLeave={() => setHoverRating(0)}
                     className="p-1 transition-transform hover:scale-110"
                   >
-                    <Star 
-                      className={`h-10 w-10 ${
-                        (hoverRating || rating) >= star 
-                          ? 'fill-yellow-400 text-yellow-400' 
-                          : 'text-gray-300'
-                      }`}
+                    <Star
+                      className={`h-10 w-10 ${(hoverRating || rating) >= star
+                        ? 'fill-yellow-400 text-yellow-400'
+                        : 'text-gray-300'
+                        }`}
                     />
                   </button>
                 ))}
@@ -636,15 +581,15 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
           </DialogHeader>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 py-4 max-h-[50vh] sm:max-h-[60vh] overflow-y-auto">
             {milestone.evidence_urls?.map((url, index) => (
-              <a 
+              <a
                 key={index}
                 href={url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="block aspect-video rounded-lg overflow-hidden border-2 hover:shadow-lg hover:border-primary transition-all bg-muted"
               >
-                <img 
-                  src={url} 
+                <img
+                  src={url}
                   alt={`Evidence ${index + 1}`}
                   className="w-full h-full object-cover"
                   loading="lazy"
@@ -663,7 +608,7 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
               Close
             </Button>
             {canVerify && (
-              <Button 
+              <Button
                 className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
                 onClick={() => {
                   setShowEvidenceDialog(false);

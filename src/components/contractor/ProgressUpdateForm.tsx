@@ -5,8 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Camera, Upload, X, Loader2, MapPin, 
+import {
+  Camera, Upload, X, Loader2, MapPin,
   CheckCircle, AlertCircle, Clock, Info
 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -28,7 +28,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import LiveNotificationService from '@/services/LiveNotificationService';
+import { WorkflowGuardService } from '@/services/WorkflowGuardService';
 import { calculateProjectProgress } from '@/utils/progressCalculation';
 
 interface Milestone {
@@ -56,7 +56,7 @@ const ProgressUpdateForm: React.FC<ProgressUpdateFormProps> = ({
   const { user } = useAuth();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   const [description, setDescription] = useState('');
   const [selectedMilestoneId, setSelectedMilestoneId] = useState<string>('');
   const [photos, setPhotos] = useState<File[]>([]);
@@ -64,7 +64,7 @@ const ProgressUpdateForm: React.FC<ProgressUpdateFormProps> = ({
   const [challenges, setChallenges] = useState('');
   const [workersPresent, setWorkersPresent] = useState<number | ''>('');
   const [weatherConditions, setWeatherConditions] = useState('');
-  const [location, setLocation] = useState<{lat: number, lon: number} | null>(null);
+  const [location, setLocation] = useState<{ lat: number, lon: number } | null>(null);
   const [gettingLocation, setGettingLocation] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -84,10 +84,10 @@ const ProgressUpdateForm: React.FC<ProgressUpdateFormProps> = ({
   // Enforce sequential milestone progression - only allow updating the NEXT available milestone
   const getNextAvailableMilestone = (): Milestone | null => {
     // Check if any milestone is currently submitted (awaiting verification) or verified (awaiting payment)
-    const blockedMilestone = sortedMilestones.find(m => 
+    const blockedMilestone = sortedMilestones.find(m =>
       m.status === 'submitted' || m.status === 'verified'
     );
-    
+
     if (blockedMilestone) {
       // A milestone is in the verification/payment cycle - block all updates
       return null;
@@ -106,14 +106,14 @@ const ProgressUpdateForm: React.FC<ProgressUpdateFormProps> = ({
 
   // Get the blocking milestone for display purposes
   const getBlockingMilestone = (): Milestone | null => {
-    return sortedMilestones.find(m => 
+    return sortedMilestones.find(m =>
       m.status === 'submitted' || m.status === 'verified'
     ) || null;
   };
 
   const nextAvailableMilestone = getNextAvailableMilestone();
   const blockingMilestone = getBlockingMilestone();
-  
+
   // Only show the single next available milestone (enforces sequential workflow)
   const activeMilestones = nextAvailableMilestone ? [nextAvailableMilestone] : [];
 
@@ -121,12 +121,12 @@ const ProgressUpdateForm: React.FC<ProgressUpdateFormProps> = ({
   // When submitting, simulate the milestone becoming "submitted" for preview
   const calculateProgress = (): number => {
     if (uniqueMilestones.length === 0) return 0;
-    
+
     // Create a modified milestone list to simulate current submission
     const selectedMilestone = uniqueMilestones.find(m => m.id === selectedMilestoneId);
-    const isNewSubmission = selectedMilestone && 
+    const isNewSubmission = selectedMilestone &&
       (selectedMilestone.status === 'pending' || selectedMilestone.status === 'in_progress');
-    
+
     const simulatedMilestones = uniqueMilestones.map(m => {
       if (isNewSubmission && m.id === selectedMilestoneId) {
         // Simulate this milestone becoming 'submitted'
@@ -134,7 +134,7 @@ const ProgressUpdateForm: React.FC<ProgressUpdateFormProps> = ({
       }
       return m;
     });
-    
+
     return calculateProjectProgress(simulatedMilestones);
   };
 
@@ -213,7 +213,7 @@ const ProgressUpdateForm: React.FC<ProgressUpdateFormProps> = ({
       // Path must start with user.id to satisfy RLS policy
       // Use index to ensure unique filenames even if uploaded at same millisecond
       const fileName = `${user.id}/progress/${projectId}/${Date.now()}_${index}_${photo.name}`;
-      
+
       const { data, error } = await supabase.storage
         .from('report-files')
         .upload(fileName, photo);
@@ -250,7 +250,7 @@ const ProgressUpdateForm: React.FC<ProgressUpdateFormProps> = ({
       .select('status')
       .eq('id', projectId)
       .single();
-    
+
     if (projectCheck?.status === 'completed' || projectCheck?.status === 'cancelled') {
       toast({
         title: "Project Completed",
@@ -285,48 +285,21 @@ const ProgressUpdateForm: React.FC<ProgressUpdateFormProps> = ({
 
       if (error) throw error;
 
-      // If milestone selected, update milestone status and evidence
+      // If milestone selected, update milestone status and evidence via WorkflowGuard
       if (selectedMilestoneId) {
         const selectedMilestone = milestones.find(m => m.id === selectedMilestoneId);
         if (selectedMilestone) {
-          // Determine the new status based on current status and whether evidence is provided
-          let newStatus = selectedMilestone.status;
-          
-          if (selectedMilestone.status === 'pending') {
-            // Start working on this milestone
-            newStatus = uploadedPhotoUrls.length > 0 ? 'submitted' : 'in_progress';
-          } else if (selectedMilestone.status === 'in_progress' && uploadedPhotoUrls.length > 0) {
-            // Submit evidence for verification
-            newStatus = 'submitted';
-          }
+          const result = await WorkflowGuardService.submitMilestone(
+            projectId,
+            selectedMilestoneId,
+            selectedMilestone.title,
+            user.id,
+            uploadedPhotoUrls,
+            description
+          );
 
-          // Only update if status changes or we have new evidence
-          if (newStatus !== selectedMilestone.status || uploadedPhotoUrls.length > 0) {
-            const updateData: any = {
-              status: newStatus
-            };
-
-            // Add evidence URLs if provided
-            if (uploadedPhotoUrls.length > 0) {
-              updateData.evidence_urls = uploadedPhotoUrls;
-              updateData.submitted_at = new Date().toISOString();
-            }
-
-            await supabase
-              .from('project_milestones')
-              .update(updateData)
-              .eq('id', selectedMilestoneId);
-
-            // Send live notification for milestone progress
-            if (newStatus === 'submitted') {
-              await LiveNotificationService.onMilestoneProgressSubmitted(
-                projectId,
-                selectedMilestoneId,
-                selectedMilestone.title,
-                user.id,
-                description
-              );
-            }
+          if (!result.success) {
+            throw new Error(result.error || 'Failed to submit milestone evidence');
           }
         }
       }
@@ -372,7 +345,7 @@ const ProgressUpdateForm: React.FC<ProgressUpdateFormProps> = ({
               </Badge>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-              <div 
+              <div
                 className="bg-gradient-to-r from-blue-500 to-green-500 h-full rounded-full transition-all duration-500"
                 style={{ width: `${progress}%` }}
               />
@@ -391,7 +364,7 @@ const ProgressUpdateForm: React.FC<ProgressUpdateFormProps> = ({
             <Clock className="h-4 w-4 text-amber-600" />
             <AlertTitle className="text-amber-800">Progress Update Blocked</AlertTitle>
             <AlertDescription className="text-amber-700">
-              {blockingMilestone.status === 'submitted' 
+              {blockingMilestone.status === 'submitted'
                 ? `Milestone "${blockingMilestone.title}" is awaiting citizen verification.`
                 : `Milestone "${blockingMilestone.title}" is verified but awaiting payment release.`
               }
@@ -405,8 +378,8 @@ const ProgressUpdateForm: React.FC<ProgressUpdateFormProps> = ({
         {activeMilestones.length > 0 && !blockingMilestone && (
           <div className="space-y-2">
             <Label>Related Milestone</Label>
-            <Select 
-              value={selectedMilestoneId || "none"} 
+            <Select
+              value={selectedMilestoneId || "none"}
               onValueChange={(value) => setSelectedMilestoneId(value === "none" ? "" : value)}
             >
               <SelectTrigger>

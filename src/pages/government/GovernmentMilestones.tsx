@@ -50,7 +50,7 @@ const GovernmentMilestones = () => {
       const { data, error } = await supabase
         .from('projects')
         .select('*')
-        .in('status', ['planning', 'in_progress', 'active'])
+        .in('status', ['planning', 'in_progress'])
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -63,7 +63,7 @@ const GovernmentMilestones = () => {
             .select('*')
             .eq('project_id', project.id)
             .order('milestone_number', { ascending: true });
-          
+
           return { ...project, milestones: milestones || [] };
         })
       );
@@ -106,11 +106,11 @@ const GovernmentMilestones = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
       <Header />
-      
+
       <main>
         <ResponsiveContainer className="py-6 sm:py-8">
           <BreadcrumbNav items={breadcrumbItems} />
-          
+
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
               <Target className="h-8 w-8 text-primary" />
@@ -201,7 +201,7 @@ const GovernmentMilestones = () => {
                             </div>
                           ))}
                         </div>
-                        
+
                         {/* Progress Bar */}
                         <div className="mt-4">
                           <div className="flex justify-between text-sm mb-1">

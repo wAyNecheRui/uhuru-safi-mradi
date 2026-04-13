@@ -1,7 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
-import { 
-  WorkflowStep, 
-  WorkflowState, 
+import {
+  WorkflowStep,
+  WorkflowState,
   ProjectStatus,
   CommunityVote,
   ContractorBid,
@@ -25,13 +25,13 @@ export class WorkflowService {
   }) {
     const user = (await supabase.auth.getUser()).data.user;
     if (!user) throw new Error('User not authenticated');
-    
+
     const { data, error } = await supabase
       .from('problem_reports')
       .insert({
         ...reportData,
         reported_by: user.id,
-        status: 'submitted',
+        status: 'pending',
         priority: 'medium'
       })
       .select()
@@ -104,7 +104,7 @@ export class WorkflowService {
         *,
         user_profiles!reported_by(full_name, location)
       `)
-      .eq('status', 'submitted')
+      .eq('status', 'pending')
       .order('priority_score', { ascending: false })
       .order('created_at', { ascending: false });
 
@@ -128,7 +128,7 @@ export class WorkflowService {
     if (currentReport.status !== 'under_review') {
       throw new Error(`Cannot approve: Report must be in 'under_review' status (current: ${currentReport.status})`);
     }
-    
+
     const { data, error } = await supabase
       .from('problem_reports')
       .update({
@@ -181,7 +181,7 @@ export class WorkflowService {
   }): Promise<ContractorBid> {
     const user = (await supabase.auth.getUser()).data.user;
     if (!user) throw new Error('User not authenticated');
-    
+
     const { data, error } = await supabase
       .from('contractor_bids')
       .insert({
@@ -345,7 +345,7 @@ export class WorkflowService {
     verification_photos?: string[];
   }): Promise<MilestoneVerification> {
     const user = (await supabase.auth.getUser()).data.user;
-    
+
     const { data, error } = await supabase
       .from('milestone_verifications')
       .upsert({
@@ -377,7 +377,7 @@ export class WorkflowService {
     const verifications = await this.getMilestoneVerifications(milestoneId);
     const approvedVerifications = verifications.filter(v => v.verification_status === 'approved');
     const totalVerifications = verifications.length;
-    
+
     if (totalVerifications === 0 || (approvedVerifications.length / totalVerifications) < 0.7) {
       throw new Error('Insufficient verifications for payment release');
     }
@@ -404,7 +404,7 @@ export class WorkflowService {
 
     if (project?.escrow_accounts?.[0]) {
       const paymentAmount = (milestone.payment_percentage / 100) * project.escrow_accounts[0].total_amount;
-      
+
       await supabase
         .from('payment_transactions')
         .insert({

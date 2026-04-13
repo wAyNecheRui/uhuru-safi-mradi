@@ -5,11 +5,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ReportData } from '@/types/problemReporting';
+import { WorkflowService } from '@/services/WorkflowService';
 
 export const useProblemReporting = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  
+
   const [reportData, setReportData] = useState<ReportData>({
     title: '',
     category: 'roads',
@@ -34,7 +35,7 @@ export const useProblemReporting = () => {
       toast.error('Maximum 10 photos/videos allowed');
       return;
     }
-    
+
     setReportData(prev => ({ ...prev, photos: [...prev.photos, ...files] }));
     toast.success(`${files.length} file(s) added successfully`);
   }, [reportData.photos.length]);
@@ -109,7 +110,7 @@ export const useProblemReporting = () => {
     try {
       // Upload photos first if any
       const photoUrls: string[] = [];
-      
+
       if (reportData.photos.length > 0) {
         for (const photo of reportData.photos) {
           const fileExt = photo.name.split('.').pop();
@@ -146,32 +147,20 @@ export const useProblemReporting = () => {
         }
       }
 
-      // Submit the report
-      const { data, error } = await supabase
-        .from('problem_reports')
-        .insert({
-          title: reportData.title,
-          description: reportData.description,
-          category: reportData.category,
-          priority: reportData.priority || 'medium',
-          location: reportData.location,
-          coordinates: reportData.coordinates,
-          gps_coordinates: gpsPoint,
-          estimated_cost: reportData.estimatedCost ? parseFloat(reportData.estimatedCost) : null,
-          affected_population: reportData.affectedPopulation ? parseInt(reportData.affectedPopulation) : null,
-          photo_urls: photoUrls,
-          reported_by: user.id,
-          status: 'pending'
-        })
-        .select()
-        .single();
-
-      if (error) {
-        throw error;
-      }
+      // Submit the report via central Workflow Service to ensure sync & notifications
+      const report = await WorkflowService.submitProblemReport({
+        title: reportData.title,
+        description: reportData.description,
+        category: reportData.category,
+        location: reportData.location,
+        coordinates: reportData.coordinates,
+        estimated_cost: reportData.estimatedCost ? parseFloat(reportData.estimatedCost) : undefined,
+        affected_population: reportData.affectedPopulation ? parseInt(reportData.affectedPopulation) : undefined,
+        photo_urls: photoUrls
+      });
 
       toast.success('Problem report submitted successfully!');
-      
+
       // Reset form
       setReportData({
         title: '',

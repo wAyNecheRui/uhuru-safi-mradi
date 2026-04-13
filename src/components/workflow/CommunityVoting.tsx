@@ -5,6 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { ThumbsUp, ThumbsDown, MessageSquare, Users, Wifi } from 'lucide-react';
 import { WorkflowService } from '@/services/WorkflowService';
+import { WorkflowGuardService } from '@/services/WorkflowGuardService';
 import { CommunityVote } from '@/types/workflow';
 import { toast } from 'sonner';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
@@ -25,7 +26,7 @@ const CommunityVoting: React.FC<CommunityVotingProps> = ({ reportId, currentUser
     try {
       const votesData = await WorkflowService.getVotesForReport(reportId);
       setVotes(votesData);
-      
+
       // Find current user's vote
       if (currentUserId) {
         const existingVote = votesData.find(vote => vote.user_id === currentUserId);
@@ -43,8 +44,8 @@ const CommunityVoting: React.FC<CommunityVotingProps> = ({ reportId, currentUser
   // Set up real-time subscription for live vote updates
   const { isSubscribed } = useRealtimeSubscription({
     subscriptions: [
-      { 
-        table: 'community_votes', 
+      {
+        table: 'community_votes',
         event: '*',
         filter: `report_id=eq.${reportId}`
       }
@@ -66,7 +67,14 @@ const CommunityVoting: React.FC<CommunityVotingProps> = ({ reportId, currentUser
     setIsSubmitting(true);
     try {
       await WorkflowService.submitVote(reportId, voteType, comment.trim() || undefined);
-      toast.success('Vote submitted successfully');
+
+      const statusResult = await WorkflowGuardService.checkAndUpdateStatusAfterVote(reportId);
+      if (statusResult.statusChanged) {
+        toast.success('Vote submitted! This report has reached the review threshold and will now be reviewed by government officials.');
+      } else {
+        toast.success('Vote submitted successfully');
+      }
+
       await loadVotes();
     } catch (error) {
       console.error('Error submitting vote:', error);
@@ -164,7 +172,7 @@ const CommunityVoting: React.FC<CommunityVotingProps> = ({ reportId, currentUser
                 <ThumbsUp className="h-4 w-4 mr-2" />
                 {userVote?.vote_type === 'upvote' ? 'Upvoted' : 'Upvote'}
               </Button>
-              
+
               <Button
                 onClick={() => handleVote('downvote')}
                 disabled={isSubmitting}

@@ -330,32 +330,6 @@ const CommunityValidation = () => {
     }
   };
 
-  const handleVerify = async (reportId: string, action: 'verify' | 'flag') => {
-    if (!user) {
-      toast.error('Please log in to verify reports');
-      return;
-    }
-
-    try {
-      const { error } = await supabase
-        .from('problem_reports')
-        .update({
-          status: action === 'verify' ? 'verified' : 'flagged',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', reportId);
-
-      if (error) throw error;
-
-      toast.success(`Report ${action === 'verify' ? 'verified' : 'flagged'} successfully`);
-      // Refresh lists
-      if (userLocation) fetchReportsWithDistance();
-      fetchAllValidatedReports();
-    } catch (error: any) {
-      console.error('Verification error:', error);
-      toast.error(`Failed to ${action} report`);
-    }
-  };
 
   // Fetch "All Reports" on mount (vote history / validated reports)
   useEffect(() => {
