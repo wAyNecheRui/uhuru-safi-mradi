@@ -56,7 +56,7 @@ const ContractorBidding = () => {
   const { user } = useAuth();
   const { contractorProfile, userProfile } = useProfile();
   const { toast } = useToast();
-  
+
   const [allProblems, setAllProblems] = useState<ProblemReport[]>([]);
   const [myBids, setMyBids] = useState<ContractorBid[]>([]);
   const [loading, setLoading] = useState(true);
@@ -64,7 +64,7 @@ const ContractorBidding = () => {
   const [viewingProblem, setViewingProblem] = useState<ProblemReport | null>(null);
   const [locationProblem, setLocationProblem] = useState<ProblemReport | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  
+
   const [bidForm, setBidForm] = useState({
     amount: '',
     duration: '',
@@ -81,7 +81,7 @@ const ContractorBidding = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      
+
       // Fetch ALL reported problems (not just bidding_open) so contractors can see the pipeline
       // Include vote counts
       const { data: problemsData, error: problemsError } = await supabase
@@ -101,13 +101,13 @@ const ContractorBidding = () => {
         .order('priority_score', { ascending: false });
 
       if (problemsError) throw problemsError;
-      
+
       // Calculate vote counts
       const problemsWithVotes = (problemsData || []).map(p => ({
         ...p,
         vote_count: p.community_votes?.length || 0
       }));
-      
+
       setAllProblems(problemsWithVotes);
 
       // Fetch contractor's bids
@@ -161,11 +161,21 @@ const ContractorBidding = () => {
       return;
     }
 
+    // Check contractor verification status
+    if (!contractorProfile?.verified) {
+      toast({
+        title: "Verification Required",
+        description: "Your contractor profile must be verified before you can submit bids. Please ensure your KRA PIN and business documents are updated.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
       setSubmitting(true);
-      
+
       const bidAmount = parseFloat(bidForm.amount.replace(/,/g, ''));
-      
+
       const { error } = await supabase
         .from('contractor_bids')
         .insert({
@@ -389,20 +399,20 @@ const ContractorBidding = () => {
         <div className="lg:col-span-3">
           <Tabs defaultValue="available" className="space-y-6">
             <TabsList className="grid w-full grid-cols-3 bg-background shadow-lg">
-              <TabsTrigger 
-                value="available" 
+              <TabsTrigger
+                value="available"
                 className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
               >
                 Open for Bidding ({biddingOpenProblems.length})
               </TabsTrigger>
-              <TabsTrigger 
-                value="pipeline" 
+              <TabsTrigger
+                value="pipeline"
                 className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
               >
                 Project Pipeline ({pipelineProblems.length})
               </TabsTrigger>
-              <TabsTrigger 
-                value="mybids" 
+              <TabsTrigger
+                value="mybids"
                 className="data-[state=active]:bg-secondary data-[state=active]:text-secondary-foreground"
               >
                 My Bids ({myBids.length})
@@ -441,7 +451,7 @@ const ContractorBidding = () => {
                           <p className="text-muted-foreground line-clamp-2">{problem.description}</p>
 
                           <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <button 
+                            <button
                               className="flex items-center hover:text-primary transition-colors"
                               onClick={() => setLocationProblem(problem)}
                             >
@@ -454,9 +464,9 @@ const ContractorBidding = () => {
                           {problem.photo_urls && problem.photo_urls.length > 0 && (
                             <div className="flex gap-2 overflow-x-auto">
                               {problem.photo_urls.slice(0, 3).map((url, index) => (
-                                <img 
-                                  key={index} 
-                                  src={url} 
+                                <img
+                                  key={index}
+                                  src={url}
                                   alt={`Problem ${index + 1}`}
                                   className="h-20 w-20 object-cover rounded-lg"
                                 />
@@ -499,12 +509,19 @@ const ContractorBidding = () => {
                               {hasAlreadyBid(problem.id) ? (
                                 <Badge className="bg-blue-100 text-blue-800">Bid Submitted</Badge>
                               ) : (
-                                <Button
-                                  onClick={() => setSelectedProblem(problem)}
-                                  className="bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90"
-                                >
-                                  Submit Bid
-                                </Button>
+                                <div className="flex flex-col gap-1 items-end">
+                                  <Button
+                                    onClick={() => setSelectedProblem(problem)}
+                                    className="bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90"
+                                  >
+                                    Submit Bid
+                                  </Button>
+                                  {!contractorProfile?.verified && (
+                                    <span className="text-[10px] text-amber-600 font-medium whitespace-nowrap">
+                                      Verification required
+                                    </span>
+                                  )}
+                                </div>
                               )}
                             </div>
                           </div>
@@ -526,7 +543,7 @@ const ContractorBidding = () => {
                   </div>
                 </CardContent>
               </Card>
-              
+
               {pipelineProblems.length === 0 ? (
                 <Card className="shadow-lg">
                   <CardContent className="p-8 text-center">
@@ -566,22 +583,21 @@ const ContractorBidding = () => {
                               )}
                             </div>
                           </div>
-                          
+
                           <div className="flex flex-col items-end gap-2">
                             {/* Workflow Progress */}
                             <div className="flex items-center gap-1">
                               {[0, 1, 2, 3].map((step) => (
                                 <div
                                   key={step}
-                                  className={`w-2 h-2 rounded-full ${
-                                    step <= getWorkflowProgress(problem.status) 
-                                      ? 'bg-primary' 
-                                      : 'bg-gray-200'
-                                  }`}
+                                  className={`w-2 h-2 rounded-full ${step <= getWorkflowProgress(problem.status)
+                                    ? 'bg-primary'
+                                    : 'bg-gray-200'
+                                    }`}
                                 />
                               ))}
                             </div>
-                            
+
                             {problem.status === WORKFLOW_STATUS.PENDING && (
                               <span className="text-xs text-muted-foreground">
                                 Needs {MIN_VOTES_THRESHOLD - (problem.vote_count || 0)} more votes
@@ -602,7 +618,7 @@ const ContractorBidding = () => {
                                 Contractor assigned
                               </span>
                             )}
-                            
+
                             <Button
                               variant="ghost"
                               size="sm"
@@ -685,7 +701,7 @@ const ContractorBidding = () => {
               Provide your proposal details for this project.
             </DialogDescription>
           </DialogHeader>
-          
+
           <form onSubmit={handleBidSubmit} className="flex-1 overflow-y-auto min-h-0 space-y-3 py-2 pr-1">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
@@ -694,7 +710,7 @@ const ContractorBidding = () => {
                   id="amount"
                   type="text"
                   value={bidForm.amount}
-                  onChange={(e) => setBidForm({...bidForm, amount: e.target.value})}
+                  onChange={(e) => setBidForm({ ...bidForm, amount: e.target.value })}
                   placeholder="e.g., 500,000"
                   required
                   className="text-sm"
@@ -706,7 +722,7 @@ const ContractorBidding = () => {
                   id="duration"
                   type="number"
                   value={bidForm.duration}
-                  onChange={(e) => setBidForm({...bidForm, duration: e.target.value})}
+                  onChange={(e) => setBidForm({ ...bidForm, duration: e.target.value })}
                   placeholder="e.g., 30"
                   required
                   className="text-sm"
@@ -719,7 +735,7 @@ const ContractorBidding = () => {
               <Textarea
                 id="proposal"
                 value={bidForm.proposal}
-                onChange={(e) => setBidForm({...bidForm, proposal: e.target.value})}
+                onChange={(e) => setBidForm({ ...bidForm, proposal: e.target.value })}
                 placeholder="Describe your approach..."
                 rows={3}
                 required
@@ -732,7 +748,7 @@ const ContractorBidding = () => {
               <Textarea
                 id="technicalApproach"
                 value={bidForm.technicalApproach}
-                onChange={(e) => setBidForm({...bidForm, technicalApproach: e.target.value})}
+                onChange={(e) => setBidForm({ ...bidForm, technicalApproach: e.target.value })}
                 placeholder="Technical methodology..."
                 rows={2}
                 className="text-sm resize-none"
@@ -740,16 +756,16 @@ const ContractorBidding = () => {
             </div>
 
             <div className="flex gap-2 pt-3 border-t">
-              <Button 
+              <Button
                 type="button"
-                variant="outline" 
+                variant="outline"
                 className="flex-1"
                 size="sm"
                 onClick={() => setSelectedProblem(null)}
               >
                 Cancel
               </Button>
-              <Button 
+              <Button
                 type="submit"
                 disabled={submitting}
                 className="flex-1"
@@ -768,7 +784,7 @@ const ContractorBidding = () => {
           <DialogHeader>
             <DialogTitle>{viewingProblem?.title}</DialogTitle>
           </DialogHeader>
-          
+
           {viewingProblem && (
             <div className="space-y-4">
               <div className="flex gap-2">
@@ -806,9 +822,9 @@ const ContractorBidding = () => {
                   <h4 className="font-semibold mb-2">Evidence Photos</h4>
                   <div className="grid grid-cols-3 gap-2">
                     {viewingProblem.photo_urls.map((url, index) => (
-                      <img 
-                        key={index} 
-                        src={url} 
+                      <img
+                        key={index}
+                        src={url}
                         alt={`Problem ${index + 1}`}
                         className="aspect-square object-cover rounded-lg"
                       />
@@ -819,7 +835,7 @@ const ContractorBidding = () => {
 
               <div className="border-t pt-4">
                 {canBid(viewingProblem) ? (
-                  <Button 
+                  <Button
                     className="w-full"
                     onClick={() => {
                       setViewingProblem(null);

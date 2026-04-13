@@ -112,6 +112,22 @@ const CommunityVoting = () => {
         return;
       }
 
+      // Check user type for authenticity
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('user_type')
+        .eq('user_id', userData.user.id)
+        .maybeSingle();
+
+      if (profile?.user_type !== 'citizen') {
+        toast({
+          title: "Standard Citizens Only",
+          description: "Only users with a regular citizen profile can participate in community voting.",
+          variant: "destructive"
+        });
+        return;
+      }
+
       const dbVoteType = voteType === 'up' ? 'upvote' : 'downvote';
 
       if (currentVote === voteType) {
