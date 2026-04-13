@@ -1,7 +1,7 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Camera, X, RotateCcw, Upload, Image as ImageIcon, Aperture, SwitchCamera } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Camera, X, RotateCcw, Upload, Aperture, SwitchCamera } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface WebCameraCaptureProps {
   onCapture: (file: File) => void;
@@ -14,32 +14,44 @@ interface WebCameraCaptureProps {
 const WebCameraCapture: React.FC<WebCameraCaptureProps> = ({
   onCapture,
   onClose,
-  maxFiles = 5,
+  maxFiles = 10,
   capturedCount = 0,
   inline = false,
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [cameraError, setCameraError] = useState<string>('');
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
   const [capturedPreview, setCapturedPreview] = useState<string | null>(null);
-  const { toast } = useToast();
+  const [isMobile, setIsMobile] = useState(false);
 
-  const startCamera = useCallback(async () => {
+  useEffect(() => {
+    const mobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    setIsMobile(mobile);
+  }, []);
+
+  // On mobile: use native camera input. On desktop: use getUserMedia stream.
+  const handleCameraClick = useCallback(() => {
+    if (isMobile) {
+      // Trigger native camera via file input with capture attribute
+      cameraInputRef.current?.click();
+    } else {
+      // Desktop: open getUserMedia stream
+      startDesktopCamera();
+    }
+  }, [isMobile]);
+
+  const startDesktopCamera = useCallback(async () => {
     setCameraError('');
     try {
-      const constraints: MediaStreamConstraints = {
-        video: {
-          facingMode,
-          width: { ideal: 1920 },
-          height: { ideal: 1080 },
-        },
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode, width: { ideal: 1920 }, height: { ideal: 1080 } },
         audio: false,
-      };
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      });
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
@@ -94,28 +106,54 @@ const WebCameraCapture: React.FC<WebCameraCaptureProps> = ({
     const file = new File([blob], `photo-${Date.now()}.jpg`, { type: 'image/jpeg' });
     onCapture(file);
     setCapturedPreview(null);
-    toast({ title: '📸 Photo captured', description: 'Photo added to your submission.' });
-  }, [capturedPreview, onCapture, toast]);
+    toast.success('📸 Photo captured and added');
+  }, [capturedPreview, onCapture]);
 
   const switchCamera = useCallback(() => {
     stopCamera();
     setFacingMode(prev => prev === 'environment' ? 'user' : 'environment');
-    setTimeout(startCamera, 200);
-  }, [stopCamera, startCamera]);
+    setTimeout(() => startDesktopCamera(), 200);
+  }, [stopCamera, startDesktopCamera]);
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle files from native camera input (mobile)
+  const handleCameraInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files) return;
+    if (!files || files.length === 0) return;
     Array.from(files).forEach(file => {
-      if (capturedCount < maxFiles) onCapture(file);
+      if (capturedCount < maxFiles) {
+        onCapture(file);
+        toast.success('📸 Photo captured and added');
+      }
     });
-  };
+    // Reset so user can capture again
+    e.target.value = '';
+  }, [capturedCount, maxFiles, onCapture]);
+
+  // Handle files from gallery/file upload
+  const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    let added = 0;
+    Array.from(files).forEach(file => {
+      if (capturedCount + added < maxFiles) {
+        onCapture(file);
+        added++;
+      }
+    });
+    if (added > 0) {
+      toast.success(`${added} file(s) added successfully`);
+    }
+    // Reset so user can select again
+    e.target.value = '';
+  }, [capturedCount, maxFiles, onCapture]);
 
   const atLimit = capturedCount >= maxFiles;
 
   return (
     <div className="space-y-3">
       <canvas ref={canvasRef} className="hidden" />
+      
+      {/* Hidden file input for gallery upload */}
       <input
         ref={fileInputRef}
         type="file"
@@ -124,9 +162,19 @@ const WebCameraCapture: React.FC<WebCameraCaptureProps> = ({
         className="hidden"
         onChange={handleFileUpload}
       />
+      
+      {/* Hidden file input for native mobile camera */}
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={handleCameraInput}
+      />
 
-      {/* Camera viewfinder */}
-      {isCameraOpen && (
+      {/* Desktop camera viewfinder */}
+      {isCameraOpen && !isMobile && (
         <div className="relative rounded-xl overflow-hidden bg-black border-2 border-primary/20">
           {capturedPreview ? (
             <img src={capturedPreview} alt="Preview" className="w-full aspect-[4/3] object-cover" />
@@ -134,7 +182,6 @@ const WebCameraCapture: React.FC<WebCameraCaptureProps> = ({
             <video ref={videoRef} autoPlay playsInline muted className="w-full aspect-[4/3] object-cover" />
           )}
 
-          {/* Camera overlay controls */}
           <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-4">
             <div className="flex items-center justify-center gap-4">
               {capturedPreview ? (
@@ -169,14 +216,14 @@ const WebCameraCapture: React.FC<WebCameraCaptureProps> = ({
         </div>
       )}
 
-      {/* Action buttons when camera is closed */}
+      {/* Action buttons */}
       {!isCameraOpen && (
         <div className={`grid ${inline ? 'grid-cols-2' : 'grid-cols-1 sm:grid-cols-2'} gap-2`}>
           <Button
             type="button"
             variant="outline"
             className="h-14 border-dashed border-2 hover:border-primary/50 hover:bg-primary/5 transition-all"
-            onClick={startCamera}
+            onClick={handleCameraClick}
             disabled={atLimit}
           >
             <Camera className="h-5 w-5 mr-2 text-primary" />

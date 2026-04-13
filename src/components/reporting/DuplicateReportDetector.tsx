@@ -10,7 +10,6 @@ interface SimilarReport {
   title: string;
   location: string | null;
   status: string | null;
-  status: string | null;
   category: string | null;
   created_at: string | null;
   photo_urls: string[] | null;
@@ -19,9 +18,9 @@ interface SimilarReport {
   verified_votes: number | null;
 }
 
-interface DuplicateReportDetectorProps {
+export interface DuplicateReportDetectorProps {
   title: string;
-  description: string;
+  description?: string;
   location: string;
   category: string;
   onLinkToExisting?: (reportId: string) => void;
