@@ -5,6 +5,10 @@ export interface ReportData {
   description: string;
   location: string;
   coordinates: string;
+  county: string;
+  constituency: string;
+  ward: string;
+  gpsVerified: boolean;
   priority: string;
   photos: File[];
   estimatedCost: string;
