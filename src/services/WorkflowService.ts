@@ -19,6 +19,9 @@ export class WorkflowService {
     category: string;
     location: string;
     coordinates?: string;
+    county?: string;
+    constituency?: string;
+    ward?: string;
     estimated_cost?: number;
     affected_population?: number;
     photo_urls?: string[];
