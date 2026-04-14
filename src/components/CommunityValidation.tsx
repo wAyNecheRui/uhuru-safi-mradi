@@ -404,15 +404,15 @@ const CommunityValidation = () => {
                 <Loader2 className="h-3 w-3 mr-1 animate-spin" />
                 Detecting location...
               </Badge>
-            ) : userLocation ? (
+            ) : userCounty ? (
               <Badge className="bg-green-100 text-green-800">
                 <Navigation className="h-3 w-3 mr-1" />
-                Location: {userLocation.county || `${userLocation.latitude.toFixed(2)}°, ${userLocation.longitude.toFixed(2)}°`}
+                County: {userCounty}
               </Badge>
             ) : (
               <Badge variant="outline">
                 <Info className="h-3 w-3 mr-1" />
-                Location not available
+                County not set — update your profile or enable GPS
               </Badge>
             )}
             {locationError && (
@@ -422,7 +422,7 @@ const CommunityValidation = () => {
         </CardHeader>
       </Card>
 
-      {/* Category Tabs - Always visible */}
+      {/* Category Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2 bg-white shadow">
           <TabsTrigger value="all" className="data-[state=active]:bg-gray-900 data-[state=active]:text-white">
@@ -431,10 +431,10 @@ const CommunityValidation = () => {
           <TabsTrigger
             value="county"
             className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
-            disabled={!userLocation}
+            disabled={!userCounty}
           >
             <MapPin className="h-4 w-4 mr-1" />
-            Nearby Reports ({userLocation ? countyCount : '-'})
+            {userCounty ? `${userCounty} County` : 'My County'} ({userCounty ? countyCount : '-'})
           </TabsTrigger>
         </TabsList>
       </Tabs>
