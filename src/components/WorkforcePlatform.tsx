@@ -35,7 +35,7 @@ const WorkforcePlatform = () => {
   const handleApply = async () => {
     if (!selectedJobId) return;
 
-    if (!workerProfile?.skills || workerProfile.skills.length === 0) {
+    if (!userProfile) {
       toast({
         title: "Skills Profile Required",
         description: "Please register your skills profile in the Workforce Integration page before applying.",
@@ -215,7 +215,7 @@ const WorkforcePlatform = () => {
                         >
                           Apply Now
                         </Button>
-                        {(!workerProfile?.skills || workerProfile.skills.length === 0) && (
+                        {(!userProfile) && (
                           <span className="text-[10px] text-amber-600 font-medium text-center">
                             Skills registration required
                           </span>
