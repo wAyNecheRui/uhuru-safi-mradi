@@ -403,7 +403,7 @@ const CommunityValidation = () => {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2 bg-white shadow">
           <TabsTrigger value="all" className="data-[state=active]:bg-gray-900 data-[state=active]:text-white">
-            All Reports ({allReports.length})
+            My Votes ({allReports.length})
           </TabsTrigger>
           <TabsTrigger
             value="county"
@@ -411,7 +411,7 @@ const CommunityValidation = () => {
             disabled={!userLocation}
           >
             <MapPin className="h-4 w-4 mr-1" />
-            My County ({userLocation ? countyCount : '-'})
+            Nearby Reports ({userLocation ? countyCount : '-'})
           </TabsTrigger>
         </TabsList>
       </Tabs>
@@ -429,8 +429,8 @@ const CommunityValidation = () => {
             <h3 className="text-lg font-semibold text-gray-900 mb-2">No Reports in This Category</h3>
             <p className="text-gray-600">
               {activeTab === 'all'
-                ? "You haven't validated any reports yet. Vote on a report in 'My County' to see it here."
-                : `No reports found near you yet.`}
+                ? "You haven't voted on any reports yet. Go to 'Nearby Reports' to vote on issues in your area."
+                : `No reports found near your current location.`}
             </p>
           </CardContent>
         </Card>

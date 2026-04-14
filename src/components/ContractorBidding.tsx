@@ -220,7 +220,11 @@ const ContractorBidding = () => {
         amount: '',
         duration: '',
         proposal: '',
-        technicalApproach: ''
+        technicalApproach: '',
+        materialsSpec: '',
+        timelineBreakdown: '',
+        safetyPlan: '',
+        qualityAssurance: ''
       });
       setSelectedProblem(null);
       fetchData();
