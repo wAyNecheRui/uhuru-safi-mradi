@@ -7,26 +7,42 @@ import { toast } from 'sonner';
 import { ReportData } from '@/types/problemReporting';
 import { WorkflowService } from '@/services/WorkflowService';
 
+const emptyReportData: ReportData = {
+  title: '',
+  category: 'roads',
+  description: '',
+  location: '',
+  coordinates: '',
+  county: '',
+  constituency: '',
+  ward: '',
+  gpsVerified: false,
+  priority: '',
+  photos: [],
+  estimatedCost: '',
+  affectedPopulation: ''
+};
+
 export const useProblemReporting = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const [reportData, setReportData] = useState<ReportData>({
-    title: '',
-    category: 'roads',
-    description: '',
-    location: '',
-    coordinates: '',
-    priority: '',
-    photos: [],
-    estimatedCost: '',
-    affectedPopulation: ''
-  });
-
+  const [reportData, setReportData] = useState<ReportData>({ ...emptyReportData });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleInputChange = useCallback((field: keyof ReportData, value: string) => {
     setReportData(prev => ({ ...prev, [field]: value }));
+  }, []);
+
+  const handleLocationDataChange = useCallback((data: { county: string; constituency: string; ward: string; gpsVerified: boolean; coordinates?: string }) => {
+    setReportData(prev => ({
+      ...prev,
+      county: data.county,
+      constituency: data.constituency,
+      ward: data.ward,
+      gpsVerified: data.gpsVerified,
+      ...(data.coordinates ? { coordinates: data.coordinates } : {}),
+    }));
   }, []);
 
   const handlePhotoUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -82,7 +98,9 @@ export const useProblemReporting = () => {
     if (!reportData.title.trim()) errors.push('Problem title is required');
     if (!reportData.category) errors.push('Category is required');
     if (!reportData.description.trim()) errors.push('Description is required');
-    if (!reportData.location.trim()) errors.push('Location is required');
+    if (!reportData.county) errors.push('County is required');
+    if (!reportData.constituency) errors.push('Constituency is required');
+    if (!reportData.ward) errors.push('Ward is required');
     if (reportData.photos.length === 0) errors.push('At least one photo or video is required');
     if (!reportData.priority) errors.push('Priority level is required');
     return errors;
@@ -115,7 +133,6 @@ export const useProblemReporting = () => {
         for (const photo of reportData.photos) {
           const fileExt = photo.name.split('.').pop();
           const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-          // Path must start with user.id to satisfy RLS policy
           const filePath = `${user.id}/problem-reports/${fileName}`;
 
           const { error: uploadError } = await supabase.storage
@@ -134,26 +151,19 @@ export const useProblemReporting = () => {
         }
       }
 
-      // Parse coordinates into PostGIS point format for spatial queries
-      let gpsPoint: string | null = null;
-      if (reportData.coordinates) {
-        const parts = reportData.coordinates.split(',').map(s => s.trim());
-        if (parts.length === 2) {
-          const lat = parseFloat(parts[0]);
-          const lon = parseFloat(parts[1]);
-          if (!isNaN(lat) && !isNaN(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180) {
-            gpsPoint = `(${lon},${lat})`;
-          }
-        }
-      }
+      // Derive display location from structured fields
+      const displayLocation = [reportData.ward, reportData.constituency, `${reportData.county} County`].filter(Boolean).join(', ');
 
-      // Submit the report via central Workflow Service to ensure sync & notifications
+      // Submit the report via WorkflowService with structured location
       const report = await WorkflowService.submitProblemReport({
         title: reportData.title,
         description: reportData.description,
         category: reportData.category,
-        location: reportData.location,
-        coordinates: reportData.coordinates,
+        location: displayLocation,
+        coordinates: reportData.coordinates || undefined,
+        county: reportData.county,
+        constituency: reportData.constituency,
+        ward: reportData.ward,
         estimated_cost: reportData.estimatedCost ? parseFloat(reportData.estimatedCost) : undefined,
         affected_population: reportData.affectedPopulation ? parseInt(reportData.affectedPopulation) : undefined,
         photo_urls: photoUrls
@@ -162,17 +172,7 @@ export const useProblemReporting = () => {
       toast.success('Problem report submitted successfully!');
 
       // Reset form
-      setReportData({
-        title: '',
-        category: '',
-        description: '',
-        location: '',
-        coordinates: '',
-        priority: '',
-        photos: [],
-        estimatedCost: '',
-        affectedPopulation: ''
-      });
+      setReportData({ ...emptyReportData });
 
       navigate('/citizen/track');
     } catch (error: any) {
@@ -181,11 +181,12 @@ export const useProblemReporting = () => {
     } finally {
       setIsSubmitting(false);
     }
-  }, [reportData, user, supabase, navigate]);
+  }, [reportData, user, navigate, getValidationErrors]);
 
   return {
     reportData,
     handleInputChange,
+    handleLocationDataChange,
     handlePhotoUpload,
     handleRemovePhoto,
     handleCameraCapture,
