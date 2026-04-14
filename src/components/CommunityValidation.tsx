@@ -49,15 +49,19 @@ interface ProblemReport {
 
 const CommunityValidation = () => {
   const { user } = useAuth();
+  const { userProfile } = useProfile();
   // Split data sources:
   // - allReports: reports this citizen has already voted on ("validated") anywhere
-  // - countyReports: reports near the citizen (requires GPS)
+  // - countyReports: reports in the citizen's county (from profile or GPS)
   const [allReports, setAllReports] = useState<ProblemReport[]>([]);
   const [countyReports, setCountyReports] = useState<ProblemReport[]>([]);
   const [loadingAll, setLoadingAll] = useState(true);
   const [loadingCounty, setLoadingCounty] = useState(false);
   const [votingState, setVotingState] = useState<{ [key: string]: boolean }>({});
   const [activeTab, setActiveTab] = useState('all');
+
+  // The user's county — prefer profile county, fallback to GPS-detected county
+  const userCounty = userProfile?.county || userLocation?.county || null;
 
   const {
     userLocation,
