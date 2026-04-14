@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProjects } from '@/hooks/useProjects';
 import { useSecurityEnhanced } from '@/hooks/useSecurityEnhanced';
+import { supabase } from '@/integrations/supabase/client';
 import { enhancedReportValidationSchema } from '@/utils/securityEnhanced';
 
 import { CATEGORIES, PRIORITIES } from '@/constants/problemReporting';

@@ -15,7 +15,7 @@ import { useState } from 'react';
 const WorkforcePlatform = () => {
   const { jobs, loading, applyForJob, createJob } = useWorkforce();
   const { user } = useAuth();
-  const { userProfile, contractorProfile, workerProfile } = useProfile();
+  const { userProfile, contractorProfile } = useProfile();
   const { toast } = useToast();
 
   const [applicationMessage, setApplicationMessage] = useState('');
