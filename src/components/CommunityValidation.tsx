@@ -567,18 +567,18 @@ const CommunityValidation = () => {
                         </div>
                       )}
                       {/* Vote eligibility notice */}
-                      {!report.user_vote && report.can_vote === false && (
+                      {!report.user_vote && (
                         report.reported_by === user?.id ? (
                           <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded flex flex-col items-center justify-center text-center">
-                            <span><Info className="h-3 w-3 inline mr-1" /> You automatically support your own report</span>
-                            <span className="text-[10px] opacity-80">(No additional votes needed from you)</span>
+                            <span><Info className="h-3 w-3 inline mr-1" /> You cannot vote on your own reports</span>
+                            <span className="text-[10px] opacity-80">(You automatically support issues you report)</span>
                           </div>
-                        ) : (
+                        ) : report.can_vote === false ? (
                           <div className="text-xs text-amber-600 bg-amber-50 p-2 rounded">
                             <AlertTriangle className="h-3 w-3 inline mr-1" />
                             You must be within 50km to vote on this issue
                           </div>
-                        )
+                        ) : null
                       )}
                       <div className="flex gap-2">
                         <Button

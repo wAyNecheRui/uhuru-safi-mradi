@@ -128,6 +128,22 @@ const CommunityVoting = () => {
         return;
       }
 
+      // Prevent voting on own reports
+      const { data: report } = await supabase
+        .from('problem_reports')
+        .select('reported_by')
+        .eq('id', reportId)
+        .maybeSingle();
+
+      if (report?.reported_by === userData.user.id) {
+        toast({
+          title: "Ownership Check",
+          description: "You cannot vote on problems you have reported.",
+          variant: "destructive"
+        });
+        return;
+      }
+
       const dbVoteType = voteType === 'up' ? 'upvote' : 'downvote';
 
       if (currentVote === voteType) {

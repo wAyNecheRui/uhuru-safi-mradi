@@ -69,7 +69,11 @@ const ContractorBidding = () => {
     amount: '',
     duration: '',
     proposal: '',
-    technicalApproach: ''
+    technicalApproach: '',
+    materialsSpec: '',
+    timelineBreakdown: '',
+    safetyPlan: '',
+    qualityAssurance: ''
   });
 
   useEffect(() => {
@@ -150,17 +154,6 @@ const ContractorBidding = () => {
       return;
     }
 
-    // Check contractor county eligibility
-    const countyAllowed = await canContractorBid(user.id, selectedProblem.id);
-    if (!countyAllowed) {
-      toast({
-        title: "County Mismatch",
-        description: "This project is outside your registered counties. Update your profile to include the relevant county.",
-        variant: "destructive"
-      });
-      return;
-    }
-
     // Check contractor verification status
     if (!contractorProfile?.verified) {
       toast({
@@ -184,7 +177,11 @@ const ContractorBidding = () => {
           bid_amount: bidAmount,
           estimated_duration: parseInt(bidForm.duration),
           proposal: bidForm.proposal,
-          technical_approach: bidForm.technicalApproach || null
+          technical_approach: bidForm.technicalApproach || null,
+          materials_spec: bidForm.materialsSpec || null,
+          timeline_breakdown: bidForm.timelineBreakdown || null,
+          safety_plan: bidForm.safetyPlan || null,
+          quality_assurance: bidForm.qualityAssurance || null
         });
 
       if (error) throw error;
@@ -744,15 +741,66 @@ const ContractorBidding = () => {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="technicalApproach" className="text-xs sm:text-sm">Technical Approach (optional)</Label>
+              <Label htmlFor="technicalApproach" className="text-xs sm:text-sm">Technical Approach & Methodology *</Label>
               <Textarea
                 id="technicalApproach"
                 value={bidForm.technicalApproach}
                 onChange={(e) => setBidForm({ ...bidForm, technicalApproach: e.target.value })}
-                placeholder="Technical methodology..."
-                rows={2}
+                placeholder="Describe your implementation strategy..."
+                rows={3}
+                required
                 className="text-sm resize-none"
               />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="materialsSpec" className="text-xs sm:text-sm">Materials Specification</Label>
+                <Textarea
+                  id="materialsSpec"
+                  value={bidForm.materialsSpec}
+                  onChange={(e) => setBidForm({ ...bidForm, materialsSpec: e.target.value })}
+                  placeholder="List primary materials and sources..."
+                  rows={2}
+                  className="text-sm resize-none"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="timelineBreakdown" className="text-xs sm:text-sm">Timeline Breakdown</Label>
+                <Textarea
+                  id="timelineBreakdown"
+                  value={bidForm.timelineBreakdown}
+                  onChange={(e) => setBidForm({ ...bidForm, timelineBreakdown: e.target.value })}
+                  placeholder="Phase 1: Prep, Phase 2: Implementation..."
+                  rows={2}
+                  className="text-sm resize-none"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="safetyPlan" className="text-xs sm:text-sm">Safety Compliance Plan</Label>
+                <Textarea
+                  id="safetyPlan"
+                  value={bidForm.safetyPlan}
+                  onChange={(e) => setBidForm({ ...bidForm, safetyPlan: e.target.value })}
+                  placeholder="PPE and on-site safety protocols..."
+                  rows={2}
+                  className="text-sm resize-none"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="qualityAssurance" className="text-xs sm:text-sm">Quality Assurance Measures</Label>
+                <Textarea
+                  id="qualityAssurance"
+                  value={bidForm.qualityAssurance}
+                  onChange={(e) => setBidForm({ ...bidForm, qualityAssurance: e.target.value })}
+                  placeholder="Testing and inspection protocols..."
+                  rows={2}
+                  className="text-sm resize-none"
+                />
+              </div>
             </div>
 
             <div className="flex gap-2 pt-3 border-t">
