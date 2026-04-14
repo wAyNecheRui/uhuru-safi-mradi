@@ -19,6 +19,7 @@ import {
   Info
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useProfile } from '@/hooks/useProfile';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useLocationFiltering, ProblemWithDistance } from '@/hooks/useLocationFiltering';
