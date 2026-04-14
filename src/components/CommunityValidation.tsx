@@ -429,8 +429,8 @@ const CommunityValidation = () => {
             <h3 className="text-lg font-semibold text-gray-900 mb-2">No Reports in This Category</h3>
             <p className="text-gray-600">
               {activeTab === 'all'
-                ? "You haven't validated any reports yet. Vote on a report in 'My County' to see it here."
-                : `No reports found near you yet.`}
+                ? "You haven't voted on any reports yet. Go to 'Nearby Reports' to vote on issues in your area."
+                : `No reports found near your current location.`}
             </p>
           </CardContent>
         </Card>
