@@ -18,6 +18,7 @@ const EnhancedProblemReporting = () => {
   const {
     reportData,
     handleInputChange,
+    handleLocationDataChange,
     handlePhotoUpload,
     handleRemovePhoto,
     handleCameraCapture,
@@ -71,6 +72,7 @@ const EnhancedProblemReporting = () => {
             reportData={reportData}
             onInputChange={handleInputChange}
             onGetCurrentLocation={getCurrentLocation}
+            onLocationDataChange={handleLocationDataChange}
           />
 
           <PriorityImpactSection
