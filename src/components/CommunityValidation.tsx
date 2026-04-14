@@ -86,23 +86,30 @@ const CommunityValidation = () => {
     })();
   }, [getCurrentLocation]);
 
-  // Fetch reports with distance using location
-  const fetchReportsWithDistance = useCallback(async () => {
-    if (!userLocation) return;
+  // Fetch reports in the user's county (structured county matching)
+  const fetchCountyReports = useCallback(async () => {
+    if (!userCounty) return;
     setLoadingCounty(true);
     try {
-      const problemsWithDistance = await fetchProblemsWithDistance(
-        userLocation.latitude,
-        userLocation.longitude,
-        20 // 20km radius
-      );
+      // Query problem_reports by the structured county column
+      // Use word-boundary matching to avoid sub-county false positives
+      const countyPattern = `%${userCounty}%`;
+      const { data: reports, error } = await supabase
+        .from('problem_reports')
+        .select('*')
+        .or(`county.ilike.${countyPattern},location.ilike.${countyPattern}`)
+        .not('status', 'in', '("rejected","completed")')
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      if (error) throw error;
 
       // Enrich with votes and eligibility
-      const enrichedReports = await Promise.all((problemsWithDistance || []).map(async (problem) => {
+      const enrichedReports = await Promise.all((reports || []).map(async (report) => {
         const { data: voteCounts } = await supabase
           .from('community_votes')
           .select('vote_type')
-          .eq('report_id', problem.id);
+          .eq('report_id', report.id);
 
         const upvotes = voteCounts?.filter(v => v.vote_type === 'upvote').length || 0;
         const downvotes = voteCounts?.filter(v => v.vote_type === 'downvote').length || 0;
@@ -112,7 +119,7 @@ const CommunityValidation = () => {
           const { data: userVoteData } = await supabase
             .from('community_votes')
             .select('vote_type')
-            .eq('report_id', problem.id)
+            .eq('report_id', report.id)
             .eq('user_id', user.id)
             .maybeSingle();
           userVote = userVoteData?.vote_type || null;
@@ -121,50 +128,61 @@ const CommunityValidation = () => {
         const { data: reporterData } = await supabase
           .from('user_profiles')
           .select('full_name')
-          .eq('user_id', problem.reported_by)
+          .eq('user_id', report.reported_by)
           .maybeSingle();
 
-        // Check eligibility
-        const canVoteResult = await canVote(problem.id);
-        const canVerifyResult = await canVerify(problem.id);
+        // Calculate distance if we have both user GPS and report coordinates
+        let distance_km: number | null = null;
+        let distance_category: 'urgent' | 'nearby' | 'county' | 'unknown' = 'unknown';
+        if (userLocation && report.coordinates) {
+          const parts = report.coordinates.split(',').map((s: string) => parseFloat(s.trim()));
+          if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+            const R = 6371;
+            const dLat = (parts[0] - userLocation.latitude) * Math.PI / 180;
+            const dLon = (parts[1] - userLocation.longitude) * Math.PI / 180;
+            const a = Math.sin(dLat/2)**2 + Math.cos(userLocation.latitude * Math.PI/180) * Math.cos(parts[0] * Math.PI/180) * Math.sin(dLon/2)**2;
+            distance_km = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            distance_category = distance_km <= 5 ? 'urgent' : distance_km <= 10 ? 'nearby' : 'county';
+          }
+        }
 
         return {
-          id: problem.id,
-          title: problem.title,
-          description: problem.description,
-          priority: problem.priority || 'medium',
-          location: problem.location || 'Location not specified',
-          photo_urls: problem.photo_urls,
-          created_at: problem.created_at,
-          reported_by: problem.reported_by,
-          status: problem.status || 'pending',
-          priority_score: problem.priority_score || 0,
+          id: report.id,
+          title: report.title,
+          description: report.description,
+          priority: report.priority || 'medium',
+          location: report.location || 'Location not specified',
+          photo_urls: report.photo_urls,
+          created_at: report.created_at,
+          reported_by: report.reported_by,
+          status: report.status || 'pending',
+          priority_score: report.priority_score || 0,
           user_vote: userVote as 'upvote' | 'downvote' | null,
           reporter_name: reporterData?.full_name || 'Community Member',
           upvotes,
           downvotes,
-          distance_km: problem.distance_km,
-          distance_category: problem.distance_category,
-          can_vote: canVoteResult,
-          can_verify: canVerifyResult,
+          distance_km,
+          distance_category,
+          can_vote: report.reported_by !== user?.id,
+          can_verify: true,
         };
       }));
 
       setCountyReports(enrichedReports);
     } catch (error) {
-      console.error('Error fetching reports with distance:', error);
-      toast.error('Failed to load community reports');
+      console.error('Error fetching county reports:', error);
+      toast.error('Failed to load county reports');
     } finally {
       setLoadingCounty(false);
     }
-  }, [userLocation, user, fetchProblemsWithDistance, canVote, canVerify]);
+  }, [userCounty, userLocation, user]);
 
-  // Effect to fetch reports with distance when location is available
+  // Effect to fetch county reports when county is known
   useEffect(() => {
-    if (userLocation) {
-      fetchReportsWithDistance();
+    if (userCounty) {
+      fetchCountyReports();
     }
-  }, [userLocation, fetchReportsWithDistance]);
+  }, [userCounty, fetchCountyReports]);
 
   // Fetch "validated" reports (reports the current citizen has voted on)
   const fetchAllValidatedReports = useCallback(async () => {
