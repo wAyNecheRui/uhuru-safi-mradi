@@ -77,13 +77,13 @@ const ContractorLocationSettings = () => {
 
   const handleSave = async () => {
     if (!user) return;
-    
+
     // Validate AGPO category if AGPO is enabled
     if (settings.is_agpo && !settings.agpo_category) {
       toast.error('Please select an AGPO category');
       return;
     }
-    
+
     setSaving(true);
 
     try {
@@ -170,7 +170,7 @@ const ContractorLocationSettings = () => {
               Service Area & Capacity Settings
             </CardTitle>
             <p className="text-sm text-muted-foreground mt-1">
-              Configure which counties you can service and your project capacity to see relevant projects.
+              Configure which counties you specialize in and your project capacity for government bid evaluation.
             </p>
           </div>
           {hasExistingSettings && !isEditMode && (
@@ -188,7 +188,7 @@ const ContractorLocationSettings = () => {
             <Building className="h-5 w-5 text-primary" />
             <Label className="font-semibold text-lg">Company Information</Label>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Years in Business</Label>
@@ -301,8 +301,8 @@ const ContractorLocationSettings = () => {
               <Switch
                 checked={settings.is_agpo}
                 onCheckedChange={(checked) =>
-                  setSettings(prev => ({ 
-                    ...prev, 
+                  setSettings(prev => ({
+                    ...prev,
                     is_agpo: checked,
                     agpo_category: checked ? prev.agpo_category : null
                   }))
@@ -367,7 +367,7 @@ const ContractorLocationSettings = () => {
                   {settings.agpo_category === 'pwd' ? 'PWD-Owned' : `${settings.agpo_category}-Owned`}
                 </Badge>
               )}
-              
+
               <div className="bg-accent/30 border rounded-lg p-3 mt-3">
                 <p className="text-sm">
                   <strong>✓ AGPO Benefits:</strong> +5 bonus points in bid scoring, priority access to reserved contracts, and eligibility for 30% government procurement quota.
@@ -408,9 +408,9 @@ const ContractorLocationSettings = () => {
           <div className="space-y-3">
             <Label className="font-medium">Registered Service Counties</Label>
             <p className="text-xs text-muted-foreground">
-              {isEditMode ? "Select counties where you can provide services. You'll only see projects from these counties." : 'Counties where you can provide services:'}
+              {isEditMode ? "Select counties where you specialize. This helps in bid evaluation and profile visibility." : 'Counties where you are registered to provide services:'}
             </p>
-            
+
             <div className="flex flex-wrap gap-2 mb-3">
               {settings.registered_counties.map(county => (
                 <Badge key={county} variant="secondary">
