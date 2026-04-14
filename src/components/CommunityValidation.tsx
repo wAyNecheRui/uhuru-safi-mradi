@@ -60,9 +60,6 @@ const CommunityValidation = () => {
   const [votingState, setVotingState] = useState<{ [key: string]: boolean }>({});
   const [activeTab, setActiveTab] = useState('all');
 
-  // The user's county — prefer profile county, fallback to GPS-detected county
-  const userCounty = userProfile?.county || userLocation?.county || null;
-
   const {
     userLocation,
     isLocating,
@@ -74,6 +71,9 @@ const CommunityValidation = () => {
     getDistanceCategory,
     formatDistance,
   } = useLocationFiltering();
+
+  // The user's county — prefer profile county, fallback to GPS-detected county
+  const userCounty = userProfile?.county || userLocation?.county || null;
 
   // Auto-detect location on page load (no manual "Enable Location" button)
   useEffect(() => {
