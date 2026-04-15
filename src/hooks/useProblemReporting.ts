@@ -98,9 +98,7 @@ export const useProblemReporting = () => {
     if (!reportData.title.trim()) errors.push('Problem title is required');
     if (!reportData.category) errors.push('Category is required');
     if (!reportData.description.trim()) errors.push('Description is required');
-    if (!reportData.county) errors.push('County is required');
-    if (!reportData.constituency) errors.push('Constituency is required');
-    if (!reportData.ward) errors.push('Ward is required');
+    if (!reportData.coordinates) errors.push('GPS location is required — please allow location access');
     if (reportData.photos.length === 0) errors.push('At least one photo or video is required');
     if (!reportData.priority) errors.push('Priority level is required');
     return errors;

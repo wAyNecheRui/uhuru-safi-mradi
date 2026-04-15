@@ -1,7 +1,9 @@
-import React from 'react';
-import { Map } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Map, MapPin, Loader2, CheckCircle, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { ReportData } from '@/types/problemReporting';
-import CascadingLocationSelector from '@/components/location/CascadingLocationSelector';
+import { getFullLocationByCoordinates } from '@/constants/kenyaAdminData';
 
 interface LocationSectionProps {
   reportData: ReportData;
@@ -10,24 +12,68 @@ interface LocationSectionProps {
   onLocationDataChange?: (data: { county: string; constituency: string; ward: string; gpsVerified: boolean; coordinates?: string }) => void;
 }
 
+type GpsState = 'detecting' | 'success' | 'error' | 'denied';
+
 const LocationSection = ({ reportData, onInputChange, onGetCurrentLocation, onLocationDataChange }: LocationSectionProps) => {
+  const [gpsState, setGpsState] = useState<GpsState>('detecting');
+  const [errorMsg, setErrorMsg] = useState('');
 
-  const handleLocationChange = (data: { county: string; constituency: string; ward: string; gpsVerified: boolean; coordinates?: string }) => {
-    // Update structured fields via callback
-    if (onLocationDataChange) {
-      onLocationDataChange(data);
+  const detectLocation = () => {
+    if (!navigator.geolocation) {
+      setGpsState('error');
+      setErrorMsg('GPS is not supported on this device.');
+      return;
     }
 
-    // Derive the display location string from structured data
-    const locationParts = [data.ward, data.constituency, data.county].filter(Boolean);
-    const locationString = locationParts.length > 0 ? locationParts.join(', ') : '';
-    onInputChange('location', locationString);
+    setGpsState('detecting');
+    setErrorMsg('');
 
-    // Update coordinates if provided by GPS
-    if (data.coordinates) {
-      onInputChange('coordinates', data.coordinates);
-    }
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        const coords = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+        const location = getFullLocationByCoordinates(latitude, longitude);
+
+        if (location) {
+          const locationString = `${location.ward}, ${location.constituency}, ${location.county} County`;
+          onInputChange('location', locationString);
+          onInputChange('coordinates', coords);
+          if (onLocationDataChange) {
+            onLocationDataChange({
+              county: location.county,
+              constituency: location.constituency,
+              ward: location.ward,
+              gpsVerified: true,
+              coordinates: coords,
+            });
+          }
+          setGpsState('success');
+        } else {
+          onInputChange('coordinates', coords);
+          setGpsState('error');
+          setErrorMsg('Could not determine administrative location from GPS.');
+        }
+      },
+      (error) => {
+        console.error('GPS Error:', error);
+        if (error.code === error.PERMISSION_DENIED) {
+          setGpsState('denied');
+          setErrorMsg('Location access denied. Please enable location permissions in your browser/phone settings.');
+        } else if (error.code === error.TIMEOUT) {
+          setGpsState('error');
+          setErrorMsg('Location detection timed out. Please try again.');
+        } else {
+          setGpsState('error');
+          setErrorMsg('Unable to detect your location. Please try again.');
+        }
+      },
+      { enableHighAccuracy: true, timeout: 15000 }
+    );
   };
+
+  useEffect(() => {
+    detectLocation();
+  }, []);
 
   const getMapUrl = () => {
     if (!reportData.coordinates) return null;
@@ -37,21 +83,75 @@ const LocationSection = ({ reportData, onInputChange, onGetCurrentLocation, onLo
 
   return (
     <div className="space-y-4">
-      <CascadingLocationSelector
-        value={{
-          county: reportData.county || '',
-          constituency: reportData.constituency || '',
-          ward: reportData.ward || '',
-          gpsVerified: reportData.gpsVerified || false,
-          coordinates: reportData.coordinates || undefined,
-        }}
-        onChange={handleLocationChange}
-        enableGpsVerification={true}
-        required={true}
-        label="Problem Location"
-      />
+      <label className="block text-sm font-semibold text-foreground">
+        Problem Location <span className="text-destructive">*</span>
+      </label>
 
-      {/* GPS Coordinates (read-only) */}
+      {/* GPS Detection Status */}
+      <div className="p-3 rounded-lg border bg-muted/50">
+        {gpsState === 'detecting' && (
+          <div className="flex items-center gap-3">
+            <Loader2 className="h-5 w-5 text-primary animate-spin" />
+            <div>
+              <p className="text-sm font-medium">Detecting your location...</p>
+              <p className="text-xs text-muted-foreground">Please allow location access when prompted</p>
+            </div>
+          </div>
+        )}
+
+        {gpsState === 'success' && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              <span className="text-sm font-medium text-green-700 dark:text-green-400">Location detected successfully</span>
+              <Badge variant="outline" className="ml-auto text-[10px] border-green-300 text-green-700 dark:text-green-400">GPS Verified</Badge>
+            </div>
+
+            {/* Location details read-only */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {reportData.county && (
+                <div className="p-2 bg-background rounded border">
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">County</p>
+                  <p className="text-sm font-semibold">{reportData.county}</p>
+                </div>
+              )}
+              {reportData.constituency && (
+                <div className="p-2 bg-background rounded border">
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Constituency</p>
+                  <p className="text-sm font-semibold">{reportData.constituency}</p>
+                </div>
+              )}
+              {reportData.ward && (
+                <div className="p-2 bg-background rounded border">
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Ward</p>
+                  <p className="text-sm font-semibold">{reportData.ward}</p>
+                </div>
+              )}
+            </div>
+
+            <Button variant="ghost" size="sm" onClick={detectLocation} className="text-xs text-muted-foreground">
+              <RefreshCw className="h-3 w-3 mr-1" />
+              Re-detect location
+            </Button>
+          </div>
+        )}
+
+        {(gpsState === 'error' || gpsState === 'denied') && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              <span className="text-sm font-medium text-amber-700 dark:text-amber-400">Location detection failed</span>
+            </div>
+            <p className="text-xs text-muted-foreground">{errorMsg}</p>
+            <Button variant="outline" size="sm" onClick={detectLocation}>
+              <RefreshCw className="h-3 w-3 mr-1" />
+              Try Again
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {/* GPS Coordinates & Map */}
       {reportData.coordinates && (
         <div className="space-y-2">
           <div className="flex items-center gap-2 p-3 bg-muted rounded-lg border">
@@ -59,7 +159,6 @@ const LocationSection = ({ reportData, onInputChange, onGetCurrentLocation, onLo
             <code className="text-sm font-mono">{reportData.coordinates}</code>
           </div>
 
-          {/* Map View */}
           <div className="border rounded-lg overflow-hidden bg-muted">
             <iframe
               src={getMapUrl() || ''}
