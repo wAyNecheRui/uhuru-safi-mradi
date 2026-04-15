@@ -581,6 +581,27 @@ export function getCountyByCoordinates(lat: number, lng: number): County | null 
   return closest;
 }
 
+/**
+ * Reverse-geocode GPS coordinates to full administrative location.
+ * Returns the nearest county, its first constituency, and first ward.
+ * This is a best-effort approximation using county capital coordinates.
+ */
+export function getFullLocationByCoordinates(lat: number, lng: number): {
+  county: string;
+  constituency: string;
+  ward: string;
+} | null {
+  const county = getCountyByCoordinates(lat, lng);
+  if (!county) return null;
+  const constituency = county.constituencies[0];
+  const ward = constituency?.wards[0] || '';
+  return {
+    county: county.name,
+    constituency: constituency?.name || '',
+    ward,
+  };
+}
+
 export function getCountyCoordinates(countyName: string): [number, number] {
   const county = KENYA_ADMIN_DATA.find(c => c.name.toLowerCase() === countyName.toLowerCase());
   return county ? county.coordinates : [-1.2921, 36.8219];
