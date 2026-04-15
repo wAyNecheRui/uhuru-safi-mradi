@@ -34,7 +34,7 @@ await renderMedia({
   composition,
   serveUrl: bundled,
   codec: "h264",
-  outputLocation: "/mnt/documents/Uhuru_Safi_Walkthrough.mp4",
+  outputLocation: "/mnt/documents/Uhuru_Safi_Full_Walkthrough.mp4",
   puppeteerInstance: browser,
   muted: true,
   concurrency: 1,
