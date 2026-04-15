@@ -3,7 +3,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Camera, MapPin, AlertCircle, FileText, Shield } from 'lucide-react';
+import { Camera, MapPin, AlertCircle, AlertTriangle, FileText, Shield } from 'lucide-react';
 import { useProblemReporting } from '@/hooks/useProblemReporting';
 import { useProfile } from '@/hooks/useProfile';
 import { useAuth } from '@/contexts/AuthContext';
