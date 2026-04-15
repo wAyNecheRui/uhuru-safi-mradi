@@ -216,7 +216,7 @@ const WorkforcePlatform = () => {
                         >
                           Apply Now
                         </Button>
-                        {(!userProfile?.skills || userProfile.skills.length === 0) && (
+                        {(!(userProfile as any)?.skills || (userProfile as any)?.skills?.length === 0) && (
                           <span className="text-[10px] text-amber-600 font-medium text-center">
                             Skills registration required
                           </span>
