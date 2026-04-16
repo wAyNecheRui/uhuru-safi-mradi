@@ -55,18 +55,84 @@ const CascadingLocationSelector: React.FC<CascadingLocationSelectorProps> = ({
     }
     setGpsStatus('loading');
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
+      async (pos) => {
         const { latitude, longitude } = pos.coords;
-        const detected = getCountyByCoordinates(latitude, longitude);
         const coords = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
-        if (detected) {
-          setDetectedCounty(detected.name);
-          if (value.county && detected.name.toLowerCase() === value.county.toLowerCase()) {
+
+        let detectedCountyName = '';
+        let detectedConstituency = '';
+        let detectedWard = '';
+
+        try {
+          // Attempt reverse geocoding via OpenStreetMap Nominatim
+          const response = await fetch(`https://api.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+          if (response.ok) {
+            const data = await response.json();
+            const address = data.address || {};
+
+            // 1. Match County
+            const countyStr = (address.county || address.state || '').replace(/ County/i, '').trim();
+            const matchedCounty = counties.find(c => countyStr.toLowerCase().includes(c.toLowerCase()));
+
+            if (matchedCounty) {
+              detectedCountyName = matchedCounty;
+
+              // 2. Match Constituency 
+              const OSM_consts = [address.suburb, address.city_district, address.town, address.city].filter(Boolean);
+              const constList = getConstituencies(matchedCounty);
+              for (const pc of OSM_consts) {
+                const match = constList.find(c => c.toLowerCase() === pc.toLowerCase() || pc.toLowerCase().includes(c.toLowerCase()));
+                if (match) {
+                  detectedConstituency = match;
+                  break;
+                }
+              }
+
+              // 3. Match Ward
+              if (detectedConstituency) {
+                const OSM_wards = [address.neighbourhood, address.village, address.residential, address.suburb, address.hamlet].filter(Boolean);
+                const wardList = getWards(matchedCounty, detectedConstituency);
+                for (const pw of OSM_wards) {
+                  const match = wardList.find(w => w.toLowerCase() === pw.toLowerCase() || pw.toLowerCase().includes(w.toLowerCase()));
+                  if (match) {
+                    detectedWard = match;
+                    break;
+                  }
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.error("Reverse geocoding failed", error);
+        }
+
+        // Fallback to simple coordinate distance if API failed or didn't find a county match
+        if (!detectedCountyName) {
+          const fallback = getCountyByCoordinates(latitude, longitude);
+          if (fallback) detectedCountyName = fallback.name;
+        }
+
+        if (detectedCountyName) {
+          setDetectedCounty(detectedCountyName);
+          if (value.county && detectedCountyName.toLowerCase() === value.county.toLowerCase()) {
             setGpsStatus('verified');
-            onChange({ ...value, gpsVerified: true, coordinates: coords });
+            onChange({
+              ...value,
+              gpsVerified: true,
+              coordinates: coords,
+              constituency: value.constituency || detectedConstituency,
+              ward: value.ward || detectedWard
+            });
           } else if (!value.county) {
-            // Auto-fill county from GPS
-            onChange({ ...value, county: detected.name, gpsVerified: true, coordinates: coords, constituency: '', ward: '' });
+            // Auto-fill from GPS
+            onChange({
+              ...value,
+              county: detectedCountyName,
+              constituency: detectedConstituency,
+              ward: detectedWard,
+              gpsVerified: true,
+              coordinates: coords
+            });
             setGpsStatus('verified');
           } else {
             setGpsStatus('mismatch');

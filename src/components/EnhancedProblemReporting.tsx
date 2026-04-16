@@ -129,7 +129,6 @@ const EnhancedProblemReporting = () => {
           <LocationSection
             reportData={reportData}
             onInputChange={handleInputChange}
-            onGetCurrentLocation={getCurrentLocation}
             onLocationDataChange={handleLocationDataChange}
           />
 
