@@ -227,7 +227,8 @@ const IssueReportingForm = () => {
                     value={formData.description}
                     onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                     placeholder="Describe the issue in detail, including when you first noticed it and how it affects the community..."
-                    className="mt-1 h-32"
+                    minRows={4}
+                    className="mt-1"
                   />
                 </div>
               </div>

@@ -407,7 +407,7 @@ const ProgressUpdateForm: React.FC<ProgressUpdateFormProps> = ({
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Describe the work completed, activities performed..."
-            rows={4}
+            minRows={4}
           />
         </div>
 
@@ -545,7 +545,7 @@ const ProgressUpdateForm: React.FC<ProgressUpdateFormProps> = ({
             value={challenges}
             onChange={(e) => setChallenges(e.target.value)}
             placeholder="Any challenges, delays, or issues encountered..."
-            rows={2}
+            minRows={2}
           />
         </div>
       </div>

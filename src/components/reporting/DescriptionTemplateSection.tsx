@@ -32,8 +32,8 @@ const DescriptionTemplateSection = ({ reportData, onInputChange }: DescriptionTe
       {/* Label with helper text */}
       <div className="flex items-center justify-between">
         <div className="space-y-1">
-          <Label 
-            htmlFor="problem-description" 
+          <Label
+            htmlFor="problem-description"
             className="text-sm font-medium text-foreground flex items-center gap-1.5"
           >
             Problem Description
@@ -92,10 +92,10 @@ const DescriptionTemplateSection = ({ reportData, onInputChange }: DescriptionTe
       <Textarea
         id="problem-description"
         placeholder={getPlaceholder()}
-        rows={8}
+        minRows={6}
         value={reportData.description}
         onChange={(e) => onInputChange('description', e.target.value)}
-        className="min-h-[180px] resize-y placeholder:text-muted-foreground/60 placeholder:leading-relaxed"
+        className="min-h-[180px] placeholder:text-muted-foreground/60 placeholder:leading-relaxed"
         aria-describedby="description-help"
       />
 

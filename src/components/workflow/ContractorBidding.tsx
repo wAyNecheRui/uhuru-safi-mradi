@@ -19,11 +19,11 @@ interface ContractorBiddingProps {
   canSelectBids?: boolean;
 }
 
-const ContractorBidding: React.FC<ContractorBiddingProps> = ({ 
-  reportId, 
-  projectBudget, 
+const ContractorBidding: React.FC<ContractorBiddingProps> = ({
+  reportId,
+  projectBudget,
   onBidSelected,
-  canSelectBids = false 
+  canSelectBids = false
 }) => {
   const { user } = useAuth();
   const [bids, setBids] = useState<ContractorBid[]>([]);
@@ -31,7 +31,7 @@ const ContractorBidding: React.FC<ContractorBiddingProps> = ({
   const [showBidForm, setShowBidForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
-  
+
   const [bidForm, setBidForm] = useState({
     bid_amount: '',
     proposal: '',
@@ -173,14 +173,14 @@ const ContractorBidding: React.FC<ContractorBiddingProps> = ({
                     <Input
                       type="number"
                       value={bidForm.bid_amount}
-                      onChange={(e) => setBidForm({...bidForm, bid_amount: e.target.value})}
+                      onChange={(e) => setBidForm({ ...bidForm, bid_amount: e.target.value })}
                       onBlur={() => markTouched('bid_amount')}
                       placeholder="e.g., 500000"
                       className={`text-sm ${touched.bid_amount && (!bidForm.bid_amount || parseFloat(bidForm.bid_amount) <= 0) ? 'border-destructive' : ''}`}
                     />
-                    <InlineError 
-                      message="Enter a valid bid amount" 
-                      show={touched.bid_amount && (!bidForm.bid_amount || parseFloat(bidForm.bid_amount) <= 0)} 
+                    <InlineError
+                      message="Enter a valid bid amount"
+                      show={touched.bid_amount && (!bidForm.bid_amount || parseFloat(bidForm.bid_amount) <= 0)}
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -190,14 +190,14 @@ const ContractorBidding: React.FC<ContractorBiddingProps> = ({
                     <Input
                       type="number"
                       value={bidForm.estimated_duration}
-                      onChange={(e) => setBidForm({...bidForm, estimated_duration: e.target.value})}
+                      onChange={(e) => setBidForm({ ...bidForm, estimated_duration: e.target.value })}
                       onBlur={() => markTouched('estimated_duration')}
                       placeholder="e.g., 30"
                       className={`text-sm ${touched.estimated_duration && (!bidForm.estimated_duration || parseInt(bidForm.estimated_duration) <= 0) ? 'border-destructive' : ''}`}
                     />
-                    <InlineError 
-                      message="Enter estimated duration in days" 
-                      show={touched.estimated_duration && (!bidForm.estimated_duration || parseInt(bidForm.estimated_duration) <= 0)} 
+                    <InlineError
+                      message="Enter estimated duration in days"
+                      show={touched.estimated_duration && (!bidForm.estimated_duration || parseInt(bidForm.estimated_duration) <= 0)}
                     />
                   </div>
                 </div>
@@ -211,15 +211,15 @@ const ContractorBidding: React.FC<ContractorBiddingProps> = ({
                   </label>
                   <Textarea
                     value={bidForm.proposal}
-                    onChange={(e) => setBidForm({...bidForm, proposal: e.target.value})}
+                    onChange={(e) => setBidForm({ ...bidForm, proposal: e.target.value })}
                     onBlur={() => markTouched('proposal')}
                     placeholder="Describe your approach in detail (minimum 50 characters)..."
-                    rows={3}
+                    minRows={3}
                     className={`text-sm resize-none ${touched.proposal && bidForm.proposal.trim().length < 50 ? 'border-destructive' : ''}`}
                   />
-                  <InlineError 
-                    message={`Proposal needs ${50 - bidForm.proposal.trim().length} more characters`} 
-                    show={touched.proposal && bidForm.proposal.trim().length < 50} 
+                  <InlineError
+                    message={`Proposal needs ${50 - bidForm.proposal.trim().length} more characters`}
+                    show={touched.proposal && bidForm.proposal.trim().length < 50}
                   />
                 </div>
 
@@ -229,7 +229,7 @@ const ContractorBidding: React.FC<ContractorBiddingProps> = ({
                   </label>
                   <Textarea
                     value={bidForm.technical_approach}
-                    onChange={(e) => setBidForm({...bidForm, technical_approach: e.target.value})}
+                    onChange={(e) => setBidForm({ ...bidForm, technical_approach: e.target.value })}
                     placeholder="Technical methodology..."
                     rows={2}
                     className="text-sm resize-none"
@@ -247,8 +247,8 @@ const ContractorBidding: React.FC<ContractorBiddingProps> = ({
                 )}
 
                 <div className="flex gap-2 pt-3 border-t">
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="flex-1"
                     size="sm"
                     onClick={() => { setShowBidForm(false); setTouched({}); }}
@@ -256,7 +256,7 @@ const ContractorBidding: React.FC<ContractorBiddingProps> = ({
                     Cancel
                   </Button>
                   <ValidationTooltip disabled={!isBidValid} missingFields={bidValidationErrors}>
-                    <Button 
+                    <Button
                       onClick={handleSubmitBid}
                       disabled={isSubmitting || !isBidValid}
                       className="flex-1"

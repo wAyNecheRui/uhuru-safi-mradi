@@ -158,7 +158,7 @@ const CommunityVoting: React.FC<CommunityVotingProps> = ({ reportId, currentUser
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
                 placeholder="Share your thoughts about this problem..."
-                rows={3}
+                minRows={3}
               />
             </div>
 

@@ -282,7 +282,7 @@ const ProblemReportingForm = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Detailed Description *</label>
                 <Textarea
                   required
-                  rows={4}
+                  minRows={4}
                   placeholder="Provide detailed information about the problem, its impact on the community, and any safety concerns"
                   value={formData.description}
                   onChange={(e) => handleInputChange('description', e.target.value)}
