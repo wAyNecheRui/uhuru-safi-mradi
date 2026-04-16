@@ -253,9 +253,9 @@ describe('Search & Filter Logic', () => {
   });
 
   it('handles empty search query (shows all)', () => {
-    const query = '';
+    const query: string = '';
     const results = projects.filter(
-      (p) => !query || p.title.toLowerCase().includes(query.toLowerCase())
+      (p) => query.length === 0 || p.title.toLowerCase().includes(query.toLowerCase())
     );
     expect(results).toHaveLength(4);
   });
