@@ -161,25 +161,59 @@ const ProblemReportingForm = () => {
 
   const getCurrentLocation = () => {
     if (navigator.geolocation) {
+      toast({ title: "Detecting location...", description: "Please wait while we acquire your GPS coordinates." });
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const coords = `${position.coords.latitude}, ${position.coords.longitude}`;
-          handleInputChange('location', `${formData.location} (GPS: ${coords})`);
-          toast({
-            title: "Location Added",
-            description: "GPS coordinates have been added to your location.",
-          });
+        async (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          const coords = `${lat}, ${lng}`;
+
+          try {
+            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`, {
+              headers: { 'Accept-Language': 'en-US,en;q=0.9' }
+            });
+
+            if (!response.ok) throw new Error('Network response was not ok');
+
+            const data = await response.json();
+            const detectedLocation = data.display_name;
+
+            handleInputChange('location', detectedLocation || coords);
+            toast({
+              title: "Location Detected",
+              description: `Mapped to: ${detectedLocation}`,
+            });
+          } catch (error) {
+            console.error("OSM Geocoding error:", error);
+            handleInputChange('location', coords);
+            toast({
+              title: "Location Captured",
+              description: "Coordinates acquired, but unable to resolve street address.",
+            });
+          }
         },
         (error) => {
           toast({
             title: "Location Error",
-            description: "Unable to get your current location.",
+            description: "Unable to get your current location. Please check browser permissions.",
             variant: "destructive"
           });
-        }
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
       );
+    } else {
+      toast({
+        title: "GPS not supported",
+        description: "Your device doesn't support GPS location.",
+        variant: "destructive"
+      });
     }
   };
+
+  // Auto-detect location on mount
+  useEffect(() => {
+    getCurrentLocation();
+  }, []);
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -258,23 +292,23 @@ const ProblemReportingForm = () => {
 
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Location *</label>
-                <div className="flex space-x-3">
-                  <Input
-                    required
-                    className="flex-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Detailed location description"
-                    value={formData.location}
-                    onChange={(e) => handleInputChange('location', e.target.value)}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={getCurrentLocation}
-                    className="border-blue-300 text-blue-600 hover:bg-blue-50"
-                  >
-                    <MapPin className="w-4 h-4 mr-2" />
-                    GPS
-                  </Button>
+                <div className="flex flex-col space-y-3">
+                  {formData.location ? (
+                    <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                      <div className="flex items-center gap-2 text-green-800">
+                        <MapPin className="h-5 w-5 shrink-0" />
+                        <span className="font-semibold shrink-0">Detected Location:</span>
+                        <span className="break-words">{formData.location}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 p-3 border border-gray-300 rounded-lg text-gray-500 bg-gray-50 italic flex items-center gap-2">
+                        <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
+                        Initializing automatic location detection...
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 

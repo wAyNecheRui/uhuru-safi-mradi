@@ -78,16 +78,38 @@ export const useProblemReporting = () => {
       return;
     }
 
+    toast.info('Detecting location...', { duration: 2000 });
+
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      async (position) => {
         const { latitude, longitude } = position.coords;
         const coordinates = `${latitude}, ${longitude}`;
-        setReportData(prev => ({ ...prev, coordinates }));
-        toast.success('GPS location captured successfully');
+
+        try {
+          const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`, {
+            headers: { 'Accept-Language': 'en-US,en;q=0.9' }
+          });
+
+          if (!response.ok) throw new Error('Network response was not ok');
+
+          const data = await response.json();
+          const detectedLocation = data.display_name;
+
+          setReportData(prev => ({
+            ...prev,
+            coordinates,
+            location: detectedLocation || coordinates
+          }));
+          toast.success('Location automatically detected!');
+        } catch (error) {
+          console.error("OSM Geocoding error:", error);
+          setReportData(prev => ({ ...prev, coordinates, location: `Location at ${coordinates}` }));
+          toast.success('GPS coordinates captured, but could not fetch address name.');
+        }
       },
       (error) => {
         console.error('GPS Error:', error);
-        toast.error('Unable to get GPS location. Please enter manually.');
+        toast.error('Unable to get GPS location. Please check browser permissions.');
       },
       { enableHighAccuracy: true, timeout: 10000 }
     );
@@ -180,6 +202,11 @@ export const useProblemReporting = () => {
       setIsSubmitting(false);
     }
   }, [reportData, user, navigate, getValidationErrors]);
+
+  // Auto-detect location on mount
+  useEffect(() => {
+    getCurrentLocation();
+  }, []);
 
   return {
     reportData,

@@ -45,23 +45,47 @@ const IssueReportingForm = () => {
     setGpsLoading(true);
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const coords = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          };
-          setFormData(prev => ({ ...prev, gpsCoordinates: coords }));
-          toast({
-            title: "Location captured",
-            description: `GPS coordinates: ${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`,
-          });
-          setGpsLoading(false);
+        async (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          const coords = { lat, lng };
+
+          try {
+            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`, {
+              headers: { 'Accept-Language': 'en-US,en;q=0.9' }
+            });
+
+            if (!response.ok) throw new Error('Network response was not ok');
+
+            const data = await response.json();
+            const detectedLocation = data.display_name;
+
+            setFormData(prev => ({
+              ...prev,
+              gpsCoordinates: coords,
+              location: detectedLocation || `${lat}, ${lng}`
+            }));
+
+            toast({
+              title: "Location detected automatically!",
+              description: `Mapped to: ${detectedLocation}`,
+            });
+          } catch (error) {
+            console.error("OSM Geocoding error:", error);
+            setFormData(prev => ({ ...prev, gpsCoordinates: coords, location: `${lat}, ${lng}` }));
+            toast({
+              title: "Location captured",
+              description: "Coordinates acquired, but unable to resolve street address.",
+            });
+          } finally {
+            setGpsLoading(false);
+          }
         },
         (error) => {
           console.error('Error getting location:', error);
           toast({
             title: "Location error",
-            description: "Unable to get your current location. Please enter manually.",
+            description: "Unable to get your current location. Please check permissions.",
             variant: "destructive"
           });
           setGpsLoading(false);
@@ -143,6 +167,11 @@ const IssueReportingForm = () => {
 
     setIsSubmitting(false);
   };
+
+  // Auto-detect location on mount
+  useEffect(() => {
+    getCurrentLocation();
+  }, []);
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -234,87 +263,24 @@ const IssueReportingForm = () => {
               </div>
             </div>
 
-            {/* Location Details */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="county" className="text-sm font-medium text-gray-700">
-                  County *
-                </Label>
-                <Select value={formData.county} onValueChange={(value) => setFormData(prev => ({ ...prev, county: value }))}>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Select county" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {kenyanCounties.map((county) => (
-                      <SelectItem key={county} value={county}>
-                        {county}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            {/* Auto-detected Location */}
+            {formData.location && (
+              <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-center gap-2 text-green-800">
+                  <MapPin className="h-5 w-5" />
+                  <span className="font-semibold">Detected Location:</span>
+                  <span>{formData.location}</span>
+                </div>
               </div>
+            )}
 
-              <div>
-                <Label htmlFor="ward" className="text-sm font-medium text-gray-700">
-                  Ward/Constituency
-                </Label>
-                <Input
-                  id="ward"
-                  value={formData.ward}
-                  onChange={(e) => setFormData(prev => ({ ...prev, ward: e.target.value }))}
-                  placeholder="e.g., Kasarani Ward"
-                  className="mt-1"
-                />
+            {/* Automatic Location Loading Indicator */}
+            {!formData.location && (
+              <div className="p-4 bg-muted rounded-lg flex items-center justify-center gap-3">
+                <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full" />
+                <span className="text-muted-foreground text-sm">Identifying precise map location...</span>
               </div>
-
-              <div>
-                <Label htmlFor="location" className="text-sm font-medium text-gray-700">
-                  Specific Location
-                </Label>
-                <Input
-                  id="location"
-                  value={formData.location}
-                  onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                  placeholder="e.g., Near Kenyatta University"
-                  className="mt-1"
-                />
-              </div>
-            </div>
-
-            {/* GPS Location */}
-            <div className="flex items-center space-x-4 p-4 bg-blue-50 rounded-lg">
-              <Globe className="h-5 w-5 text-blue-600" />
-              <div className="flex-1">
-                <h4 className="font-medium text-blue-900">GPS Location</h4>
-                <p className="text-sm text-blue-700">
-                  {formData.gpsCoordinates
-                    ? `Lat: ${formData.gpsCoordinates.lat.toFixed(6)}, Lng: ${formData.gpsCoordinates.lng.toFixed(6)}`
-                    : 'No GPS coordinates captured yet'
-                  }
-                </p>
-              </div>
-              <Button
-                type="button"
-                onClick={getCurrentLocation}
-                disabled={gpsLoading}
-                variant="outline"
-                className="border-blue-300 text-blue-700 hover:bg-blue-100"
-              >
-                {gpsLoading ? (
-                  'Getting Location...'
-                ) : formData.gpsCoordinates ? (
-                  <>
-                    <Check className="h-4 w-4 mr-2" />
-                    Update Location
-                  </>
-                ) : (
-                  <>
-                    <MapPin className="h-4 w-4 mr-2" />
-                    Get My Location
-                  </>
-                )}
-              </Button>
-            </div>
+            )}
 
             {/* Photo Upload */}
             <div className="space-y-4">
