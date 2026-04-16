@@ -1,13 +1,9 @@
-
 export interface ReportData {
   title: string;
   category: string;
   description: string;
-  location: string;
+  location: string; // The physical OSM address
   coordinates: string;
-  county: string;
-  constituency: string;
-  ward: string;
   gpsVerified: boolean;
   priority: string;
   photos: File[];

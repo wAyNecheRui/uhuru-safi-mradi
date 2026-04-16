@@ -1,5 +1,4 @@
-
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,9 +12,6 @@ const emptyReportData: ReportData = {
   description: '',
   location: '',
   coordinates: '',
-  county: '',
-  constituency: '',
-  ward: '',
   gpsVerified: false,
   priority: '',
   photos: [],
@@ -34,14 +30,12 @@ export const useProblemReporting = () => {
     setReportData(prev => ({ ...prev, [field]: value }));
   }, []);
 
-  const handleLocationDataChange = useCallback((data: { county: string; constituency: string; ward: string; gpsVerified: boolean; coordinates?: string }) => {
+  const handleLocationDataChange = useCallback((data: { gpsVerified: boolean; coordinates?: string; location?: string }) => {
     setReportData(prev => ({
       ...prev,
-      county: data.county,
-      constituency: data.constituency,
-      ward: data.ward,
       gpsVerified: data.gpsVerified,
       ...(data.coordinates ? { coordinates: data.coordinates } : {}),
+      ...(data.location ? { location: data.location } : {}),
     }));
   }, []);
 
@@ -146,54 +140,44 @@ export const useProblemReporting = () => {
     setIsSubmitting(true);
 
     try {
-      // Upload photos first if any
-      const photoUrls: string[] = [];
+      // Parallelize photo uploads for significantly better performance
+      const uploadPromises = reportData.photos.map(async (photo) => {
+        const fileExt = photo.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const filePath = `${user.id}/problem-reports/${fileName}`;
 
-      if (reportData.photos.length > 0) {
-        for (const photo of reportData.photos) {
-          const fileExt = photo.name.split('.').pop();
-          const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-          const filePath = `${user.id}/problem-reports/${fileName}`;
+        const { error: uploadError } = await supabase.storage
+          .from('report-files')
+          .upload(filePath, photo);
 
-          const { error: uploadError } = await supabase.storage
-            .from('report-files')
-            .upload(filePath, photo);
-
-          if (uploadError) {
-            console.error('Photo upload error:', uploadError);
-            toast.error(`Failed to upload ${photo.name}`);
-          } else {
-            const { data: { publicUrl } } = supabase.storage
-              .from('report-files')
-              .getPublicUrl(filePath);
-            photoUrls.push(publicUrl);
-          }
+        if (uploadError) {
+          console.error('Photo upload error:', uploadError);
+          throw new Error(`Failed to upload ${photo.name}`);
         }
-      }
 
-      // Derive display location from structured fields
-      const displayLocation = [reportData.ward, reportData.constituency, `${reportData.county} County`].filter(Boolean).join(', ');
+        const { data: { publicUrl } } = supabase.storage
+          .from('report-files')
+          .getPublicUrl(filePath);
 
-      // Submit the report via WorkflowService with structured location
-      const report = await WorkflowService.submitProblemReport({
+        return publicUrl;
+      });
+
+      const photoUrls = await Promise.all(uploadPromises);
+
+      // Submit the report via WorkflowService - only sending fields existing in the schema
+      await WorkflowService.submitProblemReport({
         title: reportData.title,
         description: reportData.description,
         category: reportData.category,
-        location: displayLocation,
+        location: reportData.location,
         coordinates: reportData.coordinates || undefined,
-        county: reportData.county,
-        constituency: reportData.constituency,
-        ward: reportData.ward,
         estimated_cost: reportData.estimatedCost ? parseFloat(reportData.estimatedCost) : undefined,
         affected_population: reportData.affectedPopulation ? parseInt(reportData.affectedPopulation) : undefined,
         photo_urls: photoUrls
       });
 
       toast.success('Problem report submitted successfully!');
-
-      // Reset form
       setReportData({ ...emptyReportData });
-
       navigate('/citizen/track');
     } catch (error: any) {
       console.error('Submit error:', error);
@@ -202,6 +186,8 @@ export const useProblemReporting = () => {
       setIsSubmitting(false);
     }
   }, [reportData, user, navigate, getValidationErrors]);
+
+  // Auto-detect location on mount
 
   // Auto-detect location on mount
   useEffect(() => {
