@@ -387,14 +387,18 @@ export type Database = {
           evaluation_notes: string | null
           experience_score: number | null
           id: string
+          materials_spec: string | null
           price_score: number | null
           proposal: string
+          quality_assurance: string | null
           report_id: string
+          safety_plan: string | null
           selected_at: string | null
           status: string
           submitted_at: string
           technical_approach: string | null
           technical_score: number | null
+          timeline_breakdown: string | null
           total_score: number | null
         }
         Insert: {
@@ -410,14 +414,18 @@ export type Database = {
           evaluation_notes?: string | null
           experience_score?: number | null
           id?: string
+          materials_spec?: string | null
           price_score?: number | null
           proposal: string
+          quality_assurance?: string | null
           report_id: string
+          safety_plan?: string | null
           selected_at?: string | null
           status?: string
           submitted_at?: string
           technical_approach?: string | null
           technical_score?: number | null
+          timeline_breakdown?: string | null
           total_score?: number | null
         }
         Update: {
@@ -433,14 +441,18 @@ export type Database = {
           evaluation_notes?: string | null
           experience_score?: number | null
           id?: string
+          materials_spec?: string | null
           price_score?: number | null
           proposal?: string
+          quality_assurance?: string | null
           report_id?: string
+          safety_plan?: string | null
           selected_at?: string | null
           status?: string
           submitted_at?: string
           technical_approach?: string | null
           technical_score?: number | null
+          timeline_breakdown?: string | null
           total_score?: number | null
         }
         Relationships: [
@@ -2624,6 +2636,7 @@ export type Database = {
           photo_urls: string[]
           priority: string
           priority_score: number
+          reported_by: string
           status: string
           title: string
           verified_votes: number
