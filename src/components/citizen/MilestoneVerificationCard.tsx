@@ -74,6 +74,7 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
   const [proximityCheck, setProximityCheck] = useState<'idle' | 'checking' | 'passed' | 'failed' | 'gps_error'>('idle');
   const [proximityDistance, setProximityDistance] = useState<number | null>(null);
   const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
+  const [locationErrorMessage, setLocationErrorMessage] = useState<string | null>(null);
 
   // Check verification status on mount and after verification
   useEffect(() => {
@@ -86,6 +87,7 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
       setProximityCheck('idle');
       setLocation(null);
       setGpsAccuracy(null);
+      setLocationErrorMessage(null);
     }
   }, [showVerifyDialog]);
 
@@ -119,6 +121,7 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
   const handleGetLocation = async () => {
     setGettingLocation(true);
     setProximityCheck('checking');
+    setLocationErrorMessage(null);
     try {
       const pos = await getCurrentPosition();
       setLocation({ lat: pos.lat, lon: pos.lon });
@@ -147,12 +150,16 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
       console.error('Geolocation error:', error);
       setProximityCheck('gps_error');
 
-      let errorMsg = "GPS access is required to verify milestones.";
-      if (error.code === 3) { // TIMEOUT
-        errorMsg = "GPS request timed out. Please ensure you have a clear view of the sky and try again.";
-      } else if (error.code === 1) { // PERMISSION_DENIED
-        errorMsg = "Location access denied. Even if you clicked 'Allow', your OS or browser settings may be blocking the signal. Please check your system privacy settings.";
+      let errorMsg = "We couldn't lock your location yet. Tap retry and keep location services on.";
+      if (error?.code === 3) {
+        errorMsg = "Location lookup timed out. Please retry while staying near a window or outdoors.";
+      } else if (error?.code === 1) {
+        errorMsg = "Location permission is blocked for this tab or device. Re-enable location access in your browser or OS settings, then retry.";
+      } else if (error?.code === 'INSECURE_CONTEXT') {
+        errorMsg = "Location only works on a secure HTTPS page.";
       }
+
+      setLocationErrorMessage(errorMsg);
 
       toast({
         title: "Location Error",
@@ -380,10 +387,7 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
                   size="sm"
                   className="bg-green-600 hover:bg-green-700 text-xs sm:text-sm"
                   onClick={() => {
-                    // Open dialog AND trigger geolocation in the SAME synchronous user gesture.
-                    // This preserves the user-activation context required by browsers in standalone tabs.
                     setShowVerifyDialog(true);
-                    handleGetLocation();
                   }}
                 >
                   <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
@@ -418,6 +422,21 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
           </DialogHeader>
 
           <div className="space-y-4 py-2 overflow-y-auto flex-1 min-h-0 pr-2">
+            {showVerifyDialog && proximityCheck === 'idle' && !gettingLocation && !location && (
+              <div className="rounded-lg border border-border bg-muted/30 p-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleGetLocation}
+                  disabled={gettingLocation}
+                  className="w-full"
+                >
+                  <MapPin className="h-4 w-4 mr-2" />
+                  Detect my location
+                </Button>
+              </div>
+            )}
+
             {/* Important Notice */}
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-3">
               <div className="flex items-start gap-2">
@@ -548,7 +567,7 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
               {proximityCheck === 'gps_error' && (
                 <div className="mt-2 p-2 bg-red-50 rounded border border-red-100">
                   <p className="text-xs text-red-700 font-medium">
-                    Technical Issue: The browser couldn't find your coordinates.
+                    {locationErrorMessage || "Technical Issue: The browser couldn't find your coordinates."}
                   </p>
                   <ul className="text-[10px] text-red-600 list-disc pl-4 mt-1 space-y-0.5">
                     <li>Using a laptop? Move closer to a window for WiFi positioning.</li>
