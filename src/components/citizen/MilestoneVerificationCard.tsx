@@ -80,13 +80,14 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
     checkVerificationStatus();
   }, [milestone.id, user?.id]);
 
-  // Automatically trigger location check when verification dialog opens
+  // Reset proximity state when dialog closes so a fresh check runs next time
   useEffect(() => {
-    const isVerifiable = milestone.status === 'submitted' || milestone.status === 'in_progress';
-    if (showVerifyDialog && user && isVerifiable && proximityCheck === 'idle') {
-      handleGetLocation();
+    if (!showVerifyDialog) {
+      setProximityCheck('idle');
+      setLocation(null);
+      setGpsAccuracy(null);
     }
-  }, [showVerifyDialog, user, milestone.status, proximityCheck]);
+  }, [showVerifyDialog]);
 
   const checkVerificationStatus = async () => {
     setCheckingStatus(true);
@@ -113,26 +114,7 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
     }
   };
 
-  const handleSimulateLocation = async () => {
-    setGettingLocation(true);
-    setProximityCheck('checking');
-
-    // Artificial 1.5s delay to feel real
-    await new Promise(r => setTimeout(r, 1500));
-
-    // Use dummy coordinates that will pass server-side check (simulate on-site)
-    // We'll set proximity check to 'passed' directly to bypass the RPC during simulation
-    setLocation({ lat: -1.3965, lon: 36.7570 }); // Representative coordinates
-    setGpsAccuracy(5.0);
-    setProximityCheck('passed');
-
-    toast({
-      title: "Simulation Verified 🧪",
-      description: "Simulation mode: Proximity check bypassed for testing.",
-    });
-
-    setGettingLocation(false);
-  };
+  // Simulation removed — only real GPS is allowed for milestone verification (anti-fraud).
 
   const handleGetLocation = async () => {
     setGettingLocation(true);
@@ -397,7 +379,12 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
                 <Button
                   size="sm"
                   className="bg-green-600 hover:bg-green-700 text-xs sm:text-sm"
-                  onClick={() => setShowVerifyDialog(true)}
+                  onClick={() => {
+                    // Open dialog AND trigger geolocation in the SAME synchronous user gesture.
+                    // This preserves the user-activation context required by browsers in standalone tabs.
+                    setShowVerifyDialog(true);
+                    handleGetLocation();
+                  }}
                 >
                   <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                   Verify Work
@@ -544,11 +531,11 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
               {proximityCheck !== 'passed' && !gettingLocation && (
                 <div className="mt-2 flex justify-center">
                   <button
-                    onClick={handleSimulateLocation}
-                    className="text-[10px] text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5 opacity-60 hover:opacity-100 py-1"
+                    onClick={handleGetLocation}
+                    className="text-xs text-primary hover:text-primary/80 transition-colors flex items-center gap-1.5 py-1 font-medium"
                   >
-                    <div className="w-1.5 h-1.5 bg-amber-400 rounded-full animate-pulse" />
-                    Simulate location for testing
+                    <MapPin className="h-3 w-3" />
+                    Retry location detection
                   </button>
                 </div>
               )}
