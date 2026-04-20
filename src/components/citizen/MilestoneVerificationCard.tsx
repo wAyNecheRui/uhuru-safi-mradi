@@ -550,11 +550,11 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
               {proximityCheck !== 'passed' && !gettingLocation && (
                 <div className="mt-2 flex justify-center">
                   <button
-                    onClick={handleSimulateLocation}
-                    className="text-[10px] text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5 opacity-60 hover:opacity-100 py-1"
+                    onClick={handleGetLocation}
+                    className="text-xs text-primary hover:text-primary/80 transition-colors flex items-center gap-1.5 py-1 font-medium"
                   >
-                    <div className="w-1.5 h-1.5 bg-amber-400 rounded-full animate-pulse" />
-                    Simulate location for testing
+                    <MapPin className="h-3 w-3" />
+                    Retry location detection
                   </button>
                 </div>
               )}
