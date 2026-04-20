@@ -398,7 +398,12 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
                 <Button
                   size="sm"
                   className="bg-green-600 hover:bg-green-700 text-xs sm:text-sm"
-                  onClick={() => setShowVerifyDialog(true)}
+                  onClick={() => {
+                    // Open dialog AND trigger geolocation in the SAME synchronous user gesture.
+                    // This preserves the user-activation context required by browsers in standalone tabs.
+                    setShowVerifyDialog(true);
+                    handleGetLocation();
+                  }}
                 >
                   <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                   Verify Work
