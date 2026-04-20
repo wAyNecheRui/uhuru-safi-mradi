@@ -73,12 +73,13 @@ const BreadcrumbNav = ({ items = [] }: BreadcrumbNavProps) => {
   return (
     <Breadcrumb className="mb-6">
       <BreadcrumbList>
-        {breadcrumbs.map((breadcrumb, index) => (
-          <React.Fragment key={index}>
-            <BreadcrumbItem>
+        {breadcrumbs.map((breadcrumb, index) => {
+          const isLast = index === breadcrumbs.length - 1;
+          return [
+            <BreadcrumbItem key={`item-${index}`}>
               {breadcrumb.href ? (
                 <BreadcrumbLink asChild>
-                <Link to={breadcrumb.href} className="flex items-center hover:text-primary transition-colors">
+                  <Link to={breadcrumb.href} className="flex items-center hover:text-primary transition-colors">
                     {index === 0 && <Home className="h-4 w-4 mr-1" />}
                     {breadcrumb.label}
                   </Link>
@@ -88,14 +89,14 @@ const BreadcrumbNav = ({ items = [] }: BreadcrumbNavProps) => {
                   {breadcrumb.label}
                 </BreadcrumbPage>
               )}
-            </BreadcrumbItem>
-            {index < breadcrumbs.length - 1 && (
-              <BreadcrumbSeparator>
+            </BreadcrumbItem>,
+            !isLast && (
+              <BreadcrumbSeparator key={`sep-${index}`}>
                 <ChevronRight className="h-4 w-4" />
               </BreadcrumbSeparator>
-            )}
-          </React.Fragment>
-        ))}
+            ),
+          ];
+        })}
       </BreadcrumbList>
     </Breadcrumb>
   );
