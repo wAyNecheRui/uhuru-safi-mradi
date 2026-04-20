@@ -49,16 +49,13 @@ const CascadingLocationSelector: React.FC<CascadingLocationSelectorProps> = ({
     onChange({ ...value, ward });
   };
 
-  const verifyWithGps = () => {
-    if (!navigator.geolocation) {
-      setGpsStatus('error');
-      return;
-    }
+  const verifyWithGps = async () => {
     setGpsStatus('loading');
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const { latitude, longitude } = pos.coords;
-        const coords = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+    try {
+      const pos = await getCurrentPosition();
+      const latitude = pos.lat;
+      const longitude = pos.lon;
+      const coords = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
 
         let detectedCountyName = '';
         let detectedConstituency = '';
