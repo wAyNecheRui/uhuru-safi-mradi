@@ -14,6 +14,7 @@ import { useProjects } from '@/hooks/useProjects';
 import { useSecurityEnhanced } from '@/hooks/useSecurityEnhanced';
 import { supabase } from '@/integrations/supabase/client';
 import { enhancedReportValidationSchema } from '@/utils/securityEnhanced';
+import { getCurrentPosition } from '@/utils/geoUtils';
 
 import { CATEGORIES, PRIORITIES } from '@/constants/problemReporting';
 
@@ -159,52 +160,45 @@ const ProblemReportingForm = () => {
     }
   };
 
-  const getCurrentLocation = () => {
-    if (navigator.geolocation) {
-      toast({ title: "Detecting location...", description: "Please wait while we acquire your GPS coordinates." });
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const lat = position.coords.latitude;
-          const lng = position.coords.longitude;
-          const coords = `${lat}, ${lng}`;
+  const getCurrentLocation = async () => {
+    toast({ title: "Detecting location...", description: "Please wait while we acquire your GPS coordinates." });
+    try {
+      const pos = await getCurrentPosition();
+      const lat = pos.lat;
+      const lng = pos.lon;
+      const coords = `${lat}, ${lng}`;
 
-          try {
-            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`, {
-              headers: { 'Accept-Language': 'en-US,en;q=0.9' }
-            });
+      try {
+        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`, {
+          headers: { 'Accept-Language': 'en-US,en;q=0.9' }
+        });
 
-            if (!response.ok) throw new Error('Network response was not ok');
+        if (!response.ok) throw new Error('Network response was not ok');
 
-            const data = await response.json();
-            const detectedLocation = data.display_name;
+        const data = await response.json();
+        const detectedLocation = data.display_name;
 
-            handleInputChange('location', detectedLocation || coords);
-            toast({
-              title: "Location Detected",
-              description: `Mapped to: ${detectedLocation}`,
-            });
-          } catch (error) {
-            console.error("OSM Geocoding error:", error);
-            handleInputChange('location', coords);
-            toast({
-              title: "Location Captured",
-              description: "Coordinates acquired, but unable to resolve street address.",
-            });
-          }
-        },
-        (error) => {
-          toast({
-            title: "Location Error",
-            description: "Unable to get your current location. Please check browser permissions.",
-            variant: "destructive"
-          });
-        },
-        { enableHighAccuracy: true, timeout: 10000 }
-      );
-    } else {
+        handleInputChange('location', detectedLocation || coords);
+        toast({
+          title: "Location Detected",
+          description: `Mapped to: ${detectedLocation}`,
+        });
+      } catch (error) {
+        console.error("OSM Geocoding error:", error);
+        handleInputChange('location', coords);
+        toast({
+          title: "Location Captured",
+          description: "Coordinates acquired, but unable to resolve street address.",
+        });
+      }
+    } catch (error: any) {
+      const msg =
+        error?.code === 1
+          ? 'Location access denied. Please enable location in browser settings.'
+          : 'Unable to get your current location. Please check browser permissions.';
       toast({
-        title: "GPS not supported",
-        description: "Your device doesn't support GPS location.",
+        title: "Location Error",
+        description: msg,
         variant: "destructive"
       });
     }

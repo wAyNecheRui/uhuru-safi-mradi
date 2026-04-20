@@ -3,6 +3,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Navigation, CheckCircle, Loader2, AlertTriangle } from 'lucide-react';
 import { getCountyNames, getConstituencies, getWards, getCountyByCoordinates } from '@/constants/kenyaAdminData';
+import { getCurrentPosition } from '@/utils/geoUtils';
 
 interface LocationData {
   county: string;
@@ -48,16 +49,13 @@ const CascadingLocationSelector: React.FC<CascadingLocationSelectorProps> = ({
     onChange({ ...value, ward });
   };
 
-  const verifyWithGps = () => {
-    if (!navigator.geolocation) {
-      setGpsStatus('error');
-      return;
-    }
+  const verifyWithGps = async () => {
     setGpsStatus('loading');
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const { latitude, longitude } = pos.coords;
-        const coords = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+    try {
+      const pos = await getCurrentPosition();
+      const latitude = pos.lat;
+      const longitude = pos.lon;
+      const coords = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
 
         let detectedCountyName = '';
         let detectedConstituency = '';
@@ -141,10 +139,10 @@ const CascadingLocationSelector: React.FC<CascadingLocationSelectorProps> = ({
         } else {
           setGpsStatus('error');
         }
-      },
-      () => setGpsStatus('error'),
-      { enableHighAccuracy: true, timeout: 15000 }
-    );
+    } catch (error) {
+      console.error('GPS verification error:', error);
+      setGpsStatus('error');
+    }
   };
 
   useEffect(() => {

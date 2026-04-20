@@ -6,6 +6,7 @@ import { Camera, MapPin, Upload, Trash2, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { getCurrentPosition } from '@/utils/geoUtils';
 
 interface MediaFile {
   id: string;
@@ -36,29 +37,14 @@ const CameraIntegration: React.FC<CameraIntegrationProps> = ({
   const [capturing, setCapturing] = useState(false);
   const { toast } = useToast();
 
-  const getCurrentLocation = (): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      if (!navigator.geolocation) {
-        reject('Geolocation not supported');
-        return;
-      }
-
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          resolve(`${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
-        },
-        (error) => {
-          console.warn('Location access denied:', error);
-          resolve('Location not available');
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 300000
-        }
-      );
-    });
+  const getCurrentLocationString = async (): Promise<string> => {
+    try {
+      const pos = await getCurrentPosition();
+      return `${pos.lat.toFixed(6)}, ${pos.lon.toFixed(6)}`;
+    } catch (error) {
+      console.warn('Location access denied or unavailable:', error);
+      return 'Location not available';
+    }
   };
 
   const handleFileCapture = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -77,7 +63,7 @@ const CameraIntegration: React.FC<CameraIntegrationProps> = ({
     setCapturing(true);
 
     try {
-      const gpsCoordinates = await getCurrentLocation();
+      const gpsCoordinates = await getCurrentLocationString();
       const newFiles: MediaFile[] = [];
 
       for (let i = 0; i < files.length; i++) {

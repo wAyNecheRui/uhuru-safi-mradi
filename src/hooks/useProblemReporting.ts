@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ReportData } from '@/types/problemReporting';
 import { WorkflowService } from '@/services/WorkflowService';
+import { getCurrentPosition } from '@/utils/geoUtils';
 
 const emptyReportData: ReportData = {
   title: '',
@@ -72,25 +73,24 @@ export const useProblemReporting = () => {
     setReportData(prev => ({ ...prev, photos: [...prev.photos, file] }));
   }, [reportData.photos.length]);
 
-  const getCurrentLocation = useCallback(() => {
-    if (!navigator.geolocation) {
-      toast.error('GPS not supported on this device');
-      return;
+  const getCurrentLocation = useCallback(async () => {
+    try {
+      const pos = await getCurrentPosition();
+      const coordinates = `${pos.lat}, ${pos.lon}`;
+      setReportData(prev => ({ ...prev, coordinates }));
+      toast.success(
+        pos.isFallback
+          ? `Location captured via WiFi/Network (±${Math.round(pos.accuracy)}m)`
+          : `GPS location captured (±${Math.round(pos.accuracy)}m)`
+      );
+    } catch (error: any) {
+      console.error('GPS Error:', error);
+      const msg =
+        error?.code === 1
+          ? 'Location access denied. Please enable location for this site in browser settings.'
+          : 'Unable to get GPS location. Please enter manually.';
+      toast.error(msg);
     }
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
-        const coordinates = `${latitude}, ${longitude}`;
-        setReportData(prev => ({ ...prev, coordinates }));
-        toast.success('GPS location captured successfully');
-      },
-      (error) => {
-        console.error('GPS Error:', error);
-        toast.error('Unable to get GPS location. Please enter manually.');
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
   }, []);
 
   const getValidationErrors = useCallback((): string[] => {

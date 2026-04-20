@@ -33,6 +33,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { getCurrentPosition } from '@/utils/geoUtils';
 import { LiveNotificationService } from '@/services/LiveNotificationService';
 
 interface ProjectIssueReportModalProps {
@@ -80,39 +81,31 @@ const ProjectIssueReportModal: React.FC<ProjectIssueReportModalProps> = ({
   const [photos, setPhotos] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
-  const handleGetLocation = () => {
-    if (!navigator.geolocation) {
+  const handleGetLocation = async () => {
+    setGettingLocation(true);
+    try {
+      const pos = await getCurrentPosition();
+      setLocation({ lat: pos.lat, lng: pos.lon });
       toast({
-        title: 'Not Supported',
-        description: 'Geolocation is not supported by your browser',
+        title: 'Location Captured',
+        description: pos.isFallback
+          ? `Recorded via WiFi/Network (±${Math.round(pos.accuracy)}m)`
+          : `Recorded via GPS (±${Math.round(pos.accuracy)}m)`
+      });
+    } catch (error: any) {
+      console.error('Geolocation error:', error);
+      const msg =
+        error?.code === 1
+          ? 'Location access denied. Please enable location in browser settings.'
+          : 'Could not get your location. Please try again.';
+      toast({
+        title: 'Location Error',
+        description: msg,
         variant: 'destructive'
       });
-      return;
+    } finally {
+      setGettingLocation(false);
     }
-
-    setGettingLocation(true);
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setLocation({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude
-        });
-        setGettingLocation(false);
-        toast({
-          title: 'Location Captured',
-          description: 'Your current location has been recorded'
-        });
-      },
-      (error) => {
-        console.error('Geolocation error:', error);
-        setGettingLocation(false);
-        toast({
-          title: 'Location Error',
-          description: 'Could not get your location',
-          variant: 'destructive'
-        });
-      }
-    );
   };
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
