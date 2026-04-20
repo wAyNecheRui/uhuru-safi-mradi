@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -24,9 +24,12 @@ interface ProjectMapModalProps {
   isOpen: boolean;
   onClose: () => void;
   projects: Project[];
+  onSelectProject?: (projectId: string) => void;
 }
 
-const ProjectMapModal = ({ isOpen, onClose, projects }: ProjectMapModalProps) => {
+const ProjectMapModal = ({ isOpen, onClose, projects, onSelectProject }: ProjectMapModalProps) => {
+  const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null);
+
   const markers: MapMarker[] = useMemo(() => {
     return projects
       .filter(p => p.coordinates)
@@ -53,38 +56,59 @@ const ProjectMapModal = ({ isOpen, onClose, projects }: ProjectMapModalProps) =>
     }
   };
 
+  // Auto-scroll to selected project when a map marker is clicked
+  useEffect(() => {
+    if (selectedMarkerId) {
+      const el = document.getElementById(`project-list-card-${selectedMarkerId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+  }, [selectedMarkerId]);
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
-        <DialogHeader>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogHeader className="shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <MapPin className="h-5 w-5 text-primary" />
             Project Locations Map
           </DialogTitle>
           <DialogDescription>
-            View all active infrastructure projects in your area
+            Click a map pin to find the project, or click the project card to view details.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-grow min-h-0 overflow-hidden mt-4">
           {/* Interactive Leaflet Map */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 h-full min-h-[300px]">
             <InteractiveMap
               markers={markers}
-              height="400px"
+              height="100%"
               zoom={markers.length > 0 ? 10 : 7}
+              onMarkerClick={(marker) => setSelectedMarkerId(marker.id)}
             />
           </div>
 
           {/* Project List */}
-          <div className="space-y-3 max-h-[400px] overflow-y-auto">
-            <h4 className="font-semibold text-sm text-muted-foreground uppercase">
-              {projects.length} Projects
+          <div className="space-y-3 overflow-y-auto pr-2 pb-2 h-full">
+            <h4 className="font-semibold text-sm text-muted-foreground uppercase sticky top-0 bg-background pt-1 pb-2 z-10">
+              {projects.filter(p => p.coordinates).length} Mapped Projects
             </h4>
-            {projects.map((project) => (
-              <div 
-                key={project.id} 
-                className="p-3 bg-card border rounded-lg hover:border-primary/50 transition-colors cursor-pointer"
+            {projects.filter(p => p.coordinates).map((project) => (
+              <div
+                key={project.id}
+                id={`project-list-card-${project.id}`}
+                onClick={() => {
+                  if (onSelectProject) {
+                    onClose();
+                    onSelectProject(project.id);
+                  }
+                }}
+                className={`p-3 bg-card border rounded-lg transition-all cursor-pointer shadow-sm
+                  ${selectedMarkerId === project.id
+                    ? 'border-primary ring-1 ring-primary/50 relative z-10'
+                    : 'hover:border-primary/50 hover:shadow-md opacity-90 hover:opacity-100'}`}
               >
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <h5 className="font-medium text-sm line-clamp-1">{project.title}</h5>
@@ -95,24 +119,22 @@ const ProjectMapModal = ({ isOpen, onClose, projects }: ProjectMapModalProps) =>
                 <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
                   {project.description}
                 </p>
-                <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1">
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1 font-medium">
                     <Wallet className="h-3 w-3" />
                     KES {(project.budget || 0).toLocaleString()}
                   </span>
-                  {project.coordinates && (
-                    <span className="flex items-center gap-1 text-green-600">
-                      <MapPin className="h-3 w-3" />
-                      GPS
-                    </span>
-                  )}
+                  <span className="flex items-center gap-1 text-green-600 bg-green-50 px-1.5 py-0.5 rounded">
+                    <MapPin className="h-3 w-3" />
+                    MAPPED
+                  </span>
                 </div>
               </div>
             ))}
-            {projects.length === 0 && (
+            {projects.filter(p => p.coordinates).length === 0 && (
               <div className="text-center py-8 text-muted-foreground">
                 <MapPin className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">No projects found</p>
+                <p className="text-sm">No mapped projects found.<br />GPS coordinates are required.</p>
               </div>
             )}
           </div>

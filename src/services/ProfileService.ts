@@ -38,6 +38,14 @@ export interface ContractorProfile {
   previous_projects_count: number;
   total_contract_value: number;
   average_rating: number;
+  agpo_category?: string | null;
+  agpo_certificate_url?: string;
+  agpo_verified?: boolean;
+  agpo_verified_at?: string;
+  cr12_url?: string;
+  cr12_verified?: boolean;
+  nca_certificate_url?: string;
+  nca_category?: string;
   verified: boolean;
   verification_date?: string;
   created_at: string;
@@ -68,7 +76,7 @@ export class ProfileService {
   static async getUserProfile(userId?: string): Promise<UserProfile | null> {
     const { data: { user } } = await supabase.auth.getUser();
     const targetUserId = userId || user?.id;
-    
+
     if (!targetUserId) return null;
 
     const { data, error } = await supabase
@@ -90,7 +98,7 @@ export class ProfileService {
    */
   static async updateUserProfile(updates: Partial<UserProfile>): Promise<{ success: boolean; error?: string }> {
     const { data: { user } } = await supabase.auth.getUser();
-    
+
     if (!user) {
       return { success: false, error: 'User not authenticated' };
     }
@@ -114,7 +122,7 @@ export class ProfileService {
   static async getContractorProfile(userId?: string): Promise<ContractorProfile | null> {
     const { data: { user } } = await supabase.auth.getUser();
     const targetUserId = userId || user?.id;
-    
+
     if (!targetUserId) return null;
 
     const { data, error } = await supabase
@@ -136,7 +144,7 @@ export class ProfileService {
    */
   static async upsertContractorProfile(profile: Partial<ContractorProfile>): Promise<{ success: boolean; error?: string }> {
     const { data: { user } } = await supabase.auth.getUser();
-    
+
     if (!user) {
       return { success: false, error: 'User not authenticated' };
     }
@@ -188,7 +196,7 @@ export class ProfileService {
   static async getGovernmentProfile(userId?: string): Promise<GovernmentProfile | null> {
     const { data: { user } } = await supabase.auth.getUser();
     const targetUserId = userId || user?.id;
-    
+
     if (!targetUserId) return null;
 
     const { data, error } = await supabase
@@ -210,7 +218,7 @@ export class ProfileService {
    */
   static async upsertGovernmentProfile(profile: Partial<GovernmentProfile>): Promise<{ success: boolean; error?: string }> {
     const { data: { user } } = await supabase.auth.getUser();
-    
+
     if (!user) {
       return { success: false, error: 'User not authenticated' };
     }
@@ -263,7 +271,7 @@ export class ProfileService {
    */
   static async checkProfileCompletion(): Promise<boolean> {
     const profile = await this.getUserProfile();
-    
+
     if (!profile) return false;
 
     const requiredFields = [

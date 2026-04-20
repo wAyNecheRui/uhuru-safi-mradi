@@ -53,7 +53,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const mountedRef = useRef(true);
   const initDoneRef = useRef(false);
   const prevUserIdRef = useRef<string | null>(null);
-  
+
   // Get query client for cache clearing - wrapped in try/catch for safety
   let queryClient: ReturnType<typeof useQueryClient> | null = null;
   try {
@@ -89,7 +89,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [clearDataCache]);
 
   // Fast user data loader with cache
-  const loadUserData = useCallback(async (userId: string, email: string): Promise<{ user: AuthUser; roles: AppRole[] } | null> => {
+  const loadUserData = useCallback(async (userId: string, email: string, metadata?: any): Promise<{ user: AuthUser; roles: AppRole[] } | null> => {
     const cached = userCache.get(userId);
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
       return { user: cached.user, roles: cached.roles };
@@ -107,7 +107,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Trust user_type from profile directly — roles are assigned on signup
       let userType: 'citizen' | 'contractor' | 'government' = 'citizen';
       let userName = email.split('@')[0];
-      
+
+      // Fallback 1: Extract from JWT token metadata immediately available on reload
+      if (metadata?.user_type && ['citizen', 'contractor', 'government'].includes(metadata.user_type)) {
+        userType = metadata.user_type as 'citizen' | 'contractor' | 'government';
+      }
+      if (metadata?.full_name) {
+        userName = metadata.full_name;
+      }
+
+      // Fallback 2: Database profile has highest priority if it actually loads
       if (profile?.user_type) {
         const profileType = profile.user_type as string;
         userName = profile.full_name || userName;
@@ -152,7 +161,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (data.user && data.session) {
         // Always clear cache on sign-in to get fresh profile data
         userCache.delete(data.user.id);
-        const userData = await loadUserData(data.user.id, data.user.email || '');
+        const userData = await loadUserData(data.user.id, data.user.email || '', data.user.user_metadata);
         if (mountedRef.current && userData) {
           setUser(userData.user);
           setRoles(userData.roles);
@@ -202,12 +211,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const currentUserId = user?.id ?? null;
     const prevUserId = prevUserIdRef.current;
-    
+
     // If user changed (including from one user to another), clear cache
     if (prevUserId !== null && currentUserId !== prevUserId) {
       clearDataCache();
     }
-    
+
     prevUserIdRef.current = currentUserId;
   }, [user?.id, clearDataCache]);
 
@@ -236,7 +245,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         // Clear cache to ensure fresh profile data on session restore
         userCache.delete(session.user.id);
-        const userData = await loadUserData(session.user.id, session.user.email || '');
+        const userData = await loadUserData(session.user.id, session.user.email || '', session.user.user_metadata);
         if (mountedRef.current && userData) {
           setUser(userData.user);
           setRoles(userData.roles);
@@ -275,7 +284,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Defer to avoid deadlock
         setTimeout(async () => {
           userCache.delete(session.user.id);
-          const userData = await loadUserData(session.user.id, session.user.email || '');
+          const userData = await loadUserData(session.user.id, session.user.email || '', session.user.user_metadata);
           if (mountedRef.current && userData) {
             setUser(userData.user);
             setRoles(userData.roles);

@@ -1,4 +1,4 @@
-export type WorkflowStep = 
+export type WorkflowStep =
   | 'problem_identification'
   | 'community_validation'
   | 'government_approval'
@@ -6,7 +6,7 @@ export type WorkflowStep =
   | 'project_execution'
   | 'final_verification';
 
-export type ProjectStatus = 
+export type ProjectStatus =
   | 'submitted'
   | 'community_review'
   | 'government_review'
@@ -52,6 +52,10 @@ export interface ContractorBid {
   proposal: string;
   estimated_duration: number;
   technical_approach?: string;
+  materials_spec?: string;
+  timeline_breakdown?: string;
+  safety_plan?: string;
+  quality_assurance?: string;
   status: BidStatus;
   submitted_at: string;
   selected_at?: string;

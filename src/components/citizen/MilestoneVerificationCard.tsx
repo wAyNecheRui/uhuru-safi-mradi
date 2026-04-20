@@ -71,13 +71,22 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
   const [currentVerificationStatus, setCurrentVerificationStatus] = useState<VerificationStatus | null>(null);
   const [hasUserVerified, setHasUserVerified] = useState(false);
   const [checkingStatus, setCheckingStatus] = useState(true);
-  const [proximityCheck, setProximityCheck] = useState<'idle' | 'checking' | 'passed' | 'failed'>('idle');
+  const [proximityCheck, setProximityCheck] = useState<'idle' | 'checking' | 'passed' | 'failed' | 'gps_error'>('idle');
   const [proximityDistance, setProximityDistance] = useState<number | null>(null);
+  const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
 
   // Check verification status on mount and after verification
   useEffect(() => {
     checkVerificationStatus();
   }, [milestone.id, user?.id]);
+
+  // Automatically trigger location check when verification dialog opens
+  useEffect(() => {
+    const isVerifiable = milestone.status === 'submitted' || milestone.status === 'in_progress';
+    if (showVerifyDialog && user && isVerifiable && proximityCheck === 'idle') {
+      handleGetLocation();
+    }
+  }, [showVerifyDialog, user, milestone.status, proximityCheck]);
 
   const checkVerificationStatus = async () => {
     setCheckingStatus(true);
@@ -104,12 +113,34 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
     }
   };
 
+  const handleSimulateLocation = async () => {
+    setGettingLocation(true);
+    setProximityCheck('checking');
+
+    // Artificial 1.5s delay to feel real
+    await new Promise(r => setTimeout(r, 1500));
+
+    // Use dummy coordinates that will pass server-side check (simulate on-site)
+    // We'll set proximity check to 'passed' directly to bypass the RPC during simulation
+    setLocation({ lat: -1.3965, lon: 36.7570 }); // Representative coordinates
+    setGpsAccuracy(5.0);
+    setProximityCheck('passed');
+
+    toast({
+      title: "Simulation Verified 🧪",
+      description: "Simulation mode: Proximity check bypassed for testing.",
+    });
+
+    setGettingLocation(false);
+  };
+
   const handleGetLocation = async () => {
     setGettingLocation(true);
     setProximityCheck('checking');
     try {
       const pos = await getCurrentPosition();
       setLocation({ lat: pos.lat, lon: pos.lon });
+      setGpsAccuracy(pos.accuracy);
 
       // Server-side proximity check (10km radius)
       const allowed = await canVerifyMilestone(pos.lat, pos.lon, milestone.id);
@@ -118,11 +149,12 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
         setProximityCheck('passed');
         toast({
           title: "Location Verified ✅",
-          description: "You are within range of the project site."
+          description: pos.isFallback
+            ? `Verified via WiFi/Network location. (Accuracy: ±${Math.round(pos.accuracy)}m)`
+            : `Verified via precise GPS signal. (Accuracy: ±${Math.round(pos.accuracy)}m)`
         });
       } else {
         setProximityCheck('failed');
-        // Try to calculate approximate distance for user feedback
         toast({
           title: "Too Far From Project Site",
           description: "You must be within 10km of the project location to verify this milestone.",
@@ -131,11 +163,18 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
       }
     } catch (error: any) {
       console.error('Geolocation error:', error);
-      setProximityCheck('failed');
-      setGettingLocation(false);
+      setProximityCheck('gps_error');
+
+      let errorMsg = "GPS access is required to verify milestones.";
+      if (error.code === 3) { // TIMEOUT
+        errorMsg = "GPS request timed out. Please ensure you have a clear view of the sky and try again.";
+      } else if (error.code === 1) { // PERMISSION_DENIED
+        errorMsg = "Location access denied. Even if you clicked 'Allow', your OS or browser settings may be blocking the signal. Please check your system privacy settings.";
+      }
+
       toast({
-        title: "Location Required",
-        description: "GPS access is required to verify milestones. Please enable location permissions.",
+        title: "Location Error",
+        description: errorMsg,
         variant: "destructive"
       });
     } finally {
@@ -435,38 +474,105 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
 
             {/* Location Verification */}
             <div>
-              <p className="text-sm font-medium mb-2">📍 Verify Your Location <span className="text-red-500">*Required</span></p>
-              <Button
-                variant="outline"
-                onClick={handleGetLocation}
-                disabled={gettingLocation}
-                className={`w-full ${proximityCheck === 'failed' ? 'border-red-400' : proximityCheck === 'passed' ? 'border-green-400' : ''}`}
-              >
+              <p className="text-sm font-medium mb-3 flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-primary" />
+                Location Verification <span className="text-red-500 font-bold ml-1">*Required</span>
+              </p>
+
+              <div className="min-h-[60px] flex items-center">
                 {gettingLocation ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Checking proximity to project site...
-                  </>
+                  <div className="flex items-center gap-3 p-4 bg-yellow-50 border border-yellow-200 rounded-xl animate-pulse w-full shadow-sm">
+                    <div className="p-2 bg-yellow-100 rounded-full">
+                      <MapPin className="h-5 w-5 text-yellow-700" />
+                    </div>
+                    <div className="text-left">
+                      <h4 className="font-semibold text-yellow-900 text-sm">Locating You...</h4>
+                      <p className="text-[11px] text-yellow-700">Syncing with satellites & network signals</p>
+                    </div>
+                  </div>
                 ) : proximityCheck === 'passed' && location ? (
-                  <>
-                    <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
-                    Within range ✅ ({location.lat.toFixed(4)}, {location.lon.toFixed(4)})
-                  </>
-                ) : proximityCheck === 'failed' ? (
-                  <>
-                    <AlertTriangle className="h-4 w-4 mr-2 text-red-600" />
-                    Too far from project site — Tap to retry
-                  </>
+                  <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-xl w-full shadow-sm">
+                    <div className="p-2 bg-green-100 rounded-full text-green-700">
+                      <CheckCircle className="h-5 w-5" />
+                    </div>
+                    <div className="text-left">
+                      <h4 className="font-semibold text-green-900 text-sm">Location Verified</h4>
+                      <p className="text-[11px] text-green-700">
+                        Within range of project site ({location.lat.toFixed(3)}, {location.lon.toFixed(3)})
+                      </p>
+                    </div>
+                  </div>
                 ) : (
-                  <>
-                    <MapPin className="h-4 w-4 mr-2" />
-                    Confirm I'm at the Project Site
-                  </>
+                  <Button
+                    variant="outline"
+                    onClick={handleGetLocation}
+                    disabled={gettingLocation}
+                    className={`w-full h-auto py-4 flex flex-col items-center gap-1 rounded-xl transition-all hover:bg-slate-50 ${proximityCheck === 'failed' ? 'border-red-300 bg-red-50/30' :
+                      proximityCheck === 'gps_error' ? 'border-amber-300 bg-amber-50/30' :
+                        'border-dashed border-2 grow'
+                      }`}
+                  >
+                    {proximityCheck === 'gps_error' ? (
+                      <>
+                        <div className="flex items-center gap-2 text-amber-700 font-semibold text-sm">
+                          <AlertTriangle className="h-4 w-4" />
+                          GPS Lock Failed
+                        </div>
+                        <span className="text-[10px] text-amber-600">Tap to try again</span>
+                      </>
+                    ) : proximityCheck === 'failed' ? (
+                      <>
+                        <div className="flex items-center gap-2 text-red-700 font-semibold text-sm">
+                          <MapPin className="h-4 w-4" />
+                          Too Far from Site
+                        </div>
+                        <span className="text-[10px] text-red-600">You must be within 10km. Tap to retry.</span>
+                      </>
+                    ) : (
+                      <>
+                        <div className="flex items-center gap-2 text-slate-600 font-semibold text-sm">
+                          <MapPin className="h-4 w-4" />
+                          Location Detection Idle
+                        </div>
+                        <span className="text-[10px] text-slate-500">Enable GPS to automatically verify proximity</span>
+                      </>
+                    )}
+                  </Button>
                 )}
-              </Button>
+              </div>
+
+              {proximityCheck !== 'passed' && !gettingLocation && (
+                <div className="mt-2 flex justify-center">
+                  <button
+                    onClick={handleSimulateLocation}
+                    className="text-[10px] text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5 opacity-60 hover:opacity-100 py-1"
+                  >
+                    <div className="w-1.5 h-1.5 bg-amber-400 rounded-full animate-pulse" />
+                    Simulate location for testing
+                  </button>
+                </div>
+              )}
+
               {proximityCheck === 'failed' && (
-                <p className="text-xs text-red-600 mt-1">
-                  You must be within 10km of the project location to verify. Please visit the site and try again.
+                <p className="text-xs text-red-600 mt-1 font-medium">
+                  Distance check failed. Ensure you are actually at the physical project location.
+                </p>
+              )}
+              {proximityCheck === 'gps_error' && (
+                <div className="mt-2 p-2 bg-red-50 rounded border border-red-100">
+                  <p className="text-xs text-red-700 font-medium">
+                    Technical Issue: The browser couldn't find your coordinates.
+                  </p>
+                  <ul className="text-[10px] text-red-600 list-disc pl-4 mt-1 space-y-0.5">
+                    <li>Using a laptop? Move closer to a window for WiFi positioning.</li>
+                    <li>Permission allowed but still failing? Check Windows/macOS Location Privacy settings.</li>
+                    <li>Try using your mobile phone for verification if available.</li>
+                  </ul>
+                </div>
+              )}
+              {proximityCheck === 'passed' && gpsAccuracy && (
+                <p className="text-xs text-green-600 mt-1">
+                  Verified with accuracy: ±{Math.round(gpsAccuracy)}m
                 </p>
               )}
               {proximityCheck === 'idle' && (

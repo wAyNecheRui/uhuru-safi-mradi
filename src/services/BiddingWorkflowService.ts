@@ -30,6 +30,13 @@ export interface TopBid {
   previous_projects_count: number | null;
   max_project_capacity: number | null;
   rank: number;
+  // Full proposal fields
+  proposal?: string | null;
+  technical_approach?: string | null;
+  materials_spec?: string | null;
+  timeline_breakdown?: string | null;
+  safety_plan?: string | null;
+  quality_assurance?: string | null;
 }
 
 export interface BidEvaluationResult {
@@ -95,8 +102,8 @@ export class BiddingWorkflowService {
     if (!user) return null;
 
     const { data, error } = await supabase
-      .rpc('evaluate_bid', { 
-        p_bid_id: bidId, 
+      .rpc('evaluate_bid', {
+        p_bid_id: bidId,
         p_evaluator_id: user.id,
         p_notes: notes || null
       });
@@ -149,8 +156,8 @@ export class BiddingWorkflowService {
    * Select winning bid and create/update project with contractor
    */
   static async selectWinningBid(
-    reportId: string, 
-    bidId: string, 
+    reportId: string,
+    bidId: string,
     justification: string
   ): Promise<boolean> {
     const user = (await supabase.auth.getUser()).data.user;
@@ -289,7 +296,7 @@ export class BiddingWorkflowService {
    * Request direct procurement exception (for < 3 bids after extensions)
    */
   static async requestDirectProcurement(
-    reportId: string, 
+    reportId: string,
     justification: string
   ): Promise<boolean> {
     const user = (await supabase.auth.getUser()).data.user;

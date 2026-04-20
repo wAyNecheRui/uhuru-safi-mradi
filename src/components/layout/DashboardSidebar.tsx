@@ -18,7 +18,10 @@ import {
 } from '@/components/ui/sidebar';
 import { Settings, LogOut } from 'lucide-react';
 import { dashboardNavMap, type DashboardRole } from '@/config/dashboardRoutes';
+import { isRouteAllowed } from '@/config/governmentRoles';
+import { useProfile } from '@/hooks/useProfile';
 import { cn } from '@/lib/utils';
+import { useMemo } from 'react';
 
 export function DashboardSidebar() {
   const { user, signOut } = useAuth();
@@ -28,7 +31,20 @@ export function DashboardSidebar() {
   const navigate = useNavigate();
 
   const userType = (user?.user_type || 'citizen') as DashboardRole;
+  const { governmentProfile } = useProfile();
   const navGroups = dashboardNavMap[userType];
+
+  const filteredNavGroups = useMemo(() => {
+    if (userType !== 'government') return navGroups;
+    // If not a gov user profile yet or pending department, show standard dashboard only
+    const dept = governmentProfile?.department || 'Pending Assignment';
+
+    return navGroups.map(group => ({
+      ...group,
+      items: group.items.filter(item => isRouteAllowed(dept, item.url))
+    })).filter(group => group.items.length > 0);
+  }, [navGroups, governmentProfile?.department, userType]);
+
   const resolvedType = userType === 'admin' ? 'government' : userType;
   const isActive = (url: string) => {
     if (url === `/${resolvedType}`) {
@@ -59,7 +75,7 @@ export function DashboardSidebar() {
       <SidebarSeparator />
 
       <SidebarContent>
-        {navGroups.map((group) => (
+        {filteredNavGroups.map((group) => (
           <SidebarGroup key={group.label}>
             <SidebarGroupLabel className="text-[10px] uppercase tracking-wider font-semibold text-sidebar-foreground/50">
               {group.label}

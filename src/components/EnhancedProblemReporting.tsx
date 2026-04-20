@@ -115,7 +115,7 @@ const EnhancedProblemReporting = () => {
               location={reportData.location}
               category={reportData.category}
               onLinkToExisting={(reportId) => {
-                navigate(`/citizen/community-voting?highlight=${reportId}`);
+                navigate(`/citizen/voting?highlight=${reportId}`);
               }}
             />
           )}
@@ -129,10 +129,15 @@ const EnhancedProblemReporting = () => {
           <LocationSection
             reportData={reportData}
             onInputChange={handleInputChange}
-            onDetectLocation={getCurrentLocation}
+            onLocationDataChange={handleLocationDataChange}
           />
 
           <PriorityImpactSection
+            reportData={reportData}
+            onInputChange={handleInputChange}
+          />
+
+          <ImpactAssessmentSection
             reportData={reportData}
             onInputChange={handleInputChange}
           />

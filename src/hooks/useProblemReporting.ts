@@ -1,4 +1,5 @@
-import { useState, useCallback, useEffect } from 'react';
+
+import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,6 +13,9 @@ const emptyReportData: ReportData = {
   description: '',
   location: '',
   coordinates: '',
+  county: '',
+  constituency: '',
+  ward: '',
   gpsVerified: false,
   priority: '',
   photos: [],
@@ -30,12 +34,14 @@ export const useProblemReporting = () => {
     setReportData(prev => ({ ...prev, [field]: value }));
   }, []);
 
-  const handleLocationDataChange = useCallback((data: { gpsVerified: boolean; coordinates?: string; location?: string }) => {
+  const handleLocationDataChange = useCallback((data: { county: string; constituency: string; ward: string; gpsVerified: boolean; coordinates?: string }) => {
     setReportData(prev => ({
       ...prev,
+      county: data.county,
+      constituency: data.constituency,
+      ward: data.ward,
       gpsVerified: data.gpsVerified,
       ...(data.coordinates ? { coordinates: data.coordinates } : {}),
-      ...(data.location ? { location: data.location } : {}),
     }));
   }, []);
 
@@ -72,38 +78,16 @@ export const useProblemReporting = () => {
       return;
     }
 
-    toast.info('Detecting location...', { duration: 2000 });
-
     navigator.geolocation.getCurrentPosition(
-      async (position) => {
+      (position) => {
         const { latitude, longitude } = position.coords;
         const coordinates = `${latitude}, ${longitude}`;
-
-        try {
-          const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`, {
-            headers: { 'Accept-Language': 'en-US,en;q=0.9' }
-          });
-
-          if (!response.ok) throw new Error('Network response was not ok');
-
-          const data = await response.json();
-          const detectedLocation = data.display_name;
-
-          setReportData(prev => ({
-            ...prev,
-            coordinates,
-            location: detectedLocation || coordinates
-          }));
-          toast.success('Location automatically detected!');
-        } catch (error) {
-          console.error("OSM Geocoding error:", error);
-          setReportData(prev => ({ ...prev, coordinates, location: `Location at ${coordinates}` }));
-          toast.success('GPS coordinates captured, but could not fetch address name.');
-        }
+        setReportData(prev => ({ ...prev, coordinates }));
+        toast.success('GPS location captured successfully');
       },
       (error) => {
         console.error('GPS Error:', error);
-        toast.error('Unable to get GPS location. Please check browser permissions.');
+        toast.error('Unable to get GPS location. Please enter manually.');
       },
       { enableHighAccuracy: true, timeout: 10000 }
     );
@@ -125,6 +109,7 @@ export const useProblemReporting = () => {
   }, [getValidationErrors]);
 
   const submitReport = useCallback(async () => {
+    if (isSubmitting) return; // Prevent double submission
     if (!user) {
       toast.error('Please log in to submit a report');
       navigate('/auth');
@@ -140,36 +125,40 @@ export const useProblemReporting = () => {
     setIsSubmitting(true);
 
     try {
-      // Parallelize photo uploads for significantly better performance
-      const uploadPromises = reportData.photos.map(async (photo) => {
-        const fileExt = photo.name.split('.').pop();
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-        const filePath = `${user.id}/problem-reports/${fileName}`;
+      // Upload photos first if any
+      const photoUrls: string[] = [];
 
-        const { error: uploadError } = await supabase.storage
-          .from('report-files')
-          .upload(filePath, photo);
+      if (reportData.photos.length > 0) {
+        for (const photo of reportData.photos) {
+          const fileExt = photo.name.split('.').pop();
+          const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+          const filePath = `${user.id}/problem-reports/${fileName}`;
 
-        if (uploadError) {
-          console.error('Photo upload error:', uploadError);
-          throw new Error(`Failed to upload ${photo.name}`);
+          const { error: uploadError } = await supabase.storage
+            .from('report-files')
+            .upload(filePath, photo);
+
+          if (uploadError) {
+            console.error('Photo upload error:', uploadError);
+            toast.error(`Failed to upload ${photo.name}`);
+          } else {
+            const { data: { publicUrl } } = supabase.storage
+              .from('report-files')
+              .getPublicUrl(filePath);
+            photoUrls.push(publicUrl);
+          }
         }
+      }
 
-        const { data: { publicUrl } } = supabase.storage
-          .from('report-files')
-          .getPublicUrl(filePath);
+      // Derive display location from structured fields
+      const displayLocation = [reportData.ward, reportData.constituency, `${reportData.county} County`].filter(Boolean).join(', ');
 
-        return publicUrl;
-      });
-
-      const photoUrls = await Promise.all(uploadPromises);
-
-      // Submit the report via WorkflowService - only sending fields existing in the schema
-      await WorkflowService.submitProblemReport({
+      // Submit the report via WorkflowService with structured location
+      const report = await WorkflowService.submitProblemReport({
         title: reportData.title,
         description: reportData.description,
         category: reportData.category,
-        location: reportData.location,
+        location: displayLocation,
         coordinates: reportData.coordinates || undefined,
         estimated_cost: reportData.estimatedCost ? parseFloat(reportData.estimatedCost) : undefined,
         affected_population: reportData.affectedPopulation ? parseInt(reportData.affectedPopulation) : undefined,
@@ -177,7 +166,10 @@ export const useProblemReporting = () => {
       });
 
       toast.success('Problem report submitted successfully!');
+
+      // Reset form
       setReportData({ ...emptyReportData });
+
       navigate('/citizen/track');
     } catch (error: any) {
       console.error('Submit error:', error);
@@ -186,13 +178,6 @@ export const useProblemReporting = () => {
       setIsSubmitting(false);
     }
   }, [reportData, user, navigate, getValidationErrors]);
-
-  // Auto-detect location on mount
-
-  // Auto-detect location on mount
-  useEffect(() => {
-    getCurrentLocation();
-  }, []);
 
   return {
     reportData,

@@ -4,9 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Textarea } from '@/components/ui/textarea';
-import { 
-  Wallet, CheckCircle, Clock, AlertTriangle, 
-  Loader2, Lock, Unlock, Eye, Camera, FileText
+import {
+  Wallet, CheckCircle, Clock, AlertTriangle,
+  Loader2, Lock, Unlock, Eye, Camera, FileText, Upload
 } from 'lucide-react';
 import {
   Dialog,
@@ -46,10 +46,10 @@ interface PaymentReleaseManagerProps {
   onClose: () => void;
 }
 
-const PaymentReleaseManager: React.FC<PaymentReleaseManagerProps> = ({ 
-  projectId, 
-  projectTitle, 
-  onClose 
+const PaymentReleaseManager: React.FC<PaymentReleaseManagerProps> = ({
+  projectId,
+  projectTitle,
+  onClose
 }) => {
   const { user } = useAuth();
   const [milestones, setMilestones] = useState<Milestone[]>([]);
@@ -60,6 +60,9 @@ const PaymentReleaseManager: React.FC<PaymentReleaseManagerProps> = ({
   const [releaseNotes, setReleaseNotes] = useState('');
   const [processing, setProcessing] = useState(false);
   const [showEvidenceDialog, setShowEvidenceDialog] = useState(false);
+  const [iacFile, setIacFile] = useState<File | null>(null);
+  const [sigOfficial, setSigOfficial] = useState(false);
+  const [sigAuditor, setSigAuditor] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -231,7 +234,7 @@ const PaymentReleaseManager: React.FC<PaymentReleaseManagerProps> = ({
         {/* Milestones */}
         <div className="space-y-4">
           <h3 className="font-semibold text-lg">Milestone Payments</h3>
-          
+
           {milestones.length === 0 ? (
             <Card>
               <CardContent className="p-6 text-center">
@@ -328,31 +331,104 @@ const PaymentReleaseManager: React.FC<PaymentReleaseManagerProps> = ({
           </DialogHeader>
 
           <div className="py-4 space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <Card className="bg-slate-50 border-slate-200">
+                <CardContent className="p-3 text-center">
+                  <p className="text-[10px] uppercase font-bold text-muted-foreground">Gross Amount</p>
+                  <p className="text-lg font-bold text-slate-700">
+                    {formatCurrency((totalAmount * (selectedMilestone?.payment_percentage || 0)) / 100)}
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="bg-amber-50 border-amber-200">
+                <CardContent className="p-3 text-center">
+                  <p className="text-[10px] uppercase font-bold text-amber-600">WHT (2%) Deducted</p>
+                  <p className="text-lg font-bold text-amber-700">
+                    -{formatCurrency((totalAmount * (selectedMilestone?.payment_percentage || 0)) / 100 * 0.02)}
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
             <Card className="bg-green-50 border-green-200">
               <CardContent className="p-4 text-center">
-                <p className="text-sm text-muted-foreground">Amount to Release</p>
+                <p className="text-sm text-muted-foreground">Net Payment (EFT Amount)</p>
                 <p className="text-2xl font-bold text-green-700">
-                  {formatCurrency((totalAmount * (selectedMilestone?.payment_percentage || 0)) / 100)}
+                  {formatCurrency((totalAmount * (selectedMilestone?.payment_percentage || 0)) / 100 * 0.98)}
                 </p>
               </CardContent>
             </Card>
 
+            <div className="space-y-3 p-4 border rounded-xl bg-blue-50/30">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-bold flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-blue-600" />
+                  IAC Certificate <span className="text-red-500">*</span>
+                </label>
+                <Badge variant="outline" className="bg-white">Legal Gate</Badge>
+              </div>
+              <p className="text-[10px] text-muted-foreground">
+                Upload the signed <strong>Inspection & Acceptance Certificate</strong>. EFT cannot be triggered without this document per PPADA 2015.
+              </p>
+              <label className="flex items-center justify-center gap-2 h-12 px-3 rounded-lg border-2 border-dashed border-blue-200 bg-white text-sm cursor-pointer hover:bg-blue-50 transition-colors">
+                {iacFile ? (
+                  <><CheckCircle className="h-5 w-5 text-green-600" /> {iacFile.name.substring(0, 20)}...</>
+                ) : (
+                  <><Upload className="h-5 w-5 text-blue-400" /> Select Signed IAC (PDF)</>
+                )}
+                <input type="file" className="hidden" accept=".pdf" onChange={(e) => setIacFile(e.target.files?.[0] || null)} />
+              </label>
+            </div>
+
+            <div className="space-y-3 p-4 border rounded-xl bg-slate-50 border-slate-200">
+              <label className="text-sm font-bold flex items-center gap-2 mb-1">
+                <Shield className="h-4 w-4 text-slate-600" />
+                Multi-Signature Verification
+              </label>
+              <div className="space-y-2">
+                <label className="flex items-center gap-3 p-2 rounded-lg hover:bg-white transition-colors cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={sigOfficial}
+                    onChange={(e) => setSigOfficial(e.target.checked)}
+                    className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
+                  />
+                  <div className="text-xs">
+                    <p className="font-bold text-slate-700">Senior Official sign-off</p>
+                    <p className="text-muted-foreground group-hover:text-slate-600">Confirms alignment with project scope and budget.</p>
+                  </div>
+                </label>
+                <label className="flex items-center gap-3 p-2 rounded-lg hover:bg-white transition-colors cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={sigAuditor}
+                    onChange={(e) => setSigAuditor(e.target.checked)}
+                    className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
+                  />
+                  <div className="text-xs">
+                    <p className="font-bold text-slate-700">Internal Auditor Verification</p>
+                    <p className="text-muted-foreground group-hover:text-slate-600">Confirms IAC authenticity and verification math.</p>
+                  </div>
+                </label>
+              </div>
+            </div>
+
             <div className="space-y-2">
-              <label className="text-sm font-medium">Release Notes (Optional)</label>
+              <label className="text-sm font-medium">Internal Release Notes</label>
               <Textarea
                 value={releaseNotes}
                 onChange={(e) => setReleaseNotes(e.target.value)}
-                placeholder="Add any notes for this payment release..."
-                rows={3}
+                placeholder="Reference AIE batch number or inspection date..."
+                rows={2}
               />
             </div>
           </div>
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowReleaseDialog(false)}>Cancel</Button>
-            <Button 
+            <Button
               onClick={handleReleasePayment}
-              disabled={processing}
+              disabled={processing || !iacFile || !sigOfficial || !sigAuditor}
               className="bg-green-600 hover:bg-green-700"
             >
               {processing ? (
@@ -381,15 +457,15 @@ const PaymentReleaseManager: React.FC<PaymentReleaseManagerProps> = ({
 
           <div className="grid grid-cols-2 gap-4 py-4">
             {selectedMilestone?.evidence_urls?.map((url, index) => (
-              <a 
+              <a
                 key={index}
                 href={url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="block aspect-video rounded-lg overflow-hidden border hover:shadow-lg transition-shadow"
               >
-                <img 
-                  src={url} 
+                <img
+                  src={url}
                   alt={`Evidence ${index + 1}`}
                   className="w-full h-full object-cover"
                 />

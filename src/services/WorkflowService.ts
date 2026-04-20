@@ -32,7 +32,8 @@ export class WorkflowService {
         ...reportData,
         reported_by: user.id,
         status: 'pending',
-        priority: 'medium'
+        priority: 'medium',
+        priority_score: 0
       })
       .select()
       .single();
@@ -68,8 +69,19 @@ export class WorkflowService {
 
     if (error) throw error;
 
+    // Update priority score based on raw vote count
+    const { count: voteCount } = await supabase
+      .from('community_votes')
+      .select('*', { count: 'exact', head: true })
+      .eq('report_id', reportId);
+
+    await supabase
+      .from('problem_reports')
+      .update({ priority_score: voteCount || 0 })
+      .eq('id', reportId);
+
     // Get report title for notification
-    const { data: report } = await supabase
+    const { data: reportForNotif } = await supabase
       .from('problem_reports')
       .select('title')
       .eq('id', reportId)
@@ -80,7 +92,7 @@ export class WorkflowService {
       reportId,
       user.id,
       voteType,
-      report?.title || 'Unknown Report'
+      reportForNotif?.title || 'Unknown Report'
     );
 
     return data;
@@ -178,6 +190,10 @@ export class WorkflowService {
     proposal: string;
     estimated_duration: number;
     technical_approach?: string;
+    materials_spec?: string;
+    timeline_breakdown?: string;
+    safety_plan?: string;
+    quality_assurance?: string;
   }): Promise<ContractorBid> {
     const user = (await supabase.auth.getUser()).data.user;
     if (!user) throw new Error('User not authenticated');
@@ -524,4 +540,6 @@ export class WorkflowService {
 
     if (error) throw error;
   }
+
+
 }

@@ -111,6 +111,7 @@ export default function GovernmentEscrowFunding() {
   };
 
   const handleFundEscrow = async () => {
+    if (processing) return;
     if (!selectedProject || !fundingAmount) return;
 
     const amount = parseFloat(fundingAmount);
@@ -254,7 +255,7 @@ export default function GovernmentEscrowFunding() {
                     </Badge>
                   </div>
                   <p className="text-muted-foreground text-sm line-clamp-2">{project.description}</p>
-                  
+
                   {project.budget && (
                     <div className="mt-4">
                       <div className="flex justify-between text-sm mb-1">
@@ -292,7 +293,7 @@ export default function GovernmentEscrowFunding() {
                   {project.jobs.length > 0 && (
                     <div className="mt-2 text-xs text-muted-foreground flex items-center gap-1">
                       <Users className="h-3 w-3" />
-                      {project.jobs.reduce((sum, j) => sum + j.positions_available, 0)} workers across {project.jobs.length} job(s) — 
+                      {project.jobs.reduce((sum, j) => sum + j.positions_available, 0)} workers across {project.jobs.length} job(s) —
                       Calculated wage need: {formatCurrency(project.calculatedWagePool)}
                       {project.escrow?.worker_wage_allocation ? (
                         project.escrow.worker_wage_allocation >= project.calculatedWagePool
@@ -313,8 +314,8 @@ export default function GovernmentEscrowFunding() {
                     <Button
                       onClick={() => {
                         setSelectedProject(project);
-                        const remainingAmount = project.budget 
-                          ? project.budget - (project.escrow?.held_amount || 0) 
+                        const remainingAmount = project.budget
+                          ? project.budget - (project.escrow?.held_amount || 0)
                           : 0;
                         setFundingAmount(remainingAmount.toString());
                         // Auto-set worker wage amount from calculated pool minus already allocated
@@ -469,7 +470,7 @@ export default function GovernmentEscrowFunding() {
             <Button variant="outline" onClick={() => setSelectedProject(null)}>
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={() => setShowConfirmDialog(true)}
               disabled={!fundingAmount || parseFloat(fundingAmount) <= 0}
             >

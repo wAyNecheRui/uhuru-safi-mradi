@@ -50,21 +50,55 @@ export async function canContractorBid(
   return data as boolean;
 }
 
-/** Get user's current GPS position as a promise */
-export function getCurrentPosition(): Promise<{ lat: number; lon: number; accuracy: number }> {
-  return new Promise((resolve, reject) => {
-    if (!navigator.geolocation) {
-      reject(new Error('Geolocation not supported'));
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => resolve({
-        lat: pos.coords.latitude,
-        lon: pos.coords.longitude,
-        accuracy: pos.coords.accuracy,
-      }),
-      (err) => reject(err),
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
-    );
-  });
+/** Check if browser has location permissions explicitly granted */
+export async function checkLocationPermission(): Promise<PermissionState | 'unsupported'> {
+  if (!navigator.permissions || !navigator.permissions.query) return 'unsupported';
+  try {
+    const result = await navigator.permissions.query({ name: 'geolocation' as PermissionName });
+    return result.state;
+  } catch (e) {
+    return 'unsupported';
+  }
 }
+
+/** Get user's current GPS position with automatic coarse fallback */
+export async function getCurrentPosition(): Promise<{ lat: number; lon: number; accuracy: number; isFallback?: boolean }> {
+  if (!navigator.geolocation) {
+    throw new Error('Geolocation not supported');
+  }
+
+  // Stage 1: Try High Accuracy (GPS/Satellite)
+  try {
+    return await new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => resolve({
+          lat: pos.coords.latitude,
+          lon: pos.coords.longitude,
+          accuracy: pos.coords.accuracy,
+        }),
+        (err) => reject(err),
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 10000 } // 8s timeout for high accuracy
+      );
+    });
+  } catch (error: any) {
+    // If it was a USER denial, don't retry coarse (it will fail too)
+    if (error.code === 1) throw error;
+
+    console.log('[Geo] High accuracy failed/timed out, falling back to coarse resolution...');
+
+    // Stage 2: Coarse Fallback (WiFi/Cell/Network) - Much faster and more reliable indoors
+    return await new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => resolve({
+          lat: pos.coords.latitude,
+          lon: pos.coords.longitude,
+          accuracy: pos.coords.accuracy,
+          isFallback: true
+        }),
+        (err) => reject(err),
+        { enableHighAccuracy: false, timeout: 15000, maximumAge: 60000 }
+      );
+    });
+  }
+}
+

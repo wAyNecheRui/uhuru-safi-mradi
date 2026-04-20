@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { 
+import {
   MapPin, Clock, Wallet, CheckCircle, AlertTriangle, Camera, TrendingUp,
   ArrowLeft, Target, ImageOff
 } from 'lucide-react';
@@ -18,6 +18,7 @@ import QualityRatingModal from '@/components/citizen/QualityRatingModal';
 import ProjectIssueReportModal from '@/components/citizen/ProjectIssueReportModal';
 import ProjectBrowser from '@/components/projects/ProjectBrowser';
 import ContractorBanner from '@/components/contractor/ContractorBanner';
+import ProjectSpatialTimeline from '@/components/citizen/ProjectSpatialTimeline';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -35,6 +36,8 @@ interface Project {
   category: string | null;
   photo_urls: string[] | null;
   location: string | null;
+  coordinates: string | null;
+  is_agpo_reserved: boolean;
 }
 
 interface Milestone {
@@ -88,7 +91,7 @@ const CitizenProjects = () => {
     try {
       const { data, error } = await supabase
         .from('projects')
-        .select('*, problem_reports!projects_report_id_fkey(category, photo_urls, location)')
+        .select('*, problem_reports!projects_report_id_fkey(category, photo_urls, location, coordinates)')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -105,6 +108,8 @@ const CitizenProjects = () => {
         category: (p.problem_reports as any)?.category || null,
         photo_urls: (p.problem_reports as any)?.photo_urls || null,
         location: (p.problem_reports as any)?.location || null,
+        coordinates: (p.problem_reports as any)?.coordinates || null,
+        is_agpo_reserved: (p.problem_reports as any)?.is_agpo_reserved || false,
       }));
       setProjects(projectsWithCategory);
 
@@ -206,7 +211,16 @@ const CitizenProjects = () => {
       <Header />
       <main>
         <ResponsiveContainer className="py-6 sm:py-8">
-          <BreadcrumbNav items={breadcrumbItems} />
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <BreadcrumbNav items={breadcrumbItems} />
+            <Button
+              onClick={() => setShowMapModal(true)}
+              className="bg-primary/90 hover:bg-primary backdrop-blur-md shadow-lg transition-all hover:scale-105 active:scale-95 group"
+            >
+              <MapPin className="h-4 w-4 mr-2 group-hover:animate-bounce" />
+              Launch Immersive Map
+            </Button>
+          </div>
 
           {/* Project Browser */}
           <div className="mt-4">
@@ -242,6 +256,16 @@ const CitizenProjects = () => {
                     <Badge variant="outline"><Wallet className="h-3 w-3 mr-1" />KES {(expandedProject.budget || 0).toLocaleString()}</Badge>
                     {expandedProject.location && (
                       <Badge variant="outline"><MapPin className="h-3 w-3 mr-1" />{expandedProject.location}</Badge>
+                    )}
+                    {expandedProject.is_agpo_reserved && (
+                      <Badge className="bg-purple-100 text-purple-800 border-purple-200">
+                        <Target className="h-3 w-3 mr-1" /> AGPO Reserved
+                      </Badge>
+                    )}
+                    {(milestones[expandedProject.id] || []).some(m => m.status === 'paid') && (
+                      <Badge className="bg-blue-100 text-blue-800 border-blue-200">
+                        <CheckCircle className="h-3 w-3 mr-1" /> IAC Verified
+                      </Badge>
                     )}
                   </div>
                 </CardHeader>
@@ -297,7 +321,20 @@ const CitizenProjects = () => {
                           <li><strong>Payment automatically releases</strong> from escrow</li>
                         </ol>
                       </div>
+
+                      {/* Interactive Visual Timeline */}
+                      <div className="mt-8 mb-4">
+                        <h4 className="font-display font-semibold text-foreground flex items-center gap-2 mb-6">
+                          <TrendingUp className="h-5 w-5 text-primary" /> Visual Delivery Timeline
+                        </h4>
+                        <ProjectSpatialTimeline
+                          milestones={milestones[expandedProject.id] || []}
+                          currentStatus={expandedProject.status}
+                        />
+                      </div>
+
                       <div className="space-y-3">
+                        <h4 className="font-semibold text-sm text-muted-foreground mt-8">Detail Milestones & Verification</h4>
                         {(milestones[expandedProject.id] || []).map(milestone => (
                           <MilestoneVerificationCard
                             key={milestone.id}
@@ -323,7 +360,12 @@ const CitizenProjects = () => {
         </ResponsiveContainer>
       </main>
 
-      <ProjectMapModal isOpen={showMapModal} onClose={() => setShowMapModal(false)} projects={projects} />
+      <ProjectMapModal
+        isOpen={showMapModal}
+        onClose={() => setShowMapModal(false)}
+        projects={projects}
+        onSelectProject={handleSelectProject}
+      />
       {selectedProjectForProgress && (
         <ProjectProgressViewer projectId={selectedProjectForProgress.id} projectTitle={selectedProjectForProgress.title} isOpen={!!selectedProjectForProgress} onClose={() => setSelectedProjectForProgress(null)} />
       )}

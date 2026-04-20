@@ -8,6 +8,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { AuthProvider } from "./contexts/AuthContext";
 import { RealtimeProvider } from "./contexts/RealtimeContext";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import GovernmentRoleGuard from "@/components/auth/GovernmentRoleGuard";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ConditionalLayout } from "@/components/layout/ConditionalLayout";
 // Lazy load all pages for better initial load performance
@@ -346,180 +347,36 @@ const App = () => {
                           }
                         />
 
-                        {/* Government Routes */}
                         <Route
-                          path="/government"
+                          path="/government/*"
                           element={
                             <ProtectedRoute allowedRoles={["government", "admin"]}>
-                              <GovernmentDashboard />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/government/projects"
-                          element={
-                            <ProtectedRoute allowedRoles={["government", "admin"]}>
-                              <GovernmentProjects />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/government/reports"
-                          element={
-                            <ProtectedRoute allowedRoles={["government", "admin"]}>
-                              <GovernmentReports />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/government/escrow"
-                          element={
-                            <ProtectedRoute allowedRoles={["government", "admin"]}>
-                              <GovernmentEscrow />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/government/verification"
-                          element={
-                            <ProtectedRoute allowedRoles={["government", "admin"]}>
-                              <GovernmentVerification />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/government/payments"
-                          element={
-                            <ProtectedRoute allowedRoles={["government", "admin"]}>
-                              <GovernmentPaymentTransparency />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/government/blockchain"
-                          element={
-                            <ProtectedRoute allowedRoles={["government", "admin"]}>
-                              <GovernmentBlockchain />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/government/eacc"
-                          element={
-                            <ProtectedRoute allowedRoles={["government", "admin"]}>
-                              <GovernmentEACC />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/government/benchmarks"
-                          element={
-                            <ProtectedRoute allowedRoles={["government", "admin"]}>
-                              <GovernmentBenchmarks />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/government/verification-requests"
-                          element={
-                            <ProtectedRoute allowedRoles={["government", "admin"]}>
-                              <GovernmentVerificationRequests />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/government/portfolio"
-                          element={
-                            <ProtectedRoute allowedRoles={["government", "admin"]}>
-                              <GovernmentPortfolio />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/government/approvals"
-                          element={
-                            <ProtectedRoute allowedRoles={["government", "admin"]}>
-                              <GovernmentApprovalDashboard />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/government/contractors"
-                          element={
-                            <ProtectedRoute allowedRoles={["government", "admin"]}>
-                              <GovernmentContractorManagement />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/government/analytics"
-                          element={
-                            <ProtectedRoute allowedRoles={["government", "admin"]}>
-                              <GovernmentAnalytics />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/government/compliance"
-                          element={
-                            <ProtectedRoute allowedRoles={["government", "admin"]}>
-                              <GovernmentCompliance />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/government/users"
-                          element={
-                            <ProtectedRoute allowedRoles={["government", "admin"]}>
-                              <GovernmentUserManagement />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/government/bid-approval"
-                          element={
-                            <ProtectedRoute allowedRoles={["government", "admin"]}>
-                              <GovernmentBidApproval />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/government/milestones"
-                          element={
-                            <ProtectedRoute allowedRoles={["government", "admin"]}>
-                              <GovernmentMilestones />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/government/escrow-funding"
-                          element={
-                            <ProtectedRoute allowedRoles={["government", "admin"]}>
-                              <GovernmentEscrowFunding />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/government/notifications"
-                          element={
-                            <ProtectedRoute allowedRoles={["government", "admin"]}>
-                              <GovernmentNotifications />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/government/lpo"
-                          element={
-                            <ProtectedRoute allowedRoles={["government", "admin"]}>
-                              <GovernmentLPO />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/government/payment-release"
-                          element={
-                            <ProtectedRoute allowedRoles={["government", "admin"]}>
-                              <GovernmentPaymentRelease />
+                              <GovernmentRoleGuard>
+                                <Routes>
+                                  <Route index element={<GovernmentDashboard />} />
+                                  <Route path="projects" element={<GovernmentProjects />} />
+                                  <Route path="reports" element={<GovernmentReports />} />
+                                  <Route path="escrow" element={<GovernmentEscrow />} />
+                                  <Route path="verification" element={<GovernmentVerification />} />
+                                  <Route path="payments" element={<GovernmentPaymentTransparency />} />
+                                  <Route path="blockchain" element={<GovernmentBlockchain />} />
+                                  <Route path="eacc" element={<GovernmentEACC />} />
+                                  <Route path="benchmarks" element={<GovernmentBenchmarks />} />
+                                  <Route path="verification-requests" element={<GovernmentVerificationRequests />} />
+                                  <Route path="portfolio" element={<GovernmentPortfolio />} />
+                                  <Route path="approvals" element={<GovernmentApprovalDashboard />} />
+                                  <Route path="contractors" element={<GovernmentContractorManagement />} />
+                                  <Route path="analytics" element={<GovernmentAnalytics />} />
+                                  <Route path="compliance" element={<GovernmentCompliance />} />
+                                  <Route path="users" element={<GovernmentUserManagement />} />
+                                  <Route path="bid-approval" element={<GovernmentBidApproval />} />
+                                  <Route path="milestones" element={<GovernmentMilestones />} />
+                                  <Route path="escrow-funding" element={<GovernmentEscrowFunding />} />
+                                  <Route path="notifications" element={<GovernmentNotifications />} />
+                                  <Route path="lpo" element={<GovernmentLPO />} />
+                                  <Route path="payment-release" element={<GovernmentPaymentRelease />} />
+                                </Routes>
+                              </GovernmentRoleGuard>
                             </ProtectedRoute>
                           }
                         />

@@ -50,7 +50,7 @@ export const useLocationFiltering = () => {
   const [problems, setProblems] = useState<ProblemWithDistance[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Get user's current location
+  // Get user's current location with progressive accuracy
   const getCurrentLocation = useCallback((): Promise<UserLocation> => {
     return new Promise((resolve, reject) => {
       setIsLocating(true);
@@ -64,54 +64,66 @@ export const useLocationFiltering = () => {
         return;
       }
 
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const location: UserLocation = {
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-            accuracy: position.coords.accuracy,
-          };
+      const attemptFetch = (highAccuracy: boolean): void => {
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
+            const location: UserLocation = {
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+              accuracy: position.coords.accuracy,
+            };
 
-          // Try to get county from reverse geocoding
-          try {
-            const response = await fetch(
-              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${location.latitude}&lon=${location.longitude}&zoom=10`
-            );
-            const data = await response.json();
-            if (data.address?.county || data.address?.state) {
-              location.county = data.address.county || data.address.state;
+            // Try to get county from reverse geocoding
+            try {
+              const response = await fetch(
+                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${location.latitude}&lon=${location.longitude}&zoom=10`
+              );
+              const data = await response.json();
+              if (data.address?.county || data.address?.state) {
+                location.county = data.address.county || data.address.state;
+              }
+            } catch (e) {
+              console.log('Could not determine county from coordinates');
             }
-          } catch (e) {
-            console.log('Could not determine county from coordinates');
-          }
 
-          setUserLocation(location);
-          setIsLocating(false);
-          resolve(location);
-        },
-        (error) => {
-          let errorMessage = 'Unable to get location';
-          switch (error.code) {
-            case error.PERMISSION_DENIED:
-              errorMessage = 'Location permission denied';
-              break;
-            case error.POSITION_UNAVAILABLE:
-              errorMessage = 'Location information unavailable';
-              break;
-            case error.TIMEOUT:
-              errorMessage = 'Location request timed out';
-              break;
+            setUserLocation(location);
+            setIsLocating(false);
+            resolve(location);
+          },
+          (error) => {
+            // If high accuracy timed out or failed, try standard accuracy
+            if (highAccuracy) {
+              console.log('High accuracy GPS failed/timed out, falling back to standard...');
+              attemptFetch(false);
+              return;
+            }
+
+            let errorMessage = 'Unable to get location';
+            switch (error.code) {
+              case error.PERMISSION_DENIED:
+                errorMessage = 'Location permission denied';
+                break;
+              case error.POSITION_UNAVAILABLE:
+                errorMessage = 'Location information unavailable';
+                break;
+              case error.TIMEOUT:
+                errorMessage = 'Location request timed out';
+                break;
+            }
+            setLocationError(errorMessage);
+            setIsLocating(false);
+            reject(new Error(errorMessage));
+          },
+          {
+            enableHighAccuracy: highAccuracy,
+            timeout: highAccuracy ? 8000 : 12000, // 8s for high, 12s for standard
+            maximumAge: 60000,
           }
-          setLocationError(errorMessage);
-          setIsLocating(false);
-          reject(new Error(errorMessage));
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 15000,
-          maximumAge: 60000,
-        }
-      );
+        );
+      };
+
+      // Start with high accuracy
+      attemptFetch(true);
     });
   }, []);
 

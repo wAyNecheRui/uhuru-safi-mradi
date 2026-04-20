@@ -6,8 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
-import { 
-  Plus, Trash2, CheckCircle, Clock, Wallet, 
+import {
+  Plus, Trash2, CheckCircle, Clock, Wallet,
   Loader2, Calendar, Target, Save, AlertCircle
 } from 'lucide-react';
 import {
@@ -122,6 +122,9 @@ const MilestoneManagement: React.FC<MilestoneManagementProps> = ({ project, onCl
   };
 
   const saveMilestones = async () => {
+    if (saving) return; // FIX: Idempotency lock prevents double-clicks from running this block twice
+    setSaving(true);
+
     // Pre-check: verify project status and contractor assignment
     const { data: { user } } = await supabase.auth.getUser();
     const { data: projectData } = await supabase
@@ -129,7 +132,7 @@ const MilestoneManagement: React.FC<MilestoneManagementProps> = ({ project, onCl
       .select('status, contractor_id')
       .eq('id', project.id)
       .single();
-    
+
     if (projectData?.status === 'completed' || projectData?.status === 'cancelled') {
       toast({
         title: "Project Completed",
@@ -189,11 +192,11 @@ const MilestoneManagement: React.FC<MilestoneManagementProps> = ({ project, onCl
       // Check if trying to DELETE or MODIFY milestones that have progressed beyond 'pending' status
       const nonPendingDbMilestones = currentDbMilestones?.filter(m => m.status !== 'pending') || [];
       const nonPendingIds = nonPendingDbMilestones.map(m => m.id);
-      
+
       // Check if any non-pending milestones are being modified or deleted
       const existingIds = existingMilestones.map(m => m.id);
       const attemptingToDeleteNonPending = nonPendingIds.some(id => !existingIds.includes(id));
-      
+
       if (attemptingToDeleteNonPending) {
         toast({
           title: "Cannot Delete Progressed Milestones",
@@ -203,7 +206,7 @@ const MilestoneManagement: React.FC<MilestoneManagementProps> = ({ project, onCl
         setSaving(false);
         return;
       }
-      
+
       // Check if trying to modify non-pending milestones
       for (const milestone of existingMilestones) {
         if (nonPendingIds.includes(milestone.id)) {
@@ -217,7 +220,7 @@ const MilestoneManagement: React.FC<MilestoneManagementProps> = ({ project, onCl
 
       // Find milestones to delete (in DB but not in current list) - only pending ones
       const currentMilestoneIds = existingMilestones.map(m => m.id);
-      const milestonesToDelete = currentDbMilestones?.filter(m => 
+      const milestonesToDelete = currentDbMilestones?.filter(m =>
         !currentMilestoneIds.includes(m.id) && m.status === 'pending'
       ) || [];
 
@@ -241,7 +244,7 @@ const MilestoneManagement: React.FC<MilestoneManagementProps> = ({ project, onCl
           console.log(`Skipping update for non-pending milestone ${milestone.id}`);
           continue;
         }
-        
+
         const { error: updateError } = await supabase
           .from('project_milestones')
           .update({
@@ -359,110 +362,110 @@ const MilestoneManagement: React.FC<MilestoneManagementProps> = ({ project, onCl
           {milestones.map((milestone, index) => {
             const isLocked = milestone.status && milestone.status !== 'pending';
             return (
-            <Card key={index} className={`shadow-sm ${isLocked ? 'bg-muted/50 border-muted' : ''}`}>
-              <CardContent className="p-3 sm:p-4">
-                <div className="flex items-center justify-between mb-3 gap-2">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="text-primary text-xs">
-                      #{milestone.milestone_number}
-                    </Badge>
-                    {isLocked && (
-                      <Badge variant="secondary" className="text-xs capitalize">
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        {milestone.status}
+              <Card key={index} className={`shadow-sm ${isLocked ? 'bg-muted/50 border-muted' : ''}`}>
+                <CardContent className="p-3 sm:p-4">
+                  <div className="flex items-center justify-between mb-3 gap-2">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-primary text-xs">
+                        #{milestone.milestone_number}
                       </Badge>
+                      {isLocked && (
+                        <Badge variant="secondary" className="text-xs capitalize">
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          {milestone.status}
+                        </Badge>
+                      )}
+                    </div>
+                    {milestones.length > 1 && !isLocked && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeMilestone(index)}
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8 p-0"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     )}
                   </div>
-                  {milestones.length > 1 && !isLocked && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeMilestone(index)}
-                      className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8 p-0"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
 
-                <div className="space-y-3">
-                  {isLocked && (
-                    <p className="text-xs text-muted-foreground bg-muted p-2 rounded">
-                      This milestone has been {milestone.status} and cannot be edited.
-                    </p>
-                  )}
-                  {/* Title - Full width */}
-                  <div className="space-y-1.5">
-                    <Label className="text-xs sm:text-sm">Title</Label>
-                    <Input
-                      value={milestone.title}
-                      onChange={(e) => updateMilestone(index, 'title', e.target.value)}
-                      placeholder="e.g., Site Preparation & Mobilization"
-                      className="text-sm"
-                      disabled={isLocked}
-                    />
-                  </div>
-
-                  {/* Payment & Date - Two columns on larger screens */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-3">
+                    {isLocked && (
+                      <p className="text-xs text-muted-foreground bg-muted p-2 rounded">
+                        This milestone has been {milestone.status} and cannot be edited.
+                      </p>
+                    )}
+                    {/* Title - Full width */}
                     <div className="space-y-1.5">
-                      <Label className="text-xs sm:text-sm">Payment %</Label>
-                      <div className="flex items-center gap-2">
-                        <Input
-                          type="number"
-                          min="0"
-                          max="100"
-                          value={milestone.payment_percentage}
-                          onChange={(e) => updateMilestone(index, 'payment_percentage', parseInt(e.target.value) || 0)}
-                          className="text-sm w-20"
-                          disabled={isLocked}
-                        />
-                        <span className="text-xs text-muted-foreground truncate">
-                          = {formatCurrency((project.budget || 0) * (milestone.payment_percentage / 100))}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <Label className="text-xs sm:text-sm">Target Date</Label>
+                      <Label className="text-xs sm:text-sm">Title</Label>
                       <Input
-                        type="date"
-                        value={milestone.target_completion_date}
-                        onChange={(e) => updateMilestone(index, 'target_completion_date', e.target.value)}
+                        value={milestone.title}
+                        onChange={(e) => updateMilestone(index, 'title', e.target.value)}
+                        placeholder="e.g., Site Preparation & Mobilization"
                         className="text-sm"
                         disabled={isLocked}
                       />
                     </div>
-                  </div>
 
-                  {/* Description */}
-                  <div className="space-y-1.5">
-                    <Label className="text-xs sm:text-sm">Description</Label>
-                    <Input
-                      value={milestone.description}
-                      onChange={(e) => updateMilestone(index, 'description', e.target.value)}
-                      placeholder="e.g., Initial setup, material delivery, and groundwork"
-                      className="text-sm"
-                      disabled={isLocked}
-                    />
-                  </div>
+                    {/* Payment & Date - Two columns on larger screens */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs sm:text-sm">Payment %</Label>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={milestone.payment_percentage}
+                            onChange={(e) => updateMilestone(index, 'payment_percentage', parseInt(e.target.value) || 0)}
+                            className="text-sm w-20"
+                            disabled={isLocked}
+                          />
+                          <span className="text-xs text-muted-foreground truncate">
+                            = {formatCurrency((project.budget || 0) * (milestone.payment_percentage / 100))}
+                          </span>
+                        </div>
+                      </div>
 
-                  {/* Criteria */}
-                  <div className="space-y-1.5">
-                    <Label className="text-xs sm:text-sm">Completion Criteria</Label>
-                    <Textarea
-                      value={milestone.completion_criteria}
-                      onChange={(e) => updateMilestone(index, 'completion_criteria', e.target.value)}
-                      placeholder="e.g., Site cleared and secured, all materials delivered and verified, foundation excavation complete"
-                      rows={2}
-                      className="text-sm resize-none"
-                      disabled={isLocked}
-                    />
+                      <div className="space-y-1.5">
+                        <Label className="text-xs sm:text-sm">Target Date</Label>
+                        <Input
+                          type="date"
+                          value={milestone.target_completion_date}
+                          onChange={(e) => updateMilestone(index, 'target_completion_date', e.target.value)}
+                          className="text-sm"
+                          disabled={isLocked}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Description */}
+                    <div className="space-y-1.5">
+                      <Label className="text-xs sm:text-sm">Description</Label>
+                      <Input
+                        value={milestone.description}
+                        onChange={(e) => updateMilestone(index, 'description', e.target.value)}
+                        placeholder="e.g., Initial setup, material delivery, and groundwork"
+                        className="text-sm"
+                        disabled={isLocked}
+                      />
+                    </div>
+
+                    {/* Criteria */}
+                    <div className="space-y-1.5">
+                      <Label className="text-xs sm:text-sm">Completion Criteria</Label>
+                      <Textarea
+                        value={milestone.completion_criteria}
+                        onChange={(e) => updateMilestone(index, 'completion_criteria', e.target.value)}
+                        placeholder="e.g., Site cleared and secured, all materials delivered and verified, foundation excavation complete"
+                        rows={2}
+                        className="text-sm resize-none"
+                        disabled={isLocked}
+                      />
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
+                </CardContent>
+              </Card>
+            );
           })}
         </div>
 
@@ -476,8 +479,8 @@ const MilestoneManagement: React.FC<MilestoneManagementProps> = ({ project, onCl
         <Button variant="outline" onClick={onClose} size="sm" className="flex-1 sm:flex-none">
           Cancel
         </Button>
-        <Button 
-          onClick={saveMilestones} 
+        <Button
+          onClick={saveMilestones}
           disabled={saving || !isValid}
           className="bg-primary flex-1 sm:flex-none"
           size="sm"

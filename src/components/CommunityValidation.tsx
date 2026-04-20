@@ -16,7 +16,9 @@ import {
   Navigation,
   Loader2,
   Filter,
-  Info
+  Info,
+  Search,
+  ChevronDown
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
@@ -37,6 +39,8 @@ interface ProblemReport {
   reported_by: string;
   status: string;
   priority_score: number;
+  category?: string;
+  problem_type?: string;
   user_vote?: 'upvote' | 'downvote' | null;
   reporter_name?: string;
   upvotes: number;
@@ -47,18 +51,30 @@ interface ProblemReport {
   can_verify?: boolean;
 }
 
+const getRootCounty = (name: string): string => {
+  if (!name) return '';
+  return name.toLowerCase()
+    .replace(/\bcounty\b/g, '')
+    .replace(/\bcity\b/g, '')
+    .replace(/\b(north|south|east|west|central)\b/g, '')
+    .trim();
+};
+
 const CommunityValidation = () => {
   const { user } = useAuth();
   const { userProfile } = useProfile();
-  // Split data sources:
-  // - allReports: reports this citizen has already voted on ("validated") anywhere
-  // - countyReports: reports in the citizen's county (from profile or GPS)
-  const [allReports, setAllReports] = useState<ProblemReport[]>([]);
-  const [countyReports, setCountyReports] = useState<ProblemReport[]>([]);
+  const [allValidatedReports, setAllValidatedReports] = useState<ProblemReport[]>([]);
+  const [profileCountyReports, setProfileCountyReports] = useState<ProblemReport[]>([]);
+  const [detectedCountyReports, setDetectedCountyReports] = useState<ProblemReport[]>([]);
+
   const [loadingAll, setLoadingAll] = useState(true);
-  const [loadingCounty, setLoadingCounty] = useState(false);
+  const [loadingProfile, setLoadingProfile] = useState(false);
+  const [loadingDetected, setLoadingDetected] = useState(false);
+
   const [votingState, setVotingState] = useState<{ [key: string]: boolean }>({});
-  const [activeTab, setActiveTab] = useState('all');
+  const [activeTab, setActiveTab] = useState('votes');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
   const {
     userLocation,
@@ -72,196 +88,111 @@ const CommunityValidation = () => {
     formatDistance,
   } = useLocationFiltering();
 
-  // The user's county — prefer profile county, fallback to GPS-detected county
   const userCounty = userProfile?.county || userLocation?.county || null;
 
-  // Auto-detect location on page load (no manual "Enable Location" button)
   useEffect(() => {
     void (async () => {
-      try {
-        await getCurrentLocation();
-      } catch {
-        // Location is optional; failure should not block "All Reports"
-      }
+      await getCurrentLocation();
     })();
   }, [getCurrentLocation]);
 
-  // Fetch reports in the user's county (structured county matching)
-  const fetchCountyReports = useCallback(async () => {
-    if (!userCounty) return;
-    setLoadingCounty(true);
+  const fetchCountyReports = useCallback(async (countyName: string, type: 'profile' | 'detected') => {
+    if (!countyName) return;
+    const setLoading = type === 'profile' ? setLoadingProfile : setLoadingDetected;
+    const setReports = type === 'profile' ? setProfileCountyReports : setDetectedCountyReports;
+
     try {
-      // Query problem_reports by the structured county column
-      // Use word-boundary matching to avoid sub-county false positives
-      const countyPattern = `%${userCounty}%`;
-      const { data: reports, error } = await supabase
-        .from('problem_reports')
-        .select('*')
-        .or(`county.ilike.${countyPattern},location.ilike.${countyPattern}`)
-        .not('status', 'in', '("rejected","completed")')
-        .order('created_at', { ascending: false })
-        .limit(100);
-
-      if (error) throw error;
-
-      // Enrich with votes and eligibility
-      const enrichedReports = await Promise.all((reports || []).map(async (report) => {
-        const { data: voteCounts } = await supabase
-          .from('community_votes')
-          .select('vote_type')
-          .eq('report_id', report.id);
-
-        const upvotes = voteCounts?.filter(v => v.vote_type === 'upvote').length || 0;
-        const downvotes = voteCounts?.filter(v => v.vote_type === 'downvote').length || 0;
-
-        let userVote = null;
-        if (user) {
-          const { data: userVoteData } = await supabase
-            .from('community_votes')
-            .select('vote_type')
-            .eq('report_id', report.id)
-            .eq('user_id', user.id)
-            .maybeSingle();
-          userVote = userVoteData?.vote_type || null;
-        }
-
-        const { data: reporterData } = await supabase
-          .from('user_profiles')
-          .select('full_name')
-          .eq('user_id', report.reported_by)
-          .maybeSingle();
-
-        // Calculate distance if we have both user GPS and report coordinates
-        let distance_km: number | null = null;
-        let distance_category: 'urgent' | 'nearby' | 'county' | 'unknown' = 'unknown';
-        if (userLocation && report.coordinates) {
-          const parts = report.coordinates.split(',').map((s: string) => parseFloat(s.trim()));
-          if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
-            const R = 6371;
-            const dLat = (parts[0] - userLocation.latitude) * Math.PI / 180;
-            const dLon = (parts[1] - userLocation.longitude) * Math.PI / 180;
-            const a = Math.sin(dLat/2)**2 + Math.cos(userLocation.latitude * Math.PI/180) * Math.cos(parts[0] * Math.PI/180) * Math.sin(dLon/2)**2;
-            distance_km = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            distance_category = distance_km <= 5 ? 'urgent' : distance_km <= 10 ? 'nearby' : 'county';
-          }
-        }
-
-        return {
-          id: report.id,
-          title: report.title,
-          description: report.description,
-          priority: report.priority || 'medium',
-          location: report.location || 'Location not specified',
-          photo_urls: report.photo_urls,
-          created_at: report.created_at,
-          reported_by: report.reported_by,
-          status: report.status || 'pending',
-          priority_score: report.priority_score || 0,
-          user_vote: userVote as 'upvote' | 'downvote' | null,
-          reporter_name: reporterData?.full_name || 'Community Member',
-          upvotes,
-          downvotes,
-          distance_km,
-          distance_category,
-          can_vote: report.reported_by !== user?.id,
-          can_verify: true,
-        };
-      }));
-
-      setCountyReports(enrichedReports);
-    } catch (error) {
-      console.error('Error fetching county reports:', error);
-      toast.error('Failed to load county reports');
-    } finally {
-      setLoadingCounty(false);
-    }
-  }, [userCounty, userLocation, user]);
-
-  // Effect to fetch county reports when county is known
-  useEffect(() => {
-    if (userCounty) {
-      fetchCountyReports();
-    }
-  }, [userCounty, fetchCountyReports]);
-
-  // Fetch "validated" reports (reports the current citizen has voted on)
-  const fetchAllValidatedReports = useCallback(async () => {
-    setLoadingAll(true);
-    try {
-      if (!user) {
-        setAllReports([]);
-        return;
-      }
-
-      const { data: votes, error: votesError } = await supabase
-        .from('community_votes')
-        .select('report_id, vote_type, created_at')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (votesError) throw votesError;
-
-      const reportIds = (votes || []).map(v => v.report_id).filter(Boolean);
-      if (reportIds.length === 0) {
-        setAllReports([]);
-        return;
-      }
-
-      const userVoteMap = new Map<string, 'upvote' | 'downvote'>();
-      const voteOrderMap = new Map<string, number>();
-      (votes || []).forEach((v, idx) => {
-        userVoteMap.set(v.report_id, v.vote_type as 'upvote' | 'downvote');
-        voteOrderMap.set(v.report_id, idx);
-      });
+      setLoading(true);
+      const rootCounty = getRootCounty(countyName);
 
       const { data, error } = await supabase
         .from('problem_reports')
-        .select('*')
-        .in('id', reportIds)
-        .order('created_at', { ascending: false });
+        .select(`
+          *,
+          community_votes(user_id, vote_type),
+          profiles:reported_by(full_name)
+        `)
+        .eq('status', WORKFLOW_STATUS.PENDING)
+        .ilike('location', `%${rootCounty}%`)
+        .order('priority_score', { ascending: false });
 
       if (error) throw error;
 
-      const reportsWithVotes = await Promise.all((data || []).map(async (report) => {
-        const { data: voteCounts } = await supabase
-          .from('community_votes')
-          .select('vote_type')
-          .eq('report_id', report.id);
-
-        const upvotes = voteCounts?.filter(v => v.vote_type === 'upvote').length || 0;
-        const downvotes = voteCounts?.filter(v => v.vote_type === 'downvote').length || 0;
-
-        const userVote = userVoteMap.get(report.id) ?? null;
-
-        const { data: reporterData } = await supabase
-          .from('user_profiles')
-          .select('full_name')
-          .eq('user_id', report.reported_by)
-          .maybeSingle();
+      const formatted = (data || []).map(report => {
+        const userVote = report.community_votes?.find((v: any) => v.user_id === user?.id);
+        const upvotes = report.community_votes?.filter((v: any) => v.vote_type === 'upvote').length || 0;
+        const downvotes = report.community_votes?.filter((v: any) => v.vote_type === 'downvote').length || 0;
 
         return {
           ...report,
-          priority_score: report.priority_score || 0,
-          user_vote: userVote as 'upvote' | 'downvote' | null,
-          reporter_name: reporterData?.full_name || 'Anonymous User',
-          priority: report.priority || 'medium',
-          location: report.location || 'Location not specified',
+          user_vote: (userVote?.vote_type as 'upvote' | 'downvote') || null,
+          reporter_name: (report as any).profiles?.full_name || 'Anonymous',
           upvotes,
           downvotes,
           can_vote: true,
           can_verify: true,
         };
-      }));
-
-      // Keep "All Reports" ordered by the user's vote time (most recent first)
-      reportsWithVotes.sort((a, b) => {
-        return (voteOrderMap.get(a.id) ?? 0) - (voteOrderMap.get(b.id) ?? 0);
       });
 
-      setAllReports(reportsWithVotes);
-    } catch (error: any) {
+      setReports(formatted);
+    } catch (error) {
+      console.error(`Error fetching ${type} reports:`, error);
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (userProfile?.county) fetchCountyReports(userProfile.county, 'profile');
+  }, [userProfile?.county, fetchCountyReports]);
+
+  useEffect(() => {
+    if (userLocation?.county) fetchCountyReports(userLocation.county, 'detected');
+  }, [userLocation?.county, fetchCountyReports]);
+
+  const fetchAllValidatedReports = useCallback(async () => {
+    if (!user) return;
+    try {
+      setLoadingAll(true);
+      const { data: myVotes, error: votesError } = await supabase
+        .from('community_votes')
+        .select('report_id, created_at')
+        .eq('user_id', user.id);
+
+      if (votesError) throw votesError;
+      if (!myVotes || myVotes.length === 0) {
+        setAllValidatedReports([]);
+        return;
+      }
+
+      const reportIds = myVotes.map(v => v.report_id);
+      const voteOrderMap = new Map(myVotes.map(v => [v.report_id, new Date(v.created_at).getTime()]));
+
+      const { data: reports, error: reportsError } = await supabase
+        .from('problem_reports')
+        .select(`
+          *,
+          community_votes(user_id, vote_type),
+          profiles:reported_by(full_name)
+        `)
+        .in('id', reportIds);
+
+      if (reportsError) throw reportsError;
+
+      const reportsWithVotes = (reports || []).map(report => ({
+        ...report,
+        user_vote: (report.community_votes?.find((v: any) => v.user_id === user.id)?.vote_type as 'upvote' | 'downvote') || null,
+        reporter_name: (report as any).profiles?.full_name || 'Anonymous',
+        upvotes: report.community_votes?.filter((v: any) => v.vote_type === 'upvote').length || 0,
+        downvotes: report.community_votes?.filter((v: any) => v.vote_type === 'downvote').length || 0,
+        can_vote: true,
+        can_verify: true,
+      }));
+
+      reportsWithVotes.sort((a, b) => (voteOrderMap.get(b.id) ?? 0) - (voteOrderMap.get(a.id) ?? 0));
+      setAllValidatedReports(reportsWithVotes);
+    } catch (error) {
       console.error('Error fetching reports:', error);
-      toast.error('Failed to load community reports');
     } finally {
       setLoadingAll(false);
     }
@@ -272,92 +203,44 @@ const CommunityValidation = () => {
       toast.error('Please log in to vote');
       return;
     }
-
     setVotingState(prev => ({ ...prev, [reportId]: true }));
-
     try {
-      // Insert or update vote in community_votes table
       const { error } = await supabase
         .from('community_votes')
-        .upsert({
-          report_id: reportId,
-          user_id: user.id,
-          vote_type: voteType
-        }, {
-          onConflict: 'report_id,user_id'
-        });
+        .upsert({ report_id: reportId, user_id: user.id, vote_type: voteType }, { onConflict: 'report_id,user_id' });
 
       if (error) throw error;
 
-      // Log to verification audit trail (Phase D - fire and forget)
-      try {
-        await supabase.from('verification_audit_log' as any).insert({
-          action_type: 'vote',
-          user_id: user.id,
-          report_id: reportId,
-          gps_latitude: userLocation?.latitude,
-          gps_longitude: userLocation?.longitude,
-          result: 'allowed',
-          metadata: { vote_type: voteType }
-        });
-      } catch { /* non-blocking */ }
-
-      // Update local state immediately for better UX
-      const applyVoteUpdate = (report: ProblemReport): ProblemReport => {
-        const wasUpvote = report.user_vote === 'upvote';
-        const wasDownvote = report.user_vote === 'downvote';
-
-        let newUpvotes = report.upvotes;
-        let newDownvotes = report.downvotes;
-
-        // Remove previous vote
-        if (wasUpvote) newUpvotes--;
-        if (wasDownvote) newDownvotes--;
-
-        // Add new vote
-        if (voteType === 'upvote') newUpvotes++;
-        if (voteType === 'downvote') newDownvotes++;
-
-        return {
-          ...report,
-          user_vote: voteType,
-          upvotes: newUpvotes,
-          downvotes: newDownvotes,
-          priority_score: newUpvotes - newDownvotes,
-        };
+      const applyVoteUpdate = (r: ProblemReport): ProblemReport => {
+        if (r.id !== reportId) return r;
+        const wasUp = r.user_vote === 'upvote';
+        const wasDown = r.user_vote === 'downvote';
+        let newUp = r.upvotes + (voteType === 'upvote' ? 1 : 0) - (wasUp ? 1 : 0);
+        let newDown = r.downvotes + (voteType === 'downvote' ? 1 : 0) - (wasDown ? 1 : 0);
+        return { ...r, user_vote: voteType, upvotes: newUp, downvotes: newDown, priority_score: newUp - newDown };
       };
 
-      setCountyReports(prev => prev.map(r => (r.id === reportId ? applyVoteUpdate(r) : r)));
-      setAllReports(prev => prev.map(r => (r.id === reportId ? applyVoteUpdate(r) : r)));
+      setProfileCountyReports(prev => prev.map(applyVoteUpdate));
+      setDetectedCountyReports(prev => prev.map(applyVoteUpdate));
+      setAllValidatedReports(prev => prev.map(applyVoteUpdate));
 
-      // Check if this vote triggers a status change (reaches 50 votes threshold)
       const statusResult = await WorkflowGuardService.checkAndUpdateStatusAfterVote(reportId);
-
       if (statusResult.statusChanged) {
-        toast.success('Vote submitted! This report has reached the review threshold and will now be reviewed by government officials.', {
-          duration: 5000
-        });
-        // Remove from the *local feed* (My County) once it's no longer pending
-        setCountyReports(prev => prev.filter(r => r.id !== reportId));
+        toast.success('Vote submitted! Threshold reached - moving to review.');
+        setProfileCountyReports(prev => prev.filter(r => r.id !== reportId));
+        setDetectedCountyReports(prev => prev.filter(r => r.id !== reportId));
       } else {
         toast.success(`Vote submitted successfully`);
       }
-
-      // Refresh the citizen's "validated" list so the vote immediately appears in All Reports
       fetchAllValidatedReports();
-    } catch (error: any) {
+    } catch (error) {
       console.error('Voting error:', error);
-      toast.error('Failed to submit vote');
     } finally {
       setVotingState(prev => ({ ...prev, [reportId]: false }));
     }
   };
 
-
-  // Fetch "All Reports" on mount (vote history / validated reports)
-  useEffect(() => {
-    fetchAllValidatedReports();
-  }, [fetchAllValidatedReports]);
+  useEffect(() => { fetchAllValidatedReports(); }, [fetchAllValidatedReports]);
 
   const getPriorityColor = (priority: string) => {
     switch (priority.toLowerCase()) {
@@ -369,21 +252,26 @@ const CommunityValidation = () => {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-KE', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    });
-  };
+  const formatDate = (date: string) => new Date(date).toLocaleDateString('en-KE', {
+    year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+  });
 
-  const activeReports = activeTab === 'all' ? allReports : countyReports;
-  const activeLoading = activeTab === 'all' ? loadingAll : loadingCounty;
-  const countyCount = countyReports.length;
+  const rawActiveReports = activeTab === 'votes' ? allValidatedReports : activeTab === 'profile' ? profileCountyReports : detectedCountyReports;
+  const activeLoading = activeTab === 'votes' ? loadingAll : activeTab === 'profile' ? loadingProfile : loadingDetected;
+
+  const filteredReports = React.useMemo(() => {
+    return rawActiveReports.filter(report => {
+      const matchesSearch = report.title.toLowerCase().includes(searchQuery.toLowerCase()) || report.description.toLowerCase().includes(searchQuery.toLowerCase()) || report.location.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = selectedCategory === 'all' || report.category === selectedCategory || report.problem_type === selectedCategory;
+      return matchesSearch && matchesCategory;
+    });
+  }, [rawActiveReports, searchQuery, selectedCategory]);
+
+  const availableCategories = React.useMemo(() => {
+    const cats = new Set<string>();
+    rawActiveReports.forEach(r => { if (r.category) cats.add(r.category); else if (r.problem_type) cats.add(r.problem_type); });
+    return Array.from(cats).sort();
+  }, [rawActiveReports]);
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
@@ -393,247 +281,103 @@ const CommunityValidation = () => {
             <Users className="h-6 w-6 mr-3 text-green-600" />
             Community Validation & Voting
           </CardTitle>
-          <p className="text-gray-600">
-            Help validate and prioritize community-reported problems in your area. Your votes help determine which issues get addressed first.
-          </p>
-
-          {/* Location Status */}
+          <p className="text-gray-600">Help validate and prioritize community-reported problems in your area.</p>
           <div className="mt-4 flex flex-wrap items-center gap-3">
-            {isLocating ? (
-              <Badge variant="outline" className="text-blue-600">
-                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                Detecting location...
-              </Badge>
-            ) : userCounty ? (
-              <Badge className="bg-green-100 text-green-800">
-                <Navigation className="h-3 w-3 mr-1" />
-                County: {userCounty}
-              </Badge>
-            ) : (
-              <Badge variant="outline">
-                <Info className="h-3 w-3 mr-1" />
-                County not set — update your profile or enable GPS
-              </Badge>
-            )}
-            {locationError && (
-              <span className="text-sm text-amber-600">{locationError}</span>
-            )}
+            {isLocating ? <Badge variant="outline" className="text-blue-600"><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Detecting location...</Badge> :
+              userCounty ? <Badge className="bg-green-100 text-green-800"><Navigation className="h-3 w-3 mr-1" /> County: {userCounty}</Badge> :
+                <Badge variant="outline"><Info className="h-3 w-3 mr-1" /> County not set</Badge>}
           </div>
         </CardHeader>
       </Card>
 
-      {/* Category Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 bg-white shadow">
-          <TabsTrigger value="all" className="data-[state=active]:bg-gray-900 data-[state=active]:text-white">
-            My Votes ({allReports.length})
-          </TabsTrigger>
-          <TabsTrigger
-            value="county"
-            className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
-            disabled={!userCounty}
-          >
-            <MapPin className="h-4 w-4 mr-1" />
-            {userCounty ? `${userCounty} County` : 'My County'} ({userCounty ? countyCount : '-'})
-          </TabsTrigger>
+      <Tabs value={activeTab} onValueChange={(val) => { setActiveTab(val); setSelectedCategory('all'); }} className="w-full">
+        <TabsList className="grid w-full grid-cols-3 bg-white shadow rounded-lg overflow-hidden">
+          <TabsTrigger value="votes" className="data-[state=active]:bg-green-600 data-[state=active]:text-white"><ThumbsUp className="h-4 w-4 mr-2" /> My Votes ({allValidatedReports.length})</TabsTrigger>
+          <TabsTrigger value="profile" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white" disabled={!userProfile?.county}><MapPin className="h-4 w-4 mr-2" /> {userProfile?.county || 'My County'} ({profileCountyReports.length})</TabsTrigger>
+          <TabsTrigger value="detected" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white" disabled={!userLocation?.county}><Navigation className="h-4 w-4 mr-2" /> {userLocation?.county || 'Detected'} ({detectedCountyReports.length})</TabsTrigger>
         </TabsList>
       </Tabs>
 
-      {activeLoading && activeReports.length === 0 ? (
-        <Card>
-          <CardContent className="p-8 text-center">
-            <div className="animate-pulse">Loading reports...</div>
-          </CardContent>
-        </Card>
-      ) : activeReports.length === 0 ? (
-        <Card>
-          <CardContent className="p-8 text-center">
-            <CheckCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No Reports in This Category</h3>
-            <p className="text-gray-600">
-              {activeTab === 'all'
-                ? "You haven't voted on any reports yet. Switch to your county tab to vote on issues in your area."
-                : `No reports found in ${userCounty || 'your'} County yet.`}
-            </p>
-          </CardContent>
-        </Card>
+      <div className="space-y-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <input type="text" placeholder="Search problems..." className="w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 shadow-sm outline-none transition-all" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+        </div>
+
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+          <button onClick={() => setSelectedCategory('all')} className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${selectedCategory === 'all' ? 'bg-green-600 text-white shadow-md' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'}`}>All Categories</button>
+          {availableCategories.map((cat) => (<button key={cat} onClick={() => setSelectedCategory(cat)} className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${selectedCategory === cat ? 'bg-green-600 text-white shadow-md' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'}`}>{cat}</button>))}
+        </div>
+      </div>
+
+      {activeLoading && filteredReports.length === 0 ? (
+        <Card><CardContent className="p-12 text-center"><Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-green-600" /><div className="text-gray-500">Loading reports...</div></CardContent></Card>
+      ) : filteredReports.length === 0 ? (
+        <Card><CardContent className="p-12 text-center"><CheckCircle className="h-12 w-12 text-gray-300 mx-auto mb-4" /><h3 className="text-lg font-semibold text-gray-900 mb-2">No Reports Found</h3><p className="text-gray-600">Try adjusting your filters.</p></CardContent></Card>
       ) : (
         <div className="grid gap-6">
-          {activeReports.map((report) => (
-            <Card key={report.id} className="hover:shadow-lg transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex flex-col lg:flex-row gap-6">
-                  {/* Report Details */}
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between mb-4">
-                      <div>
-                        <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                          {report.title}
-                        </h3>
-                        <div className="flex flex-wrap items-center gap-2 mb-3">
-                          {/* Distance Badge */}
-                          {report.distance_km !== undefined && report.distance_km !== null && (
-                            <Badge className={
-                              report.distance_category === 'urgent' ? 'bg-red-100 text-red-800' :
-                                report.distance_category === 'nearby' ? 'bg-yellow-100 text-yellow-800' :
-                                  'bg-blue-100 text-blue-800'
-                            }>
-                              <Navigation className="h-3 w-3 mr-1" />
-                              {formatDistance(report.distance_km)}
-                            </Badge>
-                          )}
-                          <Badge className={getPriorityColor(report.priority)}>
-                            {report.priority.toUpperCase()}
-                          </Badge>
-                          <Badge variant="outline" className="text-xs">
-                            ID: {report.id.substring(0, 8)}
-                          </Badge>
-                        </div>
-                      </div>
-                    </div>
-
-                    <p className="text-gray-700 mb-4 line-clamp-3">
-                      {report.description}
-                    </p>
-
-                    <div className="flex flex-wrap items-center text-sm text-gray-500 gap-4 mb-4">
-                      <div className="flex items-center">
-                        <MapPin className="h-4 w-4 mr-1" />
-                        {report.location}
-                      </div>
-                      <div className="flex items-center">
-                        <Clock className="h-4 w-4 mr-1" />
-                        {formatDate(report.created_at)}
-                      </div>
-                      <div className="flex items-center">
-                        <Users className="h-4 w-4 mr-1" />
-                        Reported by {report.reporter_name}
-                      </div>
-                    </div>
-
-                    {/* Photo Gallery */}
-                    {report.photo_urls && report.photo_urls.length > 0 && (
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">
-                        {report.photo_urls.slice(0, 4).map((url, index) => (
-                          <div key={index} className="relative aspect-square">
-                            <img
-                              src={url}
-                              alt={`Evidence ${index + 1}`}
-                              className="w-full h-full object-cover rounded-lg"
-                            />
-                            {index === 3 && report.photo_urls!.length > 4 && (
-                              <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded-lg">
-                                <span className="text-white font-semibold">
-                                  +{report.photo_urls!.length - 4} more
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Voting Section */}
-                  <div className="lg:w-64 border-t lg:border-t-0 lg:border-l border-gray-200 pt-4 lg:pt-0 lg:pl-6">
-                    <div className="text-center mb-4">
-                      <div className="flex items-center justify-center gap-2 mb-2">
-                        <TrendingUp className="h-4 w-4 text-blue-600" />
-                        <div className="text-lg font-bold text-gray-900">
-                          {report.priority_score}
-                        </div>
-                      </div>
-                      <div className="text-xs text-gray-600">Priority Score</div>
-                      <div className="flex justify-center gap-4 mt-2 text-xs">
-                        <div className="text-green-600 flex items-center">
-                          <ThumbsUp className="h-3 w-3 mr-1" />
-                          {report.upvotes}
-                        </div>
-                        <div className="text-red-600 flex items-center">
-                          <ThumbsDown className="h-3 w-3 mr-1" />
-                          {report.downvotes}
-                        </div>
-                      </div>
-
-                      {/* Vote Progress & Dynamic Workflow Status */}
-                      <div className="mt-3 space-y-1">
-                        {report.status === 'pending' ? (
-                          <>
-                            <div className="flex justify-between text-xs text-gray-600">
-                              <span>Progress to Review</span>
-                              <span>{Math.min(report.upvotes + report.downvotes, MIN_VOTES_THRESHOLD)}/{MIN_VOTES_THRESHOLD}</span>
-                            </div>
-                            <Progress
-                              value={Math.min(((report.upvotes + report.downvotes) / MIN_VOTES_THRESHOLD) * 100, 100)}
-                              className="h-2"
-                            />
-                            <p className="text-xs text-gray-500">
-                              {report.upvotes + report.downvotes >= MIN_VOTES_THRESHOLD
-                                ? '✓ Ready for government review'
-                                : `${MIN_VOTES_THRESHOLD - (report.upvotes + report.downvotes)} more votes needed`}
-                            </p>
-                          </>
-                        ) : (
-                          <div className={`text-xs px-2 py-1.5 rounded border ${getWorkflowStageDisplay(report.status).colorClass}`}>
-                            {getWorkflowStageDisplay(report.status).label}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="space-y-3">
-                      {/* Already voted notice */}
-                      {report.user_vote && (
-                        <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded text-center">
-                          <CheckCircle className="h-3 w-3 inline mr-1" />
-                          You've already {report.user_vote === 'upvote' ? 'supported' : 'disputed'} this issue
-                        </div>
-                      )}
-                      {/* Vote eligibility notice */}
-                      {!report.user_vote && (
-                        report.reported_by === user?.id ? (
-                          <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded flex flex-col items-center justify-center text-center">
-                            <span><Info className="h-3 w-3 inline mr-1" /> You cannot vote on your own reports</span>
-                            <span className="text-[10px] opacity-80">(You automatically support issues you report)</span>
-                          </div>
-                        ) : report.can_vote === false ? (
-                          <div className="text-xs text-amber-600 bg-amber-50 p-2 rounded">
-                            <AlertTriangle className="h-3 w-3 inline mr-1" />
-                            You must be within 50km to vote on this issue
-                          </div>
-                        ) : null
-                      )}
-                      <div className="flex gap-2">
-                        <Button
-                          variant={report.user_vote === 'upvote' ? 'default' : 'outline'}
-                          size="sm"
-                          className="flex-1"
-                          onClick={() => handleVote(report.id, 'upvote')}
-                          disabled={votingState[report.id] || report.can_vote === false || !!report.user_vote}
-                        >
-                          <ThumbsUp className="h-4 w-4 mr-1" />
-                          {report.user_vote === 'upvote' ? 'Supported' : 'Support'}
-                        </Button>
-                        <Button
-                          variant={report.user_vote === 'downvote' ? 'destructive' : 'outline'}
-                          size="sm"
-                          className="flex-1"
-                          onClick={() => handleVote(report.id, 'downvote')}
-                          disabled={votingState[report.id] || report.can_vote === false || !!report.user_vote}
-                        >
-                          <ThumbsDown className="h-4 w-4 mr-1" />
-                          {report.user_vote === 'downvote' ? 'Disputed' : 'Dispute'}
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          {filteredReports.map((report) => (
+            <ReportCard key={report.id} report={report} user={user} votingState={votingState} handleVote={handleVote} userLocation={userLocation} formatDate={formatDate} formatDistance={formatDistance} getPriorityColor={getPriorityColor} />
           ))}
         </div>
       )}
     </div>
+  );
+};
+
+const ReportCard = ({ report, user, votingState, handleVote, userLocation, formatDate, formatDistance, getPriorityColor }: any) => {
+  return (
+    <Card className="hover:shadow-lg transition-all duration-300 border-l-4 border-l-slate-200 hover:border-l-green-500 overflow-hidden">
+      <CardContent className="p-0">
+        <div className="flex flex-col lg:flex-row divide-y lg:divide-y-0 lg:divide-x divide-gray-100">
+          <div className="flex-1 p-6">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">{report.title}</h3>
+                <div className="flex flex-wrap items-center gap-2 mb-3">
+                  {report.distance_km != null && <Badge className="bg-blue-100 text-blue-800"><Navigation className="h-3 w-3 mr-1" /> {formatDistance(report.distance_km)} away</Badge>}
+                  <Badge className={getPriorityColor(report.priority)}>{report.priority.toUpperCase()}</Badge>
+                  <Badge variant="outline" className="bg-slate-50">{report.category || 'Other'}</Badge>
+                </div>
+              </div>
+              <Badge variant="outline" className="text-[10px] text-gray-400">#{report.id.substring(0, 8)}</Badge>
+            </div>
+            <p className="text-gray-700 mb-4 line-clamp-3 leading-relaxed">{report.description}</p>
+            <div className="flex flex-wrap items-center text-sm text-gray-500 gap-x-6 gap-y-2">
+              <div className="flex items-center"><MapPin className="h-4 w-4 mr-1.5 text-red-400" /> {report.location}</div>
+              <div className="flex items-center"><Clock className="h-4 w-4 mr-1.5 text-blue-400" /> {formatDate(report.created_at)}</div>
+            </div>
+            {report.photo_urls && report.photo_urls.length > 0 && (
+              <div className="grid grid-cols-4 gap-2 mt-4">
+                {report.photo_urls.slice(0, 4).map((url: string, index: number) => (
+                  <img key={index} src={url} className="aspect-video object-cover rounded-md border" alt="Evidence" />
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="lg:w-64 bg-slate-50/50 p-6 flex flex-col justify-between">
+            <div className="text-center space-y-4">
+              <div className="inline-flex flex-col items-center">
+                <div className="flex items-center gap-2 font-black text-2xl text-gray-900"><TrendingUp className="h-4 w-4 text-blue-600" /> {report.priority_score}</div>
+                <span className="text-[10px] uppercase font-bold text-gray-400">Priority Weight</span>
+              </div>
+              <div className="flex justify-between font-bold">
+                <div className="text-green-600 flex items-center"><ThumbsUp className="h-4 w-4 mr-1" /> {report.upvotes}</div>
+                <div className="text-red-500 flex items-center"><ThumbsDown className="h-4 w-4 mr-1" /> {report.downvotes}</div>
+              </div>
+              <div className="space-y-1">
+                <div className="flex justify-between text-[10px] font-bold text-gray-500 uppercase"><span>Threshold</span><span>{Math.min(report.upvotes + report.downvotes, MIN_VOTES_THRESHOLD)}/{MIN_VOTES_THRESHOLD}</span></div>
+                <Progress value={Math.min(((report.upvotes + report.downvotes) / MIN_VOTES_THRESHOLD) * 100, 100)} className="h-1.5" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2 mt-6">
+              <Button variant={report.user_vote === 'upvote' ? 'default' : 'outline'} size="sm" className={report.user_vote === 'upvote' ? 'bg-green-600' : ''} onClick={() => handleVote(report.id, 'upvote')} disabled={votingState[report.id] || !!report.user_vote}><ThumbsUp className="h-4 w-4 mr-1" /> Support</Button>
+              <Button variant={report.user_vote === 'downvote' ? 'destructive' : 'outline'} size="sm" onClick={() => handleVote(report.id, 'downvote')} disabled={votingState[report.id] || !!report.user_vote}><ThumbsDown className="h-4 w-4 mr-1" /> Dispute</Button>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

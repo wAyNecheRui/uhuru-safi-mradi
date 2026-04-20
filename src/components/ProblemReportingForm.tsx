@@ -249,7 +249,7 @@ const ProblemReportingForm = () => {
                     location={formData.location}
                     category={formData.category}
                     onLinkToExisting={(reportId) => {
-                      navigate(`/citizen/community-voting?highlight=${reportId}`);
+                      navigate(`/citizen/voting?highlight=${reportId}`);
                     }}
                   />
                 </div>

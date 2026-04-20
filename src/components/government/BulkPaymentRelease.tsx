@@ -50,11 +50,12 @@ const BulkPaymentRelease: React.FC<BulkPaymentReleaseProps> = ({ milestones, onC
     .reduce((sum, m) => sum + m.amount, 0);
 
   const handleBulkRelease = async () => {
+    if (processing) return;
     setProcessing(true);
     let success = 0, fail = 0;
 
     const { data: { user } } = await supabase.auth.getUser();
-    
+
     for (const id of selectedIds) {
       try {
         const idempotencyKey = `release-${id}-${user?.id}-${Date.now()}`;

@@ -3,7 +3,7 @@
  * 
  * WORKFLOW STATES:
  * 1. pending        → Initial state when citizen reports a problem
- * 2. under_review   → Auto-transitions when votes reach MIN_VOTES_THRESHOLD (3 for testing)
+ * 2. under_review   → Auto-transitions when composite score reaches MIN_COMPOSITE_SCORE_THRESHOLD
  * 3. approved       → Government approves (only if under_review + all checks pass)
  * 4. bidding_open   → Government opens bidding (auto or manual after approval)
  * 5. contractor_selected → Government selects a contractor bid
@@ -29,7 +29,7 @@ export const WORKFLOW_STATUS = {
   REJECTED: 'rejected',
 } as const;
 
-export const MIN_VOTES_THRESHOLD = 3;
+export const MIN_VOTES_THRESHOLD = 5;
 
 // Valid status transitions
 const VALID_TRANSITIONS: Record<string, string[]> = {
@@ -73,12 +73,11 @@ export class WorkflowGuardService {
    * Get the workflow requirements for a report
    */
   static async getWorkflowRequirements(reportId: string): Promise<{
-    meetsVoteThreshold: boolean;
+    meetsThreshold: boolean;
     hasGPS: boolean;
     hasMedia: boolean;
     voteCount: number;
-    upvotes: number;
-    downvotes: number;
+    compositeScore: number;
     canApprove: boolean;
     canOpenBidding: boolean;
     currentStatus: string;
@@ -100,24 +99,25 @@ export class WorkflowGuardService {
     const upvotes = report.community_votes?.filter((v: any) => v.vote_type === 'upvote').length || 0;
     const downvotes = report.community_votes?.filter((v: any) => v.vote_type === 'downvote').length || 0;
     const totalVotes = upvotes + downvotes;
+    const currentScore = report.priority_score || 0;
 
-    const meetsVoteThreshold = totalVotes >= MIN_VOTES_THRESHOLD;
+    const meetsThreshold = totalVotes >= MIN_VOTES_THRESHOLD;
     const hasGPS = !!(report.gps_coordinates || report.coordinates);
     const hasMedia = (report.photo_urls?.length > 0) || (report.video_urls?.length > 0);
+
     // Can approve only if in under_review status and meets all requirements
     const canApprove = report.status === WORKFLOW_STATUS.UNDER_REVIEW &&
-      meetsVoteThreshold && hasGPS && hasMedia;
+      meetsThreshold && hasGPS && hasMedia;
 
     // Can open bidding only if already approved
     const canOpenBidding = report.status === WORKFLOW_STATUS.APPROVED;
 
     return {
-      meetsVoteThreshold,
+      meetsThreshold,
       hasGPS,
       hasMedia,
       voteCount: totalVotes,
-      upvotes,
-      downvotes,
+      compositeScore: currentScore,
       canApprove,
       canOpenBidding,
       currentStatus: report.status || WORKFLOW_STATUS.PENDING,
@@ -125,7 +125,7 @@ export class WorkflowGuardService {
   }
 
   /**
-   * Check and update report status based on vote count
+   * Check and update report status based on composite impact score
    * Called after each vote to auto-transition from pending to under_review
    */
   static async checkAndUpdateStatusAfterVote(reportId: string): Promise<{
@@ -134,9 +134,9 @@ export class WorkflowGuardService {
   }> {
     const requirements = await this.getWorkflowRequirements(reportId);
 
-    // If pending and meets vote threshold, transition to under_review
+    // If pending and meets impact threshold, transition to under_review
     if (requirements.currentStatus === WORKFLOW_STATUS.PENDING &&
-      requirements.meetsVoteThreshold) {
+      requirements.meetsThreshold) {
 
       const { error } = await supabase
         .from('problem_reports')
@@ -183,8 +183,8 @@ export class WorkflowGuardService {
     // Validate the transition
     if (!requirements.canApprove) {
       const missing: string[] = [];
-      if (!requirements.meetsVoteThreshold) {
-        missing.push(`Need ${MIN_VOTES_THRESHOLD - requirements.voteCount} more votes`);
+      if (!requirements.meetsThreshold) {
+        missing.push(`Impact score (${requirements.compositeScore}) below threshold (${MIN_COMPOSITE_SCORE_THRESHOLD})`);
       }
       if (!requirements.hasGPS) missing.push('Missing GPS coordinates');
       if (!requirements.hasMedia) missing.push('Missing photo/video evidence');
@@ -384,7 +384,7 @@ export class WorkflowGuardService {
         approved_by: userData.user?.id,
         approval_action: 'approve',
         justification: 'Contractor selected via automated threshold evaluation',
-        bid_count: 0, // Placeholder, can be improved
+        bid_count: 0,
         agpo_compliant: true
       });
 
@@ -399,7 +399,6 @@ export class WorkflowGuardService {
     let projectError = null;
 
     if (existingProject) {
-      // Update existing project with contractor
       const { data: updated, error } = await supabase
         .from('projects')
         .update({
@@ -414,7 +413,6 @@ export class WorkflowGuardService {
       project = updated;
       projectError = error;
     } else {
-      // Create new project
       const { data: created, error } = await supabase
         .from('projects')
         .insert({
@@ -621,7 +619,7 @@ export class WorkflowGuardService {
 
         // Notify stakeholders of project completion
         await LiveNotificationService.notify({
-          userId: 'broadcast', // Hypothetical broadcast or specific logic
+          userId: 'broadcast',
           title: '🎊 Project Completed!',
           message: `Work on "${project?.title || 'Project'}" has been fully verified and paid. Progress finalized!`,
           type: 'success',

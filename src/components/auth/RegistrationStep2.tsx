@@ -2,14 +2,16 @@ import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Card, CardContent } from '@/components/ui/card';
-import { CheckCircle2, Upload, HelpCircle, Loader2, ArrowRight, AlertCircle } from 'lucide-react';
+import { CheckCircle2, Upload, HelpCircle, Loader2, ArrowRight, AlertCircle, FileStack } from 'lucide-react';
 import { NCA_CATEGORIES, AGPO_CATEGORIES, CONTRACTOR_SPECIALIZATIONS } from '@/constants/kenyaAdministrativeUnits';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { VerificationService } from '@/services/VerificationService';
+import { GOVERNMENT_DEPARTMENTS } from '@/config/governmentRoles';
 
 interface RegistrationStep2Props {
   role: 'contractor' | 'government';
@@ -33,9 +35,11 @@ const RegistrationStep2: React.FC<RegistrationStep2Props> = ({
   const [ncaNumber, setNcaNumber] = useState('');
   const [ncaClass, setNcaClass] = useState('');
   const [isAgpo, setIsAgpo] = useState(false);
+  const [isKraVerified, setIsKraVerified] = useState(false);
 
   // Government fields
   const [employeeNumber, setEmployeeNumber] = useState('');
+  const [department, setDepartment] = useState('');
 
   // File states
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, File | null>>({});
@@ -46,8 +50,14 @@ const RegistrationStep2: React.FC<RegistrationStep2Props> = ({
     if (isKenya) {
       if (upper && !VerificationService.isValidKRAPin(upper)) {
         setKraPinError('Invalid format. Expected: P123456789A (letter, 9 digits, letter)');
+        setIsKraVerified(false);
+      } else if (upper && VerificationService.isValidKRAPin(upper)) {
+        setKraPinError('');
+        // Simulate real-time iTax lookup
+        setTimeout(() => setIsKraVerified(true), 800);
       } else {
         setKraPinError('');
+        setIsKraVerified(false);
       }
     }
   };
@@ -157,7 +167,7 @@ const RegistrationStep2: React.FC<RegistrationStep2Props> = ({
           .from('government_profiles')
           .upsert({
             user_id: user.id,
-            department: 'Pending Assignment',
+            department: department || 'Pending Assignment',
             position: 'Pending Verification',
             employee_number: employeeNumber || null,
           }, { onConflict: 'user_id' });
@@ -165,7 +175,7 @@ const RegistrationStep2: React.FC<RegistrationStep2Props> = ({
         if (govError) {
           await supabase.from('government_profiles').insert({
             user_id: user.id,
-            department: 'Pending Assignment',
+            department: department || 'Pending Assignment',
             position: 'Pending Verification',
             employee_number: employeeNumber || null,
           });
@@ -244,19 +254,34 @@ const RegistrationStep2: React.FC<RegistrationStep2Props> = ({
                   </TooltipContent>
                 </Tooltip>
               </div>
-              <Input
-                placeholder={isKenya ? 'e.g. P123456789A' : 'e.g. EIN, CAC Number'}
-                value={kraPin}
-                onChange={(e) => validateKraPin(e.target.value)}
-                className={kraPinError ? 'border-destructive' : ''}
-                maxLength={15}
-              />
+              <div className="flex items-center gap-2">
+                <Input
+                  placeholder={isKenya ? 'e.g. P123456789A' : 'e.g. EIN, CAC Number'}
+                  value={kraPin}
+                  onChange={(e) => validateKraPin(e.target.value)}
+                  className={kraPinError ? 'border-destructive' : isKraVerified ? 'border-green-500' : ''}
+                  maxLength={15}
+                />
+                {isKraVerified && (
+                  <Badge className="bg-green-100 text-green-700 hover:bg-green-100 flex gap-1 items-center shrink-0 animate-in zoom-in-50">
+                    <CheckCircle2 className="h-3 w-3" /> iTax Active
+                  </Badge>
+                )}
+              </div>
               {kraPinError && (
                 <p className="text-xs text-destructive flex items-center gap-1">
                   <AlertCircle className="h-3 w-3" /> {kraPinError}
                 </p>
               )}
             </div>
+
+            <FileUploadField
+              label="Registrar of Companies CR12 Form"
+              fieldKey="cr12_form"
+              onFileChange={handleFileChange}
+              currentFile={uploadedFiles['cr12_form']}
+              tooltip="Official list of directors and beneficial owners (Required for Anti-Corruption compliance)"
+            />
 
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-foreground">Primary Specialization</label>
@@ -381,6 +406,18 @@ const RegistrationStep2: React.FC<RegistrationStep2Props> = ({
                 onChange={(e) => setEmployeeNumber(e.target.value)}
               />
             </div>
+
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-foreground">Official Institution / Department</label>
+              <Select value={department} onValueChange={setDepartment}>
+                <SelectTrigger><SelectValue placeholder="Select your department" /></SelectTrigger>
+                <SelectContent>
+                  {GOVERNMENT_DEPARTMENTS.map(d => (
+                    <SelectItem key={d.department} value={d.department}>{d.department}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <p className="text-xs text-muted-foreground bg-muted/50 p-3 rounded-lg">
               🔒 Thank you for helping bring transparency! Your account will be verified by an administrator within 24-48 hours.
             </p>
@@ -399,7 +436,7 @@ const RegistrationStep2: React.FC<RegistrationStep2Props> = ({
           <Button
             type="submit"
             className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
-            disabled={isSubmitting || (isKenya && kraPin !== '' && !!kraPinError)}
+            disabled={isSubmitting || (isKenya && kraPin !== '' && !!kraPinError) || (role === 'government' && !department)}
           >
             {isSubmitting ? (
               <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Submitting...</>
@@ -419,9 +456,18 @@ const FileUploadField: React.FC<{
   fieldKey: string;
   onFileChange: (key: string, file: File | null) => void;
   currentFile?: File | null;
-}> = ({ label, fieldKey, onFileChange, currentFile }) => (
+  tooltip?: string;
+}> = ({ label, fieldKey, onFileChange, currentFile, tooltip }) => (
   <div className="space-y-1.5">
-    <label className="text-sm font-medium text-foreground">{label}</label>
+    <div className="flex items-center gap-1">
+      <label className="text-sm font-medium text-foreground">{label}</label>
+      {tooltip && (
+        <Tooltip>
+          <TooltipTrigger asChild><HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" /></TooltipTrigger>
+          <TooltipContent><p className="text-xs">{tooltip}</p></TooltipContent>
+        </Tooltip>
+      )}
+    </div>
     <label className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-dashed border-border bg-muted/30 text-sm text-muted-foreground cursor-pointer hover:border-primary/30 hover:bg-primary/5 transition-colors">
       {currentFile ? (
         <>

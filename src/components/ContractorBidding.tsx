@@ -6,8 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Star, Briefcase, Award, Clock, Wallet, Users, Shield, FileText, CheckCircle, MapPin, Loader2, AlertCircle, Eye, Lock, Navigation } from 'lucide-react';
-import { canContractorBid } from '@/utils/geoUtils';
+import { Star, Briefcase, Award, Clock, Wallet, Users, Shield, FileText, CheckCircle, MapPin, Loader2, AlertCircle, Eye, Lock, Navigation, ChevronDown, Upload, ArrowRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
@@ -43,10 +42,16 @@ interface ProblemReport {
 interface ContractorBid {
   id: string;
   report_id: string;
+  contractor_id: string;
   bid_amount: number;
+  bid_bond_amount?: number;
   estimated_duration: number;
   proposal: string;
   technical_approach: string | null;
+  materials_spec: string | null;
+  safety_plan: string | null;
+  quality_assurance: string | null;
+  timeline_breakdown: string | null;
   status: string;
   submitted_at: string;
   problem_reports?: { title: string; location: string | null } | null;
@@ -64,9 +69,12 @@ const ContractorBidding = () => {
   const [viewingProblem, setViewingProblem] = useState<ProblemReport | null>(null);
   const [locationProblem, setLocationProblem] = useState<ProblemReport | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [activeTab, setActiveTab] = useState('available');
+  const [selectedCategory, setSelectedCategory] = useState<string>('All');
 
   const [bidForm, setBidForm] = useState({
     amount: '',
+    bidBondAmount: '',
     duration: '',
     proposal: '',
     technicalApproach: '',
@@ -75,6 +83,9 @@ const ContractorBidding = () => {
     safetyPlan: '',
     qualityAssurance: ''
   });
+
+  const [activeEnvelopeTab, setActiveEnvelopeTab] = useState('technical');
+  const [bidBondFile, setBidBondFile] = useState<File | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -86,8 +97,6 @@ const ContractorBidding = () => {
     try {
       setLoading(true);
 
-      // Fetch ALL reported problems (not just bidding_open) so contractors can see the pipeline
-      // Include vote counts
       const { data: problemsData, error: problemsError } = await supabase
         .from('problem_reports')
         .select(`
@@ -106,7 +115,6 @@ const ContractorBidding = () => {
 
       if (problemsError) throw problemsError;
 
-      // Calculate vote counts
       const problemsWithVotes = (problemsData || []).map(p => ({
         ...p,
         vote_count: p.community_votes?.length || 0
@@ -114,7 +122,6 @@ const ContractorBidding = () => {
 
       setAllProblems(problemsWithVotes);
 
-      // Fetch contractor's bids
       if (user?.id) {
         const { data: bidsData, error: bidsError } = await supabase
           .from('contractor_bids')
@@ -144,7 +151,6 @@ const ContractorBidding = () => {
     e.preventDefault();
     if (!selectedProblem || !user) return;
 
-    // Validate that bidding is open
     if (selectedProblem.status !== WORKFLOW_STATUS.BIDDING_OPEN) {
       toast({
         title: "Cannot Submit Bid",
@@ -154,7 +160,6 @@ const ContractorBidding = () => {
       return;
     }
 
-    // Check contractor verification status
     if (!contractorProfile?.verified) {
       toast({
         title: "Verification Required",
@@ -164,10 +169,31 @@ const ContractorBidding = () => {
       return;
     }
 
+    // AGPO Enforcement
+    if (selectedProblem.is_agpo_reserved && !contractorProfile?.agpo_category) {
+      toast({
+        title: "AGPO Reserved Project",
+        description: "This project is reserved for Women, Youth, or PWD-owned enterprises. You must have a valid AGPO certificate to bid.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
       setSubmitting(true);
-
       const bidAmount = parseFloat(bidForm.amount.replace(/,/g, ''));
+      const bidBondAmount = parseFloat(bidForm.bidBondAmount.replace(/,/g, ''));
+
+      // PPRA requirement: Bid Bond must be at least 0.5% of bid amount for large projects
+      if (bidAmount > 5000000 && (!bidBondAmount || bidBondAmount < bidAmount * 0.005)) {
+        toast({
+          title: "Insufficient Bid Bond",
+          description: "For projects over 5M KES, a bid bond of at least 0.5% is mandatory per PPRA guidelines.",
+          variant: "destructive"
+        });
+        setIsSubmitting(false);
+        return;
+      }
 
       const { error } = await supabase
         .from('contractor_bids')
@@ -175,6 +201,7 @@ const ContractorBidding = () => {
           report_id: selectedProblem.id,
           contractor_id: user.id,
           bid_amount: bidAmount,
+          bid_bond_amount: bidBondAmount || null,
           estimated_duration: parseInt(bidForm.duration),
           proposal: bidForm.proposal,
           technical_approach: bidForm.technicalApproach || null,
@@ -186,7 +213,6 @@ const ContractorBidding = () => {
 
       if (error) throw error;
 
-      // Log to verification audit trail (Phase D - fire and forget)
       try {
         await supabase.from('verification_audit_log' as any).insert({
           action_type: 'bid_submit',
@@ -197,7 +223,6 @@ const ContractorBidding = () => {
         });
       } catch { /* non-blocking */ }
 
-      // Fire notifications to citizen reporter and government
       try {
         const companyName = contractorProfile?.company_name || userProfile?.full_name || 'A contractor';
         const { LiveNotificationService } = await import('@/services/LiveNotificationService');
@@ -305,9 +330,14 @@ const ContractorBidding = () => {
     return index >= 0 ? index : 0;
   };
 
-  // Filter problems for available (bidding_open) and pipeline (all others)
   const biddingOpenProblems = allProblems.filter(p => p.status === WORKFLOW_STATUS.BIDDING_OPEN);
   const pipelineProblems = allProblems.filter(p => p.status !== WORKFLOW_STATUS.BIDDING_OPEN);
+
+  const activeReports = activeTab === 'available' ? biddingOpenProblems : activeTab === 'pipeline' ? pipelineProblems : [];
+  const categories = ['All', ...Array.from(new Set(activeReports.map(p => p.category || 'Other'))).sort()];
+  const filteredReports = selectedCategory === 'All'
+    ? activeReports
+    : activeReports.filter(p => (p.category || 'Other') === selectedCategory);
 
   if (loading) {
     return (
@@ -368,26 +398,7 @@ const ContractorBidding = () => {
                     <div className="text-muted-foreground">{contractorProfile.years_in_business} years</div>
                   </div>
                 )}
-                {userProfile?.location && (
-                  <div>
-                    <span className="font-medium text-foreground">Location:</span>
-                    <div className="text-muted-foreground">{userProfile.location}</div>
-                  </div>
-                )}
               </div>
-
-              {contractorProfile?.specialization && contractorProfile.specialization.length > 0 && (
-                <div>
-                  <span className="font-medium text-foreground text-sm">Specialties:</span>
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {contractorProfile.specialization.map((specialty, index) => (
-                      <Badge key={index} variant="outline" className="text-xs">
-                        {specialty}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               <Badge className={contractorProfile?.verified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
                 {contractorProfile?.verified ? 'Verified Contractor' : 'Pending Verification'}
@@ -398,133 +409,98 @@ const ContractorBidding = () => {
 
         {/* Main Content */}
         <div className="lg:col-span-3">
-          <Tabs defaultValue="available" className="space-y-6">
+          <Tabs value={activeTab} onValueChange={(val) => { setActiveTab(val); setSelectedCategory('All'); }} className="space-y-6">
             <TabsList className="grid w-full grid-cols-3 bg-background shadow-lg">
-              <TabsTrigger
-                value="available"
-                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-              >
-                Open for Bidding ({biddingOpenProblems.length})
+              <TabsTrigger value="available" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                Open Bidding ({biddingOpenProblems.length})
               </TabsTrigger>
-              <TabsTrigger
-                value="pipeline"
-                className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
-              >
-                Project Pipeline ({pipelineProblems.length})
+              <TabsTrigger value="pipeline" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+                Pipeline ({pipelineProblems.length})
               </TabsTrigger>
-              <TabsTrigger
-                value="mybids"
-                className="data-[state=active]:bg-secondary data-[state=active]:text-secondary-foreground"
-              >
+              <TabsTrigger value="mybids" className="data-[state=active]:bg-secondary data-[state=active]:text-secondary-foreground">
                 My Bids ({myBids.length})
               </TabsTrigger>
             </TabsList>
 
-            {/* Available for Bidding Tab */}
             <TabsContent value="available" className="space-y-6">
-              {biddingOpenProblems.length === 0 ? (
-                <Card className="shadow-lg">
-                  <CardContent className="p-8 text-center">
+              {/* Category Chips */}
+              {biddingOpenProblems.length > 0 && (
+                <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                  {categories.map((cat) => (
+                    <button
+                      key={cat}
+                      onClick={() => setSelectedCategory(cat)}
+                      className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${selectedCategory === cat
+                        ? 'bg-primary text-primary-foreground shadow-md'
+                        : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                        }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {filteredReports.length === 0 ? (
+                <Card className="shadow-lg border-2 border-dashed">
+                  <CardContent className="p-12 text-center">
                     <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">No Projects Open for Bidding</h3>
-                    <p className="text-muted-foreground">Check the Pipeline tab to see upcoming projects that may open for bidding soon.</p>
+                    <h3 className="text-lg font-semibold mb-2">No projects found in this category</h3>
+                    <p className="text-muted-foreground">Try selecting another category or check the Pipeline tab.</p>
                   </CardContent>
                 </Card>
               ) : (
                 <div className="grid gap-6">
-                  {biddingOpenProblems.map((problem) => (
-                    <Card key={problem.id} className="shadow-lg hover:shadow-xl transition-shadow border-l-4 border-l-purple-500">
+                  {filteredReports.map((problem) => (
+                    <Card key={problem.id} className="shadow-lg hover:shadow-xl transition-shadow border-l-4 border-l-primary overflow-hidden">
                       <CardContent className="p-6">
                         <div className="space-y-4">
                           <div className="flex flex-wrap items-start justify-between gap-2">
                             <h3 className="text-xl font-semibold">{problem.title}</h3>
                             <div className="flex gap-2">
-                              <Badge className="bg-purple-100 text-purple-800">
-                                <CheckCircle className="h-3 w-3 mr-1" />
-                                Open for Bidding
-                              </Badge>
-                              <Badge className={getPriorityColor(problem.priority)}>
-                                {problem.priority || 'Medium'} Priority
-                              </Badge>
+                              {problem.is_agpo_reserved && (
+                                <Badge className="bg-amber-100 text-amber-800 border-amber-200 flex gap-1 items-center">
+                                  <Award className="h-3 w-3" /> AGPO Reserved
+                                </Badge>
+                              )}
+                              <Badge className="bg-purple-100 text-purple-800">Open Bidding</Badge>
+                              <Badge className={getPriorityColor(problem.priority)}>{problem.priority || 'Medium'}</Badge>
                             </div>
                           </div>
-
                           <p className="text-muted-foreground line-clamp-2">{problem.description}</p>
-
                           <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <button
-                              className="flex items-center hover:text-primary transition-colors"
-                              onClick={() => setLocationProblem(problem)}
-                            >
+                            <button className="flex items-center hover:text-primary transition-colors" onClick={() => setLocationProblem(problem)}>
                               <MapPin className="h-4 w-4 mr-1" />
-                              {problem.location || 'Location not specified'}
+                              {problem.location || 'N/A'}
                               <Navigation className="h-3 w-3 ml-1 text-blue-500" />
                             </button>
                           </div>
-
-                          {problem.photo_urls && problem.photo_urls.length > 0 && (
-                            <div className="flex gap-2 overflow-x-auto">
-                              {problem.photo_urls.slice(0, 3).map((url, index) => (
-                                <img
-                                  key={index}
-                                  src={url}
-                                  alt={`Problem ${index + 1}`}
-                                  className="h-20 w-20 object-cover rounded-lg"
-                                />
-                              ))}
-                            </div>
-                          )}
-
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg">
+                          <div className="grid grid-cols-3 gap-4 p-4 bg-muted/50 rounded-xl">
                             <div className="text-center">
-                              <Wallet className="h-5 w-5 mx-auto mb-1 text-green-600" />
-                              <div className="font-semibold text-green-600">
-                                {problem.estimated_cost ? formatCurrency(problem.estimated_cost) : 'TBD'}
-                              </div>
-                              <div className="text-xs text-muted-foreground">Estimated Cost</div>
+                              <Wallet className="h-4 w-4 mx-auto mb-1 text-green-600" />
+                              <div className="font-bold text-green-600 text-sm">{problem.estimated_cost ? formatCurrency(problem.estimated_cost) : 'TBD'}</div>
+                              <div className="text-[10px] uppercase text-muted-foreground">Est. Cost</div>
+                            </div>
+                            <div className="text-center border-x">
+                              <Users className="h-4 w-4 mx-auto mb-1 text-primary" />
+                              <div className="font-bold text-primary text-sm">{problem.vote_count || 0}</div>
+                              <div className="text-[10px] uppercase text-muted-foreground">Votes</div>
                             </div>
                             <div className="text-center">
-                              <Users className="h-5 w-5 mx-auto mb-1 text-primary" />
-                              <div className="font-semibold text-primary">{problem.vote_count || 0}</div>
-                              <div className="text-xs text-muted-foreground">Community Votes</div>
-                            </div>
-                            <div className="text-center">
-                              <Clock className="h-5 w-5 mx-auto mb-1 text-secondary" />
-                              <div className="font-semibold text-secondary">
-                                {problem.bidding_end_date ? new Date(problem.bidding_end_date).toLocaleDateString() : 'N/A'}
-                              </div>
-                              <div className="text-xs text-muted-foreground">Bidding Deadline</div>
+                              <Clock className="h-4 w-4 mx-auto mb-1 text-secondary" />
+                              <div className="font-bold text-secondary text-sm">{problem.bidding_end_date ? new Date(problem.bidding_end_date).toLocaleDateString() : 'N/A'}</div>
+                              <div className="text-[10px] uppercase text-muted-foreground">Deadline</div>
                             </div>
                           </div>
-
                           <div className="flex justify-between items-center pt-4 border-t">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setViewingProblem(problem)}
-                            >
-                              <Eye className="h-4 w-4 mr-2" />
-                              View Details
+                            <Button variant="outline" size="sm" onClick={() => setViewingProblem(problem)}>
+                              <Eye className="h-4 w-4 mr-2" /> Details
                             </Button>
-                            <div className="flex gap-2">
-                              {hasAlreadyBid(problem.id) ? (
-                                <Badge className="bg-blue-100 text-blue-800">Bid Submitted</Badge>
-                              ) : (
-                                <div className="flex flex-col gap-1 items-end">
-                                  <Button
-                                    onClick={() => setSelectedProblem(problem)}
-                                    className="bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90"
-                                  >
-                                    Submit Bid
-                                  </Button>
-                                  {!contractorProfile?.verified && (
-                                    <span className="text-[10px] text-amber-600 font-medium whitespace-nowrap">
-                                      Verification required
-                                    </span>
-                                  )}
-                                </div>
-                              )}
-                            </div>
+                            {hasAlreadyBid(problem.id) ? (
+                              <Badge className="bg-blue-100 text-blue-800 px-4 py-2">Bid Submitted</Badge>
+                            ) : (
+                              <Button onClick={() => setSelectedProblem(problem)}>Submit Bid</Button>
+                            )}
                           </div>
                         </div>
                       </CardContent>
@@ -534,101 +510,48 @@ const ContractorBidding = () => {
               )}
             </TabsContent>
 
-            {/* Pipeline Tab - Shows all stages */}
             <TabsContent value="pipeline" className="space-y-6">
-              <Card className="shadow-lg mb-4">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Lock className="h-4 w-4" />
-                    <span>Projects below are in various stages of the approval process. You can only bid once a project status changes to "Open for Bidding".</span>
-                  </div>
-                </CardContent>
-              </Card>
+              {/* Category Chips */}
+              {pipelineProblems.length > 0 && (
+                <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                  {categories.map((cat) => (
+                    <button
+                      key={cat}
+                      onClick={() => setSelectedCategory(cat)}
+                      className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${selectedCategory === cat
+                        ? 'bg-blue-600 text-white shadow-md'
+                        : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                        }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              )}
 
-              {pipelineProblems.length === 0 ? (
-                <Card className="shadow-lg">
-                  <CardContent className="p-8 text-center">
+              {filteredReports.length === 0 ? (
+                <Card className="shadow-lg border-2 border-dashed">
+                  <CardContent className="p-12 text-center">
                     <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">No Projects in Pipeline</h3>
-                    <p className="text-muted-foreground">New community-reported problems will appear here as they progress through the approval workflow.</p>
+                    <h3 className="text-lg font-semibold mb-2">No items in this category</h3>
                   </CardContent>
                 </Card>
               ) : (
                 <div className="grid gap-4">
-                  {pipelineProblems.map((problem) => (
-                    <Card key={problem.id} className="shadow-md hover:shadow-lg transition-shadow">
+                  {filteredReports.map((problem) => (
+                    <Card key={problem.id} className="shadow-md hover:shadow-lg transition-shadow border-l-4 border-l-blue-400">
                       <CardContent className="p-4">
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                           <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
+                            <div className="flex items-center gap-2 mb-1">
                               <h3 className="font-semibold">{problem.title}</h3>
-                              <Badge className={getWorkflowStatusColor(problem.status)}>
-                                {getWorkflowStatusLabel(problem.status)}
-                              </Badge>
+                              <Badge className={getWorkflowStatusColor(problem.status)}>{getWorkflowStatusLabel(problem.status)}</Badge>
                             </div>
                             <p className="text-sm text-muted-foreground line-clamp-1">{problem.description}</p>
-                            <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                              <span className="flex items-center">
-                                <MapPin className="h-3 w-3 mr-1" />
-                                {problem.location || 'N/A'}
-                              </span>
-                              <span className="flex items-center">
-                                <Users className="h-3 w-3 mr-1" />
-                                {problem.vote_count || 0} votes
-                              </span>
-                              {problem.estimated_cost && (
-                                <span className="flex items-center">
-                                  <Wallet className="h-3 w-3 mr-1" />
-                                  {formatCurrency(problem.estimated_cost)}
-                                </span>
-                              )}
-                            </div>
                           </div>
-
-                          <div className="flex flex-col items-end gap-2">
-                            {/* Workflow Progress */}
-                            <div className="flex items-center gap-1">
-                              {[0, 1, 2, 3].map((step) => (
-                                <div
-                                  key={step}
-                                  className={`w-2 h-2 rounded-full ${step <= getWorkflowProgress(problem.status)
-                                    ? 'bg-primary'
-                                    : 'bg-gray-200'
-                                    }`}
-                                />
-                              ))}
-                            </div>
-
-                            {problem.status === WORKFLOW_STATUS.PENDING && (
-                              <span className="text-xs text-muted-foreground">
-                                Needs {MIN_VOTES_THRESHOLD - (problem.vote_count || 0)} more votes
-                              </span>
-                            )}
-                            {problem.status === WORKFLOW_STATUS.UNDER_REVIEW && (
-                              <span className="text-xs text-muted-foreground">
-                                Awaiting government approval
-                              </span>
-                            )}
-                            {problem.status === WORKFLOW_STATUS.APPROVED && (
-                              <span className="text-xs text-muted-foreground">
-                                Bidding opening soon
-                              </span>
-                            )}
-                            {problem.status === WORKFLOW_STATUS.CONTRACTOR_SELECTED && (
-                              <span className="text-xs text-green-600">
-                                Contractor assigned
-                              </span>
-                            )}
-
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setViewingProblem(problem)}
-                            >
-                              <Eye className="h-4 w-4 mr-1" />
-                              Details
-                            </Button>
-                          </div>
+                          <Button variant="ghost" size="sm" onClick={() => setViewingProblem(problem)}>
+                            <Eye className="h-4 w-4 mr-1" /> Details
+                          </Button>
                         </div>
                       </CardContent>
                     </Card>
@@ -637,48 +560,72 @@ const ContractorBidding = () => {
               )}
             </TabsContent>
 
-            {/* My Bids Tab */}
             <TabsContent value="mybids" className="space-y-6">
               {myBids.length === 0 ? (
-                <Card className="shadow-lg">
-                  <CardContent className="p-8 text-center">
-                    <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">No Bids Yet</h3>
-                    <p className="text-muted-foreground">You haven't submitted any bids. Browse available problems and submit your first bid!</p>
-                  </CardContent>
+                <Card className="shadow-lg h-40 flex items-center justify-center">
+                  <p className="text-muted-foreground">You haven't submitted any bids yet.</p>
                 </Card>
               ) : (
                 <div className="grid gap-4">
                   {myBids.map((bid) => (
-                    <Card key={bid.id} className="shadow-md">
+                    <Card key={bid.id} className={`shadow-md border-l-4 ${bid.status === 'selected' ? 'border-l-green-500 ring-1 ring-green-100' : 'border-l-blue-400'}`}>
                       <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <h4 className="font-semibold text-gray-900">
-                              {bid.problem_reports?.title || 'Project'}
-                            </h4>
-                            <p className="text-sm text-gray-600">
-                              {bid.problem_reports?.location || 'Location not specified'}
-                            </p>
-                            <div className="flex items-center gap-4 mt-2">
-                              <span className="text-sm">
-                                <Wallet className="h-4 w-4 inline mr-1 text-green-600" />
-                                {formatCurrency(bid.bid_amount)}
-                              </span>
-                              <span className="text-sm">
-                                <Clock className="h-4 w-4 inline mr-1 text-blue-600" />
-                                {bid.estimated_duration} days
-                              </span>
+                        <div className="flex flex-col gap-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <h4 className="font-bold text-slate-900">{bid.problem_reports?.title}</h4>
+                              <div className="flex flex-wrap gap-4 mt-2 text-sm text-muted-foreground font-medium">
+                                <span className="bg-slate-100 px-2 py-0.5 rounded flex items-center gap-1.5"><Wallet className="h-3.5 w-3.5 text-green-600" /> {formatCurrency(bid.bid_amount)}</span>
+                                <span className="bg-slate-100 px-2 py-0.5 rounded flex items-center gap-1.5"><Clock className="h-3.5 w-3.5 text-blue-600" /> {bid.estimated_duration} days</span>
+                              </div>
                             </div>
+                            <Badge className={getStatusColor(bid.status)}>{bid.status.toUpperCase()}</Badge>
                           </div>
-                          <div className="text-right">
-                            <Badge className={getStatusColor(bid.status)}>
-                              {bid.status === 'selected' && <Award className="h-3 w-3 mr-1" />}
-                              {bid.status.replace('_', ' ').toUpperCase()}
-                            </Badge>
-                            <div className="text-xs text-gray-500 mt-2">
-                              {new Date(bid.submitted_at).toLocaleDateString()}
-                            </div>
+
+                          <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                            <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Proposal Overview</h5>
+                            <p className="text-sm text-slate-700 leading-relaxed">{bid.proposal}</p>
+
+                            {(bid.technical_approach || bid.materials_spec || bid.timeline_breakdown) && (
+                              <details className="mt-3 pt-3 border-t border-slate-200 group">
+                                <summary className="text-[10px] font-black text-blue-600 cursor-pointer flex items-center justify-between hover:text-blue-700 uppercase tracking-widest">
+                                  Show Full Proposal Details
+                                  <ChevronDown className="h-3 w-3 transition-transform group-open:rotate-180" />
+                                </summary>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3 animate-in fade-in slide-in-from-top-1">
+                                  {bid.technical_approach && (
+                                    <div className="space-y-1">
+                                      <span className="text-[10px] font-black text-slate-400 uppercase">Methodology</span>
+                                      <p className="text-xs text-slate-600">{bid.technical_approach}</p>
+                                    </div>
+                                  )}
+                                  {bid.materials_spec && (
+                                    <div className="space-y-1">
+                                      <span className="text-[10px] font-black text-slate-400 uppercase">Materials</span>
+                                      <p className="text-xs text-slate-600">{bid.materials_spec}</p>
+                                    </div>
+                                  )}
+                                  {bid.safety_plan && (
+                                    <div className="space-y-1">
+                                      <span className="text-[10px] font-black text-slate-400 uppercase">Safety Plan</span>
+                                      <p className="text-xs text-slate-600">{bid.safety_plan}</p>
+                                    </div>
+                                  )}
+                                  {bid.quality_assurance && (
+                                    <div className="space-y-1">
+                                      <span className="text-[10px] font-black text-slate-400 uppercase">Quality Plan</span>
+                                      <p className="text-xs text-slate-600">{bid.quality_assurance}</p>
+                                    </div>
+                                  )}
+                                  {bid.timeline_breakdown && (
+                                    <div className="space-y-1 col-span-full">
+                                      <span className="text-[10px] font-black text-slate-400 uppercase">Timeline Breakdown</span>
+                                      <p className="text-xs text-slate-600">{bid.timeline_breakdown}</p>
+                                    </div>
+                                  )}
+                                </div>
+                              </details>
+                            )}
                           </div>
                         </div>
                       </CardContent>
@@ -694,139 +641,171 @@ const ContractorBidding = () => {
       {/* Bid Submission Dialog */}
       <Dialog open={!!selectedProblem} onOpenChange={() => setSelectedProblem(null)}>
         <DialogContent className="w-[calc(100vw-1rem)] sm:w-full sm:max-w-2xl max-h-[90dvh] flex flex-col">
-          <DialogHeader className="flex-shrink-0">
-            <DialogTitle className="text-base sm:text-lg pr-8 truncate">
-              Submit Bid: {selectedProblem?.title}
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary" />
+              Two-Envelope Bid Submission
             </DialogTitle>
-            <DialogDescription className="text-xs sm:text-sm">
-              Provide your proposal details for this project.
+            <DialogDescription>
+              Submit your Technical and Financial proposals for: {selectedProblem?.title}
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleBidSubmit} className="flex-1 overflow-y-auto min-h-0 space-y-3 py-2 pr-1">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="amount" className="text-xs sm:text-sm">Bid Amount (KES) *</Label>
-                <Input
-                  id="amount"
-                  type="text"
-                  value={bidForm.amount}
-                  onChange={(e) => setBidForm({ ...bidForm, amount: e.target.value })}
-                  placeholder="e.g., 500,000"
-                  required
-                  className="text-sm"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="duration" className="text-xs sm:text-sm">Duration (days) *</Label>
-                <Input
-                  id="duration"
-                  type="number"
-                  value={bidForm.duration}
-                  onChange={(e) => setBidForm({ ...bidForm, duration: e.target.value })}
-                  placeholder="e.g., 30"
-                  required
-                  className="text-sm"
-                />
-              </div>
-            </div>
+          <Tabs value={activeEnvelopeTab} onValueChange={setActiveEnvelopeTab} className="flex-1 flex flex-col min-h-0">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="technical">1. Technical Proposal</TabsTrigger>
+              <TabsTrigger value="financial">2. Financial Bid</TabsTrigger>
+            </TabsList>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="proposal" className="text-xs sm:text-sm">Project Proposal *</Label>
-              <Textarea
-                id="proposal"
-                value={bidForm.proposal}
-                onChange={(e) => setBidForm({ ...bidForm, proposal: e.target.value })}
-                placeholder="Describe your approach..."
-                rows={3}
-                required
-                className="text-sm resize-none"
-              />
-            </div>
+            <form onSubmit={handleBidSubmit} className="flex-1 overflow-y-auto space-y-4 py-2 pr-1">
+              <TabsContent value="technical" className="space-y-4 mt-0">
+                <div className="bg-blue-50 border border-blue-100 p-3 rounded-lg flex gap-2 items-start mb-4">
+                  <Shield className="h-4 w-4 text-blue-600 mt-0.5" />
+                  <p className="text-xs text-blue-700">
+                    <strong>Technical Evaluation:</strong> Your technical score must exceed 70% for your financial bid to be opened by the procurement committee.
+                  </p>
+                </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="technicalApproach" className="text-xs sm:text-sm">Technical Approach & Methodology *</Label>
-              <Textarea
-                id="technicalApproach"
-                value={bidForm.technicalApproach}
-                onChange={(e) => setBidForm({ ...bidForm, technicalApproach: e.target.value })}
-                placeholder="Describe your implementation strategy..."
-                rows={3}
-                required
-                className="text-sm resize-none"
-              />
-            </div>
+                <div className="space-y-2">
+                  <Label>Project Proposal <span className="text-red-500">*</span></Label>
+                  <Textarea
+                    value={bidForm.proposal}
+                    onChange={(e) => setBidForm({ ...bidForm, proposal: e.target.value })}
+                    placeholder="High-level summary of your approach..."
+                    rows={3}
+                    required
+                  />
+                </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="materialsSpec" className="text-xs sm:text-sm">Materials Specification</Label>
-                <Textarea
-                  id="materialsSpec"
-                  value={bidForm.materialsSpec}
-                  onChange={(e) => setBidForm({ ...bidForm, materialsSpec: e.target.value })}
-                  placeholder="List primary materials and sources..."
-                  rows={2}
-                  className="text-sm resize-none"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="timelineBreakdown" className="text-xs sm:text-sm">Timeline Breakdown</Label>
-                <Textarea
-                  id="timelineBreakdown"
-                  value={bidForm.timelineBreakdown}
-                  onChange={(e) => setBidForm({ ...bidForm, timelineBreakdown: e.target.value })}
-                  placeholder="Phase 1: Prep, Phase 2: Implementation..."
-                  rows={2}
-                  className="text-sm resize-none"
-                />
-              </div>
-            </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Technical Methodology</Label>
+                    <Textarea
+                      value={bidForm.technicalApproach}
+                      onChange={(e) => setBidForm({ ...bidForm, technicalApproach: e.target.value })}
+                      placeholder="Explain how you will execute the work..."
+                      rows={3}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Materials Specification</Label>
+                    <Textarea
+                      value={bidForm.materialsSpec}
+                      onChange={(e) => setBidForm({ ...bidForm, materialsSpec: e.target.value })}
+                      placeholder="List key materials and standards..."
+                      rows={3}
+                    />
+                  </div>
+                </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="safetyPlan" className="text-xs sm:text-sm">Safety Compliance Plan</Label>
-                <Textarea
-                  id="safetyPlan"
-                  value={bidForm.safetyPlan}
-                  onChange={(e) => setBidForm({ ...bidForm, safetyPlan: e.target.value })}
-                  placeholder="PPE and on-site safety protocols..."
-                  rows={2}
-                  className="text-sm resize-none"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="qualityAssurance" className="text-xs sm:text-sm">Quality Assurance Measures</Label>
-                <Textarea
-                  id="qualityAssurance"
-                  value={bidForm.qualityAssurance}
-                  onChange={(e) => setBidForm({ ...bidForm, qualityAssurance: e.target.value })}
-                  placeholder="Testing and inspection protocols..."
-                  rows={2}
-                  className="text-sm resize-none"
-                />
-              </div>
-            </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Safety & Health Plan</Label>
+                    <Textarea
+                      value={bidForm.safetyPlan}
+                      onChange={(e) => setBidForm({ ...bidForm, safetyPlan: e.target.value })}
+                      placeholder="Risk mitigation and safety measures..."
+                      rows={3}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Quality Assurance</Label>
+                    <Textarea
+                      value={bidForm.qualityAssurance}
+                      onChange={(e) => setBidForm({ ...bidForm, qualityAssurance: e.target.value })}
+                      placeholder="Quality control and inspection process..."
+                      rows={3}
+                    />
+                  </div>
+                </div>
 
-            <div className="flex gap-2 pt-3 border-t">
-              <Button
-                type="button"
-                variant="outline"
-                className="flex-1"
-                size="sm"
-                onClick={() => setSelectedProblem(null)}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={submitting}
-                className="flex-1"
-                size="sm"
-              >
-                {submitting ? 'Submitting...' : 'Submit Bid'}
-              </Button>
-            </div>
-          </form>
+                <div className="space-y-2">
+                  <Label>Timeline Breakdown</Label>
+                  <Textarea
+                    value={bidForm.timelineBreakdown}
+                    onChange={(e) => setBidForm({ ...bidForm, timelineBreakdown: e.target.value })}
+                    placeholder="Phase-by-phase delivery schedule..."
+                    rows={2}
+                  />
+                </div>
+
+                <Button type="button" className="w-full" onClick={() => setActiveEnvelopeTab('financial')}>
+                  Continue to Financial Bid <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </TabsContent>
+
+              <TabsContent value="financial" className="space-y-6 mt-0 animate-in fade-in">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Bid Amount (KES) <span className="text-red-500">*</span></Label>
+                    <div className="relative">
+                      <Input
+                        value={bidForm.amount}
+                        onChange={(e) => setBidForm({ ...bidForm, amount: e.target.value })}
+                        placeholder="500,000"
+                        required
+                        className="pl-9"
+                      />
+                      <Wallet className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Execution Duration (Days) <span className="text-red-500">*</span></Label>
+                    <div className="relative">
+                      <Input
+                        type="number"
+                        value={bidForm.duration}
+                        onChange={(e) => setBidForm({ ...bidForm, duration: e.target.value })}
+                        placeholder="30"
+                        required
+                        className="pl-9"
+                      />
+                      <Clock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4 p-4 border rounded-xl bg-slate-50/50">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-base font-semibold">Bid Security (Bid Bond)</Label>
+                    <Badge variant="outline" className="bg-white">Legal Requirement</Badge>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-xs">Guarantee Amount (KES)</Label>
+                      <Input
+                        value={bidForm.bidBondAmount}
+                        onChange={(e) => setBidForm({ ...bidForm, bidBondAmount: e.target.value })}
+                        placeholder="e.g. 50,000"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs">Upload Guarantee Bond (PDF)</Label>
+                      <label className="flex items-center justify-center gap-2 h-10 px-3 rounded-md border border-input bg-white text-sm cursor-pointer hover:bg-slate-50 transition-colors">
+                        {bidBondFile ? (
+                          <><CheckCircle className="h-4 w-4 text-green-600" /> {bidBondFile.name.substring(0, 15)}...</>
+                        ) : (
+                          <><Upload className="h-4 w-4 text-muted-foreground" /> Select File</>
+                        )}
+                        <input type="file" className="hidden" accept=".pdf" onChange={(e) => setBidBondFile(e.target.files?.[0] || null)} />
+                      </label>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground italic">
+                    * Per PPADA 2015, bid security from authorized banks or insurance companies is required for projects valued over a certain threshold.
+                  </p>
+                </div>
+
+                <div className="flex gap-3 border-t pt-4 sticky bottom-0 bg-background pb-2">
+                  <Button type="button" variant="outline" className="flex-1" onClick={() => setSelectedProblem(null)}>Cancel</Button>
+                  <Button type="submit" disabled={submitting} className="flex-1 bg-primary text-primary-foreground">
+                    {submitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting...</> : "Submit Final Bid Package"}
+                  </Button>
+                </div>
+              </TabsContent>
+            </form>
+          </Tabs>
         </DialogContent>
       </Dialog>
 
@@ -836,76 +815,46 @@ const ContractorBidding = () => {
           <DialogHeader>
             <DialogTitle>{viewingProblem?.title}</DialogTitle>
           </DialogHeader>
-
           {viewingProblem && (
-            <div className="space-y-4">
+            <div className="flex-1 overflow-y-auto space-y-6 py-4">
               <div className="flex gap-2">
-                <Badge className={getWorkflowStatusColor(viewingProblem.status)}>
-                  {getWorkflowStatusLabel(viewingProblem.status)}
-                </Badge>
-                <Badge className={getPriorityColor(viewingProblem.priority)}>
-                  {viewingProblem.priority || 'Medium'} Priority
-                </Badge>
-                {viewingProblem.category && (
-                  <Badge variant="outline">{viewingProblem.category}</Badge>
-                )}
+                <Badge className={getWorkflowStatusColor(viewingProblem.status)}>{getWorkflowStatusLabel(viewingProblem.status)}</Badge>
+                <Badge className={getPriorityColor(viewingProblem.priority)}>{viewingProblem.priority}</Badge>
               </div>
-
               <div>
-                <h4 className="font-semibold mb-2">Description</h4>
-                <p className="text-muted-foreground">{viewingProblem.description}</p>
+                <Label className="text-xs uppercase font-bold text-muted-foreground">Description</Label>
+                <p className="text-gray-700 mt-1 bg-slate-50 p-4 rounded-lg">{viewingProblem.description}</p>
               </div>
-
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h4 className="font-semibold mb-1">Location</h4>
-                  <p className="text-muted-foreground">{viewingProblem.location || 'Not specified'}</p>
+                <div className="p-3 bg-slate-50 rounded-lg">
+                  <Label className="text-xs font-bold block mb-1">Location</Label>
+                  <p className="text-sm font-medium">{viewingProblem.location || 'N/A'}</p>
                 </div>
-                <div>
-                  <h4 className="font-semibold mb-1">Estimated Cost</h4>
-                  <p className="text-muted-foreground">
-                    {viewingProblem.estimated_cost ? formatCurrency(viewingProblem.estimated_cost) : 'TBD'}
-                  </p>
+                <div className="p-3 bg-slate-50 rounded-lg">
+                  <Label className="text-xs font-bold block mb-1">Estimated Cost</Label>
+                  <p className="text-sm font-bold text-green-700">{viewingProblem.estimated_cost ? formatCurrency(viewingProblem.estimated_cost) : 'TBD'}</p>
                 </div>
               </div>
-
               {viewingProblem.photo_urls && viewingProblem.photo_urls.length > 0 && (
-                <div>
-                  <h4 className="font-semibold mb-2">Evidence Photos</h4>
-                  <div className="grid grid-cols-3 gap-2">
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase">Evidence Photos</Label>
+                  <div className="grid grid-cols-2 gap-3">
                     {viewingProblem.photo_urls.map((url, index) => (
-                      <img
-                        key={index}
-                        src={url}
-                        alt={`Problem ${index + 1}`}
-                        className="aspect-square object-cover rounded-lg"
-                      />
+                      <a key={index} href={url} target="_blank" rel="noopener" className="aspect-video rounded-xl overflow-hidden border">
+                        <img src={url} className="w-full h-full object-cover" alt="Evidence" />
+                      </a>
                     ))}
                   </div>
                 </div>
               )}
-
               <div className="border-t pt-4">
                 {canBid(viewingProblem) ? (
-                  <Button
-                    className="w-full"
-                    onClick={() => {
-                      setViewingProblem(null);
-                      setSelectedProblem(viewingProblem);
-                    }}
-                  >
-                    Submit Bid for This Project
+                  <Button className="w-full h-12 text-lg font-bold" onClick={() => { setViewingProblem(null); setSelectedProblem(viewingProblem); }}>
+                    Submit Bid Now
                   </Button>
-                ) : hasAlreadyBid(viewingProblem.id) ? (
-                  <Badge className="bg-blue-100 text-blue-800 w-full justify-center py-2">
-                    You have already submitted a bid for this project
-                  </Badge>
                 ) : (
-                  <div className="bg-gray-100 p-4 rounded-lg text-center">
-                    <Lock className="h-5 w-5 mx-auto mb-2 text-gray-500" />
-                    <p className="text-sm text-gray-600">
-                      Bidding is not open yet. Current status: {getWorkflowStatusLabel(viewingProblem.status)}
-                    </p>
+                  <div className="text-center p-4 bg-muted rounded-lg">
+                    <p className="text-sm font-medium text-muted-foreground">Bidding is closed for this status: {getWorkflowStatusLabel(viewingProblem.status)}</p>
                   </div>
                 )}
               </div>
@@ -914,12 +863,7 @@ const ContractorBidding = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Location Map Modal */}
-      <ProblemLocationModal
-        isOpen={!!locationProblem}
-        onClose={() => setLocationProblem(null)}
-        problem={locationProblem}
-      />
+      <ProblemLocationModal isOpen={!!locationProblem} onClose={() => setLocationProblem(null)} problem={locationProblem} />
     </div>
   );
 };

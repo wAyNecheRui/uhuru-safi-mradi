@@ -28,6 +28,7 @@ export interface CitizenReport {
 export interface CitizenStats {
   totalReports: number;
   activeReports: number;
+  underReviewReports: number;
   completedReports: number;
   communityVotes: number;
   verificationStatus: 'verified' | 'pending' | 'unverified';
@@ -95,15 +96,14 @@ export const useCitizenData = () => {
     queryFn: async () => {
       // SECURITY: Double-check user ID is valid before fetching
       if (!stableUserId) return [];
-      
+
       // Fetch reports - ALWAYS filter by the authenticated user's ID
       const { data: reportsData, error } = await supabase
         .from('problem_reports')
         .select('*')
         .eq('reported_by', stableUserId)
-        .is('deleted_at', null)
         .order('created_at', { ascending: false });
-      
+
       if (error) {
         console.error('Error fetching citizen reports:', error);
         throw error;
@@ -116,8 +116,7 @@ export const useCitizenData = () => {
       const { data: projectsData } = await supabase
         .from('projects')
         .select('id, report_id, status')
-        .in('report_id', reportIds)
-        .is('deleted_at', null);
+        .in('report_id', reportIds);
 
       // Create a map of report_id to project data
       const projectMap = new Map<string, { id: string; status: string }>();
@@ -157,7 +156,7 @@ export const useCitizenData = () => {
       return reportsData.map(report => {
         const project = projectMap.get(report.id);
         let effectiveStatus = report.status;
-        
+
         if (project) {
           const ms = milestonesByProject[project.id] || [];
           const escrow = escrowByProject[project.id];
@@ -205,42 +204,41 @@ export const useCitizenData = () => {
       const defaultStats: CitizenStats = {
         totalReports: 0,
         activeReports: 0,
+        underReviewReports: 0,
         completedReports: 0,
         communityVotes: 0,
         verificationStatus: 'unverified' as const
       };
       // SECURITY: Double-check user ID is valid
       if (!stableUserId) return defaultStats;
-      
+
       try {
         // Get reports with their IDs and statuses - ALWAYS filter by user ID
         const { data: reportsData, error: reportsErr } = await supabase
           .from('problem_reports')
           .select('id, status')
-          .eq('reported_by', stableUserId)
-          .is('deleted_at', null);
-        
+          .eq('reported_by', stableUserId);
+
         // If reports query fails, return defaults instead of throwing
         if (reportsErr) {
           console.warn('Error fetching citizen reports for stats:', reportsErr);
           return defaultStats;
         }
-        
+
         const reportIds = reportsData?.map(r => r.id) || [];
-        
+
         // Get linked projects to check actual completion status
         let completedFromProjects = 0;
         if (reportIds.length > 0) {
           const { data: projectsData } = await supabase
             .from('projects')
             .select('report_id, status')
-            .in('report_id', reportIds)
-            .is('deleted_at', null);
-          
+            .in('report_id', reportIds);
+
           // Count projects that are completed
           completedFromProjects = projectsData?.filter(p => p.status === 'completed').length || 0;
         }
-        
+
         // Get verification status - wrapped in try/catch to not break stats on failure
         let verificationStatus: 'verified' | 'pending' | 'unverified' = 'unverified';
         try {
@@ -249,24 +247,27 @@ export const useCitizenData = () => {
             .select('status')
             .eq('user_id', stableUserId)
             .eq('verification_type', 'citizen_id');
-          
-          verificationStatus = verifications?.some(v => v.status === 'verified') 
-            ? 'verified' 
+
+          verificationStatus = verifications?.some(v => v.status === 'verified')
+            ? 'verified'
             : verifications?.some(v => v.status === 'pending')
-            ? 'pending'
-            : 'unverified';
+              ? 'pending'
+              : 'unverified';
         } catch {
           // Non-critical - just default to unverified
         }
-        
+
         const totalReports = reportsData?.length || 0;
-        
+
         const completedStatuses = ['completed', 'resolved'];
         const directlyCompleted = reportsData?.filter(r => completedStatuses.includes(r.status || '')).length || 0;
         const completedReports = Math.max(directlyCompleted, completedFromProjects);
         const rejectedReports = reportsData?.filter(r => r.status === 'rejected').length || 0;
         const activeReports = totalReports - completedReports - rejectedReports;
-        
+        const underReviewReports = reportsData?.filter(r => r.status === 'under_review').length || 0;
+
+        // Calculate financial impact removed as the escrow table doesn't exist and the metrics were reverting back to the engagement cards.
+
         // Count user's community votes
         let communityVotes = 0;
         try {
@@ -278,10 +279,11 @@ export const useCitizenData = () => {
         } catch {
           // Non-critical
         }
-        
+
         return {
           totalReports,
           activeReports: Math.max(0, activeReports),
+          underReviewReports,
           completedReports,
           communityVotes,
           verificationStatus
@@ -316,7 +318,7 @@ export const useCitizenData = () => {
   const submitVote = useMutation({
     mutationFn: async ({ reportId, voteType }: { reportId: string; voteType: 'upvote' | 'downvote' }) => {
       if (!stableUserId) throw new Error('User not authenticated');
-      
+
       // For now, just simulate the vote since we don't have community_votes table
       console.log('Vote submitted:', { reportId, voteType, userId: stableUserId });
       return { success: true };
@@ -334,14 +336,14 @@ export const useCitizenData = () => {
   const deleteReport = useMutation({
     mutationFn: async (reportId: string) => {
       if (!stableUserId) throw new Error('User not authenticated');
-      
+
       // Use soft delete instead of hard delete
       const { data, error } = await supabase
         .rpc('soft_delete_record', {
           p_table_name: 'problem_reports',
           p_record_id: reportId
         });
-      
+
       if (error) throw error;
       if (!data) throw new Error('Report not found or already deleted');
     },
@@ -359,25 +361,25 @@ export const useCitizenData = () => {
     // Data
     reports,
     stats,
-    
+
     // Loading states - SECURITY: Include authLoading to prevent showing stale data
     reportsLoading: reportsLoading || authLoading,
     statsLoading: statsLoading || authLoading,
     isLoading: reportsLoading || statsLoading || authLoading,
-    
+
     // Errors - only flag hasError for auth errors that force sign out
     // Stats errors are gracefully handled (return defaults), so only report errors are critical
     reportsError,
     statsError,
     hasError: !!reportsError && isAuthError(reportsError),
-    
+
     // Actions
     submitVote: submitVote.mutate,
     isSubmittingVote: submitVote.isPending,
-    
+
     deleteReport: deleteReport.mutate,
     isDeletingReport: deleteReport.isPending,
-    
+
     // Utilities
     refetchReports: () => queryClient.invalidateQueries({ queryKey: ['citizenReports', stableUserId] }),
     refetchStats: () => queryClient.invalidateQueries({ queryKey: ['citizenStats', stableUserId] }),

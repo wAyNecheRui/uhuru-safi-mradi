@@ -103,10 +103,16 @@ const CitizenTrackReports = () => {
         }, { onConflict: 'user_id,report_id' });
       if (error) throw error;
     },
-    onSuccess: () => {
-      toast.success('Vote submitted');
+    onSuccess: async (_, variables) => {
+      const statusResult = await WorkflowGuardService.checkAndUpdateStatusAfterVote(variables.reportId);
+      if (statusResult.statusChanged) {
+        toast.success(`Vote submitted! Report updated to ${statusResult.newStatus?.replace('_', ' ')}`);
+      } else {
+        toast.success('Vote submitted');
+      }
       queryClient.invalidateQueries({ queryKey: ['userVotes'] });
       queryClient.invalidateQueries({ queryKey: ['voteCounts'] });
+      queryClient.invalidateQueries({ queryKey: ['allSystemReports'] });
     },
     onError: (err: any) => {
       toast.error(err.message || 'Failed to vote');

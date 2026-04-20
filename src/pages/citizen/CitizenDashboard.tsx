@@ -102,13 +102,13 @@ const CitizenDashboard = () => {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6">
               {[
                 { label: 'Problems Reported', value: stats?.totalReports || 0, color: 'text-primary', bg: 'bg-primary/5' },
-                { label: 'Under Review', value: stats?.activeReports || 0, color: 'text-accent-foreground', bg: 'bg-accent/10' },
+                { label: 'Under Review', value: stats?.underReviewReports || 0, color: 'text-accent-foreground', bg: 'bg-accent/10' },
                 { label: 'Resolved', value: stats?.completedReports || 0, color: 'text-green-700', bg: 'bg-green-50' },
-                { label: 'Validations', value: stats?.communityVotes || 0, color: 'text-purple-700', bg: 'bg-purple-50' },
+                { label: 'Validations', value: stats?.communityVotes || 0, color: 'text-purple-700', bg: 'bg-purple-50' }
               ].map((s) => (
                 <div key={s.label} className={`${s.bg} rounded-xl p-4 text-center border border-transparent`}>
-                  <div className={`text-2xl font-bold ${s.color}`}>{s.value}</div>
-                  <div className="text-xs text-muted-foreground mt-1">{s.label}</div>
+                  <div className={`text-lg sm:text-2xl font-bold ${s.color}`}>{s.value}</div>
+                  <div className="text-[10px] sm:text-xs text-muted-foreground mt-1">{s.label}</div>
                 </div>
               ))}
             </div>

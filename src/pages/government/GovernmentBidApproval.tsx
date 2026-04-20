@@ -6,10 +6,11 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  CheckCircle, XCircle, AlertCircle, Clock, Wallet, 
+import {
+  CheckCircle, XCircle, AlertCircle, Clock, Wallet,
   Users, FileText, Award, TrendingUp, Loader2, RefreshCw,
-  AlertTriangle, MapPin, Camera, Shield, Gavel, Download
+  AlertTriangle, MapPin, Camera, Shield, Gavel, Download,
+  ChevronDown, ChevronUp, Eye
 } from 'lucide-react';
 import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
@@ -55,6 +56,7 @@ const GovernmentBidApproval = () => {
   const [showExtendDialog, setShowExtendDialog] = useState(false);
   const [showDirectProcurementDialog, setShowDirectProcurementDialog] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const [expandedBidId, setExpandedBidId] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -64,7 +66,7 @@ const GovernmentBidApproval = () => {
   const fetchProjects = async () => {
     try {
       setLoading(true);
-      
+
       // Get all projects that are approved OR have bidding open
       const { data: projects, error } = await supabase
         .from('problem_reports')
@@ -80,26 +82,33 @@ const GovernmentBidApproval = () => {
       for (const project of projects || []) {
         const requirements = await BiddingWorkflowService.checkBidRequirements(project.id);
         const topBids = await BiddingWorkflowService.getTopBidsForApproval(project.id);
-        
+
         // First evaluate all bids if not already evaluated
+        let finalTopBids = topBids;
         if (topBids.length > 0 && topBids[0].total_score === 0) {
           await BiddingWorkflowService.evaluateAllBids(project.id);
           // Re-fetch top bids after evaluation
-          const updatedTopBids = await BiddingWorkflowService.getTopBidsForApproval(project.id);
-          
-          const projectWithData = { ...project, requirements, topBids: updatedTopBids };
-          if (requirements?.meets_requirements) {
-            ready.push(projectWithData);
-          } else {
-            insufficient.push(projectWithData);
-          }
+          finalTopBids = await BiddingWorkflowService.getTopBidsForApproval(project.id);
+        }
+
+        // Always merge full proposal text from contractor_bids regardless of evaluation state
+        let enrichedBids = finalTopBids;
+        if (finalTopBids.length > 0) {
+          const bidIds = finalTopBids.map(b => b.bid_id);
+          const { data: proposalData } = await supabase
+            .from('contractor_bids')
+            .select('id, proposal, technical_approach, materials_spec, timeline_breakdown, safety_plan, quality_assurance')
+            .in('id', bidIds);
+
+          const proposalMap = new Map((proposalData || []).map(p => [p.id, p]));
+          enrichedBids = finalTopBids.map(b => ({ ...b, ...proposalMap.get(b.bid_id) }));
+        }
+
+        const projectWithData = { ...project, requirements, topBids: enrichedBids };
+        if (requirements?.meets_requirements) {
+          ready.push(projectWithData);
         } else {
-          const projectWithData = { ...project, requirements, topBids };
-          if (requirements?.meets_requirements) {
-            ready.push(projectWithData);
-          } else {
-            insufficient.push(projectWithData);
-          }
+          insufficient.push(projectWithData);
         }
       }
 
@@ -121,7 +130,7 @@ const GovernmentBidApproval = () => {
 
   const handleSelectBid = async () => {
     if (!selectedProject || !selectedBid) return;
-    
+
     setProcessing(true);
     try {
       const success = await BiddingWorkflowService.selectWinningBid(
@@ -133,7 +142,7 @@ const GovernmentBidApproval = () => {
       if (success) {
         // Create escrow account for the project
         const escrowCreated = await EscrowWorkflowService.createEscrowForProject(selectedProject.id);
-        
+
         // Get project ID for LPO
         const { data: project } = await supabase
           .from('projects')
@@ -148,7 +157,7 @@ const GovernmentBidApproval = () => {
             project.id,
             selectedBid.bid_id
           );
-          
+
           toast({
             title: "Contractor Selected & LPO Generated!",
             description: lpoGenerated
@@ -158,17 +167,17 @@ const GovernmentBidApproval = () => {
         } else {
           toast({
             title: "Contractor Selected Successfully!",
-            description: escrowCreated 
+            description: escrowCreated
               ? "Escrow account created. Please proceed to fund the project."
               : "The winning contractor has been selected."
           });
         }
-        
+
         setShowApprovalDialog(false);
         setSelectedProject(null);
         setSelectedBid(null);
         setJustification('');
-        
+
         // Redirect to escrow funding page
         setTimeout(() => {
           navigate('/government/escrow-funding');
@@ -190,11 +199,11 @@ const GovernmentBidApproval = () => {
 
   const handleExtendBidding = async () => {
     if (!selectedProject) return;
-    
+
     setProcessing(true);
     try {
       const success = await BiddingWorkflowService.extendBiddingWindow(selectedProject.id);
-      
+
       if (success) {
         toast({
           title: "Bidding Extended",
@@ -224,7 +233,7 @@ const GovernmentBidApproval = () => {
 
   const handleDirectProcurement = async () => {
     if (!selectedProject || !justification.trim()) return;
-    
+
     setProcessing(true);
     try {
       const success = await BiddingWorkflowService.requestDirectProcurement(
@@ -301,11 +310,11 @@ const GovernmentBidApproval = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
       <Header />
-      
+
       <main>
         <ResponsiveContainer className="py-6 sm:py-8 space-y-6">
           <BreadcrumbNav items={breadcrumbItems} />
-          
+
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">Bid Approval Dashboard</h1>
@@ -404,7 +413,7 @@ const GovernmentBidApproval = () => {
                         {getStatusBadge(project)}
                       </div>
                     </CardHeader>
-                    
+
                     <CardContent className="space-y-6">
                       {/* Bid Requirements Status */}
                       <div className="bg-green-50 rounded-lg p-4">
@@ -467,67 +476,110 @@ const GovernmentBidApproval = () => {
                               </thead>
                               <tbody>
                                 {project.topBids.map((bid) => (
-                                  <tr key={bid.bid_id} className={`border-b ${bid.rank === 1 ? 'bg-green-50' : ''}`}>
-                                    <td className="p-3">
-                                      <Badge variant={bid.rank === 1 ? 'default' : 'outline'}>
-                                        #{bid.rank}
-                                      </Badge>
-                                    </td>
-                                    <td className="p-3">
-                                      <div className="flex flex-col gap-1">
-                                        <div className="flex items-center gap-2">
-                                          <span className="font-medium">{bid.contractor_name}</span>
-                                          {bid.is_agpo && (
-                                            <Badge className={`text-xs ${
-                                              bid.agpo_category === 'women' ? 'bg-pink-100 text-pink-800' :
-                                              bid.agpo_category === 'youth' ? 'bg-blue-100 text-blue-800' :
-                                              bid.agpo_category === 'pwd' ? 'bg-green-100 text-green-800' :
-                                              'bg-purple-100 text-purple-800'
-                                            }`}>
-                                              AGPO {bid.agpo_category ? `(${bid.agpo_category.charAt(0).toUpperCase() + bid.agpo_category.slice(1)})` : ''}
-                                            </Badge>
-                                          )}
+                                  <React.Fragment key={bid.bid_id}>
+                                    <tr className={`border-b ${bid.rank === 1 ? 'bg-green-50' : ''}`}>
+                                      <td className="p-3">
+                                        <Badge variant={bid.rank === 1 ? 'default' : 'outline'}>
+                                          #{bid.rank}
+                                        </Badge>
+                                      </td>
+                                      <td className="p-3">
+                                        <div className="flex flex-col gap-1">
+                                          <div className="flex items-center gap-2">
+                                            <span className="font-medium">{bid.contractor_name}</span>
+                                            {bid.is_agpo && (
+                                              <Badge className={`text-xs ${bid.agpo_category === 'women' ? 'bg-pink-100 text-pink-800' :
+                                                bid.agpo_category === 'youth' ? 'bg-blue-100 text-blue-800' :
+                                                  bid.agpo_category === 'pwd' ? 'bg-green-100 text-green-800' :
+                                                    'bg-purple-100 text-purple-800'
+                                                }`}>
+                                                AGPO {bid.agpo_category ? `(${bid.agpo_category.charAt(0).toUpperCase() + bid.agpo_category.slice(1)})` : ''}
+                                              </Badge>
+                                            )}
+                                          </div>
+                                          <span className="text-xs text-gray-500">
+                                            Max Capacity: {bid.max_project_capacity ? formatCurrency(bid.max_project_capacity) : 'N/A'}
+                                          </span>
                                         </div>
-                                        <span className="text-xs text-gray-500">
-                                          Max Capacity: {bid.max_project_capacity ? formatCurrency(bid.max_project_capacity) : 'N/A'}
-                                        </span>
-                                      </div>
-                                    </td>
-                                    <td className="p-3 text-right font-medium">
-                                      {formatCurrency(bid.bid_amount)}
-                                    </td>
-                                    <td className="p-3 text-right">{bid.estimated_duration} days</td>
-                                    <td className="p-3 text-center">
-                                      <div className="flex flex-col items-center text-xs">
-                                        <span className="font-medium">{bid.years_in_business || 0} yrs</span>
-                                        <span className="text-gray-500">{bid.previous_projects_count || 0} projects</span>
-                                      </div>
-                                    </td>
-                                    <td className="p-3 text-right">{bid.price_score?.toFixed(1) || 0}</td>
-                                    <td className="p-3 text-right">{bid.technical_score?.toFixed(1) || 0}</td>
-                                    <td className="p-3 text-right">{bid.experience_score?.toFixed(1) || 0}</td>
-                                    <td className="p-3 text-right text-purple-600 font-medium">+{bid.agpo_bonus || 0}</td>
-                                    <td className="p-3 text-right font-bold text-green-700">
-                                      {bid.total_score?.toFixed(1) || 0}
-                                    </td>
-                                    <td className="p-3 text-center">
-                                      <Button 
-                                        size="sm"
-                                        onClick={() => {
-                                          setSelectedProject(project);
-                                          setSelectedBid(bid);
-                                          setShowApprovalDialog(true);
-                                        }}
-                                      >
-                                        Select
-                                      </Button>
-                                    </td>
-                                  </tr>
+                                      </td>
+                                      <td className="p-3 text-right font-medium">
+                                        {formatCurrency(bid.bid_amount)}
+                                      </td>
+                                      <td className="p-3 text-right">{bid.estimated_duration} days</td>
+                                      <td className="p-3 text-center">
+                                        <div className="flex flex-col items-center text-xs">
+                                          <span className="font-medium">{bid.years_in_business || 0} yrs</span>
+                                          <span className="text-gray-500">{bid.previous_projects_count || 0} projects</span>
+                                        </div>
+                                      </td>
+                                      <td className="p-3 text-right">{bid.price_score?.toFixed(1) || 0}</td>
+                                      <td className="p-3 text-right">{bid.technical_score?.toFixed(1) || 0}</td>
+                                      <td className="p-3 text-right">{bid.experience_score?.toFixed(1) || 0}</td>
+                                      <td className="p-3 text-right text-purple-600 font-medium">+{bid.agpo_bonus || 0}</td>
+                                      <td className="p-3 text-right font-bold text-green-700">
+                                        {bid.total_score?.toFixed(1) || 0}
+                                      </td>
+                                      <td className="p-3 text-center">
+                                        <div className="flex gap-2 justify-center">
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => setExpandedBidId(expandedBidId === bid.bid_id ? null : bid.bid_id)}
+                                          >
+                                            {expandedBidId === bid.bid_id ? (
+                                              <><ChevronUp className="h-3 w-3 mr-1" />Hide</>
+                                            ) : (
+                                              <><Eye className="h-3 w-3 mr-1" />View Proposal</>
+                                            )}
+                                          </Button>
+                                          <Button
+                                            size="sm"
+                                            onClick={() => {
+                                              setSelectedProject(project);
+                                              setSelectedBid(bid);
+                                              setShowApprovalDialog(true);
+                                            }}
+                                          >
+                                            Select
+                                          </Button>
+                                        </div>
+                                      </td>
+                                    </tr>
+                                    {expandedBidId === bid.bid_id && (
+                                      <tr className="bg-blue-50">
+                                        <td colSpan={11} className="p-4">
+                                          <div className="rounded-lg border border-blue-200 bg-white p-4 space-y-4">
+                                            <div className="flex items-center gap-2 text-blue-800 font-semibold text-sm border-b pb-2">
+                                              <FileText className="h-4 w-4" />
+                                              Full Proposal — {bid.contractor_name}
+                                            </div>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                              {[
+                                                { label: '📋 Proposal Overview', value: bid.proposal },
+                                                { label: '🔧 Technical Approach', value: bid.technical_approach },
+                                                { label: '🏗️ Materials Specification', value: bid.materials_spec },
+                                                { label: '📅 Timeline Breakdown', value: bid.timeline_breakdown },
+                                                { label: '🦺 Safety Plan', value: bid.safety_plan },
+                                                { label: '✅ Quality Assurance', value: bid.quality_assurance },
+                                              ].map(({ label, value }) =>
+                                                value ? (
+                                                  <div key={label} className="bg-gray-50 rounded-lg p-3">
+                                                    <p className="font-semibold text-gray-700 mb-1">{label}</p>
+                                                    <p className="text-gray-600 whitespace-pre-wrap leading-relaxed">{value}</p>
+                                                  </div>
+                                                ) : null
+                                              )}
+                                            </div>
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    )}
+                                  </React.Fragment>
                                 ))}
                               </tbody>
                             </table>
                           </div>
-                          
+
                           {/* Score Legend */}
                           <div className="mt-3 p-3 bg-gray-50 rounded-lg text-xs text-gray-600">
                             <p className="font-medium mb-1">Score Breakdown:</p>
@@ -550,9 +602,9 @@ const GovernmentBidApproval = () => {
                           </span>
                           <div className="flex gap-2 overflow-x-auto">
                             {project.photo_urls.slice(0, 4).map((url, index) => (
-                              <img 
-                                key={index} 
-                                src={url} 
+                              <img
+                                key={index}
+                                src={url}
                                 alt={`Evidence ${index + 1}`}
                                 className="h-20 w-20 object-cover rounded-lg"
                               />
@@ -590,15 +642,13 @@ const GovernmentBidApproval = () => {
                         {getStatusBadge(project)}
                       </div>
                     </CardHeader>
-                    
+
                     <CardContent className="space-y-6">
                       {/* Bid Requirements Status */}
-                      <div className={`rounded-lg p-4 ${
-                        (project.bidding_extensions || 0) >= 2 ? 'bg-red-50' : 'bg-yellow-50'
-                      }`}>
-                        <h4 className={`font-semibold mb-3 flex items-center gap-2 ${
-                          (project.bidding_extensions || 0) >= 2 ? 'text-red-800' : 'text-yellow-800'
+                      <div className={`rounded-lg p-4 ${(project.bidding_extensions || 0) >= 2 ? 'bg-red-50' : 'bg-yellow-50'
                         }`}>
+                        <h4 className={`font-semibold mb-3 flex items-center gap-2 ${(project.bidding_extensions || 0) >= 2 ? 'text-red-800' : 'text-yellow-800'
+                          }`}>
                           <AlertCircle className="h-5 w-5" />
                           {project.requirements?.status_message || 'Insufficient Bids'}
                         </h4>
@@ -608,8 +658,8 @@ const GovernmentBidApproval = () => {
                             <p className="text-lg font-bold">
                               {project.requirements?.bid_count || 0} / {project.requirements?.min_required || 3}
                             </p>
-                            <Progress 
-                              value={((project.requirements?.bid_count || 0) / (project.requirements?.min_required || 3)) * 100} 
+                            <Progress
+                              value={((project.requirements?.bid_count || 0) / (project.requirements?.min_required || 3)) * 100}
                               className="h-2 mt-1"
                             />
                           </div>
@@ -626,7 +676,7 @@ const GovernmentBidApproval = () => {
                               const biddingEndDate = project.bidding_end_date ? new Date(project.bidding_end_date) : null;
                               const now = new Date();
                               const isExpired = biddingEndDate && biddingEndDate < now;
-                              
+
                               if (isExpired) {
                                 return (
                                   <p className="text-lg font-bold text-red-600">
@@ -732,7 +782,7 @@ const GovernmentBidApproval = () => {
             <Button variant="outline" onClick={() => setShowApprovalDialog(false)}>
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={handleSelectBid}
               disabled={processing || !justification.trim()}
               className="bg-green-600 hover:bg-green-700"
@@ -767,7 +817,7 @@ const GovernmentBidApproval = () => {
             <Button variant="outline" onClick={() => setShowExtendDialog(false)}>
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={handleExtendBidding}
               disabled={processing}
               className="bg-orange-600 hover:bg-orange-700"
@@ -820,7 +870,7 @@ const GovernmentBidApproval = () => {
             <Button variant="outline" onClick={() => setShowDirectProcurementDialog(false)}>
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={handleDirectProcurement}
               disabled={processing || !justification.trim()}
               className="bg-red-600 hover:bg-red-700"

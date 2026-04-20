@@ -54,7 +54,7 @@ const roleSteps: Record<string, WizardStep[]> = {
       icon: <Vote className="h-8 w-8" />,
       illustration: '🗳️',
       actionLabel: 'View Community Votes',
-      actionHref: '/citizen/community-voting',
+      actionHref: '/citizen/voting',
     },
     {
       id: 'track',
@@ -64,7 +64,7 @@ const roleSteps: Record<string, WizardStep[]> = {
       icon: <BarChart3 className="h-8 w-8" />,
       illustration: '📊',
       actionLabel: 'View My Reports',
-      actionHref: '/citizen/track-reports',
+      actionHref: '/citizen/track',
     },
   ],
   contractor: [
@@ -231,9 +231,8 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ userType, userName,
             {steps.map((_, i) => (
               <div
                 key={i}
-                className={`h-1.5 rounded-full transition-all ${
-                  i === currentStep ? 'w-6 bg-primary' : i < currentStep ? 'w-1.5 bg-primary/50' : 'w-1.5 bg-muted'
-                }`}
+                className={`h-1.5 rounded-full transition-all ${i === currentStep ? 'w-6 bg-primary' : i < currentStep ? 'w-1.5 bg-primary/50' : 'w-1.5 bg-muted'
+                  }`}
               />
             ))}
           </div>
