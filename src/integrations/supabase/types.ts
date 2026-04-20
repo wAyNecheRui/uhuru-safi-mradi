@@ -1439,6 +1439,8 @@ export type Database = {
           deleted_by: string | null
           description: string
           id: string
+          latitude: number | null
+          longitude: number | null
           report_id: string | null
           status: string | null
           title: string
@@ -1452,6 +1454,8 @@ export type Database = {
           deleted_by?: string | null
           description: string
           id?: string
+          latitude?: number | null
+          longitude?: number | null
           report_id?: string | null
           status?: string | null
           title: string
@@ -1465,6 +1469,8 @@ export type Database = {
           deleted_by?: string | null
           description?: string
           id?: string
+          latitude?: number | null
+          longitude?: number | null
           report_id?: string | null
           status?: string | null
           title?: string
