@@ -63,7 +63,7 @@ const CameraIntegration: React.FC<CameraIntegrationProps> = ({
     setCapturing(true);
 
     try {
-      const gpsCoordinates = await getCurrentLocation();
+      const gpsCoordinates = await getCurrentLocationString();
       const newFiles: MediaFile[] = [];
 
       for (let i = 0; i < files.length; i++) {
