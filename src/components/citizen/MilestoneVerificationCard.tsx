@@ -66,38 +66,29 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
   const [verificationStatus, setVerificationStatus] = useState<'approved' | 'rejected' | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [gettingLocation, setGettingLocation] = useState(false);
-  const [location, setLocation] = useState<{ lat: number, lon: number } | null>(null);
+  const [location, setLocation] = useState<{ lat: number, lon: number, accuracy: number } | null>(null);
   const [currentVerificationStatus, setCurrentVerificationStatus] = useState<VerificationStatus | null>(null);
   const [hasUserVerified, setHasUserVerified] = useState(false);
   const [checkingStatus, setCheckingStatus] = useState(true);
-  const [proximityCheck, setProximityCheck] = useState<'idle' | 'checking' | 'passed' | 'failed' | 'gps_error'>('idle');
-  const [proximityDistance, setProximityDistance] = useState<number | null>(null);
-  const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
-  const [locationErrorMessage, setLocationErrorMessage] = useState<string | null>(null);
 
   // Check verification status on mount and after verification
   useEffect(() => {
     checkVerificationStatus();
   }, [milestone.id, user?.id]);
 
-  // Reset proximity state when dialog closes so a fresh check runs next time
+  // Reset location when dialog closes
   useEffect(() => {
     if (!showVerifyDialog) {
-      setProximityCheck('idle');
       setLocation(null);
-      setGpsAccuracy(null);
-      setLocationErrorMessage(null);
     }
   }, [showVerifyDialog]);
 
   const checkVerificationStatus = async () => {
     setCheckingStatus(true);
     try {
-      // Get current verification status
       const status = await MilestonePaymentService.checkVerificationStatus(milestone.id);
       setCurrentVerificationStatus(status);
 
-      // Check if current user has already verified
       if (user) {
         const { data } = await supabase
           .from('milestone_verifications')
@@ -115,59 +106,48 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
     }
   };
 
-  // Simulation removed — only real GPS is allowed for milestone verification (anti-fraud).
-
-  const handleGetLocation = async () => {
-    setGettingLocation(true);
-    setProximityCheck('checking');
-    setLocationErrorMessage(null);
-    try {
-      const pos = await getCurrentPosition();
-      setLocation({ lat: pos.lat, lon: pos.lon });
-      setGpsAccuracy(pos.accuracy);
-
-      // Server-side proximity check (10km radius)
-      const allowed = await canVerifyMilestone(pos.lat, pos.lon, milestone.id);
-
-      if (allowed) {
-        setProximityCheck('passed');
-        toast({
-          title: "Location Verified ✅",
-          description: pos.isFallback
-            ? `Verified via WiFi/Network location. (Accuracy: ±${Math.round(pos.accuracy)}m)`
-            : `Verified via precise GPS signal. (Accuracy: ±${Math.round(pos.accuracy)}m)`
-        });
-      } else {
-        setProximityCheck('failed');
-        toast({
-          title: "Too Far From Project Site",
-          description: "You must be within 10km of the project location to verify this milestone.",
-          variant: "destructive"
-        });
-      }
-    } catch (error: any) {
-      console.error('Geolocation error:', error);
-      setProximityCheck('gps_error');
-
-      let errorMsg = "We couldn't lock your location yet. Tap retry and keep location services on.";
-      if (error?.code === 3) {
-        errorMsg = "Location lookup timed out. Please retry while staying near a window or outdoors.";
-      } else if (error?.code === 1) {
-        errorMsg = "Location permission is blocked for this tab or device. Re-enable location access in your browser or OS settings, then retry.";
-      } else if (error?.code === 'INSECURE_CONTEXT') {
-        errorMsg = "Location only works on a secure HTTPS page.";
-      }
-
-      setLocationErrorMessage(errorMsg);
-
+  /**
+   * Simple, direct GPS capture — single attempt via native browser API.
+   * No permissions API pre-check, no fallback chain, no service-worker dependencies.
+   * The 10km proximity rule is enforced server-side at submission time.
+   */
+  const handleCaptureLocation = () => {
+    if (!navigator.geolocation) {
       toast({
-        title: "Location Error",
-        description: errorMsg,
+        title: "GPS Not Supported",
+        description: "Your browser does not support location services.",
         variant: "destructive"
       });
-    } finally {
-      setGettingLocation(false);
+      return;
     }
+
+    setGettingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLocation({
+          lat: pos.coords.latitude,
+          lon: pos.coords.longitude,
+          accuracy: pos.coords.accuracy
+        });
+        setGettingLocation(false);
+        toast({
+          title: "Location Captured",
+          description: `Accuracy: ±${Math.round(pos.coords.accuracy)}m`
+        });
+      },
+      (err) => {
+        setGettingLocation(false);
+        const msg = err.code === 1
+          ? "Please allow location access in your browser to verify."
+          : "Could not get your location. Please try again.";
+        toast({
+          title: "Location Unavailable",
+          description: msg,
+          variant: "destructive"
+        });
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
   };
 
   const handleSubmitVerification = async () => {
