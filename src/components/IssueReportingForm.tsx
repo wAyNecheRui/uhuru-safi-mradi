@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Camera, MapPin, Upload, Send, Check, Globe } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { getCurrentPosition } from '@/utils/geoUtils';
 
 import { CATEGORIES, PRIORITIES } from '@/constants/problemReporting';
 
@@ -39,55 +40,53 @@ const IssueReportingForm = () => {
     'Kakamega', 'Kericho', 'Kitale', 'Garissa', 'Thika', 'Kilifi', 'Malindi'
   ];
 
-  const getCurrentLocation = () => {
+  const getCurrentLocation = async () => {
     setGpsLoading(true);
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const lat = position.coords.latitude;
-          const lng = position.coords.longitude;
-          const coords = { lat, lng };
+    try {
+      const pos = await getCurrentPosition();
+      const lat = pos.lat;
+      const lng = pos.lon;
+      const coords = { lat, lng };
 
-          try {
-            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`, {
-              headers: { 'Accept-Language': 'en-US,en;q=0.9' }
-            });
+      try {
+        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`, {
+          headers: { 'Accept-Language': 'en-US,en;q=0.9' }
+        });
 
-            if (!response.ok) throw new Error('Network response was not ok');
+        if (!response.ok) throw new Error('Network response was not ok');
 
-            const data = await response.json();
-            const detectedLocation = data.display_name;
+        const data = await response.json();
+        const detectedLocation = data.display_name;
 
-            setFormData(prev => ({
-              ...prev,
-              gpsCoordinates: coords,
-              location: detectedLocation || `${lat}, ${lng}`
-            }));
+        setFormData(prev => ({
+          ...prev,
+          gpsCoordinates: coords,
+          location: detectedLocation || `${lat}, ${lng}`
+        }));
 
-            toast({
-              title: "Location detected automatically!",
-              description: `Mapped to: ${detectedLocation}`,
-            });
-          } catch (error) {
-            console.error("OSM Geocoding error:", error);
-            setFormData(prev => ({ ...prev, gpsCoordinates: coords, location: `${lat}, ${lng}` }));
-            toast({
-              title: "Location captured",
-              description: "Coordinates acquired, but unable to resolve street address.",
-            });
-          } finally {
-            setGpsLoading(false);
-          }
-        },
-        (error) => {
-          console.error('Error getting location:', error);
-          toast({
-            title: "Location error",
-            description: "Unable to get your current location. Please check permissions.",
-            variant: "destructive"
-          });
-          setGpsLoading(false);
-        }
+        toast({
+          title: "Location detected automatically!",
+          description: `Mapped to: ${detectedLocation}`,
+        });
+      } catch (error) {
+        console.error("OSM Geocoding error:", error);
+        setFormData(prev => ({ ...prev, gpsCoordinates: coords, location: `${lat}, ${lng}` }));
+        toast({
+          title: "Location captured",
+          description: "Coordinates acquired, but unable to resolve street address.",
+        });
+      }
+    } catch (error: any) {
+      console.error('Error getting location:', error);
+      const msg =
+        error?.code === 1
+          ? 'Location access denied. Please enable location in browser settings.'
+          : 'Unable to get your current location. Please check permissions.';
+      toast({
+        title: "Location error",
+        description: msg,
+        variant: "destructive"
+      });
       );
     } else {
       toast({
