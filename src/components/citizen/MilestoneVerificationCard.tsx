@@ -582,7 +582,7 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
             </Button>
             <Button
               onClick={handleSubmitVerification}
-              disabled={submitting || !verificationStatus || rating === 0 || proximityCheck !== 'passed'}
+              disabled={submitting || !verificationStatus || rating === 0 || !location}
               className={verificationStatus === 'approved' ? 'bg-green-600 hover:bg-green-700' : ''}
             >
               {submitting ? (
