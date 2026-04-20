@@ -114,26 +114,7 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
     }
   };
 
-  const handleSimulateLocation = async () => {
-    setGettingLocation(true);
-    setProximityCheck('checking');
-
-    // Artificial 1.5s delay to feel real
-    await new Promise(r => setTimeout(r, 1500));
-
-    // Use dummy coordinates that will pass server-side check (simulate on-site)
-    // We'll set proximity check to 'passed' directly to bypass the RPC during simulation
-    setLocation({ lat: -1.3965, lon: 36.7570 }); // Representative coordinates
-    setGpsAccuracy(5.0);
-    setProximityCheck('passed');
-
-    toast({
-      title: "Simulation Verified 🧪",
-      description: "Simulation mode: Proximity check bypassed for testing.",
-    });
-
-    setGettingLocation(false);
-  };
+  // Simulation removed — only real GPS is allowed for milestone verification (anti-fraud).
 
   const handleGetLocation = async () => {
     setGettingLocation(true);
