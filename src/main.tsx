@@ -7,8 +7,49 @@ import { AuthProvider } from './contexts/AuthContext.tsx';
 import { Capacitor } from '@capacitor/core';
 import { SplashScreen } from '@capacitor/splash-screen';
 import { StatusBar, Style } from '@capacitor/status-bar';
+import { registerSW } from 'virtual:pwa-register';
 
 console.log('Main.tsx starting...');
+
+const isPreviewHost = () => {
+  if (typeof window === 'undefined') return false;
+  return /lovable(app|project)\.com$/.test(window.location.hostname) || window.location.hostname.endsWith('.lovable.app');
+};
+
+const clearPreviewCaches = async () => {
+  if (typeof window === 'undefined' || !isPreviewHost()) return;
+
+  try {
+    if ('serviceWorker' in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(registrations.map((registration) => registration.unregister()));
+    }
+
+    if ('caches' in window) {
+      const cacheNames = await caches.keys();
+      await Promise.all(cacheNames.map((cacheName) => caches.delete(cacheName)));
+    }
+
+    console.log('[PWA] Cleared service workers and caches for preview host');
+  } catch (error) {
+    console.warn('[PWA] Failed to clear preview caches', error);
+  }
+};
+
+if (!isPreviewHost()) {
+  registerSW({
+    immediate: true,
+    onRegisteredSW(swUrl, registration) {
+      console.log('[PWA] Service worker registered', swUrl);
+      registration?.update();
+    },
+    onNeedRefresh() {
+      window.location.reload();
+    },
+  });
+} else {
+  clearPreviewCaches().catch(console.error);
+}
 
 // Initialize Capacitor plugins with error handling
 const initializeApp = async () => {
