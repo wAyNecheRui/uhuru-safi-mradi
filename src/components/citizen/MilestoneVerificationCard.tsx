@@ -80,13 +80,14 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
     checkVerificationStatus();
   }, [milestone.id, user?.id]);
 
-  // Automatically trigger location check when verification dialog opens
+  // Reset proximity state when dialog closes so a fresh check runs next time
   useEffect(() => {
-    const isVerifiable = milestone.status === 'submitted' || milestone.status === 'in_progress';
-    if (showVerifyDialog && user && isVerifiable && proximityCheck === 'idle') {
-      handleGetLocation();
+    if (!showVerifyDialog) {
+      setProximityCheck('idle');
+      setLocation(null);
+      setGpsAccuracy(null);
     }
-  }, [showVerifyDialog, user, milestone.status, proximityCheck]);
+  }, [showVerifyDialog]);
 
   const checkVerificationStatus = async () => {
     setCheckingStatus(true);
