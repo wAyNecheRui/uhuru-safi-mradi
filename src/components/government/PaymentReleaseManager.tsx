@@ -6,7 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Wallet, CheckCircle, Clock, AlertTriangle,
-  Loader2, Lock, Unlock, Eye, Camera, FileText, Upload
+  Loader2, Lock, Unlock, Eye, Camera, FileText, Upload, Shield
 } from 'lucide-react';
 import {
   Dialog,

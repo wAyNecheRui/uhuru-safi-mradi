@@ -191,7 +191,7 @@ const ContractorBidding = () => {
           description: "For projects over 5M KES, a bid bond of at least 0.5% is mandatory per PPRA guidelines.",
           variant: "destructive"
         });
-        setIsSubmitting(false);
+        setSubmitting(false);
         return;
       }
 
@@ -243,6 +243,7 @@ const ContractorBidding = () => {
 
       setBidForm({
         amount: '',
+        bidBondAmount: '',
         duration: '',
         proposal: '',
         technicalApproach: '',
