@@ -22,7 +22,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
 import { MilestonePaymentService, REQUIRED_CITIZEN_VERIFICATIONS } from '@/services/MilestonePaymentService';
-import { canVerifyMilestone, getCurrentPosition, haversineDistanceKm } from '@/utils/geoUtils';
 import { WorkflowGuardService } from '@/services/WorkflowGuardService';
 
 interface Milestone {
