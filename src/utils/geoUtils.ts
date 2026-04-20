@@ -70,58 +70,52 @@ export async function getCurrentPosition(): Promise<{ lat: number; lon: number; 
   // Secure-context check: geolocation requires HTTPS (or localhost) in modern browsers.
   if (typeof window !== 'undefined' && window.isSecureContext === false) {
     const err: any = new Error('Geolocation requires a secure (HTTPS) connection.');
-    err.code = 1;
+    err.code = 'INSECURE_CONTEXT';
     throw err;
   }
 
-  // Pre-check permission state when available (Chromium/Edge/Firefox).
-  // We only short-circuit on explicit "denied" to avoid delaying granted/prompt flows.
-  try {
-    if (navigator.permissions?.query) {
-      const status = await navigator.permissions.query({ name: 'geolocation' as PermissionName });
-      if (status.state === 'denied') {
-        const err: any = new Error('Location access denied. Please enable location for this site in your browser settings.');
-        err.code = 1;
-        throw err;
-      }
+  const requestPosition = (options: PositionOptions, isFallback = false) => new Promise<{ lat: number; lon: number; accuracy: number; isFallback?: boolean }>((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => resolve({
+        lat: pos.coords.latitude,
+        lon: pos.coords.longitude,
+        accuracy: pos.coords.accuracy,
+        ...(isFallback ? { isFallback: true } : {}),
+      }),
+      (err) => reject(err),
+      options
+    );
+  });
+
+  const attempts: Array<{ options: PositionOptions; isFallback?: boolean; label: string }> = [
+    {
+      label: 'high accuracy GPS',
+      options: { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 },
+    },
+    {
+      label: 'coarse network',
+      options: { enableHighAccuracy: false, timeout: 12000, maximumAge: 60000 },
+      isFallback: true,
+    },
+    {
+      label: 'cached network',
+      options: { enableHighAccuracy: false, timeout: 15000, maximumAge: 300000 },
+      isFallback: true,
+    },
+  ];
+
+  let lastError: any = null;
+
+  for (const attempt of attempts) {
+    try {
+      return await requestPosition(attempt.options, attempt.isFallback);
+    } catch (error: any) {
+      lastError = error;
+      if (error?.code === 1) throw error;
+      console.log(`[Geo] ${attempt.label} lookup failed, trying next strategy...`, error);
     }
-  } catch (e: any) {
-    if (e?.code === 1) throw e;
-    // Permissions API unsupported or threw — proceed with normal flow.
   }
 
-  // Stage 1: Try High Accuracy (GPS/Satellite) — short timeout so we fall back fast indoors.
-  try {
-    return await new Promise((resolve, reject) => {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => resolve({
-          lat: pos.coords.latitude,
-          lon: pos.coords.longitude,
-          accuracy: pos.coords.accuracy,
-        }),
-        (err) => reject(err),
-        { enableHighAccuracy: true, timeout: 6000, maximumAge: 10000 }
-      );
-    });
-  } catch (error: any) {
-    // If user explicitly denied, surface that — coarse will fail too.
-    if (error?.code === 1) throw error;
-
-    console.log('[Geo] High accuracy failed/timed out, falling back to coarse (WiFi/Cell)...');
-
-    // Stage 2: Coarse Fallback (WiFi/Cell/Network) — faster and more reliable indoors.
-    return await new Promise((resolve, reject) => {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => resolve({
-          lat: pos.coords.latitude,
-          lon: pos.coords.longitude,
-          accuracy: pos.coords.accuracy,
-          isFallback: true,
-        }),
-        (err) => reject(err),
-        { enableHighAccuracy: false, timeout: 12000, maximumAge: 60000 }
-      );
-    });
-  }
+  throw lastError ?? new Error('Unable to determine your location.');
 }
 
