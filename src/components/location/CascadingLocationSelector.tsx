@@ -139,10 +139,10 @@ const CascadingLocationSelector: React.FC<CascadingLocationSelectorProps> = ({
         } else {
           setGpsStatus('error');
         }
-      },
-      () => setGpsStatus('error'),
-      { enableHighAccuracy: true, timeout: 15000 }
-    );
+    } catch (error) {
+      console.error('GPS verification error:', error);
+      setGpsStatus('error');
+    }
   };
 
   useEffect(() => {
