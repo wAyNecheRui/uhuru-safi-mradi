@@ -528,7 +528,6 @@ export class WorkflowGuardService {
       .insert({
         milestone_id: milestoneId,
         verifier_id: citizenId,
-        rating,
         verification_notes: formattedNotes,
         verification_status: verificationStatus,
         verification_photos: location ? [`GPS: ${location.lat}, ${location.lon}`] : null
