@@ -184,7 +184,7 @@ export class WorkflowGuardService {
     if (!requirements.canApprove) {
       const missing: string[] = [];
       if (!requirements.meetsThreshold) {
-        missing.push(`Impact score (${requirements.compositeScore}) below threshold (${MIN_COMPOSITE_SCORE_THRESHOLD})`);
+        missing.push(`Impact score (${requirements.compositeScore}) below threshold (${MIN_VOTES_THRESHOLD} votes)`);
       }
       if (!requirements.hasGPS) missing.push('Missing GPS coordinates');
       if (!requirements.hasMedia) missing.push('Missing photo/video evidence');
