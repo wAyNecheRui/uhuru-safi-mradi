@@ -401,20 +401,6 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
           </DialogHeader>
 
           <div className="space-y-4 py-2 overflow-y-auto flex-1 min-h-0 pr-2">
-            {showVerifyDialog && proximityCheck === 'idle' && !gettingLocation && !location && (
-              <div className="rounded-lg border border-border bg-muted/30 p-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleGetLocation}
-                  disabled={gettingLocation}
-                  className="w-full"
-                >
-                  <MapPin className="h-4 w-4 mr-2" />
-                  Detect my location
-                </Button>
-              </div>
-            )}
 
             {/* Important Notice */}
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-3">
