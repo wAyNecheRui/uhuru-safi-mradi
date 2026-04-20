@@ -443,114 +443,59 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
               </div>
             )}
 
-            {/* Location Verification */}
+            {/* Location Capture — simple, single GPS read */}
             <div>
               <p className="text-sm font-medium mb-3 flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-primary" />
-                Location Verification <span className="text-red-500 font-bold ml-1">*Required</span>
+                Your Location <span className="text-destructive font-bold ml-1">*Required</span>
               </p>
 
-              <div className="min-h-[60px] flex items-center">
-                {gettingLocation ? (
-                  <div className="flex items-center gap-3 p-4 bg-yellow-50 border border-yellow-200 rounded-xl animate-pulse w-full shadow-sm">
-                    <div className="p-2 bg-yellow-100 rounded-full">
-                      <MapPin className="h-5 w-5 text-yellow-700" />
-                    </div>
-                    <div className="text-left">
-                      <h4 className="font-semibold text-yellow-900 text-sm">Locating You...</h4>
-                      <p className="text-[11px] text-yellow-700">Syncing with satellites & network signals</p>
-                    </div>
+              {location ? (
+                <div className="flex items-center gap-3 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-xl">
+                  <div className="p-2 bg-green-100 dark:bg-green-800 rounded-full">
+                    <CheckCircle className="h-5 w-5 text-green-700 dark:text-green-300" />
                   </div>
-                ) : proximityCheck === 'passed' && location ? (
-                  <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-xl w-full shadow-sm">
-                    <div className="p-2 bg-green-100 rounded-full text-green-700">
-                      <CheckCircle className="h-5 w-5" />
-                    </div>
-                    <div className="text-left">
-                      <h4 className="font-semibold text-green-900 text-sm">Location Verified</h4>
-                      <p className="text-[11px] text-green-700">
-                        Within range of project site ({location.lat.toFixed(3)}, {location.lon.toFixed(3)})
-                      </p>
-                    </div>
+                  <div className="text-left flex-1">
+                    <h4 className="font-semibold text-green-900 dark:text-green-100 text-sm">Location Captured</h4>
+                    <p className="text-[11px] text-green-700 dark:text-green-300">
+                      {location.lat.toFixed(5)}, {location.lon.toFixed(5)} (±{Math.round(location.accuracy)}m)
+                    </p>
                   </div>
-                ) : (
                   <Button
-                    variant="outline"
-                    onClick={handleGetLocation}
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleCaptureLocation}
                     disabled={gettingLocation}
-                    className={`w-full h-auto py-4 flex flex-col items-center gap-1 rounded-xl transition-all hover:bg-slate-50 ${proximityCheck === 'failed' ? 'border-red-300 bg-red-50/30' :
-                      proximityCheck === 'gps_error' ? 'border-amber-300 bg-amber-50/30' :
-                        'border-dashed border-2 grow'
-                      }`}
                   >
-                    {proximityCheck === 'gps_error' ? (
-                      <>
-                        <div className="flex items-center gap-2 text-amber-700 font-semibold text-sm">
-                          <AlertTriangle className="h-4 w-4" />
-                          GPS Lock Failed
-                        </div>
-                        <span className="text-[10px] text-amber-600">Tap to try again</span>
-                      </>
-                    ) : proximityCheck === 'failed' ? (
-                      <>
-                        <div className="flex items-center gap-2 text-red-700 font-semibold text-sm">
-                          <MapPin className="h-4 w-4" />
-                          Too Far from Site
-                        </div>
-                        <span className="text-[10px] text-red-600">You must be within 10km. Tap to retry.</span>
-                      </>
-                    ) : (
-                      <>
-                        <div className="flex items-center gap-2 text-slate-600 font-semibold text-sm">
-                          <MapPin className="h-4 w-4" />
-                          Location Detection Idle
-                        </div>
-                        <span className="text-[10px] text-slate-500">Enable GPS to automatically verify proximity</span>
-                      </>
-                    )}
+                    Recapture
                   </Button>
-                )}
-              </div>
-
-              {proximityCheck !== 'passed' && !gettingLocation && (
-                <div className="mt-2 flex justify-center">
-                  <button
-                    onClick={handleGetLocation}
-                    className="text-xs text-primary hover:text-primary/80 transition-colors flex items-center gap-1.5 py-1 font-medium"
-                  >
-                    <MapPin className="h-3 w-3" />
-                    Retry location detection
-                  </button>
                 </div>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleCaptureLocation}
+                  disabled={gettingLocation}
+                  className="w-full h-auto py-4 flex items-center justify-center gap-2 rounded-xl border-dashed border-2"
+                >
+                  {gettingLocation ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span className="text-sm font-medium">Getting your location...</span>
+                    </>
+                  ) : (
+                    <>
+                      <MapPin className="h-4 w-4" />
+                      <span className="text-sm font-medium">Capture my GPS location</span>
+                    </>
+                  )}
+                </Button>
               )}
 
-              {proximityCheck === 'failed' && (
-                <p className="text-xs text-red-600 mt-1 font-medium">
-                  Distance check failed. Ensure you are actually at the physical project location.
-                </p>
-              )}
-              {proximityCheck === 'gps_error' && (
-                <div className="mt-2 p-2 bg-red-50 rounded border border-red-100">
-                  <p className="text-xs text-red-700 font-medium">
-                    {locationErrorMessage || "Technical Issue: The browser couldn't find your coordinates."}
-                  </p>
-                  <ul className="text-[10px] text-red-600 list-disc pl-4 mt-1 space-y-0.5">
-                    <li>Using a laptop? Move closer to a window for WiFi positioning.</li>
-                    <li>Permission allowed but still failing? Check Windows/macOS Location Privacy settings.</li>
-                    <li>Try using your mobile phone for verification if available.</li>
-                  </ul>
-                </div>
-              )}
-              {proximityCheck === 'passed' && gpsAccuracy && (
-                <p className="text-xs text-green-600 mt-1">
-                  Verified with accuracy: ±{Math.round(gpsAccuracy)}m
-                </p>
-              )}
-              {proximityCheck === 'idle' && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  GPS location is mandatory to prevent fraud. You must be near the project site.
-                </p>
-              )}
+              <p className="text-xs text-muted-foreground mt-2">
+                Your GPS coordinates are recorded with your verification. You should be at or near the project site.
+              </p>
             </div>
 
             {/* Rating */}
