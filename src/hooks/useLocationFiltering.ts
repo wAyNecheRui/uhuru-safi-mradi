@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { getCurrentPosition } from '@/utils/geoUtils';
 
 export interface UserLocation {
   latitude: number;
@@ -50,81 +51,43 @@ export const useLocationFiltering = () => {
   const [problems, setProblems] = useState<ProblemWithDistance[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Get user's current location with progressive accuracy
-  const getCurrentLocation = useCallback((): Promise<UserLocation> => {
-    return new Promise((resolve, reject) => {
-      setIsLocating(true);
-      setLocationError(null);
-
-      if (!navigator.geolocation) {
-        const error = 'Geolocation is not supported by your browser';
-        setLocationError(error);
-        setIsLocating(false);
-        reject(new Error(error));
-        return;
-      }
-
-      const attemptFetch = (highAccuracy: boolean): void => {
-        navigator.geolocation.getCurrentPosition(
-          async (position) => {
-            const location: UserLocation = {
-              latitude: position.coords.latitude,
-              longitude: position.coords.longitude,
-              accuracy: position.coords.accuracy,
-            };
-
-            // Try to get county from reverse geocoding
-            try {
-              const response = await fetch(
-                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${location.latitude}&lon=${location.longitude}&zoom=10`
-              );
-              const data = await response.json();
-              if (data.address?.county || data.address?.state) {
-                location.county = data.address.county || data.address.state;
-              }
-            } catch (e) {
-              console.log('Could not determine county from coordinates');
-            }
-
-            setUserLocation(location);
-            setIsLocating(false);
-            resolve(location);
-          },
-          (error) => {
-            // If high accuracy timed out or failed, try standard accuracy
-            if (highAccuracy) {
-              console.log('High accuracy GPS failed/timed out, falling back to standard...');
-              attemptFetch(false);
-              return;
-            }
-
-            let errorMessage = 'Unable to get location';
-            switch (error.code) {
-              case error.PERMISSION_DENIED:
-                errorMessage = 'Location permission denied';
-                break;
-              case error.POSITION_UNAVAILABLE:
-                errorMessage = 'Location information unavailable';
-                break;
-              case error.TIMEOUT:
-                errorMessage = 'Location request timed out';
-                break;
-            }
-            setLocationError(errorMessage);
-            setIsLocating(false);
-            reject(new Error(errorMessage));
-          },
-          {
-            enableHighAccuracy: highAccuracy,
-            timeout: highAccuracy ? 8000 : 12000, // 8s for high, 12s for standard
-            maximumAge: 60000,
-          }
-        );
+  // Get user's current location with progressive accuracy via unified geoUtils
+  const getCurrentLocation = useCallback(async (): Promise<UserLocation> => {
+    setIsLocating(true);
+    setLocationError(null);
+    try {
+      const pos = await getCurrentPosition();
+      const location: UserLocation = {
+        latitude: pos.lat,
+        longitude: pos.lon,
+        accuracy: pos.accuracy,
       };
 
-      // Start with high accuracy
-      attemptFetch(true);
-    });
+      // Try to get county from reverse geocoding
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${location.latitude}&lon=${location.longitude}&zoom=10`
+        );
+        const data = await response.json();
+        if (data.address?.county || data.address?.state) {
+          location.county = data.address.county || data.address.state;
+        }
+      } catch (e) {
+        console.log('Could not determine county from coordinates');
+      }
+
+      setUserLocation(location);
+      setIsLocating(false);
+      return location;
+    } catch (error: any) {
+      let errorMessage = 'Unable to get location';
+      if (error?.code === 1) errorMessage = 'Location permission denied';
+      else if (error?.code === 2) errorMessage = 'Location information unavailable';
+      else if (error?.code === 3) errorMessage = 'Location request timed out';
+      setLocationError(errorMessage);
+      setIsLocating(false);
+      throw new Error(errorMessage);
+    }
   }, []);
 
   // Fetch problems with distance filtering (for citizens)

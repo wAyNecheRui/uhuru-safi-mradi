@@ -3,6 +3,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Navigation, CheckCircle, Loader2, AlertTriangle } from 'lucide-react';
 import { getCountyNames, getConstituencies, getWards, getCountyByCoordinates } from '@/constants/kenyaAdminData';
+import { getCurrentPosition } from '@/utils/geoUtils';
 
 interface LocationData {
   county: string;
