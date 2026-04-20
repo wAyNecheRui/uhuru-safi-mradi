@@ -153,11 +153,11 @@ const MilestoneVerificationCard: React.FC<MilestoneVerificationCardProps> = ({
   const handleSubmitVerification = async () => {
     if (!user || !verificationStatus) return;
 
-    // Enforce mandatory location verification
-    if (!location || proximityCheck !== 'passed') {
+    // Location is required to submit
+    if (!location) {
       toast({
         title: "Location Required",
-        description: "You must verify your location at the project site before submitting.",
+        description: "Please capture your GPS location before submitting.",
         variant: "destructive"
       });
       return;
