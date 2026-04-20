@@ -87,13 +87,7 @@ const IssueReportingForm = () => {
         description: msg,
         variant: "destructive"
       });
-      );
-    } else {
-      toast({
-        title: "GPS not supported",
-        description: "Your device doesn't support GPS location.",
-        variant: "destructive"
-      });
+    } finally {
       setGpsLoading(false);
     }
   };
