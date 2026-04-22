@@ -334,6 +334,83 @@ export type Database = {
           },
         ]
       }
+      conflict_declarations: {
+        Row: {
+          contractor_id: string
+          declared_at: string
+          has_conflict: boolean
+          id: string
+          official_id: string
+          relationship_description: string | null
+          report_id: string | null
+        }
+        Insert: {
+          contractor_id: string
+          declared_at?: string
+          has_conflict: boolean
+          id?: string
+          official_id: string
+          relationship_description?: string | null
+          report_id?: string | null
+        }
+        Update: {
+          contractor_id?: string
+          declared_at?: string
+          has_conflict?: boolean
+          id?: string
+          official_id?: string
+          relationship_description?: string | null
+          report_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conflict_declarations_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "problem_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      consent_records: {
+        Row: {
+          consent_type: string
+          granted: boolean
+          granted_at: string
+          id: string
+          ip_address: unknown
+          lawful_basis: string
+          privacy_notice_version: string
+          user_agent: string | null
+          user_id: string
+          withdrawn_at: string | null
+        }
+        Insert: {
+          consent_type: string
+          granted?: boolean
+          granted_at?: string
+          id?: string
+          ip_address?: unknown
+          lawful_basis: string
+          privacy_notice_version: string
+          user_agent?: string | null
+          user_id: string
+          withdrawn_at?: string | null
+        }
+        Update: {
+          consent_type?: string
+          granted?: boolean
+          granted_at?: string
+          id?: string
+          ip_address?: unknown
+          lawful_basis?: string
+          privacy_notice_version?: string
+          user_agent?: string | null
+          user_id?: string
+          withdrawn_at?: string | null
+        }
+        Relationships: []
+      }
       contact_messages: {
         Row: {
           created_at: string
@@ -880,6 +957,81 @@ export type Database = {
           verified?: boolean | null
         }
         Relationships: []
+      }
+      information_requests: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          rejection_reason: string | null
+          related_project_id: string | null
+          related_report_id: string | null
+          requester_email: string | null
+          requester_id: string | null
+          requester_name: string | null
+          requester_phone: string | null
+          responded_at: string | null
+          responded_by: string | null
+          response: string | null
+          status: string
+          statutory_deadline: string
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          rejection_reason?: string | null
+          related_project_id?: string | null
+          related_report_id?: string | null
+          requester_email?: string | null
+          requester_id?: string | null
+          requester_name?: string | null
+          requester_phone?: string | null
+          responded_at?: string | null
+          responded_by?: string | null
+          response?: string | null
+          status?: string
+          statutory_deadline?: string
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          rejection_reason?: string | null
+          related_project_id?: string | null
+          related_report_id?: string | null
+          requester_email?: string | null
+          requester_id?: string | null
+          requester_name?: string | null
+          requester_phone?: string | null
+          responded_at?: string | null
+          responded_by?: string | null
+          response?: string | null
+          status?: string
+          statutory_deadline?: string
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "information_requests_related_project_id_fkey"
+            columns: ["related_project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "information_requests_related_report_id_fkey"
+            columns: ["related_report_id"]
+            isOneToOne: false
+            referencedRelation: "problem_reports"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       job_applications: {
         Row: {
@@ -2730,7 +2882,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "citizen" | "contractor" | "government" | "admin"
+      app_role: "citizen" | "contractor" | "government" | "admin" | "auditor"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2858,7 +3010,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["citizen", "contractor", "government", "admin"],
+      app_role: ["citizen", "contractor", "government", "admin", "auditor"],
     },
   },
 } as const
