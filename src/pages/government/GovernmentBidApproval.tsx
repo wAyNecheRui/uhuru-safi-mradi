@@ -883,6 +883,25 @@ const GovernmentBidApproval = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {pendingCoiBid && (
+        <ConflictOfInterestDialog
+          open={showCoiDialog}
+          onOpenChange={(o) => {
+            setShowCoiDialog(o);
+            if (!o) setPendingCoiBid(null);
+          }}
+          contractorId={pendingCoiBid.bid.contractor_id}
+          contractorName={pendingCoiBid.bid.contractor_name}
+          reportId={pendingCoiBid.project.id}
+          onCleared={() => {
+            setSelectedProject(pendingCoiBid.project);
+            setSelectedBid(pendingCoiBid.bid);
+            setPendingCoiBid(null);
+            setShowApprovalDialog(true);
+          }}
+        />
+      )}
     </div>
   );
 };

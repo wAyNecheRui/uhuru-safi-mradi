@@ -77,6 +77,8 @@ const GovernmentPaymentRelease = lazy(() => import("./pages/government/Governmen
 // Public Routes
 const PublicTransparencyPortal = lazy(() => import("./pages/public/PublicTransparencyPortal"));
 const PublicProjects = lazy(() => import("./pages/public/PublicProjects"));
+const InformationRequestPage = lazy(() => import("./pages/public/InformationRequestPage"));
+const GovernmentInformationRequests = lazy(() => import("./pages/government/GovernmentInformationRequests"));
 const UserGuide = lazy(() => import("./pages/UserGuide"));
 
 // Dispute Resolution
@@ -375,6 +377,7 @@ const App = () => {
                                   <Route path="notifications" element={<GovernmentNotifications />} />
                                   <Route path="lpo" element={<GovernmentLPO />} />
                                   <Route path="payment-release" element={<GovernmentPaymentRelease />} />
+                                  <Route path="info-requests" element={<GovernmentInformationRequests />} />
                                 </Routes>
                               </GovernmentRoleGuard>
                             </ProtectedRoute>
@@ -391,6 +394,7 @@ const App = () => {
 
                         {/* Public Routes */}
                         <Route path="/transparency" element={<PublicTransparencyPortal />} />
+                        <Route path="/transparency/request-information" element={<InformationRequestPage />} />
                         <Route path="/projects" element={<PublicProjects />} />
 
                         {/* Catch-all route */}
