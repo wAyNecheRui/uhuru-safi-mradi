@@ -27,6 +27,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import ConflictOfInterestDialog from '@/components/government/ConflictOfInterestDialog';
 
 interface ProjectWithBids {
   id: string;
@@ -57,6 +58,8 @@ const GovernmentBidApproval = () => {
   const [showDirectProcurementDialog, setShowDirectProcurementDialog] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [expandedBidId, setExpandedBidId] = useState<string | null>(null);
+  const [showCoiDialog, setShowCoiDialog] = useState(false);
+  const [pendingCoiBid, setPendingCoiBid] = useState<{ project: ProjectWithBids; bid: TopBid } | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -535,9 +538,8 @@ const GovernmentBidApproval = () => {
                                           <Button
                                             size="sm"
                                             onClick={() => {
-                                              setSelectedProject(project);
-                                              setSelectedBid(bid);
-                                              setShowApprovalDialog(true);
+                                              setPendingCoiBid({ project, bid });
+                                              setShowCoiDialog(true);
                                             }}
                                           >
                                             Select
