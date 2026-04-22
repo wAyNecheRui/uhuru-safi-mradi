@@ -139,12 +139,12 @@ export const ConflictOfInterestDialog: React.FC<ConflictOfInterestDialogProps> =
           </DialogDescription>
         </DialogHeader>
 
-        <Alert className="border-amber-500/40 bg-amber-500/10">
-          <ShieldAlert className="h-4 w-4 text-amber-600" />
-          <AlertTitle className="text-amber-900 dark:text-amber-200">
+        <Alert className="border-warning/40 bg-warning/10">
+          <ShieldAlert className="h-4 w-4 text-warning" />
+          <AlertTitle className="text-warning-foreground">
             Before proceeding to evaluate this bid
           </AlertTitle>
-          <AlertDescription className="text-amber-800 dark:text-amber-200/90 text-sm">
+          <AlertDescription className="text-warning-foreground/90 text-sm">
             You are about to evaluate a bid from{' '}
             <strong>{contractorName ?? 'this contractor'}</strong>. You must declare any
             personal, family, financial, business, or other relationship that could affect your
