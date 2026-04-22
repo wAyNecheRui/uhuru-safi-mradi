@@ -456,22 +456,39 @@ export class LiveNotificationService {
   }
 
   /**
-   * Get citizen user IDs, optionally filtered by county
+   * Get citizen user IDs, optionally filtered by county.
+   * Falls back to ALL citizens if the county filter produces no matches,
+   * so that milestone-verification notifications are never silently dropped
+   * due to missing/mismatched county data on user profiles.
    */
   static async getCitizenUserIds(county?: string): Promise<string[]> {
     try {
-      let query = supabase
-        .from('user_profiles')
-        .select('user_id')
-        .eq('user_type', 'citizen')
-        .limit(100);
+      const fetchAll = async (): Promise<string[]> => {
+        const { data } = await supabase
+          .from('user_profiles')
+          .select('user_id')
+          .eq('user_type', 'citizen')
+          .limit(100);
+        return data?.map(c => c.user_id) || [];
+      };
 
       if (county) {
-        query = query.eq('county', county);
+        const { data: filtered } = await supabase
+          .from('user_profiles')
+          .select('user_id')
+          .eq('user_type', 'citizen')
+          .ilike('county', county.trim())
+          .limit(100);
+
+        const ids = filtered?.map(c => c.user_id) || [];
+        if (ids.length > 0) return ids;
+
+        // Fallback: county data missing/mismatched — notify all citizens
+        console.warn(`[Notifications] No citizens matched county "${county}", falling back to all citizens.`);
+        return await fetchAll();
       }
 
-      const { data: citizens } = await query;
-      return citizens?.map(c => c.user_id) || [];
+      return await fetchAll();
     } catch (error) {
       console.error('Error fetching citizen users:', error);
       return [];
