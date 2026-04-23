@@ -1,5 +1,21 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { z } from "https://esm.sh/zod@3.23.8"
+
+// SECURITY: Strict input schema (Phase 7 hardening)
+const NotificationSchema = z.object({
+  userId: z.string().uuid().optional(),
+  userIds: z.array(z.string().uuid()).max(500).optional(),
+  targetRole: z.enum(['citizen', 'contractor', 'government', 'all']).optional(),
+  title: z.string().trim().min(1).max(200),
+  message: z.string().trim().min(1).max(2000),
+  type: z.enum(['info', 'success', 'warning', 'error']),
+  category: z.string().trim().min(1).max(50),
+  actionUrl: z.string().trim().max(500).optional(),
+}).refine(
+  (d) => !!d.userId || (!!d.userIds && d.userIds.length > 0) || !!d.targetRole,
+  { message: 'Must specify userId, userIds, or targetRole' }
+);
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -93,9 +109,9 @@ serve(async (req) => {
       )
     }
 
-    let payload: NotificationPayload;
+    let rawPayload: any;
     try {
-      payload = JSON.parse(rawBody);
+      rawPayload = JSON.parse(rawBody);
     } catch {
       return new Response(
         JSON.stringify({ error: 'Invalid JSON' }),
@@ -103,40 +119,17 @@ serve(async (req) => {
       )
     }
 
-    // SECURITY: Reject non-object payloads (arrays, primitives)
-    if (typeof payload !== 'object' || payload === null || Array.isArray(payload)) {
+    const parsedPayload = NotificationSchema.safeParse(rawPayload);
+    if (!parsedPayload.success) {
       return new Response(
-        JSON.stringify({ error: 'Payload must be a JSON object' }),
+        JSON.stringify({ error: 'Validation failed', details: parsedPayload.error.flatten().fieldErrors }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
+    const payload: NotificationPayload = parsedPayload.data;
 
-    // Validate required fields
-    if (!payload.title || !payload.message || !payload.type || !payload.category) {
-      return new Response(
-        JSON.stringify({ error: 'Missing required fields: title, message, type, category' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    // Validate type
-    if (!ALLOWED_TYPES.includes(payload.type)) {
-      return new Response(
-        JSON.stringify({ error: `Invalid type. Allowed: ${ALLOWED_TYPES.join(', ')}` }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    // Validate and normalize category
+    // Normalize category to allowlist
     const category = ALLOWED_CATEGORIES.includes(payload.category) ? payload.category : 'general';
-
-    // Validate field lengths
-    if (payload.title.length > 200 || payload.message.length > 2000) {
-      return new Response(
-        JSON.stringify({ error: 'Title max 200 chars, message max 2000 chars' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
 
     // Determine target users
     let targetUserIds: string[] = []

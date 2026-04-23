@@ -1,5 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { z } from "https://esm.sh/zod@3.23.8"
+
+// SECURITY: Strict input schema (Phase 7 hardening)
+const PayContractorSchema = z.object({
+  milestone_id: z.string().uuid(),
+  contractor_phone: z.string().trim().max(20).regex(/^[0-9+]*$/).optional(),
+});
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -100,15 +107,14 @@ serve(async (req) => {
       )
     }
 
-    const { milestone_id, contractor_phone } = body;
-
-    // SECURITY: Validate milestone_id
-    if (!milestone_id || typeof milestone_id !== 'string' || !UUID_REGEX.test(milestone_id)) {
+    const parsed = PayContractorSchema.safeParse(body);
+    if (!parsed.success) {
       return new Response(
-        JSON.stringify({ error: 'Invalid milestone_id format' }),
+        JSON.stringify({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
+    const { milestone_id, contractor_phone } = parsed.data;
 
     console.log(`[B2C] Processing contractor payment for milestone: ${milestone_id}`)
 

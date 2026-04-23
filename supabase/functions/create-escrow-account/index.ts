@@ -1,5 +1,20 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { z } from "https://esm.sh/zod@3.23.8"
+
+// SECURITY: Strict input schema (Phase 7 hardening)
+const MilestoneSchema = z.object({
+  title: z.string().trim().max(200).optional(),
+  description: z.string().trim().max(2000).optional(),
+  payment_percentage: z.number().positive().finite().max(100),
+  target_date: z.string().nullable().optional(),
+  criteria: z.string().trim().max(2000).optional(),
+});
+const CreateEscrowSchema = z.object({
+  project_id: z.string().uuid(),
+  total_amount: z.number().positive().finite().max(100_000_000_000),
+  milestones: z.array(MilestoneSchema).min(1).max(20).optional(),
+});
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -83,23 +98,14 @@ serve(async (req) => {
       )
     }
 
-    const { project_id, total_amount, milestones } = body;
-
-    // SECURITY: Validate project_id is a valid UUID
-    if (!project_id || typeof project_id !== 'string' || !UUID_REGEX.test(project_id)) {
+    const parsedBody = CreateEscrowSchema.safeParse(body);
+    if (!parsedBody.success) {
       return new Response(
-        JSON.stringify({ error: 'Invalid project_id format' }),
+        JSON.stringify({ error: 'Validation failed', details: parsedBody.error.flatten().fieldErrors }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
-
-    // SECURITY: Validate total_amount
-    if (typeof total_amount !== 'number' || total_amount <= 0 || !Number.isFinite(total_amount) || total_amount > 100_000_000_000) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid total_amount: must be a positive number' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
+    const { project_id, total_amount, milestones } = parsedBody.data;
 
     console.log(`[ESCROW] Creating escrow for project: ${project_id}, amount: ${total_amount}`)
 
