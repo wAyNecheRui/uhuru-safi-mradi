@@ -74,4 +74,36 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    // Raise warning threshold; we deliberately split heavy libs below
+    chunkSizeWarningLimit: 800,
+    rollupOptions: {
+      output: {
+        // Manual chunking improves cache-hit rates on Kenyan mobile networks
+        // by isolating rarely-changing heavy vendor code from app code.
+        manualChunks: {
+          // Mapping libraries (heavy, only used on map views)
+          'vendor-maps': ['maplibre-gl', 'leaflet', 'react-leaflet'],
+          // PDF + canvas rendering (used only for LPO/report generation)
+          'vendor-pdf': ['jspdf'],
+          // Charting (used only on analytics dashboards)
+          'vendor-charts': ['recharts'],
+          // Radix UI primitives (shared across many pages, cache once)
+          'vendor-radix': [
+            '@radix-ui/react-dialog',
+            '@radix-ui/react-dropdown-menu',
+            '@radix-ui/react-select',
+            '@radix-ui/react-tabs',
+            '@radix-ui/react-popover',
+            '@radix-ui/react-tooltip',
+            '@radix-ui/react-toast',
+          ],
+          // Supabase client + react-query
+          'vendor-data': ['@supabase/supabase-js', '@tanstack/react-query'],
+          // Form & validation libraries
+          'vendor-forms': ['react-hook-form', '@hookform/resolvers', 'zod'],
+        },
+      },
+    },
+  },
 }));
