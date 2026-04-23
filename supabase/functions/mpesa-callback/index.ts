@@ -200,6 +200,7 @@ async function checkRateLimit(supabaseClient: any, key: string, maxRequests: num
 }
 
 serve(async (req) => {
+  const corsHeaders = buildCorsHeaders(req);
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
