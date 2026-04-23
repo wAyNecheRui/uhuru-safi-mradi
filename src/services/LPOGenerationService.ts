@@ -1,4 +1,5 @@
-import { jsPDF } from 'jspdf';
+// jsPDF is dynamically imported inside generatePDF() to keep it out of the
+// main bundle — it is only needed when an LPO is actually generated.
 import { supabase } from '@/integrations/supabase/client';
 
 export interface LPOData {
@@ -43,6 +44,7 @@ export class LPOGenerationService {
    */
   static async generateLPO(data: LPOData): Promise<boolean> {
     try {
+      const { jsPDF } = await import('jspdf');
       const doc = new jsPDF('p', 'mm', 'a4');
       const pageWidth = doc.internal.pageSize.getWidth();
       const margin = 20;
