@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { z } from 'https://esm.sh/zod@3.23.8'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -9,6 +10,13 @@ const corsHeaders = {
   'X-Frame-Options': 'DENY',
   'Cache-Control': 'no-store',
 }
+
+// SECURITY: Strict Zod schema. Cap record_ids at 100 to prevent abuse.
+const PayWorkerSchema = z.object({
+  worker_id: z.string().uuid({ message: 'worker_id must be a valid UUID' }),
+  job_id: z.string().uuid({ message: 'job_id must be a valid UUID' }),
+  record_ids: z.array(z.string().uuid()).min(1, { message: 'record_ids must contain at least 1 UUID' }).max(100, { message: 'record_ids cannot exceed 100 entries per request' }),
+});
 
 // Demo mode - generates simulated M-Pesa B2C transaction reference
 function generateDemoB2CRef(): string {
