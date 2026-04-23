@@ -10,6 +10,7 @@ import logoImg from '@/assets/uhuru-safi-logo.png';
 import MobileNavigation from '@/components/MobileNavigation';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
 import { useResponsive } from '@/hooks/useResponsive';
+import SEO from '@/components/SEO';
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -64,6 +65,11 @@ const Landing = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Uhuru Safi — Kenya's Government Transparency Platform"
+        description="Track public infrastructure projects in real-time, report community needs, monitor verified contractors, and ensure transparent funding through secure escrow."
+        canonicalPath="/"
+      />
       {/* Header */}
       <nav className="bg-card/95 backdrop-blur-xl border-b border-border/60 sticky top-0 z-50">
         <ResponsiveContainer>

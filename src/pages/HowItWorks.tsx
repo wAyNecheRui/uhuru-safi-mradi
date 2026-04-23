@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Users, Search, Building, Shield, CheckCircle, Wallet, ArrowLeft } from 'lucide-react';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
 import { useResponsive } from '@/hooks/useResponsive';
+import SEO from '@/components/SEO';
 
 const HowItWorks = () => {
   const navigate = useNavigate();
@@ -51,6 +52,11 @@ const HowItWorks = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
+      <SEO
+        title="How Uhuru Safi Works — Reporting, Bidding & Verification"
+        description="Step-by-step: how citizens report problems, communities verify them, contractors bid transparently, and milestones unlock escrow payments."
+        canonicalPath="/how-it-works"
+      />
       {/* Header */}
       <header className="bg-white shadow-sm border-b sticky top-0 z-50">
         <ResponsiveContainer>

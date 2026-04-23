@@ -7,6 +7,8 @@
     <meta name="description" content="Track public infrastructure projects in real-time, report community needs, monitor verified contractors, and ensure transparent funding through secure escrow." />
     <meta name="author" content="Uhuru Safi" />
     <meta name="keywords" content="Kenya, infrastructure, transparency, public projects, accountability, citizen reporting, government, escrow, contractors" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <link rel="canonical" href="https://govtrack.climatrix.co.ke/" />
     
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#1e3a5f" />
@@ -37,13 +39,49 @@
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://govtrack.climatrix.co.ke/" />
     <meta property="og:locale" content="en_KE" />
+    <meta property="og:locale:alternate" content="sw_KE" />
     <meta property="og:site_name" content="Uhuru Safi" />
-    
+    <meta property="og:image" content="https://govtrack.climatrix.co.ke/og-preview.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Uhuru Safi — Kenya's Government Transparency Platform" />
+
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Uhuru Safi - Kenya's Government Transparency Platform" />
     <meta name="twitter:description" content="Track public infrastructure projects in real-time, report community needs, monitor verified contractors, and ensure transparent funding through secure escrow." />
-    
+    <meta name="twitter:image" content="https://govtrack.climatrix.co.ke/og-preview.jpg" />
+    <meta name="twitter:image:alt" content="Uhuru Safi — Kenya's Government Transparency Platform" />
+
+    <!-- JSON-LD: Organization + WebSite -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "GovernmentOrganization",
+            "name": "Uhuru Safi",
+            "alternateName": "Uhuru Safi Transparency Platform",
+            "url": "https://govtrack.climatrix.co.ke/",
+            "logo": "https://govtrack.climatrix.co.ke/uhuru-safi-logo.png",
+            "areaServed": { "@type": "Country", "name": "Kenya" },
+            "description": "Kenya's official transparency platform for public infrastructure projects, community reporting, contractor verification, and escrow-backed funding."
+          },
+          {
+            "@type": "WebSite",
+            "url": "https://govtrack.climatrix.co.ke/",
+            "name": "Uhuru Safi",
+            "inLanguage": ["en-KE", "sw-KE"],
+            "potentialAction": {
+              "@type": "SearchAction",
+              "target": "https://govtrack.climatrix.co.ke/projects?q={search_term_string}",
+              "query-input": "required name=search_term_string"
+            }
+          }
+        ]
+      }
+    </script>
+
     <!-- Capacitor/Native -->
     <meta name="capacitor" content="true" />
   </head>
