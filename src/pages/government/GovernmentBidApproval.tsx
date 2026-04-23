@@ -154,8 +154,9 @@ const GovernmentBidApproval = () => {
           .eq('report_id', selectedProject.id)
           .single();
 
-        // Generate LPO automatically
+        // Generate LPO automatically (dynamic import keeps jsPDF out of initial chunk)
         if (project) {
+          const { LPOGenerationService } = await import('@/services/LPOGenerationService');
           const lpoGenerated = await LPOGenerationService.createAndDownloadLPO(
             selectedProject.id,
             project.id,
