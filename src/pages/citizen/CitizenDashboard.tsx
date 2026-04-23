@@ -103,8 +103,8 @@ const CitizenDashboard = () => {
               {[
                 { label: 'Problems Reported', value: stats?.totalReports || 0, color: 'text-primary', bg: 'bg-primary/5' },
                 { label: 'Under Review', value: stats?.underReviewReports || 0, color: 'text-accent-foreground', bg: 'bg-accent/10' },
-                { label: 'Resolved', value: stats?.completedReports || 0, color: 'text-green-700', bg: 'bg-green-50' },
-                { label: 'Validations', value: stats?.communityVotes || 0, color: 'text-purple-700', bg: 'bg-purple-50' }
+                { label: 'Resolved', value: stats?.completedReports || 0, color: 'text-success', bg: 'bg-success/10' },
+                { label: 'Validations', value: stats?.communityVotes || 0, color: 'text-info', bg: 'bg-info/10' }
               ].map((s) => (
                 <div key={s.label} className={`${s.bg} rounded-xl p-4 text-center border border-transparent`}>
                   <div className={`text-lg sm:text-2xl font-bold ${s.color}`}>{s.value}</div>
@@ -236,8 +236,8 @@ const CitizenDashboard = () => {
               <CardContent className="space-y-3">
                 {[
                   { title: 'Problem Identifier', desc: 'You help identify real community needs that require attention.', bg: 'bg-primary/5', text: 'text-primary' },
-                  { title: 'Community Verifier', desc: 'You validate and prioritize problems reported by others.', bg: 'bg-green-50', text: 'text-green-800' },
-                  { title: 'Skilled Contributor', desc: 'You can contribute your skills to help solve community problems.', bg: 'bg-purple-50', text: 'text-purple-800' },
+                  { title: 'Community Verifier', desc: 'You validate and prioritize problems reported by others.', bg: 'bg-success/10', text: 'text-success' },
+                  { title: 'Skilled Contributor', desc: 'You can contribute your skills to help solve community problems.', bg: 'bg-info/10', text: 'text-info' },
                 ].map((role) => (
                   <div key={role.title} className={`${role.bg} p-3.5 rounded-xl`}>
                     <h4 className={`font-medium text-sm ${role.text}`}>{role.title}</h4>
