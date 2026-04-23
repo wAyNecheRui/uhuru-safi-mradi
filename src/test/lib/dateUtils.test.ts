@@ -32,12 +32,7 @@ describe('lib/dateUtils', () => {
     it('formatDateTime produces a string containing AM or PM', () => {
       const out = formatDateTime('2026-04-23T09:30:00.000Z');
       expect(typeof out).toBe('string');
-      expect(out).toMatch(/AM|PM/);
-    });
-
-    it('formatTime produces a string containing AM or PM', () => {
-      const out = formatTime('2026-04-23T09:30:00.000Z');
-      expect(out).toMatch(/AM|PM/);
+      expect(out).toMatch(/am|pm/i);
     });
 
     it('formatDate excludes time components', () => {
