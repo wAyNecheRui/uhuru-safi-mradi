@@ -73,6 +73,16 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+    // Ensure a single React instance — prevents "Invalid hook call" when
+    // libraries (i18next-browser-languagedetector, react-i18next, etc.)
+    // accidentally trigger a duplicate React resolution.
+    dedupe: ['react', 'react-dom'],
+  },
+  optimizeDeps: {
+    // Pre-bundle i18n libs so they share React with the app bundle and
+    // don't trigger a mid-render Vite re-optimization (which can serve a
+    // null React module to in-flight components).
+    include: ['react', 'react-dom', 'i18next', 'react-i18next', 'i18next-browser-languagedetector'],
   },
   build: {
     // Raise warning threshold; we deliberately split heavy libs below
