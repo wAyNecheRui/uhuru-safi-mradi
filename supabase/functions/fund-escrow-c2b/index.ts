@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { z } from 'https://esm.sh/zod@3.23.8'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -9,6 +10,15 @@ const corsHeaders = {
   'X-Frame-Options': 'DENY',
   'Cache-Control': 'no-store',
 }
+
+// SECURITY: Strict Zod schema. Caps amount at 100B KES (overflow + fraud guard)
+// and worker_wage_allocation at the same cap. treasury_reference accepts safe charset only.
+const FundEscrowSchema = z.object({
+  project_id: z.string().uuid({ message: 'project_id must be a valid UUID' }),
+  amount: z.number().positive().finite().max(100_000_000_000, { message: 'amount exceeds maximum' }),
+  treasury_reference: z.string().trim().max(100).regex(/^[A-Za-z0-9\-_/.]*$/, { message: 'treasury_reference contains invalid characters' }).optional().default(''),
+  worker_wage_allocation: z.number().nonnegative().finite().max(100_000_000_000).optional().default(0),
+});
 
 // Demo mode configuration - simulates M-Pesa transactions for testing
 const DEMO_MODE = true;
