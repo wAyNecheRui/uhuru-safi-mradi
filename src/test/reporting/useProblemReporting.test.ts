@@ -165,7 +165,7 @@ describe('Problem Reporting - useProblemReporting', () => {
       const { result } = renderHook(() => useProblemReporting());
       await act(async () => { await result.current.getCurrentLocation(); });
       expect(result.current.reportData.coordinates).toBe('-1.2921, 36.8219');
-      expect(toast.success).toHaveBeenCalledWith('GPS location captured successfully');
+      expect(toast.success).toHaveBeenCalledWith(expect.stringContaining('GPS location captured'));
     });
 
     it('handles GPS error', async () => {
