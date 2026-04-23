@@ -88,7 +88,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [clearDataCache]);
 
-  // Fast user data loader with cache
+  // Fast user data loader with cache.
+  // SECURITY: user_type is derived ONLY from the server-side user_profiles row
+  // (populated by the handle_new_user DB trigger and constrained to citizen/contractor/government).
+  // We deliberately do NOT trust user_metadata.user_type — that field is client-controllable
+  // at signup and would allow a self-service privilege escalation to a government dashboard.
   const loadUserData = useCallback(async (userId: string, email: string, metadata?: any): Promise<{ user: AuthUser; roles: AppRole[] } | null> => {
     const cached = userCache.get(userId);
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
@@ -104,24 +108,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const profile = profileResult.data;
       const userRoles = (rolesResult.data?.map(r => r.role as AppRole) || []) as AppRole[];
 
-      // Trust user_type from profile directly — roles are assigned on signup
+      // Default to the lowest-privilege role until the server confirms otherwise.
       let userType: 'citizen' | 'contractor' | 'government' = 'citizen';
-      let userName = email.split('@')[0];
+      // Display name is non-privileged, so falling back to metadata is safe.
+      let userName = (metadata?.full_name as string | undefined)?.trim() || email.split('@')[0];
 
-      // Fallback 1: Extract from JWT token metadata immediately available on reload
-      if (metadata?.user_type && ['citizen', 'contractor', 'government'].includes(metadata.user_type)) {
-        userType = metadata.user_type as 'citizen' | 'contractor' | 'government';
-      }
-      if (metadata?.full_name) {
-        userName = metadata.full_name;
-      }
-
-      // Fallback 2: Database profile has highest priority if it actually loads
-      if (profile?.user_type) {
-        const profileType = profile.user_type as string;
+      // Server-authoritative role from user_profiles (set by handle_new_user trigger).
+      if (profile?.user_type && ['citizen', 'contractor', 'government'].includes(profile.user_type)) {
+        userType = profile.user_type as 'citizen' | 'contractor' | 'government';
         userName = profile.full_name || userName;
-        if (['citizen', 'contractor', 'government'].includes(profileType)) {
-          userType = profileType as 'citizen' | 'contractor' | 'government';
+      }
+
+      // Cross-check against user_roles. If the role assignment table disagrees with the
+      // profile, downgrade to the safest intersection so a stale row can't elevate access.
+      if (userRoles.length > 0) {
+        if (userType === 'government' && !userRoles.includes('government' as AppRole)) {
+          userType = userRoles.includes('contractor' as AppRole) ? 'contractor' : 'citizen';
+        } else if (userType === 'contractor' && !userRoles.includes('contractor' as AppRole) && !userRoles.includes('government' as AppRole)) {
+          userType = 'citizen';
         }
       }
 
