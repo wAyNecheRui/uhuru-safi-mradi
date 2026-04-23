@@ -2862,9 +2862,10 @@ export type Database = {
         Args: { lat1: number; lat2: number; lon1: number; lon2: number }
         Returns: number
       }
-      is_verified_government_user:
-        | { Args: never; Returns: boolean }
-        | { Args: { user_uuid?: string }; Returns: boolean }
+      is_verified_government_user: {
+        Args: { user_uuid?: string }
+        Returns: boolean
+      }
       open_bidding_for_project:
         | {
             Args: { _duration_days?: number; _report_id: string }

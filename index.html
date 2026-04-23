@@ -3,6 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
+
+    <!-- Security headers (defense-in-depth; canonical headers should also be set at the edge / hosting layer) -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.supabase.co https://*.lovable.dev https://*.lovable.app; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.maptiler.com https://*.tile.openstreetmap.org https://nominatim.openstreetmap.org https://*.lovable.dev; worker-src 'self' blob:; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self';" />
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <meta http-equiv="Permissions-Policy" content="geolocation=(self), camera=(self), microphone=(self), payment=()" />
     <title>Uhuru Safi - Kenya's Government Transparency Platform</title>
     <meta name="description" content="Track public infrastructure projects in real-time, report community needs, monitor verified contractors, and ensure transparent funding through secure escrow." />
     <meta name="author" content="Uhuru Safi" />
