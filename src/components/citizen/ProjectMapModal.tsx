@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Wallet } from 'lucide-react';
-import InteractiveMap, { MapMarker } from '@/components/maps/InteractiveMap';
+import InteractiveMap, { MapMarker } from '@/components/maps/InteractiveMapLazy';
 
 interface Project {
   id: string;

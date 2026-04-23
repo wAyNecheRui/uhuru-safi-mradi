@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { z } from 'https://esm.sh/zod@3.23.8'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -10,8 +11,12 @@ const corsHeaders = {
   'Cache-Control': 'no-store',
 }
 
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAX_BODY_SIZE = 51200;
+
+// SECURITY: Strict Zod schema for input validation
+const ReleaseMilestoneSchema = z.object({
+  milestoneId: z.string().uuid({ message: 'milestoneId must be a valid UUID' }),
+});
 
 function generateDemoPaymentRef(): string {
   const timestamp = Date.now().toString(36).toUpperCase();
@@ -82,15 +87,15 @@ serve(async (req) => {
       )
     }
 
-    const { milestoneId } = body;
-
-    // SECURITY: Validate milestoneId
-    if (!milestoneId || typeof milestoneId !== 'string' || !UUID_REGEX.test(milestoneId)) {
+    // SECURITY: Validate body with Zod
+    const parsed = ReleaseMilestoneSchema.safeParse(body);
+    if (!parsed.success) {
       return new Response(
-        JSON.stringify({ error: 'Invalid milestoneId format' }),
+        JSON.stringify({ error: 'Invalid input', details: parsed.error.flatten().fieldErrors }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
+    const { milestoneId } = parsed.data;
 
     console.log(`[RELEASE] Processing milestone payment: ${milestoneId}, user: ${user.id}`)
 

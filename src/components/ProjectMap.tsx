@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { MapPin, Wrench, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useMapProjects } from '@/hooks/useMapProjects';
-import InteractiveMap, { MapMarker } from '@/components/maps/InteractiveMap';
+import InteractiveMap, { MapMarker } from '@/components/maps/InteractiveMapLazy';
 
 interface ProjectMapProps {
   selectedCounty: string;
