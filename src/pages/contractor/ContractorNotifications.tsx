@@ -160,6 +160,7 @@ const ContractorNotifications = () => {
               e.stopPropagation();
               deleteNotification(notification.id);
             }}
+            aria-label="Delete notification"
           >
             <XCircle className="h-4 w-4 text-muted-foreground" />
           </Button>

@@ -80,7 +80,7 @@ const NotificationBell: React.FC = () => {
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
+        <Button variant="ghost" size="icon" className="relative" aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ''}`}>
           <Bell className={cn(
             "h-5 w-5 transition-all", 
             unreadCount > 0 && "animate-pulse text-primary"
@@ -199,6 +199,7 @@ const NotificationBell: React.FC = () => {
                             size="icon"
                             className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
                             onClick={(e) => handleDelete(e, notification.id)}
+                            aria-label="Delete notification"
                           >
                             <Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" />
                           </Button>

@@ -236,6 +236,7 @@ const GrokCameraModal: React.FC<GrokCameraModalProps> = ({
             size="icon"
             className="text-white hover:bg-white/20 rounded-full h-10 w-10"
             onClick={handleClose}
+            aria-label="Close camera"
           >
             <X className="h-5 w-5" />
           </Button>
@@ -247,6 +248,7 @@ const GrokCameraModal: React.FC<GrokCameraModalProps> = ({
                 size="icon"
                 className="text-white hover:bg-white/20 rounded-full h-10 w-10"
                 onClick={toggleFlash}
+                aria-label={flashEnabled ? 'Disable flash' : 'Enable flash'}
               >
                 {flashEnabled ? <Zap className="h-5 w-5 text-yellow-400" /> : <ZapOff className="h-5 w-5" />}
               </Button>
@@ -256,6 +258,7 @@ const GrokCameraModal: React.FC<GrokCameraModalProps> = ({
               size="icon"
               className="text-white hover:bg-white/20 rounded-full h-10 w-10"
               onClick={switchCamera}
+              aria-label="Switch camera"
             >
               <SwitchCamera className="h-5 w-5" />
             </Button>
@@ -326,6 +329,7 @@ const GrokCameraModal: React.FC<GrokCameraModalProps> = ({
                 className="text-white hover:bg-white/20 rounded-full h-12 w-12"
                 onClick={() => galleryInputRef.current?.click()}
                 disabled={atLimit}
+                aria-label="Choose from gallery"
               >
                 <ImageIcon className="h-6 w-6" />
               </Button>

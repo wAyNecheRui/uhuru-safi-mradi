@@ -88,7 +88,7 @@ export const MobileCamera = ({ onCapture, onClose, maxFiles = 5 }: MobileCameraP
           <h3 className="font-semibold">
             {isNative ? 'Native Camera' : 'Camera'} ({capturedImages.length}/{maxFiles})
           </h3>
-          <Button variant="ghost" size="icon" onClick={onClose}>
+          <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close camera">
             <X className="h-4 w-4" />
           </Button>
         </div>
@@ -131,6 +131,7 @@ export const MobileCamera = ({ onCapture, onClose, maxFiles = 5 }: MobileCameraP
                       size="icon"
                       className="absolute -top-2 -right-2 h-6 w-6"
                       onClick={() => removeImage(index)}
+                      aria-label={`Remove image ${index + 1}`}
                     >
                       <X className="h-3 w-3" />
                     </Button>

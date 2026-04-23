@@ -48,6 +48,7 @@ export const MobileNavDrawer = ({ items, onNavigate }: MobileNavDrawerProps) => 
           variant="ghost"
           size="icon"
           className="md:hidden"
+          aria-label="Open navigation menu"
         >
           <Menu className="h-6 w-6" />
         </Button>
@@ -60,6 +61,7 @@ export const MobileNavDrawer = ({ items, onNavigate }: MobileNavDrawerProps) => 
               variant="ghost"
               size="icon"
               onClick={() => setIsOpen(false)}
+              aria-label="Close navigation"
             >
               <X className="h-5 w-5" />
             </Button>

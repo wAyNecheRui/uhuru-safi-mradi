@@ -424,6 +424,7 @@ const ProgressUpdateForm: React.FC<ProgressUpdateFormProps> = ({
                       size="icon"
                       className="absolute top-1 right-1 h-6 w-6"
                       onClick={() => removePhoto(index)}
+                      aria-label={`Remove photo ${index + 1}`}
                     >
                       <X className="h-4 w-4" />
                     </Button>
