@@ -158,22 +158,22 @@ describe('Problem Reporting - useProblemReporting', () => {
       expect(navigator.geolocation.getCurrentPosition).toHaveBeenCalled();
     });
 
-    it('handles GPS success', () => {
+    it('handles GPS success', async () => {
       (navigator.geolocation.getCurrentPosition as any).mockImplementation(
-        (success: Function) => success({ coords: { latitude: -1.2921, longitude: 36.8219 } })
+        (success: Function) => success({ coords: { latitude: -1.2921, longitude: 36.8219, accuracy: 10 } })
       );
       const { result } = renderHook(() => useProblemReporting());
-      act(() => { result.current.getCurrentLocation(); });
+      await act(async () => { await result.current.getCurrentLocation(); });
       expect(result.current.reportData.coordinates).toBe('-1.2921, 36.8219');
-      expect(toast.success).toHaveBeenCalledWith('GPS location captured successfully');
+      expect(toast.success).toHaveBeenCalledWith(expect.stringContaining('GPS location captured'));
     });
 
-    it('handles GPS error', () => {
+    it('handles GPS error', async () => {
       (navigator.geolocation.getCurrentPosition as any).mockImplementation(
         (_s: Function, err: Function) => err(new Error('denied'))
       );
       const { result } = renderHook(() => useProblemReporting());
-      act(() => { result.current.getCurrentLocation(); });
+      await act(async () => { await result.current.getCurrentLocation(); });
       expect(toast.error).toHaveBeenCalledWith('Unable to get GPS location. Please enter manually.');
     });
   });
