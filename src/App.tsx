@@ -120,7 +120,14 @@ const App = () => {
               <BrowserRouter>
                 <AppLayout>
                   <ConditionalLayout>
-                    <Suspense fallback={<PageLoader />}>
+                    {/*
+                      Inner ErrorBoundary keeps the app shell (layout, nav)
+                      mounted when an individual lazy route chunk fails to
+                      load or throws. The outer ErrorBoundary still catches
+                      catastrophic failures in providers above.
+                    */}
+                    <ErrorBoundary>
+                      <Suspense fallback={<PageLoader />}>
                       <Routes>
                         <Route path="/" element={<Landing />} />
                         <Route path="/about" element={<About />} />
@@ -401,6 +408,7 @@ const App = () => {
                         <Route path="*" element={<NotFound />} />
                       </Routes>
                     </Suspense>
+                    </ErrorBoundary>
                   </ConditionalLayout>
                 </AppLayout>
               </BrowserRouter>
