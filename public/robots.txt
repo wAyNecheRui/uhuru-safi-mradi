@@ -12,3 +12,12 @@ Allow: /
 
 User-agent: *
 Allow: /
+Disallow: /citizen/
+Disallow: /contractor/
+Disallow: /government/
+Disallow: /admin/
+Disallow: /settings
+Disallow: /profile
+Disallow: /dashboard
+
+Sitemap: https://govtrack.climatrix.co.ke/sitemap.xml
