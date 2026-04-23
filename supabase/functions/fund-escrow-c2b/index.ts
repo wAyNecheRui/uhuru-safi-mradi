@@ -132,7 +132,15 @@ serve(async (req) => {
       )
     }
 
-    const { project_id, amount, treasury_reference, worker_wage_allocation } = requestData
+    // SECURITY: Validate body with Zod BEFORE any DB lookups
+    const parsed = FundEscrowSchema.safeParse(requestData);
+    if (!parsed.success) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid input', details: parsed.error.flatten().fieldErrors }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+    const { project_id, amount, treasury_reference, worker_wage_allocation } = parsed.data;
 
     console.log(`[C2B-DEMO] Processing treasury funding for project: ${project_id}, amount: ${amount}, user: ${user.id}`)
 
@@ -161,13 +169,7 @@ serve(async (req) => {
       )
     }
 
-    // Validate input
-    if (!project_id || !amount || amount <= 0) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid request: project_id and positive amount required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
+    // Input already validated by Zod above
 
     // Get or create escrow account - use admin client
     let { data: escrow, error: escrowError } = await supabaseAdmin
