@@ -195,7 +195,7 @@ const WebCameraCapture: React.FC<WebCameraCaptureProps> = ({
                 </>
               ) : (
                 <>
-                  <Button size="icon" variant="outline" className="bg-white/10 border-white/20 text-white rounded-full h-10 w-10" onClick={switchCamera}>
+                  <Button size="icon" variant="outline" className="bg-white/10 border-white/20 text-white rounded-full h-10 w-10" onClick={switchCamera} aria-label="Switch camera">
                     <SwitchCamera className="h-4 w-4" />
                   </Button>
                   <Button
@@ -203,10 +203,11 @@ const WebCameraCapture: React.FC<WebCameraCaptureProps> = ({
                     className="bg-white text-black rounded-full h-14 w-14 shadow-lg hover:bg-white/90"
                     onClick={takePhoto}
                     disabled={atLimit}
+                    aria-label="Take photo"
                   >
                     <div className="h-10 w-10 rounded-full border-2 border-black/20" />
                   </Button>
-                  <Button size="icon" variant="outline" className="bg-white/10 border-white/20 text-white rounded-full h-10 w-10" onClick={stopCamera}>
+                  <Button size="icon" variant="outline" className="bg-white/10 border-white/20 text-white rounded-full h-10 w-10" onClick={stopCamera} aria-label="Stop camera">
                     <X className="h-4 w-4" />
                   </Button>
                 </>

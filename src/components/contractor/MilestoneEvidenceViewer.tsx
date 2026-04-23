@@ -228,6 +228,7 @@ const MilestoneEvidenceViewer: React.FC<MilestoneEvidenceViewerProps> = ({
                     size="icon"
                     className="absolute left-2 top-1/2 -translate-y-1/2"
                     onClick={handlePrevImage}
+                    aria-label="Previous image"
                   >
                     <ChevronLeft className="h-5 w-5" />
                   </Button>
@@ -236,6 +237,7 @@ const MilestoneEvidenceViewer: React.FC<MilestoneEvidenceViewerProps> = ({
                     size="icon"
                     className="absolute right-2 top-1/2 -translate-y-1/2"
                     onClick={handleNextImage}
+                    aria-label="Next image"
                   >
                     <ChevronRight className="h-5 w-5" />
                   </Button>

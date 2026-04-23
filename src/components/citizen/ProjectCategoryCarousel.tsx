@@ -79,12 +79,12 @@ const CategoryRow = ({
         </div>
         <div className="flex items-center gap-1">
           {canScrollLeft && (
-            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => scroll('left')}>
+            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => scroll('left')} aria-label="Scroll left">
               <ChevronLeft className="h-4 w-4" />
             </Button>
           )}
           {canScrollRight && projects.length > 1 && (
-            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => scroll('right')}>
+            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => scroll('right')} aria-label="Scroll right">
               <ChevronRight className="h-4 w-4" />
             </Button>
           )}

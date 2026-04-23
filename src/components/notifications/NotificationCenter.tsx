@@ -233,6 +233,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ trigger }) => {
                 e.stopPropagation();
                 dismissAlert(item.id);
               }}
+              aria-label="Dismiss alert"
             >
               <X className="h-3 w-3" />
             </Button>
@@ -279,7 +280,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ trigger }) => {
   };
 
   const defaultTrigger = (
-    <Button variant="ghost" size="icon" className="relative">
+    <Button variant="ghost" size="icon" className="relative" aria-label={`Notifications${totalUnread > 0 ? `, ${totalUnread} unread` : ''}`}>
       <Bell className="h-5 w-5" />
       {totalUnread > 0 && (
         <Badge 
@@ -312,6 +313,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ trigger }) => {
                 onClick={handleMarkAllAsRead}
                 disabled={totalUnread === 0}
                 title="Mark all as read"
+                aria-label="Mark all as read"
               >
                 <CheckCheck className="h-4 w-4" />
               </Button>
@@ -321,6 +323,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ trigger }) => {
                 className="h-8 w-8"
                 onClick={() => setShowSettings(!showSettings)}
                 title={showSettings ? "Back to notifications" : "Settings"}
+                aria-label={showSettings ? "Back to notifications" : "Notification settings"}
               >
                 <Settings className="h-4 w-4" />
               </Button>
@@ -330,6 +333,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ trigger }) => {
                 className="h-8 w-8"
                 onClick={() => setOpen(false)}
                 title="Close"
+                aria-label="Close notifications"
               >
                 <X className="h-4 w-4" />
               </Button>

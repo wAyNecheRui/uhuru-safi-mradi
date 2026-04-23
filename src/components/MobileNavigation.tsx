@@ -63,6 +63,7 @@ const MobileNavigation = ({ onNavigate }: MobileNavigationProps) => {
           variant="ghost"
           size="icon"
           className="md:hidden text-white hover:bg-white/20"
+          aria-label="Open navigation menu"
         >
           <Menu className="h-6 w-6" />
         </Button>
@@ -85,6 +86,7 @@ const MobileNavigation = ({ onNavigate }: MobileNavigationProps) => {
                 size="icon"
                 onClick={() => setIsOpen(false)}
                 className="text-white hover:bg-white/20"
+                aria-label="Close menu"
               >
                 <X className="h-6 w-6" />
               </Button>

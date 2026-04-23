@@ -135,7 +135,7 @@ const ProjectBrowser: React.FC<ProjectBrowserProps> = ({
             {/* Filter button */}
             <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
               <SheetTrigger asChild>
-                <Button variant="outline" size="icon" className="h-11 w-11 rounded-xl relative flex-shrink-0">
+                <Button variant="outline" size="icon" className="h-11 w-11 rounded-xl relative flex-shrink-0" aria-label="Open filters">
                   <SlidersHorizontal className="h-4 w-4" />
                   {activeFiltersCount > 0 && (
                     <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center">
@@ -178,6 +178,8 @@ const ProjectBrowser: React.FC<ProjectBrowserProps> = ({
                 size="icon"
                 className="h-11 w-10 rounded-none"
                 onClick={() => setViewMode('grid')}
+                aria-label="Grid view"
+                aria-pressed={viewMode === 'grid'}
               >
                 <LayoutGrid className="h-4 w-4" />
               </Button>
@@ -186,6 +188,8 @@ const ProjectBrowser: React.FC<ProjectBrowserProps> = ({
                 size="icon"
                 className="h-11 w-10 rounded-none"
                 onClick={() => setViewMode('list')}
+                aria-label="List view"
+                aria-pressed={viewMode === 'list'}
               >
                 <List className="h-4 w-4" />
               </Button>
@@ -307,10 +311,10 @@ const SectorRow: React.FC<{
           <Badge variant="secondary" className="text-xs rounded-full">{projects.length}</Badge>
         </div>
         <div className="flex gap-1">
-          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => scroll('left')}>
+          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => scroll('left')} aria-label="Scroll left">
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => scroll('right')}>
+          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => scroll('right')} aria-label="Scroll right">
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
