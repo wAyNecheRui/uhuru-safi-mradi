@@ -1,0 +1,48 @@
+{
+  "common": {
+    "loading": "Loading…",
+    "save": "Save",
+    "cancel": "Cancel",
+    "submit": "Submit",
+    "search": "Search",
+    "filter": "Filter",
+    "edit": "Edit",
+    "delete": "Delete",
+    "view": "View",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "yes": "Yes",
+    "no": "No",
+    "close": "Close",
+    "confirm": "Confirm",
+    "retry": "Try Again",
+    "goHome": "Go Home"
+  },
+  "nav": {
+    "home": "Home",
+    "about": "About",
+    "howItWorks": "How It Works",
+    "contact": "Contact",
+    "projects": "Projects",
+    "transparency": "Transparency",
+    "dashboard": "Dashboard",
+    "reports": "Reports",
+    "profile": "Profile",
+    "settings": "Settings",
+    "signIn": "Sign In",
+    "signOut": "Sign Out",
+    "notifications": "Notifications"
+  },
+  "language": {
+    "label": "Language",
+    "english": "English",
+    "swahili": "Kiswahili"
+  },
+  "errors": {
+    "title": "Something Went Wrong",
+    "description": "An unexpected error occurred. You can try refreshing the page or go back to the home page.",
+    "network": "Connection Problem",
+    "moduleUpdate": "Page Update Required"
+  }
+}
