@@ -1,5 +1,15 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { z } from "https://esm.sh/zod@3.23.8"
+
+// SECURITY: Strict input schema (Phase 7 hardening)
+const BidSchema = z.object({
+  reportId: z.string().uuid(),
+  bidAmount: z.coerce.number().positive().finite().max(1e12),
+  proposal: z.string().trim().min(20).max(5000),
+  estimatedDuration: z.coerce.number().int().positive().max(365),
+  technicalApproach: z.string().trim().max(10000).optional().nullable(),
+});
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -211,14 +221,15 @@ serve(async (req) => {
       )
     }
 
-    // Validate input
-    const validation = validateBidData(bidData);
-    if (!validation.valid) {
+    // Validate input via Zod (replaces legacy validateBidData)
+    const parsedBid = BidSchema.safeParse(bidData);
+    if (!parsedBid.success) {
       return new Response(
-        JSON.stringify({ error: validation.error }),
+        JSON.stringify({ error: 'Validation failed', details: parsedBid.error.flatten().fieldErrors }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
+    bidData = parsedBid.data;
 
     // Admin client for service-level queries (report status check, notifications)
     const supabaseAdmin = createClient(

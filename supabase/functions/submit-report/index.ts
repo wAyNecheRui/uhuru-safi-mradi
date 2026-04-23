@@ -1,5 +1,19 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { z } from "https://esm.sh/zod@3.23.8"
+
+// SECURITY: Strict input schema (Phase 7 hardening)
+const COORD_REGEX = /^-?\d{1,3}(?:\.\d+)?\s*,\s*-?\d{1,3}(?:\.\d+)?$/;
+const ReportSchema = z.object({
+  title: z.string().trim().min(5).max(200),
+  description: z.string().trim().min(20).max(5000),
+  category: z.enum(['roads', 'water', 'electricity', 'sanitation', 'healthcare', 'education', 'security', 'environment', 'other']).optional(),
+  priority: z.enum(['low', 'medium', 'high', 'critical', 'urgent']).optional(),
+  location: z.string().trim().max(500).optional().nullable(),
+  coordinates: z.string().trim().regex(COORD_REGEX).optional().nullable(),
+  estimatedCost: z.coerce.number().min(0).max(1e12).optional().nullable(),
+  affectedPopulation: z.coerce.number().min(0).max(1e9).optional().nullable(),
+});
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -217,14 +231,15 @@ serve(async (req) => {
       )
     }
 
-    // Validate input
-    const validation = validateReportData(reportData);
-    if (!validation.valid) {
+    // Validate input via Zod (replaces legacy validateReportData)
+    const parsedReport = ReportSchema.safeParse(reportData);
+    if (!parsedReport.success) {
       return new Response(
-        JSON.stringify({ error: validation.error }),
+        JSON.stringify({ error: 'Validation failed', details: parsedReport.error.flatten().fieldErrors }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
+    reportData = parsedReport.data;
 
     // Sanitize inputs
     const sanitizedTitle = sanitizeInput(reportData.title);

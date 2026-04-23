@@ -1,5 +1,14 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { z } from "https://esm.sh/zod@3.23.8"
+
+// SECURITY: Strict input schema (Phase 7 hardening)
+const InitiatePaymentSchema = z.object({
+  escrow_account_id: z.string().uuid(),
+  amount: z.number().positive().finite().max(100_000_000_000),
+  payment_method: z.enum(['mpesa', 'bank_transfer', 'manual']),
+  phone_number: z.string().trim().max(20).regex(/^[0-9+]*$/).optional(),
+});
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -78,7 +87,14 @@ serve(async (req) => {
       )
     }
 
-    const { escrow_account_id, amount, phone_number, payment_method } = body;
+    const parsed = InitiatePaymentSchema.safeParse(body);
+    if (!parsed.success) {
+      return new Response(
+        JSON.stringify({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+    const { escrow_account_id, amount, phone_number, payment_method } = parsed.data;
 
     // SECURITY: Role check — government only
     const { data: profile, error: profileError } = await supabaseAdmin
@@ -91,28 +107,6 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ error: 'Forbidden: government role required' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    // SECURITY: Validate inputs
-    if (!escrow_account_id || typeof escrow_account_id !== 'string' || !UUID_REGEX.test(escrow_account_id)) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid escrow_account_id' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    if (typeof amount !== 'number' || amount <= 0 || !Number.isFinite(amount) || amount > 100_000_000_000) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid amount: must be a positive finite number' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    if (!payment_method || typeof payment_method !== 'string' || !['mpesa', 'bank_transfer', 'manual'].includes(payment_method)) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid payment_method' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 

@@ -1,5 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { z } from "https://esm.sh/zod@3.23.8"
+
+// SECURITY: Strict input schema (Phase 7 hardening)
+const AutoReleaseSchema = z.object({
+  milestoneId: z.string().uuid(),
+});
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -78,14 +84,14 @@ serve(async (req) => {
       )
     }
 
-    const { milestoneId } = requestData
-
-    if (!milestoneId) {
+    const parsed = AutoReleaseSchema.safeParse(requestData)
+    if (!parsed.success) {
       return new Response(
-        JSON.stringify({ error: 'Milestone ID is required' }),
+        JSON.stringify({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
+    const { milestoneId } = parsed.data
 
     console.log(`[AUTO-RELEASE] Processing auto-release for milestone: ${milestoneId}, triggered by: ${userId || 'system'}`)
 

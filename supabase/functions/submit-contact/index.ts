@@ -1,4 +1,14 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://esm.sh/zod@3.23.8";
+
+// SECURITY: Strict input schema (Phase 7 hardening)
+const ContactSchema = z.object({
+  name: z.string().trim().min(1).max(200),
+  email: z.string().trim().email().max(255),
+  user_type: z.string().trim().max(50).optional().nullable(),
+  subject: z.string().trim().min(1).max(500),
+  message: z.string().trim().min(1).max(5000),
+});
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -44,32 +54,14 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { name, email, user_type, subject, message } = parsed;
-
-    // Validate required fields
-    if (!name || !email || !subject || !message) {
+    const validated = ContactSchema.safeParse(parsed);
+    if (!validated.success) {
       return new Response(
-        JSON.stringify({ error: "All required fields must be filled" }),
+        JSON.stringify({ error: "Validation failed", details: validated.error.flatten().fieldErrors }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-
-    // Validate field lengths
-    if (name.length > 200 || email.length > 255 || subject.length > 500 || message.length > 5000) {
-      return new Response(
-        JSON.stringify({ error: "Field length exceeds maximum allowed" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Basic email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return new Response(
-        JSON.stringify({ error: "Invalid email address" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    const { name, email, user_type, subject, message } = validated.data;
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;

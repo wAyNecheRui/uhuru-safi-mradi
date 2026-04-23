@@ -1,5 +1,19 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { z } from "https://esm.sh/zod@3.23.8"
+
+// SECURITY: Strict discriminated-union schema (Phase 7 hardening)
+const KraPinSchema = z.object({
+  verification_type: z.literal('kra_pin'),
+  pin_number: z.string().trim().regex(/^[PA]\d{9}[A-Z]$/i, 'Invalid KRA PIN format'),
+  taxpayer_name: z.string().trim().min(2).max(200),
+});
+const NationalIdSchema = z.object({
+  verification_type: z.literal('national_id'),
+  id_number: z.string().trim().regex(/^\d{7,8}$/, 'National ID must be 7-8 digits'),
+  holder_name: z.string().trim().min(2).max(200),
+});
+const VerificationSchema = z.discriminatedUnion('verification_type', [KraPinSchema, NationalIdSchema]);
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -147,15 +161,15 @@ serve(async (req) => {
       )
     }
 
-    // Validate
-    const validation = validateVerificationData(verificationData);
-    if (!validation.valid) {
+    // Validate via Zod discriminated union (replaces legacy validateVerificationData)
+    const parsedVerify = VerificationSchema.safeParse(verificationData);
+    if (!parsedVerify.success) {
       return new Response(
-        JSON.stringify({ error: validation.error }),
+        JSON.stringify({ error: 'Validation failed', details: parsedVerify.error.flatten().fieldErrors }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
-
+    verificationData = parsedVerify.data;
     const verificationType = verificationData.verification_type;
 
     if (verificationType === 'kra_pin') {

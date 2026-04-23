@@ -1,5 +1,19 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { z } from "https://esm.sh/zod@3.23.8"
+
+// SECURITY: Strict input schema (Phase 7 hardening)
+const COORD_REGEX_SECURE = /^-?\d{1,3}(?:\.\d+)?\s*,\s*-?\d{1,3}(?:\.\d+)?$/;
+const SecureReportSchema = z.object({
+  title: z.string().trim().min(5).max(200),
+  description: z.string().trim().min(20).max(5000),
+  location: z.string().trim().min(5).max(200),
+  priority: z.enum(['low', 'medium', 'high', 'critical', 'urgent']),
+  category: z.string().trim().min(3).max(50),
+  coordinates: z.string().trim().regex(COORD_REGEX_SECURE).optional().nullable(),
+  photo_urls: z.array(z.string().trim().max(2000)).max(10).optional(),
+  video_urls: z.array(z.string().trim().max(2000)).max(5).optional(),
+});
 
 // Server-side rate limiting
 const rateLimitMap = new Map<string, { count: number; resetTime: number; blocked?: number }>();
@@ -177,6 +191,16 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    // SECURITY: Strict Zod validation BEFORE sanitization
+    const parsedReq = SecureReportSchema.safeParse(requestData);
+    if (!parsedReq.success) {
+      return new Response(
+        JSON.stringify({ error: 'Validation failed', details: parsedReq.error.flatten().fieldErrors }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    requestData = parsedReq.data;
 
     // Get JWT token
     const authHeader = req.headers.get('Authorization');

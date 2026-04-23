@@ -1,5 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { z } from "https://esm.sh/zod@3.23.8"
+
+// SECURITY: Strict input schema (Phase 7 hardening)
+const VoteSchema = z.object({
+  reportId: z.string().uuid(),
+  voteType: z.enum(['upvote', 'downvote']),
+});
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -116,16 +123,15 @@ serve(async (req) => {
       )
     }
 
-    // Validate input
-    const validation = validateVoteData(voteData);
-    if (!validation.valid) {
+    // Validate input via Zod (replaces legacy validateVoteData)
+    const parsedVote = VoteSchema.safeParse(voteData);
+    if (!parsedVote.success) {
       return new Response(
-        JSON.stringify({ error: validation.error }),
+        JSON.stringify({ error: 'Validation failed', details: parsedVote.error.flatten().fieldErrors }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
-
-    const { reportId, voteType } = voteData;
+    const { reportId, voteType } = parsedVote.data;
 
     // Verify report exists
     const { data: report, error: reportError } = await supabaseClient
