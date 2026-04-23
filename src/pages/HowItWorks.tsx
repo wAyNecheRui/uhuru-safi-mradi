@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Users, Search, Building, Shield, CheckCircle, Wallet, ArrowLeft } from 'lucide-react';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
 import { useResponsive } from '@/hooks/useResponsive';
+import SEO from '@/components/SEO';
 
 const HowItWorks = () => {
   const navigate = useNavigate();

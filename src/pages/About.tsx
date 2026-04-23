@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Shield, Users, Building, Eye, CheckCircle, TrendingUp, ArrowLeft } from 'lucide-react';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
 import { useResponsive } from '@/hooks/useResponsive';
+import SEO from '@/components/SEO';
 
 const About = () => {
   const navigate = useNavigate();
@@ -12,6 +13,11 @@ const About = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
+      <SEO
+        title="About Uhuru Safi — Civic Transparency for Kenya"
+        description="Learn how Uhuru Safi empowers citizens, contractors, and government to deliver transparent public infrastructure across Kenya's 47 counties."
+        canonicalPath="/about"
+      />
       {/* Header */}
       <header className="bg-white shadow-sm border-b sticky top-0 z-50">
         <ResponsiveContainer>

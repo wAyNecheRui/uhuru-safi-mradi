@@ -9,6 +9,7 @@ import ResponsiveContainer from '@/components/ResponsiveContainer';
 import { useResponsive } from '@/hooks/useResponsive';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import SEO from '@/components/SEO';
 
 const Contact = () => {
   const navigate = useNavigate();
