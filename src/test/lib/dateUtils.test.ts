@@ -35,10 +35,15 @@ describe('lib/dateUtils', () => {
       expect(out).toMatch(/am|pm/i);
     });
 
+    it('formatTime produces a string containing AM or PM', () => {
+      const out = formatTime('2026-04-23T09:30:00.000Z');
+      expect(out).toMatch(/am|pm/i);
+    });
+
     it('formatDate excludes time components', () => {
       const out = formatDate('2026-04-23T09:30:00.000Z');
       // No AM/PM and no colon-separated minutes in date-only format.
-      expect(out).not.toMatch(/AM|PM/);
+      expect(out).not.toMatch(/am|pm/i);
       expect(out).not.toMatch(/:\d{2}/);
     });
   });
@@ -81,7 +86,7 @@ describe('lib/dateUtils', () => {
       const t = new Date(FROZEN_NOW.getTime() - 30 * 86_400_000); // 30 days
       const out = formatRelativeDateTime(t);
       expect(out).not.toMatch(/ago|Just now/);
-      expect(out).toMatch(/AM|PM/);
+      expect(out).toMatch(/am|pm/i);
     });
 
     it('handles invalid input safely', () => {
