@@ -10,6 +10,7 @@ import logoImg from '@/assets/uhuru-safi-logo.png';
 import MobileNavigation from '@/components/MobileNavigation';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
 import { useResponsive } from '@/hooks/useResponsive';
+import SEO from '@/components/SEO';
 
 const Landing = () => {
   const navigate = useNavigate();
