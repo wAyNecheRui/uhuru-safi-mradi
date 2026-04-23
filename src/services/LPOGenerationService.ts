@@ -44,6 +44,7 @@ export class LPOGenerationService {
    */
   static async generateLPO(data: LPOData): Promise<boolean> {
     try {
+      const { jsPDF } = await import('jspdf');
       const doc = new jsPDF('p', 'mm', 'a4');
       const pageWidth = doc.internal.pageSize.getWidth();
       const margin = 20;
