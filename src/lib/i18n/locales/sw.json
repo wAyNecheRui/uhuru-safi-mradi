@@ -1,0 +1,48 @@
+{
+  "common": {
+    "loading": "Inapakia…",
+    "save": "Hifadhi",
+    "cancel": "Ghairi",
+    "submit": "Wasilisha",
+    "search": "Tafuta",
+    "filter": "Chuja",
+    "edit": "Hariri",
+    "delete": "Futa",
+    "view": "Tazama",
+    "back": "Rudi",
+    "next": "Endelea",
+    "previous": "Iliyotangulia",
+    "yes": "Ndio",
+    "no": "Hapana",
+    "close": "Funga",
+    "confirm": "Thibitisha",
+    "retry": "Jaribu Tena",
+    "goHome": "Nenda Mwanzo"
+  },
+  "nav": {
+    "home": "Mwanzo",
+    "about": "Kuhusu",
+    "howItWorks": "Inavyofanya Kazi",
+    "contact": "Wasiliana",
+    "projects": "Miradi",
+    "transparency": "Uwazi",
+    "dashboard": "Dashibodi",
+    "reports": "Ripoti",
+    "profile": "Wasifu",
+    "settings": "Mipangilio",
+    "signIn": "Ingia",
+    "signOut": "Toka",
+    "notifications": "Arifa"
+  },
+  "language": {
+    "label": "Lugha",
+    "english": "Kiingereza",
+    "swahili": "Kiswahili"
+  },
+  "errors": {
+    "title": "Hitilafu Imetokea",
+    "description": "Hitilafu isiyotarajiwa imetokea. Unaweza kujaribu kupakia upya ukurasa au kurudi mwanzo.",
+    "network": "Tatizo la Muunganisho",
+    "moduleUpdate": "Sasisho la Ukurasa Linahitajika"
+  }
+}
