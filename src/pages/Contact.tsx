@@ -56,6 +56,11 @@ const Contact = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
+      <SEO
+        title="Contact Uhuru Safi — Get in Touch"
+        description="Contact the Uhuru Safi team for support, partnerships, or to report issues with Kenya's public infrastructure transparency platform."
+        canonicalPath="/contact"
+      />
       {/* Header */}
       <header className="bg-white shadow-sm border-b sticky top-0 z-50">
         <ResponsiveContainer>
