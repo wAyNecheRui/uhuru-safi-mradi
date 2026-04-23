@@ -175,4 +175,6 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick, className, 
   );
 };
 
-export default ProjectCard;
+// Memoized to prevent re-rendering all cards in long project lists
+// when only the parent's filter/search state changes.
+export default React.memo(ProjectCard);

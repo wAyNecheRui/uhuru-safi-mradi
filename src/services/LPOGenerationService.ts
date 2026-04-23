@@ -1,4 +1,5 @@
-import { jsPDF } from 'jspdf';
+// jsPDF is dynamically imported inside generatePDF() to keep it out of the
+// main bundle — it is only needed when an LPO is actually generated.
 import { supabase } from '@/integrations/supabase/client';
 
 export interface LPOData {
