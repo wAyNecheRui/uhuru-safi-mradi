@@ -19,7 +19,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { BiddingWorkflowService, BidRequirements, TopBid } from '@/services/BiddingWorkflowService';
 import { EscrowWorkflowService } from '@/services/EscrowWorkflowService';
-import { LPOGenerationService } from '@/services/LPOGenerationService';
+// LPOGenerationService is dynamically imported below to keep jsPDF (~120 kB)
+// out of this route's initial chunk. It is only fetched when an LPO is generated.
 import {
   Dialog,
   DialogContent,
@@ -153,8 +154,9 @@ const GovernmentBidApproval = () => {
           .eq('report_id', selectedProject.id)
           .single();
 
-        // Generate LPO automatically
+        // Generate LPO automatically (dynamic import keeps jsPDF out of initial chunk)
         if (project) {
+          const { LPOGenerationService } = await import('@/services/LPOGenerationService');
           const lpoGenerated = await LPOGenerationService.createAndDownloadLPO(
             selectedProject.id,
             project.id,
