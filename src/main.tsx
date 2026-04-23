@@ -3,6 +3,9 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
+// Initialize i18n early so the first render already has translations
+// available. The import has side effects (i18n.init) — keep it before App.
+import './lib/i18n';
 import { AuthProvider } from './contexts/AuthContext.tsx';
 import { Capacitor } from '@capacitor/core';
 import { SplashScreen } from '@capacitor/splash-screen';
