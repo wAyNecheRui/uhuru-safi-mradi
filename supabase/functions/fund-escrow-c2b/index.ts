@@ -51,6 +51,7 @@ function simulateC2BPayment(amount: number, treasuryReference: string, projectId
 const MAX_BODY_SIZE = 51200; // 50KB
 
 serve(async (req) => {
+  const corsHeaders = buildCorsHeaders(req);
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
