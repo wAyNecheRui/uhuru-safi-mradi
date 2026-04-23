@@ -89,14 +89,15 @@ serve(async (req) => {
       )
     }
 
-    const { worker_id, job_id, record_ids } = requestData
-
-    if (!worker_id || !job_id || !record_ids?.length) {
+    // SECURITY: Validate body with Zod
+    const parsed = PayWorkerSchema.safeParse(requestData);
+    if (!parsed.success) {
       return new Response(
-        JSON.stringify({ error: 'worker_id, job_id, and record_ids are required' }),
+        JSON.stringify({ error: 'Invalid input', details: parsed.error.flatten().fieldErrors }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
+    const { worker_id, job_id, record_ids } = parsed.data;
 
     console.log(`[WORKER-ESCROW-PAY] Processing escrow payment for worker: ${worker_id}, job: ${job_id}, records: ${record_ids.length}`)
 
