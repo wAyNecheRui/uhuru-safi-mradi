@@ -87,15 +87,15 @@ serve(async (req) => {
       )
     }
 
-    const { milestoneId } = body;
-
-    // SECURITY: Validate milestoneId
-    if (!milestoneId || typeof milestoneId !== 'string' || !UUID_REGEX.test(milestoneId)) {
+    // SECURITY: Validate body with Zod
+    const parsed = ReleaseMilestoneSchema.safeParse(body);
+    if (!parsed.success) {
       return new Response(
-        JSON.stringify({ error: 'Invalid milestoneId format' }),
+        JSON.stringify({ error: 'Invalid input', details: parsed.error.flatten().fieldErrors }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
+    const { milestoneId } = parsed.data;
 
     console.log(`[RELEASE] Processing milestone payment: ${milestoneId}, user: ${user.id}`)
 
