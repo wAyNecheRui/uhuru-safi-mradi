@@ -73,7 +73,7 @@ const Index = () => {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-0">
-                    <ProjectMap selectedCounty="Nairobi" />
+                    <ProjectMap selectedCounty={homeCounty} />
                   </CardContent>
                 </Card>
 
