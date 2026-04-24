@@ -73,11 +73,11 @@ const ContractorMapView: React.FC<ContractorMapViewProps> = ({
       ? URGENCY_COLORS[item.urgency || 'low']
       : STATUS_COLORS[item.rawStatus] || '#9ca3af';
 
-    // Encode color as a synthetic status so InteractiveMap colors it correctly
     return {
       id: item.id,
       title: item.name,
-      status: mode === 'bidding' ? `urgency_${item.urgency || 'low'}` : item.rawStatus,
+      status: item.rawStatus,
+      color,
       budget: item.budget,
       progress: item.progress,
       category: item.category || undefined,
@@ -89,23 +89,6 @@ const ContractorMapView: React.FC<ContractorMapViewProps> = ({
         : undefined,
     };
   }), [filteredItems, mode]);
-
-  // Inject urgency colors into the map's color scheme by augmenting markers with a colorOverride
-  // Since InteractiveMap uses statusColors map, we pass status="urgency_X" and add to that map
-  // Simpler: monkey-patch by exposing status hex inline through inline status names already mapped
-  // We'll add urgency_* keys to the map by registering them globally on first render
-  React.useEffect(() => {
-    // Register urgency colors so InteractiveMap picks them up via its statusColors lookup
-    // We attach a singleton on window to keep this side effect contained
-    // (alternative: extend InteractiveMap props — kept as-is for minimal surface change)
-    (window as any).__mapStatusColorOverrides = {
-      ...((window as any).__mapStatusColorOverrides || {}),
-      urgency_high: URGENCY_COLORS.high,
-      urgency_medium: URGENCY_COLORS.medium,
-      urgency_low: URGENCY_COLORS.low,
-      urgency_expired: URGENCY_COLORS.expired,
-    };
-  }, []);
 
   const handleMarkerClick = (m: MapMarker) => {
     const item = filteredItems.find(i => i.id === m.id);
