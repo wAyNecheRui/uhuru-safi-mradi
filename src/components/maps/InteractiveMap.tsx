@@ -14,6 +14,8 @@ export interface MapMarker {
   progress?: number;
   category?: string;
   isApproximate?: boolean;
+  /** Optional explicit color (hex). Overrides the status-based color lookup. */
+  color?: string;
 }
 
 interface InteractiveMapProps {
@@ -41,6 +43,7 @@ const statusColors: Record<string, string> = {
 };
 
 const getStatusColor = (status?: string) => statusColors[status || 'pending'] || '#9ca3af';
+const getMarkerColor = (m: MapMarker) => m.color || getStatusColor(m.status);
 
 const getStatusLabel = (status: string) =>
   status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
