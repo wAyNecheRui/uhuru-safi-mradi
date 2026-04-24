@@ -10,6 +10,7 @@ import { useResponsive } from '@/hooks/useResponsive';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import ContractorLocationSettings from '@/components/contractor/ContractorLocationSettings';
+import ContractorMapView from '@/components/contractor/ContractorMapView';
 import { useRealtimeSubscription, REALTIME_PRESETS } from '@/hooks/useRealtimeSubscription';
 import { calculateProjectProgress } from '@/utils/progressCalculation';
 
@@ -182,6 +183,11 @@ const ContractorDashboard = () => {
 
           {/* Location Settings */}
           <ContractorLocationSettings />
+
+          {/* Opportunity Map */}
+          <div className="mt-6">
+            <ContractorMapView contractorId={stableUserId} />
+          </div>
 
           {/* Active Projects */}
           <Card className="mt-6">
