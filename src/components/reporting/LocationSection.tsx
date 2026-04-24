@@ -189,10 +189,10 @@ const LocationSection = ({ reportData, onInputChange, onLocationDataChange }: Lo
             </div>
 
             {isOutOfCounty && (
-              <Alert variant="destructive">
-                <ShieldAlert className="h-4 w-4" />
+              <Alert className="border-primary/40 bg-primary/5">
+                <Plane className="h-4 w-4 text-primary" />
                 <AlertDescription className="text-xs">
-                  <strong>Out of jurisdiction.</strong> You are registered in <strong>{registeredCounty}</strong> but your GPS shows <strong>{detectedCounty}</strong>. You can only report issues inside your registered county. Move to {registeredCounty} or update your county via an administrator.
+                  <strong>Reporting away from home.</strong> You're registered in <strong>{registeredCounty}</strong> but your GPS shows <strong>{detectedCounty}</strong>. This report will be tagged to <strong>{detectedCounty}</strong> so the right county officials see it. You won't be able to vote on it (only {detectedCounty} residents can). Limit: 3 cross-county reports per day.
                 </AlertDescription>
               </Alert>
             )}
