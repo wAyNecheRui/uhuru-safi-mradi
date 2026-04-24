@@ -228,6 +228,26 @@ const GovernmentApprovalDashboard = () => {
             <p className="text-gray-600">
               Review and approve citizen-reported problems that have received {MIN_VOTES_THRESHOLD}+ community votes
             </p>
+
+            {/* County-scope indicator + silent toggle */}
+            {assignedCounties.length > 0 && (
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <Badge variant="outline" className="text-[11px] gap-1 py-1">
+                  {viewAllCounties ? <Globe2 className="h-3 w-3" /> : <MapPin className="h-3 w-3" />}
+                  {viewAllCounties
+                    ? 'Viewing: All counties'
+                    : `Viewing: ${assignedCounties.join(', ')}`}
+                </Badge>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 px-2 text-xs"
+                  onClick={() => setViewAllCounties(!viewAllCounties)}
+                >
+                  {viewAllCounties ? 'Limit to my counties' : 'Show all counties'}
+                </Button>
+              </div>
+            )}
           </div>
 
           {/* Workflow Status Explanation */}
