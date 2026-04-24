@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Map, MapPin, Loader2, CheckCircle, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Map, MapPin, Loader2, CheckCircle, AlertTriangle, RefreshCw, ShieldAlert } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ReportData } from '@/types/problemReporting';
 import { getFullLocationByCoordinates } from '@/constants/kenyaAdminData';
+import { useProfile } from '@/hooks/useProfile';
 
 interface LocationSectionProps {
   reportData: ReportData;
@@ -14,8 +16,16 @@ interface LocationSectionProps {
 type GpsState = 'detecting' | 'success' | 'error' | 'denied';
 
 const LocationSection = ({ reportData, onInputChange, onLocationDataChange }: LocationSectionProps) => {
+  const { userProfile } = useProfile();
   const [gpsState, setGpsState] = useState<GpsState>('detecting');
   const [errorMsg, setErrorMsg] = useState('');
+
+  const registeredCounty = userProfile?.county?.trim() || '';
+  const detectedCounty = reportData.county?.trim() || '';
+  const isOutOfCounty =
+    !!registeredCounty &&
+    !!detectedCounty &&
+    registeredCounty.toLowerCase() !== detectedCounty.toLowerCase();
 
   const detectLocation = () => {
     if (!navigator.geolocation) {
@@ -152,6 +162,15 @@ const LocationSection = ({ reportData, onInputChange, onLocationDataChange }: Lo
                 </div>
               )}
             </div>
+
+            {isOutOfCounty && (
+              <Alert variant="destructive">
+                <ShieldAlert className="h-4 w-4" />
+                <AlertDescription className="text-xs">
+                  <strong>Out of jurisdiction.</strong> You are registered in <strong>{registeredCounty}</strong> but your GPS shows <strong>{detectedCounty}</strong>. You can only report issues inside your registered county. Move to {registeredCounty} or update your county via an administrator.
+                </AlertDescription>
+              </Alert>
+            )}
 
             <Button variant="ghost" size="sm" onClick={detectLocation} className="text-xs text-muted-foreground">
               <RefreshCw className="h-3 w-3 mr-1" />

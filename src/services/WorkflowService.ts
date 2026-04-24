@@ -22,6 +22,9 @@ export class WorkflowService {
     estimated_cost?: number;
     affected_population?: number;
     photo_urls?: string[];
+    county?: string;
+    constituency?: string;
+    ward?: string;
   }) {
     const user = (await supabase.auth.getUser()).data.user;
     if (!user) throw new Error('User not authenticated');

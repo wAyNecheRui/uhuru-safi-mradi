@@ -134,7 +134,7 @@ export const useLocationFiltering = () => {
     }
   }, [userLocation]);
 
-  // Check if user can verify a problem (within 10km)
+  // Check if user can verify a problem (within 3km — Location Architecture v2)
   const canVerify = useCallback(async (reportId: string): Promise<boolean> => {
     if (!userLocation) return true; // Allow if no location
 

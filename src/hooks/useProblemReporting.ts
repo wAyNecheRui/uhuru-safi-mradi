@@ -2,6 +2,7 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useProfile } from '@/hooks/useProfile';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ReportData } from '@/types/problemReporting';
@@ -27,6 +28,7 @@ const emptyReportData: ReportData = {
 export const useProblemReporting = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { userProfile } = useProfile();
 
   const [reportData, setReportData] = useState<ReportData>({ ...emptyReportData });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -122,6 +124,21 @@ export const useProblemReporting = () => {
       return;
     }
 
+    // Location Architecture: hard-block out-of-county reports for citizens
+    const registeredCounty = userProfile?.county?.trim();
+    const reportCounty = reportData.county?.trim();
+    if (!registeredCounty) {
+      toast.error('Please set your registered county in your profile before reporting.');
+      return;
+    }
+    if (reportCounty && reportCounty.toLowerCase() !== registeredCounty.toLowerCase()) {
+      toast.error(
+        `You can only report issues inside ${registeredCounty}. Detected county: ${reportCounty}.`,
+        { duration: 7000 }
+      );
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -162,7 +179,10 @@ export const useProblemReporting = () => {
         coordinates: reportData.coordinates || undefined,
         estimated_cost: reportData.estimatedCost ? parseFloat(reportData.estimatedCost) : undefined,
         affected_population: reportData.affectedPopulation ? parseInt(reportData.affectedPopulation) : undefined,
-        photo_urls: photoUrls
+        photo_urls: photoUrls,
+        county: registeredCounty,
+        constituency: reportData.constituency || undefined,
+        ward: reportData.ward || undefined,
       });
 
       toast.success('Problem report submitted successfully!');
@@ -177,7 +197,7 @@ export const useProblemReporting = () => {
     } finally {
       setIsSubmitting(false);
     }
-  }, [reportData, user, navigate, getValidationErrors]);
+  }, [reportData, user, navigate, getValidationErrors, userProfile?.county]);
 
   return {
     reportData,
