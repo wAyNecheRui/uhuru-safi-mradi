@@ -607,7 +607,6 @@ export type Database = {
           max_project_capacity: number | null
           number_of_employees: number | null
           previous_projects_count: number | null
-          registered_counties: string[] | null
           specialization: string[] | null
           tax_compliance_certificate_url: string | null
           total_contract_value: number | null
@@ -633,7 +632,6 @@ export type Database = {
           max_project_capacity?: number | null
           number_of_employees?: number | null
           previous_projects_count?: number | null
-          registered_counties?: string[] | null
           specialization?: string[] | null
           tax_compliance_certificate_url?: string | null
           total_contract_value?: number | null
@@ -659,7 +657,6 @@ export type Database = {
           max_project_capacity?: number | null
           number_of_employees?: number | null
           previous_projects_count?: number | null
-          registered_counties?: string[] | null
           specialization?: string[] | null
           tax_compliance_certificate_url?: string | null
           total_contract_value?: number | null
@@ -2533,7 +2530,6 @@ export type Database = {
           max_project_capacity: number | null
           number_of_employees: number | null
           previous_projects_count: number | null
-          registered_counties: string[] | null
           specialization: string[] | null
           total_contract_value: number | null
           updated_at: string | null
@@ -2553,7 +2549,6 @@ export type Database = {
           max_project_capacity?: number | null
           number_of_employees?: number | null
           previous_projects_count?: number | null
-          registered_counties?: string[] | null
           specialization?: string[] | null
           total_contract_value?: number | null
           updated_at?: string | null
@@ -2573,7 +2568,6 @@ export type Database = {
           max_project_capacity?: number | null
           number_of_employees?: number | null
           previous_projects_count?: number | null
-          registered_counties?: string[] | null
           specialization?: string[] | null
           total_contract_value?: number | null
           updated_at?: string | null
