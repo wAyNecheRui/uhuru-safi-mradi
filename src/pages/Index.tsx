@@ -18,12 +18,16 @@ import ResponsiveContainer from '@/components/ResponsiveContainer';
 import { useResponsive } from '@/hooks/useResponsive';
 import { useProjectStats } from '@/hooks/useProjectStats';
 import { useRecentIssues } from '@/hooks/useRecentIssues';
+import { useProfile } from '@/hooks/useProfile';
+import { getRootCounty } from '@/utils/countyHelpers';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const { isMobile } = useResponsive();
   const { stats: projectStats, loading: statsLoading } = useProjectStats();
   const { issues: recentIssues, loading: issuesLoading } = useRecentIssues(3);
+  const { userProfile } = useProfile();
+  const homeCounty = userProfile?.county ? getRootCounty(userProfile.county) : 'Nairobi';
 
   const getText = (en: string) => en;
 
