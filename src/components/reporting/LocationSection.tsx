@@ -172,7 +172,7 @@ const LocationSection = ({ reportData, onInputChange, onLocationDataChange }: Lo
               </Alert>
             )}
 
-
+            <Button variant="ghost" size="sm" onClick={detectLocation} className="text-xs text-muted-foreground">
               <RefreshCw className="h-3 w-3 mr-1" />
               Re-detect location
             </Button>
