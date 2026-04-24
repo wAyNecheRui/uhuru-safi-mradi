@@ -207,7 +207,7 @@ const CommunityValidation = () => {
     } finally {
       setLoadingAll(false);
     }
-  }, [user]);
+  }, [user, userProfile?.county]);
 
   const handleVote = async (reportId: string, voteType: 'upvote' | 'downvote') => {
     if (!user) {
