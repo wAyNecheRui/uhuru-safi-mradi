@@ -27,6 +27,22 @@ const RegistrationStep1: React.FC<RegistrationStep1Props> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const isKenya = (formData as any).country === 'KE';
+  const countyRequired = role === 'citizen' || role === 'government';
+
+  const handleSubmit = (e: React.FormEvent) => {
+    if (countyRequired && !formData.county?.trim()) {
+      e.preventDefault();
+      // Surface clear UX
+      // eslint-disable-next-line no-alert
+      alert(
+        isKenya
+          ? 'Please select your county. This is permanent and cannot be changed later.'
+          : 'Please enter your region / state. This is permanent and cannot be changed later.'
+      );
+      return;
+    }
+    onSubmit(e);
+  };
 
   const roleLabels = {
     citizen: { title: 'Create Your Account', subtitle: 'Quick & easy — takes under 60 seconds', icon: User, accent: 'primary' },
@@ -72,7 +88,7 @@ const RegistrationStep1: React.FC<RegistrationStep1Props> = ({
         </>
       )}
 
-      <form onSubmit={onSubmit} className="space-y-4 max-h-[50vh] overflow-y-auto pr-1">
+      <form onSubmit={handleSubmit} className="space-y-4 max-h-[50vh] overflow-y-auto pr-1">
         {/* Full Name */}
         <div className="space-y-1.5">
           <label className="text-sm font-medium text-foreground">Full Name *</label>
@@ -179,12 +195,14 @@ const RegistrationStep1: React.FC<RegistrationStep1Props> = ({
         {/* Region — dynamic based on country */}
         <div className="space-y-1.5">
           <label className="text-sm font-medium text-foreground">
-            {isKenya ? 'County' : 'Region / State / Province'}
+            {role === 'contractor'
+              ? (isKenya ? 'HQ County (optional)' : 'HQ Region (optional)')
+              : (isKenya ? 'County *' : 'Region / State / Province *')}
           </label>
           {isKenya ? (
             <Select value={formData.county} onValueChange={(v) => onInputChange('county', v)}>
               <SelectTrigger disabled={isLoading}>
-                <SelectValue placeholder="Select county" />
+                <SelectValue placeholder={role === 'contractor' ? 'Select HQ county' : 'Select your county'} />
               </SelectTrigger>
               <SelectContent className="max-h-60">
                 {KENYA_COUNTIES.map(c => (
@@ -194,11 +212,24 @@ const RegistrationStep1: React.FC<RegistrationStep1Props> = ({
             </Select>
           ) : (
             <Input
-              placeholder={role === 'contractor' ? 'City / Region of operation' : 'Your region or state'}
+              placeholder={role === 'contractor' ? 'City / Region of HQ' : 'Your region or state'}
               value={formData.county}
               onChange={(e) => onInputChange('county', e.target.value)}
               disabled={isLoading}
+              required={countyRequired}
             />
+          )}
+          {countyRequired && (
+            <p className="text-[11px] text-muted-foreground">
+              {role === 'government'
+                ? 'Your jurisdiction. Permanent — only an admin can change it later.'
+                : 'Your home county. Permanent — only an admin can change it later.'}
+            </p>
+          )}
+          {role === 'contractor' && (
+            <p className="text-[11px] text-muted-foreground">
+              Informational only — you can bid on projects nationwide.
+            </p>
           )}
         </div>
 
