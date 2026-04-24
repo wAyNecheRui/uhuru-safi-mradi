@@ -9,6 +9,7 @@ export const useGovernmentDashboard = () => {
   const [pendingApprovals, setPendingApprovals] = useState([]);
   const [activeProjects, setActiveProjects] = useState([]);
   const [assignedCounties, setAssignedCounties] = useState<string[]>([]);
+  const [viewAllCounties, setViewAllCounties] = useState<boolean>(false);
   const [budgetOverview, setBudgetOverview] = useState({
     totalAllocated: 'KES 0',
     totalSpent: 'KES 0', 
