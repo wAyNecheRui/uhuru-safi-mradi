@@ -19,7 +19,16 @@ import { useResponsive } from '@/hooks/useResponsive';
 import { useProjectStats } from '@/hooks/useProjectStats';
 import { useRecentIssues } from '@/hooks/useRecentIssues';
 import { useProfile } from '@/hooks/useProfile';
-import { getRootCounty } from '@/utils/countyHelpers';
+
+const getRootCounty = (name: string): string => {
+  if (!name) return '';
+  return name.toLowerCase()
+    .replace(/\s+county$/i, '')
+    .replace(/\s+sub[- ]?county$/i, '')
+    .replace(/\s+ward$/i, '')
+    .trim()
+    .replace(/\b\w/g, c => c.toUpperCase());
+};
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('overview');
