@@ -18,8 +18,11 @@ import {
   Filter,
   Info,
   Search,
-  ChevronDown
+  ChevronDown,
+  Globe2,
+  Scale,
 } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
 import { supabase } from '@/integrations/supabase/client';
