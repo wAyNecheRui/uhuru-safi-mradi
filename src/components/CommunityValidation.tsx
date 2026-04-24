@@ -109,20 +109,42 @@ const CommunityValidation = () => {
       setLoading(true);
       const rootCounty = getRootCounty(countyName);
 
+      // Validation phase = reports still gathering community input.
+      // Includes 'pending' (awaiting threshold) AND 'under_review' (just crossed threshold,
+      // still useful for citizens to see + vote on).
       const { data, error } = await supabase
         .from('problem_reports')
         .select(`
           *,
-          community_votes(user_id, vote_type),
-          profiles:reported_by(full_name)
+          community_votes(user_id, vote_type)
         `)
-        .eq('status', WORKFLOW_STATUS.PENDING)
-        .ilike('location', `%${rootCounty}%`)
+        .in('status', [WORKFLOW_STATUS.PENDING, WORKFLOW_STATUS.UNDER_REVIEW])
+        .is('deleted_at', null)
         .order('priority_score', { ascending: false });
 
       if (error) throw error;
 
-      const formatted = (data || []).map(report => {
+      // Filter by county using the structured `county` column (preferred),
+      // falling back to free-text `location` for legacy reports without a tagged county.
+      const countyMatched = (data || []).filter((r: any) => {
+        const reportCountyRoot = r.county ? getRootCounty(r.county) : null;
+        if (reportCountyRoot) return reportCountyRoot === rootCounty;
+        // Legacy fallback: only when county column is empty
+        return typeof r.location === 'string' && r.location.toLowerCase().includes(rootCounty);
+      });
+
+      // Resolve reporter names via a single lookup (no FK relationship to user_profiles)
+      const reporterIds = Array.from(new Set(countyMatched.map((r: any) => r.reported_by).filter(Boolean)));
+      let nameMap = new Map<string, string>();
+      if (reporterIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('user_profiles')
+          .select('user_id, full_name')
+          .in('user_id', reporterIds);
+        nameMap = new Map((profiles || []).map((p: any) => [p.user_id, p.full_name || 'Anonymous']));
+      }
+
+      const formatted = countyMatched.map((report: any) => {
         const userVote = report.community_votes?.find((v: any) => v.user_id === user?.id);
         const upvotes = report.community_votes?.filter((v: any) => v.vote_type === 'upvote').length || 0;
         const downvotes = report.community_votes?.filter((v: any) => v.vote_type === 'downvote').length || 0;
@@ -130,7 +152,7 @@ const CommunityValidation = () => {
         return {
           ...report,
           user_vote: (userVote?.vote_type as 'upvote' | 'downvote') || null,
-          reporter_name: (report as any).profiles?.full_name || 'Anonymous',
+          reporter_name: nameMap.get(report.reported_by) || 'Anonymous',
           upvotes,
           downvotes,
           can_vote: true,
@@ -177,12 +199,22 @@ const CommunityValidation = () => {
         .from('problem_reports')
         .select(`
           *,
-          community_votes(user_id, vote_type),
-          profiles:reported_by(full_name)
+          community_votes(user_id, vote_type)
         `)
         .in('id', reportIds);
 
       if (reportsError) throw reportsError;
+
+      // Resolve reporter names via separate lookup (no FK relationship)
+      const reporterIds = Array.from(new Set((reports || []).map((r: any) => r.reported_by).filter(Boolean)));
+      let nameMap = new Map<string, string>();
+      if (reporterIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('user_profiles')
+          .select('user_id, full_name')
+          .in('user_id', reporterIds);
+        nameMap = new Map((profiles || []).map((p: any) => [p.user_id, p.full_name || 'Anonymous']));
+      }
 
       const profileRoot = userProfile?.county ? getRootCounty(userProfile.county) : null;
       const reportsWithVotes = (reports || []).map(report => {
@@ -191,7 +223,7 @@ const CommunityValidation = () => {
         return {
           ...report,
           user_vote: (report.community_votes?.find((v: any) => v.user_id === user.id)?.vote_type as 'upvote' | 'downvote') || null,
-          reporter_name: (report as any).profiles?.full_name || 'Anonymous',
+          reporter_name: nameMap.get((report as any).reported_by) || 'Anonymous',
           upvotes: report.community_votes?.filter((v: any) => v.vote_type === 'upvote').length || 0,
           downvotes: report.community_votes?.filter((v: any) => v.vote_type === 'downvote').length || 0,
           can_vote: true,
@@ -355,7 +387,21 @@ const CommunityValidation = () => {
       {activeLoading && filteredReports.length === 0 ? (
         <Card><CardContent className="p-12 text-center"><Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-green-600" /><div className="text-gray-500">Loading reports...</div></CardContent></Card>
       ) : filteredReports.length === 0 ? (
-        <Card><CardContent className="p-12 text-center"><CheckCircle className="h-12 w-12 text-gray-300 mx-auto mb-4" /><h3 className="text-lg font-semibold text-gray-900 mb-2">No Reports Found</h3><p className="text-gray-600">Try adjusting your filters.</p></CardContent></Card>
+        <Card>
+          <CardContent className="p-12 text-center">
+            <CheckCircle className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No reports awaiting validation</h3>
+            <p className="text-gray-600 max-w-md mx-auto">
+              {activeTab === 'profile' && userProfile?.county
+                ? `There are currently no reports in ${userProfile.county} County waiting for community votes. Reports already approved or in bidding have moved past this stage — check the "Track Progress" page to follow them.`
+                : activeTab === 'detected' && userLocation?.county
+                  ? `No active community-validation reports detected near your current location (${userLocation.county}).`
+                  : activeTab === 'votes'
+                    ? 'You have not voted on any reports yet. Vote on reports in your county tab to build your civic engagement record.'
+                    : 'Try adjusting your filters or check back later.'}
+            </p>
+          </CardContent>
+        </Card>
       ) : (
         <div className="grid gap-6">
           {filteredReports.map((report) => (
