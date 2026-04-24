@@ -1,9 +1,6 @@
 import React, { lazy, Suspense } from 'react';
 import type { MapMarker } from './InteractiveMap';
 
-// Lazy-load the heavy MapLibre bundle (~216 kB gzipped).
-// This pulls vendor-maps out of the initial chunk and only fetches it
-// the first time a map is actually rendered — major win for 3G users.
 const InteractiveMap = lazy(() => import('./InteractiveMap'));
 
 interface InteractiveMapLazyProps {
@@ -13,6 +10,10 @@ interface InteractiveMapLazyProps {
   height?: string;
   onMarkerClick?: (marker: MapMarker) => void;
   className?: string;
+  cluster?: boolean;
+  highlightedId?: string | null;
+  fitToMarkers?: boolean;
+  showLocateMe?: boolean;
 }
 
 const MapFallback: React.FC<{ height?: string }> = ({ height = '400px' }) => (
