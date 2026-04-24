@@ -12,7 +12,7 @@ import {
   Shield, CheckCircle, Clock, AlertTriangle, Users, Wallet, FileText, 
   Gavel, Loader2, Eye, Briefcase, BarChart3, Award,
   ClipboardCheck, UserCog, Building2, Scale, Globe, Lock, FolderOpen, Image,
-  PlayCircle, XCircle
+  PlayCircle, XCircle, MapPin, Globe2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
