@@ -137,7 +137,7 @@ export const useGovernmentDashboard = () => {
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [toast, viewAllCounties]);
 
   // Set up real-time subscriptions for live updates
   useRealtimeSubscription({
