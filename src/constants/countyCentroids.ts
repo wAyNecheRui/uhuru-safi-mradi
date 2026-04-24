@@ -60,6 +60,54 @@ export const getCountyCentroid = (county: string | null | undefined): [number, n
   return COUNTY_CENTROIDS[key] || KENYA_CENTER;
 };
 
+/**
+ * Title-case a county key from the centroid map (e.g. "trans nzoia" -> "Trans Nzoia").
+ */
+const titleCaseCounty = (key: string): string =>
+  key
+    .split(' ')
+    .map((part) =>
+      part
+        .split('-')
+        .map((p) => (p.length ? p[0].toUpperCase() + p.slice(1) : p))
+        .join('-')
+    )
+    .join(' ');
+
+/**
+ * Find the nearest Kenyan county for a given GPS coordinate using centroid distance.
+ * Returns the county name in display form, or null if input is invalid.
+ * Used as the offline GPS -> county resolver for cross-county reporting.
+ */
+export const findNearestCounty = (
+  lat: number | null | undefined,
+  lon: number | null | undefined
+): string | null => {
+  if (lat === null || lat === undefined || lon === null || lon === undefined) return null;
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+  // Sanity check: roughly within Kenya's bounding box (with margin)
+  if (lat < -6 || lat > 6 || lon < 32 || lon > 43) return null;
+
+  let bestKey: string | null = null;
+  let bestDist = Infinity;
+
+  for (const [key, [cLat, cLon]] of Object.entries(COUNTY_CENTROIDS)) {
+    // Squared planar distance is fine for nearest-neighbour ranking
+    const dLat = lat - cLat;
+    const dLon = lon - cLon;
+    const d = dLat * dLat + dLon * dLon;
+    if (d < bestDist) {
+      bestDist = d;
+      bestKey = key;
+    }
+  }
+
+  if (!bestKey) return null;
+  // Prefer canonical hyphenated forms (e.g. "trans-nzoia") over duplicates
+  if (bestKey === 'trans nzoia') bestKey = 'trans-nzoia';
+  return titleCaseCounty(bestKey);
+};
+
 // Parse a Postgres point type "(lng,lat)" or various lat,lng formats into [lat, lng]
 export const parseGpsPoint = (raw: unknown): [number, number] | null => {
   if (!raw) return null;

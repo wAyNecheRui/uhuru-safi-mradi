@@ -124,18 +124,14 @@ export const useProblemReporting = () => {
       return;
     }
 
-    // Location Architecture: hard-block out-of-county reports for citizens
+    // Cross-county reporting allowed (per Location Architecture v3):
+    // Citizens can report problems anywhere they physically are.
+    // The report is tagged to the county detected from GPS, not their home county.
+    // Voting eligibility is still restricted to the report's county (RLS-enforced).
+    // The DB trigger enforces a soft cap of 3 cross-county reports per 24h.
     const registeredCounty = userProfile?.county?.trim();
-    const reportCounty = reportData.county?.trim();
     if (!registeredCounty) {
-      toast.error('Please set your registered county in your profile before reporting.');
-      return;
-    }
-    if (reportCounty && reportCounty.toLowerCase() !== registeredCounty.toLowerCase()) {
-      toast.error(
-        `You can only report issues inside ${registeredCounty}. Detected county: ${reportCounty}.`,
-        { duration: 7000 }
-      );
+      toast.error('Please set your registered (home) county in your profile before reporting.');
       return;
     }
 
@@ -170,7 +166,8 @@ export const useProblemReporting = () => {
       // Derive display location from structured fields
       const displayLocation = [reportData.ward, reportData.constituency, `${reportData.county} County`].filter(Boolean).join(', ');
 
-      // Submit the report via WorkflowService with structured location
+      // Submit the report — county comes from GPS detection, NOT from the user's home county.
+      // This allows cross-county reporting (Location Architecture v3).
       const report = await WorkflowService.submitProblemReport({
         title: reportData.title,
         description: reportData.description,
@@ -180,12 +177,20 @@ export const useProblemReporting = () => {
         estimated_cost: reportData.estimatedCost ? parseFloat(reportData.estimatedCost) : undefined,
         affected_population: reportData.affectedPopulation ? parseInt(reportData.affectedPopulation) : undefined,
         photo_urls: photoUrls,
-        county: registeredCounty,
+        county: reportData.county || registeredCounty,
         constituency: reportData.constituency || undefined,
         ward: reportData.ward || undefined,
       });
 
-      toast.success('Problem report submitted successfully!');
+      const isCrossCounty =
+        reportData.county &&
+        reportData.county.toLowerCase() !== registeredCounty.toLowerCase();
+
+      toast.success(
+        isCrossCounty
+          ? `Report submitted to ${reportData.county} County. Officials there will see it.`
+          : 'Problem report submitted successfully!'
+      );
 
       // Reset form
       setReportData({ ...emptyReportData });
@@ -193,7 +198,15 @@ export const useProblemReporting = () => {
       navigate('/citizen/track');
     } catch (error: any) {
       console.error('Submit error:', error);
-      toast.error(`Failed to submit report: ${error.message}`);
+      const msg = String(error?.message || '');
+      if (msg.includes('Daily limit reached') || msg.includes('cross-county')) {
+        toast.error(
+          `Daily cross-county limit reached: max 3 reports outside your home county per 24 hours. Please try again tomorrow.`,
+          { duration: 8000 }
+        );
+      } else {
+        toast.error(`Failed to submit report: ${error.message}`);
+      }
     } finally {
       setIsSubmitting(false);
     }

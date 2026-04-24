@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Map, MapPin, Loader2, CheckCircle, AlertTriangle, RefreshCw, ShieldAlert } from 'lucide-react';
+import { Map, MapPin, Loader2, CheckCircle, AlertTriangle, RefreshCw, Plane } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ReportData } from '@/types/problemReporting';
 import { getFullLocationByCoordinates } from '@/constants/kenyaAdminData';
 import { useProfile } from '@/hooks/useProfile';
+import { findNearestCounty } from '@/constants/countyCentroids';
 
 interface LocationSectionProps {
   reportData: ReportData;
@@ -59,7 +60,13 @@ const LocationSection = ({ reportData, onInputChange, onLocationDataChange }: Lo
           // Normalize 'Nairobi County' to 'Nairobi'
           let county = countyRaw.replace(/county/i, '').trim();
 
-          // OSM is highly accurate, but sometimes in rural areas ward might be empty. That's fine.
+          // Centroid fallback: if OSM didn't give us a county, snap to the nearest Kenyan county.
+          // This guarantees every GPS point in Kenya resolves to a valid county.
+          if (!county) {
+            const nearest = findNearestCounty(latitude, longitude);
+            if (nearest) county = nearest;
+          }
+
           if (county) {
             const locationString = [ward, constituency, `${county} County`].filter(Boolean).join(', ');
             onInputChange('location', locationString);
@@ -76,16 +83,34 @@ const LocationSection = ({ reportData, onInputChange, onLocationDataChange }: Lo
             }
             setGpsState('success');
           } else {
-            // Fallback to just coordinates if no county found
+            // GPS is outside Kenya — block per policy
             onInputChange('coordinates', coords);
             setGpsState('error');
-            setErrorMsg('Could not determine administrative details from GPS.');
+            setErrorMsg('Your GPS location is outside Kenya. Reports must be filed from within Kenya.');
           }
         } catch (err) {
           console.error('OSM Error:', err);
-          onInputChange('coordinates', coords);
-          setGpsState('error');
-          setErrorMsg('Network error while detecting location.');
+          // Network failure: still try the offline centroid resolver so reporting works on poor connections
+          const nearest = findNearestCounty(latitude, longitude);
+          if (nearest) {
+            const locationString = `${nearest} County`;
+            onInputChange('location', locationString);
+            onInputChange('coordinates', coords);
+            if (onLocationDataChange) {
+              onLocationDataChange({
+                county: nearest,
+                constituency: '',
+                ward: '',
+                gpsVerified: true,
+                coordinates: coords,
+              });
+            }
+            setGpsState('success');
+          } else {
+            onInputChange('coordinates', coords);
+            setGpsState('error');
+            setErrorMsg('Network error while detecting location and your GPS appears to be outside Kenya.');
+          }
         }
       },
       (error) => {
@@ -164,10 +189,10 @@ const LocationSection = ({ reportData, onInputChange, onLocationDataChange }: Lo
             </div>
 
             {isOutOfCounty && (
-              <Alert variant="destructive">
-                <ShieldAlert className="h-4 w-4" />
+              <Alert className="border-primary/40 bg-primary/5">
+                <Plane className="h-4 w-4 text-primary" />
                 <AlertDescription className="text-xs">
-                  <strong>Out of jurisdiction.</strong> You are registered in <strong>{registeredCounty}</strong> but your GPS shows <strong>{detectedCounty}</strong>. You can only report issues inside your registered county. Move to {registeredCounty} or update your county via an administrator.
+                  <strong>Reporting away from home.</strong> You're registered in <strong>{registeredCounty}</strong> but your GPS shows <strong>{detectedCounty}</strong>. This report will be tagged to <strong>{detectedCounty}</strong> so the right county officials see it. You won't be able to vote on it (only {detectedCounty} residents can). Limit: 3 cross-county reports per day.
                 </AlertDescription>
               </Alert>
             )}
