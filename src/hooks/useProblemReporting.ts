@@ -166,7 +166,8 @@ export const useProblemReporting = () => {
       // Derive display location from structured fields
       const displayLocation = [reportData.ward, reportData.constituency, `${reportData.county} County`].filter(Boolean).join(', ');
 
-      // Submit the report via WorkflowService with structured location
+      // Submit the report — county comes from GPS detection, NOT from the user's home county.
+      // This allows cross-county reporting (Location Architecture v3).
       const report = await WorkflowService.submitProblemReport({
         title: reportData.title,
         description: reportData.description,
@@ -176,12 +177,20 @@ export const useProblemReporting = () => {
         estimated_cost: reportData.estimatedCost ? parseFloat(reportData.estimatedCost) : undefined,
         affected_population: reportData.affectedPopulation ? parseInt(reportData.affectedPopulation) : undefined,
         photo_urls: photoUrls,
-        county: registeredCounty,
+        county: reportData.county || registeredCounty,
         constituency: reportData.constituency || undefined,
         ward: reportData.ward || undefined,
       });
 
-      toast.success('Problem report submitted successfully!');
+      const isCrossCounty =
+        reportData.county &&
+        reportData.county.toLowerCase() !== registeredCounty.toLowerCase();
+
+      toast.success(
+        isCrossCounty
+          ? `Report submitted to ${reportData.county} County. Officials there will see it.`
+          : 'Problem report submitted successfully!'
+      );
 
       // Reset form
       setReportData({ ...emptyReportData });
@@ -189,7 +198,15 @@ export const useProblemReporting = () => {
       navigate('/citizen/track');
     } catch (error: any) {
       console.error('Submit error:', error);
-      toast.error(`Failed to submit report: ${error.message}`);
+      const msg = String(error?.message || '');
+      if (msg.includes('Daily limit reached') || msg.includes('cross-county')) {
+        toast.error(
+          `Daily cross-county limit reached: max 3 reports outside your home county per 24 hours. Please try again tomorrow.`,
+          { duration: 8000 }
+        );
+      } else {
+        toast.error(`Failed to submit report: ${error.message}`);
+      }
     } finally {
       setIsSubmitting(false);
     }
