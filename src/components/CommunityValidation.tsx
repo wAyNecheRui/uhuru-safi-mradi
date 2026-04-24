@@ -301,13 +301,44 @@ const CommunityValidation = () => {
         </CardHeader>
       </Card>
 
-      <Tabs value={activeTab} onValueChange={(val) => { setActiveTab(val); setSelectedCategory('all'); }} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 bg-white shadow rounded-lg overflow-hidden">
-          <TabsTrigger value="votes" className="data-[state=active]:bg-green-600 data-[state=active]:text-white"><ThumbsUp className="h-4 w-4 mr-2" /> My Votes ({allValidatedReports.length})</TabsTrigger>
-          <TabsTrigger value="profile" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white" disabled={!userProfile?.county}><MapPin className="h-4 w-4 mr-2" /> {userProfile?.county || 'My County'} ({profileCountyReports.length})</TabsTrigger>
-          <TabsTrigger value="detected" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white" disabled={!userLocation?.county}><Navigation className="h-4 w-4 mr-2" /> {userLocation?.county || 'Detected'} ({detectedCountyReports.length})</TabsTrigger>
-        </TabsList>
-      </Tabs>
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <Tabs value={activeTab} onValueChange={(val) => { setActiveTab(val); setSelectedCategory('all'); }} className="flex-1 min-w-[260px]">
+          <TabsList className={`grid w-full bg-white shadow rounded-lg overflow-hidden ${showNationwide ? 'grid-cols-3' : 'grid-cols-1'}`}>
+            <TabsTrigger value="profile" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white" disabled={!userProfile?.county}>
+              <MapPin className="h-4 w-4 mr-2" /> {userProfile?.county || 'My County'} ({profileCountyReports.length})
+            </TabsTrigger>
+            {showNationwide && (
+              <>
+                <TabsTrigger value="detected" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white" disabled={!userLocation?.county}>
+                  <Navigation className="h-4 w-4 mr-2" /> {userLocation?.county || 'Detected'} ({detectedCountyReports.length})
+                </TabsTrigger>
+                <TabsTrigger value="votes" className="data-[state=active]:bg-green-600 data-[state=active]:text-white">
+                  <ThumbsUp className="h-4 w-4 mr-2" /> My Votes ({allValidatedReports.length})
+                </TabsTrigger>
+              </>
+            )}
+          </TabsList>
+        </Tabs>
+        <Button
+          variant={showNationwide ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => {
+            const next = !showNationwide;
+            setShowNationwide(next);
+            if (!next) setActiveTab('profile');
+          }}
+          className="whitespace-nowrap"
+        >
+          <Globe2 className="h-4 w-4 mr-2" />
+          {showNationwide ? 'Hide nationwide' : 'Show nationwide'}
+        </Button>
+      </div>
+      {showNationwide && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs text-amber-900 flex items-start gap-2">
+          <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
+          <span>Out-of-county votes are weighted at <strong>0.3x</strong> to keep local voices decisive on local issues.</span>
+        </div>
+      )}
 
       <div className="space-y-4">
         <div className="relative">
