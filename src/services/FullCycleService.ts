@@ -174,7 +174,6 @@ export interface ContractorRegistration {
   years_in_business: number;
   number_of_employees: number;
   specialization: string[];
-  registered_counties: string[];
   max_project_capacity: number;
   is_agpo: boolean;
   agpo_category?: string;
@@ -223,7 +222,6 @@ export class ContractorVerificationCycle {
           years_in_business: data.years_in_business,
           number_of_employees: data.number_of_employees,
           specialization: data.specialization,
-          registered_counties: data.registered_counties,
           max_project_capacity: data.max_project_capacity,
           is_agpo: data.is_agpo,
           agpo_category: data.agpo_category,

@@ -279,12 +279,9 @@ const GovernmentContractorManagement = () => {
                           <p className="text-sm text-gray-500">
                             {contractor.years_in_business} years in business • {contractor.number_of_employees || 0} employees
                           </p>
-                          {contractor.registered_counties && contractor.registered_counties.length > 0 && (
-                            <p className="text-xs text-gray-500 mt-1">
-                              Service Areas: {contractor.registered_counties.slice(0, 3).join(', ')}
-                              {contractor.registered_counties.length > 3 && ` +${contractor.registered_counties.length - 3} more`}
-                            </p>
-                          )}
+                          <p className="text-xs text-gray-500 mt-1">
+                            Service Coverage: Nationwide
+                          </p>
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
                           {contractor.verified ? (
