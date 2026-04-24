@@ -199,12 +199,22 @@ const CommunityValidation = () => {
         .from('problem_reports')
         .select(`
           *,
-          community_votes(user_id, vote_type),
-          profiles:reported_by(full_name)
+          community_votes(user_id, vote_type)
         `)
         .in('id', reportIds);
 
       if (reportsError) throw reportsError;
+
+      // Resolve reporter names via separate lookup (no FK relationship)
+      const reporterIds = Array.from(new Set((reports || []).map((r: any) => r.reported_by).filter(Boolean)));
+      let nameMap = new Map<string, string>();
+      if (reporterIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('user_profiles')
+          .select('user_id, full_name')
+          .in('user_id', reporterIds);
+        nameMap = new Map((profiles || []).map((p: any) => [p.user_id, p.full_name || 'Anonymous']));
+      }
 
       const profileRoot = userProfile?.county ? getRootCounty(userProfile.county) : null;
       const reportsWithVotes = (reports || []).map(report => {
@@ -213,7 +223,7 @@ const CommunityValidation = () => {
         return {
           ...report,
           user_vote: (report.community_votes?.find((v: any) => v.user_id === user.id)?.vote_type as 'upvote' | 'downvote') || null,
-          reporter_name: (report as any).profiles?.full_name || 'Anonymous',
+          reporter_name: nameMap.get((report as any).reported_by) || 'Anonymous',
           upvotes: report.community_votes?.filter((v: any) => v.vote_type === 'upvote').length || 0,
           downvotes: report.community_votes?.filter((v: any) => v.vote_type === 'downvote').length || 0,
           can_vote: true,
