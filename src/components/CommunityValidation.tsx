@@ -75,9 +75,10 @@ const CommunityValidation = () => {
   const [loadingDetected, setLoadingDetected] = useState(false);
 
   const [votingState, setVotingState] = useState<{ [key: string]: boolean }>({});
-  const [activeTab, setActiveTab] = useState('votes');
+  const [activeTab, setActiveTab] = useState('profile');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [showNationwide, setShowNationwide] = useState(false);
 
   const {
     userLocation,
