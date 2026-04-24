@@ -60,7 +60,13 @@ const LocationSection = ({ reportData, onInputChange, onLocationDataChange }: Lo
           // Normalize 'Nairobi County' to 'Nairobi'
           let county = countyRaw.replace(/county/i, '').trim();
 
-          // OSM is highly accurate, but sometimes in rural areas ward might be empty. That's fine.
+          // Centroid fallback: if OSM didn't give us a county, snap to the nearest Kenyan county.
+          // This guarantees every GPS point in Kenya resolves to a valid county.
+          if (!county) {
+            const nearest = findNearestCounty(latitude, longitude);
+            if (nearest) county = nearest;
+          }
+
           if (county) {
             const locationString = [ward, constituency, `${county} County`].filter(Boolean).join(', ');
             onInputChange('location', locationString);
@@ -77,16 +83,34 @@ const LocationSection = ({ reportData, onInputChange, onLocationDataChange }: Lo
             }
             setGpsState('success');
           } else {
-            // Fallback to just coordinates if no county found
+            // GPS is outside Kenya — block per policy
             onInputChange('coordinates', coords);
             setGpsState('error');
-            setErrorMsg('Could not determine administrative details from GPS.');
+            setErrorMsg('Your GPS location is outside Kenya. Reports must be filed from within Kenya.');
           }
         } catch (err) {
           console.error('OSM Error:', err);
-          onInputChange('coordinates', coords);
-          setGpsState('error');
-          setErrorMsg('Network error while detecting location.');
+          // Network failure: still try the offline centroid resolver so reporting works on poor connections
+          const nearest = findNearestCounty(latitude, longitude);
+          if (nearest) {
+            const locationString = `${nearest} County`;
+            onInputChange('location', locationString);
+            onInputChange('coordinates', coords);
+            if (onLocationDataChange) {
+              onLocationDataChange({
+                county: nearest,
+                constituency: '',
+                ward: '',
+                gpsVerified: true,
+                coordinates: coords,
+              });
+            }
+            setGpsState('success');
+          } else {
+            onInputChange('coordinates', coords);
+            setGpsState('error');
+            setErrorMsg('Network error while detecting location and your GPS appears to be outside Kenya.');
+          }
         }
       },
       (error) => {
