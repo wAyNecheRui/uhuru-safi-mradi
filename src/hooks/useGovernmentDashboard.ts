@@ -251,6 +251,8 @@ export const useGovernmentDashboard = () => {
     pendingApprovals,
     activeProjects,
     assignedCounties,
+    viewAllCounties,
+    setViewAllCounties,
     budgetOverview,
     loading,
     handleApproval,
