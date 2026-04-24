@@ -19,7 +19,7 @@ function toRad(deg: number) {
   return (deg * Math.PI) / 180;
 }
 
-/** Server-side milestone proximity check (10km) */
+/** Server-side milestone proximity check (3km — Location Architecture v2) */
 export async function canVerifyMilestone(
   userLat: number, userLon: number, milestoneId: string
 ): Promise<boolean> {
