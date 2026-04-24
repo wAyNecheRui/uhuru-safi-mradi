@@ -133,10 +133,12 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
           </div>
 
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-slate-700">County</label>
+            <label className="block text-sm font-medium text-slate-700">
+              {formData.type === 'contractor' ? 'HQ County (optional)' : 'County *'}
+            </label>
             <Select value={formData.county} onValueChange={(value) => onInputChange('county', value)}>
               <SelectTrigger disabled={isLoading}>
-                <SelectValue placeholder="Select county (optional)" />
+                <SelectValue placeholder={formData.type === 'contractor' ? 'Select HQ county' : 'Select your county'} />
               </SelectTrigger>
               <SelectContent className="max-h-60">
                 {KENYA_COUNTIES.map(county => (
@@ -144,6 +146,11 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
                 ))}
               </SelectContent>
             </Select>
+            {formData.type !== 'contractor' && (
+              <p className="text-[11px] text-slate-500">
+                Permanent — only an admin can change it later.
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -372,9 +379,9 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
           ) : (
             <>
               <li>Your National ID/Passport number will be verified against government records.</li>
-              <li>County selection at registration is based on your residence.</li>
+              <li>County selection at registration is based on your residence and is permanent.</li>
               <li>
-                {formData.type === 'contractor' && 'After verification, you can register for additional counties.'}
+                {formData.type === 'contractor' && 'Contractors can bid on projects nationwide regardless of HQ county.'}
                 {formData.type === 'government' && 'County assignments are managed by system administrators.'}
               </li>
               <li>False information may result in account suspension and legal action.</li>
