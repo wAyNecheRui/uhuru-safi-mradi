@@ -36,11 +36,12 @@ const GovernmentApprovalDashboard = () => {
   const [budgetAmount, setBudgetAmount] = useState('');
   const [processing, setProcessing] = useState(false);
   const [assignedCounties, setAssignedCounties] = useState<string[]>([]);
+  const [viewAllCounties, setViewAllCounties] = useState<boolean>(false);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchPendingReports();
-  }, []);
+  }, [viewAllCounties]);
 
   const fetchPendingReports = async () => {
     try {
