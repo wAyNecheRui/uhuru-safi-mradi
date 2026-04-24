@@ -130,7 +130,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
           id: m.id,
           title: m.title,
           status: m.status || 'pending',
-          color: getStatusColor(m.status),
+          color: getMarkerColor(m),
           isApproximate: m.isApproximate ? 1 : 0,
         },
         geometry: { type: 'Point' as const, coordinates: [m.lng, m.lat] },
@@ -288,7 +288,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
     const bounds = new maplibregl.LngLatBounds();
 
     validMarkers.forEach(marker => {
-      const color = getStatusColor(marker.status);
+      const color = getMarkerColor(marker);
       const opacity = marker.isApproximate ? 0.7 : 1;
       const ring = marker.isApproximate
         ? `box-shadow: 0 0 0 4px ${color}33, 0 2px 8px rgba(0,0,0,0.3);`
@@ -370,7 +370,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
 };
 
 function buildPopupHtml(marker: MapMarker): string {
-  const color = getStatusColor(marker.status);
+  const color = getMarkerColor(marker);
   const budgetStr = typeof marker.budget === 'number'
     ? `KES ${marker.budget.toLocaleString()}`
     : marker.budget || '';
