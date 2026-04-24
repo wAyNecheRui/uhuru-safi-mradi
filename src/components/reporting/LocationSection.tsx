@@ -163,7 +163,16 @@ const LocationSection = ({ reportData, onInputChange, onLocationDataChange }: Lo
               )}
             </div>
 
-            <Button variant="ghost" size="sm" onClick={detectLocation} className="text-xs text-muted-foreground">
+            {isOutOfCounty && (
+              <Alert variant="destructive">
+                <ShieldAlert className="h-4 w-4" />
+                <AlertDescription className="text-xs">
+                  <strong>Out of jurisdiction.</strong> You are registered in <strong>{registeredCounty}</strong> but your GPS shows <strong>{detectedCounty}</strong>. You can only report issues inside your registered county. Move to {registeredCounty} or update your county via an administrator.
+                </AlertDescription>
+              </Alert>
+            )}
+
+
               <RefreshCw className="h-3 w-3 mr-1" />
               Re-detect location
             </Button>
