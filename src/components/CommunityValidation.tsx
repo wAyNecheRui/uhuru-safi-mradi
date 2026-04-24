@@ -380,6 +380,28 @@ const ReportCard = ({ report, user, votingState, handleVote, userLocation, forma
                   {report.distance_km != null && <Badge className="bg-blue-100 text-blue-800"><Navigation className="h-3 w-3 mr-1" /> {formatDistance(report.distance_km)} away</Badge>}
                   <Badge className={getPriorityColor(report.priority)}>{report.priority.toUpperCase()}</Badge>
                   <Badge variant="outline" className="bg-slate-50">{report.category || 'Other'}</Badge>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge
+                          variant="outline"
+                          className={
+                            report.is_in_county
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200 cursor-help'
+                              : 'bg-amber-50 text-amber-800 border-amber-200 cursor-help'
+                          }
+                        >
+                          <Scale className="h-3 w-3 mr-1" />
+                          {report.is_in_county ? '1.0× vote weight' : '0.3× vote weight'}
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-[240px] text-xs">
+                        {report.is_in_county
+                          ? 'This report is in your registered county — your vote counts at full weight.'
+                          : 'This report is outside your registered county — your vote counts at 30% to keep local voices decisive on local issues.'}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </div>
               </div>
               <Badge variant="outline" className="text-[10px] text-gray-400">#{report.id.substring(0, 8)}</Badge>
