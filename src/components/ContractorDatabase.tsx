@@ -78,7 +78,7 @@ const ContractorDatabase = () => {
             id: profile.id,
             name: profile.company_name || 'Contractor',
             category: getCanonicalLabel(profile.specialization?.[0]),
-            location: profile.registered_counties?.[0] || 'Kenya',
+            location: 'Nationwide',
             rating: avgRating,
             reviewCount: realRating?.totalRatings || 0,
             specializations: profile.specialization || [],

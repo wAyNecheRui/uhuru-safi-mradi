@@ -42,7 +42,6 @@ interface ContractorDetails {
   verified: boolean;
   specialization: string[];
   years_in_business: number;
-  registered_counties: string[];
   is_agpo: boolean;
   agpo_category: string | null;
 }
@@ -252,15 +251,13 @@ const ContractorPortfolioModal: React.FC<ContractorPortfolioModalProps> = ({
                   </div>
                 )}
 
-                {/* Registered Counties */}
-                {contractor.registered_counties && contractor.registered_counties.length > 0 && (
-                  <div className="mt-3 flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm text-gray-600">
-                      {contractor.registered_counties.join(', ')}
-                    </span>
-                  </div>
-                )}
+                {/* Nationwide bidding indicator */}
+                <div className="mt-3 flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-gray-500" />
+                  <span className="text-sm text-gray-600">
+                    Available nationwide
+                  </span>
+                </div>
               </CardContent>
             </Card>
 

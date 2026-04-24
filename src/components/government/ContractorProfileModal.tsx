@@ -129,8 +129,8 @@ const ContractorProfileModal: React.FC<ContractorProfileModalProps> = ({
                 </div>
                 <div className="flex items-center gap-2">
                   <MapPin className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">Counties:</span>
-                  <span className="font-medium">{contractor.registered_counties?.join(', ') || 'N/A'}</span>
+                  <span className="text-muted-foreground">Coverage:</span>
+                  <span className="font-medium">Nationwide</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-muted-foreground">KRA PIN:</span>

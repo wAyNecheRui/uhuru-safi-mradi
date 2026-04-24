@@ -7,11 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { MapPin, Wallet, Users, Loader2, Save, Award, Building, Briefcase, Heart, Edit, CheckCircle } from 'lucide-react';
+import { Wallet, Users, Loader2, Save, Award, Building, Briefcase, Heart, Edit, CheckCircle, Globe } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { KENYA_COUNTIES } from '@/hooks/useLocationFiltering';
 
 type AGPOCategory = 'women' | 'youth' | 'pwd' | null;
 
@@ -22,7 +21,6 @@ const ContractorLocationSettings = () => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [hasExistingSettings, setHasExistingSettings] = useState(false);
   const [settings, setSettings] = useState({
-    registered_counties: [] as string[],
     max_project_capacity: 5000000,
     is_agpo: false,
     agpo_category: null as AGPOCategory,
@@ -41,7 +39,7 @@ const ContractorLocationSettings = () => {
     try {
       const { data, error } = await supabase
         .from('contractor_profiles')
-        .select('registered_counties, max_project_capacity, is_agpo, agpo_category, specialization, years_in_business, number_of_employees')
+        .select('max_project_capacity, is_agpo, agpo_category, specialization, years_in_business, number_of_employees')
         .eq('user_id', user?.id)
         .maybeSingle();
 
@@ -49,7 +47,6 @@ const ContractorLocationSettings = () => {
 
       if (data) {
         setSettings({
-          registered_counties: data.registered_counties || [],
           max_project_capacity: data.max_project_capacity || 5000000,
           is_agpo: data.is_agpo || false,
           agpo_category: (data.agpo_category as AGPOCategory) || null,
@@ -57,16 +54,14 @@ const ContractorLocationSettings = () => {
           years_in_business: data.years_in_business || 0,
           number_of_employees: data.number_of_employees || 0,
         });
-        // Check if user has saved settings before (has at least some data configured)
-        const hasSavedData = (data.registered_counties && data.registered_counties.length > 0) ||
-          data.is_agpo ||
+        const hasSavedData = data.is_agpo ||
           (data.specialization && data.specialization.length > 0) ||
           data.years_in_business > 0 ||
           data.number_of_employees > 0;
         setHasExistingSettings(hasSavedData);
-        setIsEditMode(!hasSavedData); // Start in edit mode only if no settings saved
+        setIsEditMode(!hasSavedData);
       } else {
-        setIsEditMode(true); // No profile yet, start in edit mode
+        setIsEditMode(true);
       }
     } catch (error) {
       console.error('Error fetching settings:', error);
@@ -78,7 +73,6 @@ const ContractorLocationSettings = () => {
   const handleSave = async () => {
     if (!user) return;
 
-    // Validate AGPO category if AGPO is enabled
     if (settings.is_agpo && !settings.agpo_category) {
       toast.error('Please select an AGPO category');
       return;
@@ -90,7 +84,6 @@ const ContractorLocationSettings = () => {
       const { error } = await supabase
         .from('contractor_profiles')
         .update({
-          registered_counties: settings.registered_counties,
           max_project_capacity: settings.max_project_capacity,
           is_agpo: settings.is_agpo,
           agpo_category: settings.is_agpo ? settings.agpo_category : null,
@@ -103,22 +96,13 @@ const ContractorLocationSettings = () => {
       if (error) throw error;
       toast.success('Settings saved successfully - Your profile will be visible to government officials during bid evaluation');
       setHasExistingSettings(true);
-      setIsEditMode(false); // Switch to view mode after save
+      setIsEditMode(false);
     } catch (error) {
       console.error('Error saving settings:', error);
       toast.error('Failed to save settings');
     } finally {
       setSaving(false);
     }
-  };
-
-  const toggleCounty = (county: string) => {
-    setSettings(prev => ({
-      ...prev,
-      registered_counties: prev.registered_counties.includes(county)
-        ? prev.registered_counties.filter(c => c !== county)
-        : [...prev.registered_counties, county],
-    }));
   };
 
   const getCapacityLabel = (capacity: number): string => {
@@ -166,11 +150,11 @@ const ContractorLocationSettings = () => {
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="flex items-center text-xl">
-              <MapPin className="h-5 w-5 mr-2 text-primary" />
-              Service Area & Capacity Settings
+              <Building className="h-5 w-5 mr-2 text-primary" />
+              Capacity & Specialization Settings
             </CardTitle>
             <p className="text-sm text-muted-foreground mt-1">
-              Configure which counties you specialize in and your project capacity for government bid evaluation.
+              Configure your company capacity and areas of expertise for government bid evaluation.
             </p>
           </div>
           {hasExistingSettings && !isEditMode && (
@@ -182,6 +166,17 @@ const ContractorLocationSettings = () => {
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Nationwide bidding notice */}
+        <div className="flex items-start gap-3 p-4 bg-primary/5 rounded-lg border border-primary/20">
+          <Globe className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-semibold text-sm">You can bid on projects nationwide</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Contractors are eligible to bid on any open project across all 47 counties. Your HQ county is informational only.
+            </p>
+          </div>
+        </div>
+
         {/* Company Info Section */}
         <div className="space-y-4 p-4 bg-muted/30 rounded-lg border">
           <div className="flex items-center gap-2 mb-2">
@@ -402,57 +397,6 @@ const ContractorLocationSettings = () => {
             Category: <Badge variant="outline">{getCapacityLabel(settings.max_project_capacity)}</Badge>
           </p>
         </div>
-
-        {/* County Selection */}
-        {!settings.is_agpo && (
-          <div className="space-y-3">
-            <Label className="font-medium">Registered Service Counties</Label>
-            <p className="text-xs text-muted-foreground">
-              {isEditMode ? "Select counties where you specialize. This helps in bid evaluation and profile visibility." : 'Counties where you are registered to provide services:'}
-            </p>
-
-            <div className="flex flex-wrap gap-2 mb-3">
-              {settings.registered_counties.map(county => (
-                <Badge key={county} variant="secondary">
-                  {county}
-                  {isEditMode && (
-                    <button
-                      onClick={() => toggleCounty(county)}
-                      className="ml-1 hover:text-destructive"
-                    >
-                      ×
-                    </button>
-                  )}
-                </Badge>
-              ))}
-              {settings.registered_counties.length === 0 && (
-                <span className="text-sm text-muted-foreground italic">
-                  No counties selected - you'll see all projects
-                </span>
-              )}
-            </div>
-
-            {isEditMode && (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 max-h-60 overflow-y-auto border rounded-lg p-3">
-                {KENYA_COUNTIES.map(county => (
-                  <div key={county} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={county}
-                      checked={settings.registered_counties.includes(county)}
-                      onCheckedChange={() => toggleCounty(county)}
-                    />
-                    <label
-                      htmlFor={county}
-                      className="text-sm cursor-pointer"
-                    >
-                      {county}
-                    </label>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
 
         {/* Action Buttons */}
         {isEditMode ? (

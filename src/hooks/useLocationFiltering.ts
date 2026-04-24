@@ -34,7 +34,6 @@ export interface ProblemWithDistance {
 }
 
 interface ContractorProfile {
-  registered_counties: string[];
   max_project_capacity: number;
   is_agpo: boolean;
 }

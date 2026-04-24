@@ -113,8 +113,7 @@ export const signUpUser = async (email: string, password: string, userData: Sign
           is_agpo: userData.is_agpo || false,
           agpo_category: userData.is_agpo ? userData.agpo_category : null,
           // NCA category stored in max_project_capacity based on NCA limits
-          max_project_capacity: getNCAMaxValue(userData.nca_category),
-          registered_counties: userData.county ? [userData.county] : []
+          max_project_capacity: getNCAMaxValue(userData.nca_category)
         });
       }
       
