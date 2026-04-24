@@ -281,12 +281,21 @@ const Profile = () => {
   // Form handlers
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const success = await updateProfile({
+    const isCountyLocked = user?.user_type === 'citizen' || user?.user_type === 'government';
+    const payload: any = {
       full_name: formData.full_name,
       phone_number: formData.phone_number,
-      location: formData.location,
-      county: formData.location
-    });
+    };
+    // Only contractors can change county; for locked roles, never include it
+    // in the update payload so the DB lock trigger is never tripped.
+    if (!isCountyLocked) {
+      payload.location = formData.location;
+      payload.county = formData.location;
+    } else {
+      // Allow updating non-county location string only if county already set
+      payload.location = formData.location;
+    }
+    const success = await updateProfile(payload);
     if (success) setEditing(false);
   };
 
@@ -620,13 +629,31 @@ const Profile = () => {
                               placeholder="+254 700 000 000" className="mt-1" required type="tel" />
                           </div>
                           <div>
-                            <Label className="text-xs font-medium">County *</Label>
-                            <Select value={formData.location} onValueChange={(v) => setFormData(p => ({ ...p, location: v }))}>
-                              <SelectTrigger className="mt-1"><SelectValue placeholder="Select county" /></SelectTrigger>
-                              <SelectContent>
-                                {counties.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                              </SelectContent>
-                            </Select>
+                            <Label className="text-xs font-medium flex items-center gap-1">
+                              {user?.user_type === 'contractor' ? 'HQ County (optional)' : 'County'}
+                              {(user?.user_type === 'citizen' || user?.user_type === 'government') && (
+                                <Shield className="h-3 w-3 text-muted-foreground" aria-label="Locked" />
+                              )}
+                            </Label>
+                            {(user?.user_type === 'citizen' || user?.user_type === 'government') ? (
+                              <>
+                                <Input
+                                  value={userProfile?.county || userProfile?.location || ''}
+                                  disabled
+                                  className="mt-1 bg-muted"
+                                />
+                                <p className="text-[11px] text-muted-foreground mt-1">
+                                  Permanent — contact an administrator to change.
+                                </p>
+                              </>
+                            ) : (
+                              <Select value={formData.location} onValueChange={(v) => setFormData(p => ({ ...p, location: v }))}>
+                                <SelectTrigger className="mt-1"><SelectValue placeholder="Select HQ county" /></SelectTrigger>
+                                <SelectContent>
+                                  {counties.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                                </SelectContent>
+                              </Select>
+                            )}
                           </div>
                           <div>
                             <Label className="text-xs font-medium">Email</Label>
@@ -646,12 +673,20 @@ const Profile = () => {
                           { label: 'Full Name', value: userProfile?.full_name, icon: <User className="h-4 w-4" /> },
                           { label: 'Email', value: user?.email, icon: <Mail className="h-4 w-4" /> },
                           { label: 'Phone', value: userProfile?.phone_number, icon: <Phone className="h-4 w-4" /> },
-                          { label: 'County', value: userProfile?.location || userProfile?.county, icon: <MapPin className="h-4 w-4" /> },
-                        ].map(({ label, value, icon }) => (
+                          {
+                            label: user?.user_type === 'contractor' ? 'HQ County' : 'County',
+                            value: userProfile?.location || userProfile?.county,
+                            icon: <MapPin className="h-4 w-4" />,
+                            locked: user?.user_type === 'citizen' || user?.user_type === 'government',
+                          },
+                        ].map(({ label, value, icon, locked }: any) => (
                           <div key={label} className="flex items-center gap-3 py-2">
                             <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-muted-foreground flex-shrink-0">{icon}</div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-xs text-muted-foreground">{label}</p>
+                              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                {label}
+                                {locked && <Shield className="h-3 w-3" aria-label="Locked" />}
+                              </p>
                               <p className="text-sm font-medium text-foreground">{value || 'Not set'}</p>
                             </div>
                           </div>

@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import FeedbackButton from '@/components/feedback/FeedbackButton';
 import OnboardingWizard from '@/components/onboarding/OnboardingWizard';
 import { ConsentBanner } from '@/components/privacy/ConsentBanner';
+import CountyAssignmentGate from '@/components/auth/CountyAssignmentGate';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -47,6 +48,7 @@ export function AppLayout({ children, className, userType: propUserType, userNam
       <div id="live-announcer" aria-live="polite" aria-atomic="true" className="sr-only" />
       <FeedbackButton />
       <ConsentBanner />
+      <CountyAssignmentGate />
       {showOnboarding && userType && (
         <OnboardingWizard
           userType={userType}

@@ -1,0 +1,118 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Loader2, MapPin, ShieldAlert } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useProfile } from '@/hooks/useProfile';
+import { supabase } from '@/integrations/supabase/client';
+import { KENYA_COUNTIES } from '@/constants/kenyaAdministrativeUnits';
+import { toast } from 'sonner';
+
+/**
+ * Forces citizens & government users to set their permanent county before
+ * they can use the app. Contractors are exempt — their county is optional.
+ *
+ * Backfills the ~25 legacy users who registered before the county-required rule.
+ * Once set, the database trigger `enforce_county_lock_and_sync` permanently
+ * locks the value (admin-only override).
+ */
+export const CountyAssignmentGate: React.FC = () => {
+  const { user } = useAuth();
+  const { userProfile, refreshProfiles } = useProfile();
+  const [county, setCounty] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const needsCounty = useMemo(() => {
+    if (!user || !userProfile) return false;
+    if (user.user_type !== 'citizen' && user.user_type !== 'government') return false;
+    return !userProfile.county?.trim();
+  }, [user, userProfile]);
+
+  useEffect(() => {
+    if (!needsCounty) setCounty('');
+  }, [needsCounty]);
+
+  if (!needsCounty) return null;
+
+  const handleSave = async () => {
+    if (!county) {
+      toast.error('Please select your county');
+      return;
+    }
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('user_profiles')
+        .update({ county })
+        .eq('user_id', user!.id);
+
+      if (error) throw error;
+
+      toast.success('County set successfully. This is now permanent.');
+      await refreshProfiles();
+    } catch (err: any) {
+      console.error('CountyAssignmentGate save failed:', err);
+      toast.error(err?.message || 'Failed to save county. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={true} onOpenChange={() => { /* blocking */ }}>
+      <DialogContent
+        className="max-w-md"
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+      >
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <MapPin className="h-5 w-5 text-primary" />
+            Set Your {user!.user_type === 'government' ? 'Jurisdiction' : 'Home'} County
+          </DialogTitle>
+          <DialogDescription>
+            {user!.user_type === 'government'
+              ? 'Confirm the county you have jurisdiction over. This will be your permanent assigned county.'
+              : 'Confirm the county where you live. You can only report and vote on issues in this county.'}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 pt-2">
+          <Alert>
+            <ShieldAlert className="h-4 w-4" />
+            <AlertDescription className="text-xs">
+              <strong>This is permanent.</strong> After saving, only an administrator
+              can change your county.
+            </AlertDescription>
+          </Alert>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">County *</label>
+            <Select value={county} onValueChange={setCounty} disabled={saving}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select your county" />
+              </SelectTrigger>
+              <SelectContent className="max-h-60">
+                {KENYA_COUNTIES.map(c => (
+                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <Button onClick={handleSave} disabled={!county || saving} className="w-full">
+            {saving ? (
+              <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving permanently…</>
+            ) : (
+              'Confirm & Lock County'
+            )}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export default CountyAssignmentGate;
