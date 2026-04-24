@@ -201,6 +201,26 @@ const GovernmentDashboard = () => {
           Government Dashboard
         </h1>
         <p className="text-sm text-muted-foreground mt-1">Project approval, budget oversight, and transparency management.</p>
+
+        {/* County-scope indicator + silent toggle */}
+        {assignedCounties.length > 0 && (
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <Badge variant="outline" className="text-[11px] gap-1 py-1">
+              {viewAllCounties ? <Globe2 className="h-3 w-3" /> : <MapPin className="h-3 w-3" />}
+              {viewAllCounties
+                ? 'Viewing: All counties'
+                : `Viewing: ${assignedCounties.join(', ')}`}
+            </Badge>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 px-2 text-xs"
+              onClick={() => setViewAllCounties(!viewAllCounties)}
+            >
+              {viewAllCounties ? 'Limit to my counties' : 'Show all counties'}
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Quick Actions */}
