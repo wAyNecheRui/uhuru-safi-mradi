@@ -135,6 +135,7 @@ const CommunityValidation = () => {
           downvotes,
           can_vote: true,
           can_verify: true,
+          is_in_county: true,
         };
       });
 
