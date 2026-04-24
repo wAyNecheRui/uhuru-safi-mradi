@@ -9,7 +9,7 @@ import { Progress } from '@/components/ui/progress';
 import { 
   CheckCircle, XCircle, AlertCircle, Users, MapPin, 
   Camera, Wallet, Clock, FileText, Shield,
-  ThumbsUp, ThumbsDown, Loader2, MessageSquare, Gavel, Play
+  ThumbsUp, ThumbsDown, Loader2, MessageSquare, Gavel, Play, Globe2
 } from 'lucide-react';
 import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
