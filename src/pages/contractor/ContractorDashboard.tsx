@@ -184,6 +184,11 @@ const ContractorDashboard = () => {
           {/* Location Settings */}
           <ContractorLocationSettings />
 
+          {/* Opportunity Map */}
+          <div className="mt-6">
+            <ContractorMapView contractorId={stableUserId} />
+          </div>
+
           {/* Active Projects */}
           <Card className="mt-6">
             <CardHeader className="pb-3">
