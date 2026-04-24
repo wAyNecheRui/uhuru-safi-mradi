@@ -18,12 +18,25 @@ import ResponsiveContainer from '@/components/ResponsiveContainer';
 import { useResponsive } from '@/hooks/useResponsive';
 import { useProjectStats } from '@/hooks/useProjectStats';
 import { useRecentIssues } from '@/hooks/useRecentIssues';
+import { useProfile } from '@/hooks/useProfile';
+
+const getRootCounty = (name: string): string => {
+  if (!name) return '';
+  return name.toLowerCase()
+    .replace(/\s+county$/i, '')
+    .replace(/\s+sub[- ]?county$/i, '')
+    .replace(/\s+ward$/i, '')
+    .trim()
+    .replace(/\b\w/g, c => c.toUpperCase());
+};
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const { isMobile } = useResponsive();
   const { stats: projectStats, loading: statsLoading } = useProjectStats();
   const { issues: recentIssues, loading: issuesLoading } = useRecentIssues(3);
+  const { userProfile } = useProfile();
+  const homeCounty = userProfile?.county ? getRootCounty(userProfile.county) : 'Nairobi';
 
   const getText = (en: string) => en;
 
@@ -60,7 +73,7 @@ const Index = () => {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-0">
-                    <ProjectMap selectedCounty="Nairobi" />
+                    <ProjectMap selectedCounty={homeCounty} />
                   </CardContent>
                 </Card>
 

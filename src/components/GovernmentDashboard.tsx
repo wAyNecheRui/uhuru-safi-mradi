@@ -12,7 +12,7 @@ import {
   Shield, CheckCircle, Clock, AlertTriangle, Users, Wallet, FileText, 
   Gavel, Loader2, Eye, Briefcase, BarChart3, Award,
   ClipboardCheck, UserCog, Building2, Scale, Globe, Lock, FolderOpen, Image,
-  PlayCircle, XCircle
+  PlayCircle, XCircle, MapPin, Globe2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -111,7 +111,7 @@ const ApprovedReportsSection = ({ openBidding }: { openBidding: (reportId: strin
 const GovernmentDashboard = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { pendingApprovals, activeProjects, budgetOverview, loading, handleApproval, openBidding } = useGovernmentDashboard();
+  const { pendingApprovals, activeProjects, budgetOverview, loading, handleApproval, openBidding, assignedCounties, viewAllCounties, setViewAllCounties } = useGovernmentDashboard();
   
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
@@ -201,6 +201,26 @@ const GovernmentDashboard = () => {
           Government Dashboard
         </h1>
         <p className="text-sm text-muted-foreground mt-1">Project approval, budget oversight, and transparency management.</p>
+
+        {/* County-scope indicator + silent toggle */}
+        {assignedCounties.length > 0 && (
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <Badge variant="outline" className="text-[11px] gap-1 py-1">
+              {viewAllCounties ? <Globe2 className="h-3 w-3" /> : <MapPin className="h-3 w-3" />}
+              {viewAllCounties
+                ? 'Viewing: All counties'
+                : `Viewing: ${assignedCounties.join(', ')}`}
+            </Badge>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 px-2 text-xs"
+              onClick={() => setViewAllCounties(!viewAllCounties)}
+            >
+              {viewAllCounties ? 'Limit to my counties' : 'Show all counties'}
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Quick Actions */}

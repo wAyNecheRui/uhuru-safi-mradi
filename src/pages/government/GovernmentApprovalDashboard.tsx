@@ -9,7 +9,7 @@ import { Progress } from '@/components/ui/progress';
 import { 
   CheckCircle, XCircle, AlertCircle, Users, MapPin, 
   Camera, Wallet, Clock, FileText, Shield,
-  ThumbsUp, ThumbsDown, Loader2, MessageSquare, Gavel, Play
+  ThumbsUp, ThumbsDown, Loader2, MessageSquare, Gavel, Play, Globe2
 } from 'lucide-react';
 import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
@@ -36,11 +36,12 @@ const GovernmentApprovalDashboard = () => {
   const [budgetAmount, setBudgetAmount] = useState('');
   const [processing, setProcessing] = useState(false);
   const [assignedCounties, setAssignedCounties] = useState<string[]>([]);
+  const [viewAllCounties, setViewAllCounties] = useState<boolean>(false);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchPendingReports();
-  }, []);
+  }, [viewAllCounties]);
 
   const fetchPendingReports = async () => {
     try {
@@ -69,10 +70,10 @@ const GovernmentApprovalDashboard = () => {
         .eq('status', WORKFLOW_STATUS.UNDER_REVIEW)
         .order('priority_score', { ascending: false });
 
-      // If government official has assigned counties, filter by those
-      if (counties.length > 0) {
+      // If government official has assigned counties AND not in "view all" mode, filter by those
+      if (counties.length > 0 && !viewAllCounties) {
         query = query.or(
-          counties.map(county => `location.ilike.%${county}%`).join(',')
+          counties.map(county => `location.ilike.%${county}%,county.ilike.%${county}%`).join(',')
         );
       }
 
@@ -227,6 +228,26 @@ const GovernmentApprovalDashboard = () => {
             <p className="text-gray-600">
               Review and approve citizen-reported problems that have received {MIN_VOTES_THRESHOLD}+ community votes
             </p>
+
+            {/* County-scope indicator + silent toggle */}
+            {assignedCounties.length > 0 && (
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <Badge variant="outline" className="text-[11px] gap-1 py-1">
+                  {viewAllCounties ? <Globe2 className="h-3 w-3" /> : <MapPin className="h-3 w-3" />}
+                  {viewAllCounties
+                    ? 'Viewing: All counties'
+                    : `Viewing: ${assignedCounties.join(', ')}`}
+                </Badge>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 px-2 text-xs"
+                  onClick={() => setViewAllCounties(!viewAllCounties)}
+                >
+                  {viewAllCounties ? 'Limit to my counties' : 'Show all counties'}
+                </Button>
+              </div>
+            )}
           </div>
 
           {/* Workflow Status Explanation */}
