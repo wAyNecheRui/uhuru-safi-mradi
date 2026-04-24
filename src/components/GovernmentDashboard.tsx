@@ -111,7 +111,7 @@ const ApprovedReportsSection = ({ openBidding }: { openBidding: (reportId: strin
 const GovernmentDashboard = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { pendingApprovals, activeProjects, budgetOverview, loading, handleApproval, openBidding } = useGovernmentDashboard();
+  const { pendingApprovals, activeProjects, budgetOverview, loading, handleApproval, openBidding, assignedCounties, viewAllCounties, setViewAllCounties } = useGovernmentDashboard();
   
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
