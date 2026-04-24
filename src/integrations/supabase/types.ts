@@ -307,6 +307,7 @@ export type Database = {
           report_id: string
           user_id: string
           vote_type: string
+          vote_weight: number
         }
         Insert: {
           comment?: string | null
@@ -315,6 +316,7 @@ export type Database = {
           report_id: string
           user_id: string
           vote_type: string
+          vote_weight?: number
         }
         Update: {
           comment?: string | null
@@ -323,6 +325,7 @@ export type Database = {
           report_id?: string
           user_id?: string
           vote_type?: string
+          vote_weight?: number
         }
         Relationships: [
           {
@@ -1280,6 +1283,7 @@ export type Database = {
           category: string | null
           constituency: string | null
           coordinates: string | null
+          county: string | null
           created_at: string | null
           deleted_at: string | null
           deleted_by: string | null
@@ -1318,6 +1322,7 @@ export type Database = {
           category?: string | null
           constituency?: string | null
           coordinates?: string | null
+          county?: string | null
           created_at?: string | null
           deleted_at?: string | null
           deleted_by?: string | null
@@ -1356,6 +1361,7 @@ export type Database = {
           category?: string | null
           constituency?: string | null
           coordinates?: string | null
+          county?: string | null
           created_at?: string | null
           deleted_at?: string | null
           deleted_by?: string | null
