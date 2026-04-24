@@ -124,18 +124,14 @@ export const useProblemReporting = () => {
       return;
     }
 
-    // Location Architecture: hard-block out-of-county reports for citizens
+    // Cross-county reporting allowed (per Location Architecture v3):
+    // Citizens can report problems anywhere they physically are.
+    // The report is tagged to the county detected from GPS, not their home county.
+    // Voting eligibility is still restricted to the report's county (RLS-enforced).
+    // The DB trigger enforces a soft cap of 3 cross-county reports per 24h.
     const registeredCounty = userProfile?.county?.trim();
-    const reportCounty = reportData.county?.trim();
     if (!registeredCounty) {
-      toast.error('Please set your registered county in your profile before reporting.');
-      return;
-    }
-    if (reportCounty && reportCounty.toLowerCase() !== registeredCounty.toLowerCase()) {
-      toast.error(
-        `You can only report issues inside ${registeredCounty}. Detected county: ${reportCounty}.`,
-        { duration: 7000 }
-      );
+      toast.error('Please set your registered (home) county in your profile before reporting.');
       return;
     }
 
