@@ -387,7 +387,21 @@ const CommunityValidation = () => {
       {activeLoading && filteredReports.length === 0 ? (
         <Card><CardContent className="p-12 text-center"><Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-green-600" /><div className="text-gray-500">Loading reports...</div></CardContent></Card>
       ) : filteredReports.length === 0 ? (
-        <Card><CardContent className="p-12 text-center"><CheckCircle className="h-12 w-12 text-gray-300 mx-auto mb-4" /><h3 className="text-lg font-semibold text-gray-900 mb-2">No Reports Found</h3><p className="text-gray-600">Try adjusting your filters.</p></CardContent></Card>
+        <Card>
+          <CardContent className="p-12 text-center">
+            <CheckCircle className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No reports awaiting validation</h3>
+            <p className="text-gray-600 max-w-md mx-auto">
+              {activeTab === 'profile' && userProfile?.county
+                ? `There are currently no reports in ${userProfile.county} County waiting for community votes. Reports already approved or in bidding have moved past this stage — check the "Track Progress" page to follow them.`
+                : activeTab === 'detected' && userLocation?.county
+                  ? `No active community-validation reports detected near your current location (${userLocation.county}).`
+                  : activeTab === 'votes'
+                    ? 'You have not voted on any reports yet. Vote on reports in your county tab to build your civic engagement record.'
+                    : 'Try adjusting your filters or check back later.'}
+            </p>
+          </CardContent>
+        </Card>
       ) : (
         <div className="grid gap-6">
           {filteredReports.map((report) => (
