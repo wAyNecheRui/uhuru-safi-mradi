@@ -50,13 +50,12 @@ export const useGovernmentDashboard = () => {
         .eq('status', WORKFLOW_STATUS.UNDER_REVIEW)
         .order('priority_score', { ascending: false });
 
-      // If government official has assigned counties, filter by those
-      // If no counties assigned, they can see all (national level access)
-      if (counties.length > 0) {
-        // Filter reports where location contains any of the assigned counties
-        // or ward/constituency is in the assigned counties
+      // If government official has assigned counties AND is not in "view all" mode, filter by those.
+      // If no counties assigned, they see all (national level access).
+      if (counties.length > 0 && !viewAllCounties) {
+        // Filter reports where location/county/constituency/ward contains any assigned county
         pendingQuery = pendingQuery.or(
-          counties.map(county => `location.ilike.%${county}%`).join(',')
+          counties.map(county => `location.ilike.%${county}%,county.ilike.%${county}%`).join(',')
         );
       }
 
