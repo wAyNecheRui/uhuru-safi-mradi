@@ -70,10 +70,10 @@ const GovernmentApprovalDashboard = () => {
         .eq('status', WORKFLOW_STATUS.UNDER_REVIEW)
         .order('priority_score', { ascending: false });
 
-      // If government official has assigned counties, filter by those
-      if (counties.length > 0) {
+      // If government official has assigned counties AND not in "view all" mode, filter by those
+      if (counties.length > 0 && !viewAllCounties) {
         query = query.or(
-          counties.map(county => `location.ilike.%${county}%`).join(',')
+          counties.map(county => `location.ilike.%${county}%,county.ilike.%${county}%`).join(',')
         );
       }
 
