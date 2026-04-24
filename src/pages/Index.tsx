@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { MapPin } from 'lucide-react';
-import ProjectMap from '@/components/ProjectMap';
+import ProjectsMapView from '@/components/maps/ProjectsMapView';
 import ContractorBidding from '@/components/ContractorBidding';
 import GovernmentDashboard from '@/components/GovernmentDashboard';
 import CommunityVoting from '@/components/CommunityVoting';
@@ -61,33 +61,35 @@ const Index = () => {
                 <StatsCards projectStats={projectStats} getText={getText} />
               ) : null}
 
-              {/* Map and Recent Issues */}
-              <div className={`grid gap-5 ${isMobile ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2'}`}>
-                <Card className="shadow-sm">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="flex items-center text-base font-semibold">
-                      <div className="p-1.5 rounded-lg bg-green-50 mr-2.5">
-                        <MapPin className="h-4 w-4 text-green-600" />
-                      </div>
-                      Project Map
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <ProjectMap selectedCounty={homeCounty} />
-                  </CardContent>
-                </Card>
+              {/* Project Map — full width split view */}
+              <Card className="shadow-sm overflow-hidden">
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center text-base font-semibold">
+                    <div className="p-1.5 rounded-lg bg-green-50 mr-2.5">
+                      <MapPin className="h-4 w-4 text-green-600" />
+                    </div>
+                    Projects Near You
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-3 sm:p-4">
+                  <ProjectsMapView
+                    selectedCounty={homeCounty}
+                    height={isMobile ? '600px' : '560px'}
+                  />
+                </CardContent>
+              </Card>
 
-                {issuesLoading ? (
-                  <div className="bg-card border rounded-xl p-6 animate-pulse space-y-3">
-                    <div className="h-5 bg-muted rounded w-1/3" />
-                    {[...Array(3)].map((_, i) => (
-                      <div key={i} className="h-20 bg-muted rounded-xl" />
-                    ))}
-                  </div>
-                ) : (
-                  <RecentIssues issues={recentIssues} getText={getText} />
-                )}
-              </div>
+              {/* Recent Issues */}
+              {issuesLoading ? (
+                <div className="bg-card border rounded-xl p-6 animate-pulse space-y-3">
+                  <div className="h-5 bg-muted rounded w-1/3" />
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="h-20 bg-muted rounded-xl" />
+                  ))}
+                </div>
+              ) : (
+                <RecentIssues issues={recentIssues} getText={getText} />
+              )}
             </TabsContent>
 
             <TabsContent value="simple-report">
