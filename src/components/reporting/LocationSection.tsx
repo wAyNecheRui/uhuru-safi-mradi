@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Map, MapPin, Loader2, CheckCircle, AlertTriangle, RefreshCw, ShieldAlert } from 'lucide-react';
+import { Map, MapPin, Loader2, CheckCircle, AlertTriangle, RefreshCw, Plane } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ReportData } from '@/types/problemReporting';
 import { getFullLocationByCoordinates } from '@/constants/kenyaAdminData';
 import { useProfile } from '@/hooks/useProfile';
+import { findNearestCounty } from '@/constants/countyCentroids';
 
 interface LocationSectionProps {
   reportData: ReportData;
