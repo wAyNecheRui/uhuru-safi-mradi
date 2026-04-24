@@ -1,18 +1,26 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { KENYA_COUNTIES } from '@/constants/kenyaAdministrativeUnits';
+import { getCountyCentroid, parseGpsPoint } from '@/constants/countyCentroids';
 
-interface MapProject {
+export interface MapProject {
   id: string;
   name: string;
   status: string;
+  rawStatus: string;
   progress: number;
   budget: string;
+  budgetRaw: number | null;
   contractor: string;
   location: string | null;
+  category: string | null;
+  county: string | null;
+  lat: number;
+  lng: number;
+  isApproximate: boolean;
 }
 
-export const useMapProjects = (selectedCounty: string) => {
+export const useMapProjects = (selectedCounty: string, viewAllCounties: boolean = false) => {
   const [projects, setProjects] = useState<MapProject[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -21,8 +29,7 @@ export const useMapProjects = (selectedCounty: string) => {
     const fetchProjects = async () => {
       try {
         setLoading(true);
-        
-        // Get projects with their related problem reports
+
         const { data, error: projectsError } = await supabase
           .from('projects')
           .select(`
@@ -30,19 +37,23 @@ export const useMapProjects = (selectedCounty: string) => {
             title,
             status,
             budget,
+            latitude,
+            longitude,
             contractor_id,
             problem_reports!projects_report_id_fkey (
               location,
-              coordinates
+              coordinates,
+              gps_coordinates,
+              category,
+              county
             )
           `);
-          
+
         if (projectsError) throw projectsError;
 
-        // Get contractor names separately if contractor_id exists
         const contractorIds = data?.filter(p => p.contractor_id).map(p => p.contractor_id) || [];
         let contractorData: any[] = [];
-        
+
         if (contractorIds.length > 0) {
           const { data: contractors } = await supabase
             .from('skills_profiles')
@@ -51,41 +62,73 @@ export const useMapProjects = (selectedCounty: string) => {
           contractorData = contractors || [];
         }
 
-        // Filter projects by county — match only against official 47 county names
         const isValidCounty = KENYA_COUNTIES.some(
           c => c.toLowerCase() === selectedCounty.toLowerCase()
         );
-        
+
         const filteredData = data?.filter(project => {
-          const location = project.problem_reports?.location;
-          if (!location) return true; // Include projects without location
-          if (!isValidCounty) return true; // If not a valid county, show all
-          
-          // Match county name as a whole word to avoid sub-county confusion
-          const locationLower = location.toLowerCase();
+          if (viewAllCounties) return true;
+          const report = project.problem_reports as any;
+          const county = report?.county || report?.location;
+          if (!county) return true;
+          if (!isValidCounty) return true;
+
           const countyLower = selectedCounty.toLowerCase();
-          // Check for exact county match (not substring of a longer name)
           const countyPattern = new RegExp(`\\b${countyLower.replace(/[-]/g, '[-\\s]?')}\\b`, 'i');
-          return countyPattern.test(locationLower);
+          return countyPattern.test(String(county).toLowerCase());
         }) || [];
 
-        const formattedProjects: MapProject[] = filteredData.map((project, index) => {
+        const formattedProjects: MapProject[] = filteredData.map((project) => {
           const contractor = contractorData.find(c => c.user_id === project.contractor_id);
-          
+          const report = project.problem_reports as any;
+          const reportCounty = report?.county || null;
+
+          // Resolve coordinates: project lat/lng → report gps_coordinates → report coordinates → county centroid
+          let lat: number | null = null;
+          let lng: number | null = null;
+          let isApproximate = false;
+
+          if (typeof project.latitude === 'number' && typeof project.longitude === 'number'
+              && !isNaN(project.latitude) && !isNaN(project.longitude)) {
+            lat = project.latitude;
+            lng = project.longitude;
+          } else {
+            const gps = parseGpsPoint(report?.gps_coordinates) || parseGpsPoint(report?.coordinates);
+            if (gps) {
+              [lat, lng] = gps;
+            } else {
+              const fallbackCounty = reportCounty || (isValidCounty ? selectedCounty : null);
+              const centroid = getCountyCentroid(fallbackCounty);
+              lat = centroid[0];
+              lng = centroid[1];
+              isApproximate = true;
+            }
+          }
+
+          const budgetRaw = project.budget ? parseFloat(String(project.budget)) : null;
+
           return {
             id: project.id,
             name: project.title,
             status: formatStatus(project.status || 'planning'),
+            rawStatus: (project.status || 'planning').toLowerCase().replace(/\s+/g, '_'),
             progress: getProgressFromStatus(project.status || 'planning'),
             budget: formatBudget(project.budget),
-            contractor: contractor?.organization || 
-                       contractor?.full_name || 
+            budgetRaw,
+            contractor: contractor?.organization ||
+                       contractor?.full_name ||
                        (project.status === 'planning' ? 'Pending' : 'Unassigned'),
-            location: project.problem_reports?.location || `${selectedCounty} Area`
+            location: report?.location || (reportCounty ? `${reportCounty} County` : null),
+            category: report?.category || null,
+            county: reportCounty,
+            lat: lat!,
+            lng: lng!,
+            isApproximate,
           };
         });
 
         setProjects(formattedProjects);
+        setError(null);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch projects');
       } finally {
@@ -95,7 +138,6 @@ export const useMapProjects = (selectedCounty: string) => {
 
     fetchProjects();
 
-    // Set up real-time subscription
     const channel = supabase
       .channel('projects_changes')
       .on('postgres_changes', {
@@ -110,7 +152,7 @@ export const useMapProjects = (selectedCounty: string) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [selectedCounty]);
+  }, [selectedCounty, viewAllCounties]);
 
   return { projects, loading, error };
 };
@@ -121,7 +163,7 @@ const formatStatus = (status: string): string => {
     case 'in_progress': return 'In Progress';
     case 'under_review': return 'Under Review';
     case 'completed': return 'Completed';
-    default: return 'Planning';
+    default: return status.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   }
 };
 
@@ -137,12 +179,8 @@ const getProgressFromStatus = (status: string): number => {
 
 const formatBudget = (budget: any): string => {
   if (!budget) return 'Budget TBD';
-  
   const amount = parseFloat(budget.toString());
-  if (amount >= 1000000) {
-    return `KES ${(amount / 1000000).toFixed(1)}M`;
-  } else if (amount >= 1000) {
-    return `KES ${(amount / 1000).toFixed(0)}K`;
-  }
+  if (amount >= 1000000) return `KES ${(amount / 1000000).toFixed(1)}M`;
+  if (amount >= 1000) return `KES ${(amount / 1000).toFixed(0)}K`;
   return `KES ${amount.toLocaleString()}`;
 };
