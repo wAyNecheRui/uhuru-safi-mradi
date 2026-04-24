@@ -184,15 +184,21 @@ const CommunityValidation = () => {
 
       if (reportsError) throw reportsError;
 
-      const reportsWithVotes = (reports || []).map(report => ({
-        ...report,
-        user_vote: (report.community_votes?.find((v: any) => v.user_id === user.id)?.vote_type as 'upvote' | 'downvote') || null,
-        reporter_name: (report as any).profiles?.full_name || 'Anonymous',
-        upvotes: report.community_votes?.filter((v: any) => v.vote_type === 'upvote').length || 0,
-        downvotes: report.community_votes?.filter((v: any) => v.vote_type === 'downvote').length || 0,
-        can_vote: true,
-        can_verify: true,
-      }));
+      const profileRoot = userProfile?.county ? getRootCounty(userProfile.county) : null;
+      const reportsWithVotes = (reports || []).map(report => {
+        const reportCountyRoot = (report as any).county ? getRootCounty((report as any).county) : null;
+        const isInCounty = profileRoot && reportCountyRoot ? profileRoot === reportCountyRoot : false;
+        return {
+          ...report,
+          user_vote: (report.community_votes?.find((v: any) => v.user_id === user.id)?.vote_type as 'upvote' | 'downvote') || null,
+          reporter_name: (report as any).profiles?.full_name || 'Anonymous',
+          upvotes: report.community_votes?.filter((v: any) => v.vote_type === 'upvote').length || 0,
+          downvotes: report.community_votes?.filter((v: any) => v.vote_type === 'downvote').length || 0,
+          can_vote: true,
+          can_verify: true,
+          is_in_county: isInCounty,
+        };
+      });
 
       reportsWithVotes.sort((a, b) => (voteOrderMap.get(b.id) ?? 0) - (voteOrderMap.get(a.id) ?? 0));
       setAllValidatedReports(reportsWithVotes);
