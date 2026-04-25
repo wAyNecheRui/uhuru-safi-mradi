@@ -87,6 +87,7 @@ const DisputeResolution = lazy(() => import("./pages/DisputeResolution"));
 // Settings & Profile
 const SettingsPage = lazy(() => import("./pages/Settings"));
 const ProfilePage = lazy(() => import("./pages/Profile"));
+const WalletPage = lazy(() => import("./pages/WalletPage"));
 const Terms = lazy(() => import("./pages/Terms"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 
