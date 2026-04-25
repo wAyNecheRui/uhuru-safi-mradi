@@ -11,10 +11,15 @@ import { KENYA_COUNTIES } from '@/constants/kenyaAdministrativeUnits';
 import { toast } from 'sonner';
 
 /**
- * Forces citizens & government users to set their permanent county before
- * they can use the app. Contractors are exempt — their county is optional.
+ * Forces citizens to set their permanent home county before they can use the app.
  *
- * Backfills the ~25 legacy users who registered before the county-required rule.
+ * Government users are exempt — their jurisdiction is managed via
+ * `government_profiles.assigned_counties` in GovernmentJurisdictionSettings
+ * (multi-county jurisdiction, not a single home county).
+ *
+ * Contractors are also exempt — their county is optional.
+ *
+ * Backfills legacy citizen users who registered before the county-required rule.
  * Once set, the database trigger `enforce_county_lock_and_sync` permanently
  * locks the value (admin-only override).
  */
@@ -26,7 +31,8 @@ export const CountyAssignmentGate: React.FC = () => {
 
   const needsCounty = useMemo(() => {
     if (!user || !userProfile) return false;
-    if (user.user_type !== 'citizen' && user.user_type !== 'government') return false;
+    // Citizens only — government uses assigned_counties, contractors are optional
+    if (user.user_type !== 'citizen') return false;
     return !userProfile.county?.trim();
   }, [user, userProfile]);
 
