@@ -76,12 +76,11 @@ export const CountyAssignmentGate: React.FC = () => {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <MapPin className="h-5 w-5 text-primary" />
-            Set Your {user!.user_type === 'government' ? 'Jurisdiction' : 'Home'} County
+            Set Your Home County
           </DialogTitle>
           <DialogDescription>
-            {user!.user_type === 'government'
-              ? 'Confirm the county you have jurisdiction over. This will be your permanent assigned county.'
-              : 'Confirm the county where you live. You can only report and vote on issues in this county.'}
+            Confirm the county where you live. You can only vote on issues in this county,
+            though you may report problems from anywhere using GPS.
           </DialogDescription>
         </DialogHeader>
 
