@@ -2111,6 +2111,105 @@ export type Database = {
         }
         Relationships: []
       }
+      wallet_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          from_wallet_id: string | null
+          id: string
+          initiated_by: string | null
+          metadata: Json | null
+          reference: string | null
+          status: string
+          to_wallet_id: string | null
+          transaction_type: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description?: string | null
+          from_wallet_id?: string | null
+          id?: string
+          initiated_by?: string | null
+          metadata?: Json | null
+          reference?: string | null
+          status?: string
+          to_wallet_id?: string | null
+          transaction_type: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          from_wallet_id?: string | null
+          id?: string
+          initiated_by?: string | null
+          metadata?: Json | null
+          reference?: string | null
+          status?: string
+          to_wallet_id?: string | null
+          transaction_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallet_transactions_from_wallet_id_fkey"
+            columns: ["from_wallet_id"]
+            isOneToOne: false
+            referencedRelation: "wallets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wallet_transactions_to_wallet_id_fkey"
+            columns: ["to_wallet_id"]
+            isOneToOne: false
+            referencedRelation: "wallets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wallets: {
+        Row: {
+          balance: number
+          created_at: string
+          escrow_account_id: string | null
+          id: string
+          status: string
+          total_received: number
+          total_sent: number
+          total_withdrawn: number
+          updated_at: string
+          user_id: string | null
+          wallet_type: string
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          escrow_account_id?: string | null
+          id?: string
+          status?: string
+          total_received?: number
+          total_sent?: number
+          total_withdrawn?: number
+          updated_at?: string
+          user_id?: string | null
+          wallet_type: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          escrow_account_id?: string | null
+          id?: string
+          status?: string
+          total_received?: number
+          total_sent?: number
+          total_withdrawn?: number
+          updated_at?: string
+          user_id?: string | null
+          wallet_type?: string
+        }
+        Relationships: []
+      }
       worker_access_audit: {
         Row: {
           access_timestamp: string
@@ -2657,6 +2756,18 @@ export type Database = {
           total_score: number
         }[]
       }
+      execute_wallet_transfer: {
+        Args: {
+          p_amount: number
+          p_description?: string
+          p_from_wallet_id: string
+          p_metadata?: Json
+          p_reference?: string
+          p_to_wallet_id: string
+          p_transaction_type: string
+        }
+        Returns: string
+      }
       extend_bidding_window:
         | {
             Args: { _additional_days?: number; _report_id: string }
@@ -2776,6 +2887,11 @@ export type Database = {
           title: string
         }[]
       }
+      get_or_create_escrow_wallet: {
+        Args: { p_escrow_account_id: string }
+        Returns: string
+      }
+      get_or_create_wallet: { Args: { p_user_id: string }; Returns: string }
       get_problems_with_distance: {
         Args: { max_distance_km?: number; user_lat: number; user_lon: number }
         Returns: {
@@ -2839,6 +2955,7 @@ export type Database = {
           years_in_business: number
         }[]
       }
+      get_treasury_wallet_id: { Args: never; Returns: string }
       get_user_roles: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"][]
