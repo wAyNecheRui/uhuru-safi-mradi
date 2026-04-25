@@ -39,7 +39,7 @@ const WalletPage: React.FC = () => {
 
   if (!user) return <Navigate to="/auth" replace />;
 
-  const userType = (user.user_metadata?.user_type as string) || 'citizen';
+  const userType = (user as any).user_type || 'citizen';
   const homePath =
     userType === 'contractor' ? '/contractor' : userType === 'government' ? '/government' : '/citizen';
 
