@@ -1,6 +1,20 @@
 {
   "version": "5",
+  "redirects": {
+    "https://esm.sh/@supabase/supabase-js@2": "https://esm.sh/@supabase/supabase-js@2.104.1"
+  },
   "remote": {
+    "https://deno.land/std@0.168.0/async/abortable.ts": "80b2ac399f142cc528f95a037a7d0e653296352d95c681e284533765961de409",
+    "https://deno.land/std@0.168.0/async/deadline.ts": "2c2deb53c7c28ca1dda7a3ad81e70508b1ebc25db52559de6b8636c9278fd41f",
+    "https://deno.land/std@0.168.0/async/debounce.ts": "60301ffb37e730cd2d6f9dadfd0ecb2a38857681bd7aaf6b0a106b06e5210a98",
+    "https://deno.land/std@0.168.0/async/deferred.ts": "77d3f84255c3627f1cc88699d8472b664d7635990d5358c4351623e098e917d6",
+    "https://deno.land/std@0.168.0/async/delay.ts": "5a9bfba8de38840308a7a33786a0155a7f6c1f7a859558ddcec5fe06e16daf57",
+    "https://deno.land/std@0.168.0/async/mod.ts": "7809ad4bb223e40f5fdc043e5c7ca04e0e25eed35c32c3c32e28697c553fa6d9",
+    "https://deno.land/std@0.168.0/async/mux_async_iterator.ts": "770a0ff26c59f8bbbda6b703a2235f04e379f73238e8d66a087edc68c2a2c35f",
+    "https://deno.land/std@0.168.0/async/pool.ts": "6854d8cd675a74c73391c82005cbbe4cc58183bddcd1fbbd7c2bcda42b61cf69",
+    "https://deno.land/std@0.168.0/async/retry.ts": "e8e5173623915bbc0ddc537698fa418cf875456c347eda1ed453528645b42e67",
+    "https://deno.land/std@0.168.0/async/tee.ts": "3a47cc4e9a940904fd4341f0224907e199121c80b831faa5ec2b054c6d2eff5e",
+    "https://deno.land/std@0.168.0/http/server.ts": "e99c1bee8a3f6571ee4cdeb2966efad465b8f6fe62bec1bdb59c1f007cc4d155",
     "https://deno.land/std@0.224.0/assert/_constants.ts": "a271e8ef5a573f1df8e822a6eb9d09df064ad66a4390f21b3e31f820a38e0975",
     "https://deno.land/std@0.224.0/assert/assert.ts": "09d30564c09de846855b7b071e62b5974b001bb72a4b797958fe0660e7849834",
     "https://deno.land/std@0.224.0/assert/assert_almost_equals.ts": "9e416114322012c9a21fa68e187637ce2d7df25bcbdbfd957cd639e65d3cf293",
@@ -37,7 +51,9 @@
     "https://deno.land/std@0.224.0/fmt/colors.ts": "508563c0659dd7198ba4bbf87e97f654af3c34eb56ba790260f252ad8012e1c5",
     "https://deno.land/std@0.224.0/internal/diff.ts": "6234a4b493ebe65dc67a18a0eb97ef683626a1166a1906232ce186ae9f65f4e6",
     "https://deno.land/std@0.224.0/internal/format.ts": "0a98ee226fd3d43450245b1844b47003419d34d210fa989900861c79820d21c2",
-    "https://deno.land/std@0.224.0/internal/mod.ts": "534125398c8e7426183e12dc255bb635d94e06d0f93c60a297723abe69d3b22e"
+    "https://deno.land/std@0.224.0/internal/mod.ts": "534125398c8e7426183e12dc255bb635d94e06d0f93c60a297723abe69d3b22e",
+    "https://esm.sh/@supabase/supabase-js@2.104.1": "bad73bfa9aac8a6d896e7a1d4449c7c2ece9a01bccca9e9569f1ed0fc76b5222",
+    "https://esm.sh/zod@3.23.8": "15e60c792ac21d4818f181671c7c74bf33bf7526d487dc524911e42785d8b5c2"
   },
   "workspace": {
     "packageJson": {
@@ -86,7 +102,11 @@
         "npm:@supabase/supabase-js@^2.50.2",
         "npm:@tailwindcss/typography@~0.5.15",
         "npm:@tanstack/react-query@^5.56.2",
+        "npm:@testing-library/jest-dom@^6.6.0",
+        "npm:@testing-library/react@16",
+        "npm:@testing-library/user-event@^14.5.0",
         "npm:@types/dompurify@^3.2.0",
+        "npm:@types/leaflet@^1.9.21",
         "npm:@types/node@^22.5.5",
         "npm:@types/react-dom@^18.3.0",
         "npm:@types/react@^18.3.3",
@@ -102,16 +122,25 @@
         "npm:eslint-plugin-react-refresh@~0.4.9",
         "npm:eslint@^9.9.0",
         "npm:globals@^15.9.0",
+        "npm:i18next-browser-languagedetector@^8.2.1",
+        "npm:i18next@^26.0.6",
         "npm:input-otp@^1.2.4",
+        "npm:jsdom@^20.0.3",
+        "npm:jspdf@^4.2.1",
+        "npm:leaflet@^1.9.4",
         "npm:lovable-tagger@^1.1.7",
         "npm:lucide-react@0.462",
+        "npm:maplibre-gl@^4.7.0",
         "npm:next-themes@0.3",
         "npm:postcss@^8.4.47",
         "npm:react-day-picker@^8.10.1",
         "npm:react-dom@^18.3.1",
         "npm:react-hook-form@^7.53.0",
+        "npm:react-i18next@^17.0.4",
+        "npm:react-leaflet@^4.2.1",
         "npm:react-resizable-panels@^2.1.3",
         "npm:react-router-dom@^6.26.2",
+        "npm:react-textarea-autosize@^8.5.9",
         "npm:react@^18.3.1",
         "npm:recharts@^2.12.7",
         "npm:sonner@^1.5.0",
@@ -123,6 +152,7 @@
         "npm:vaul@~0.9.3",
         "npm:vite-plugin-pwa@0.21.1",
         "npm:vite@^5.4.1",
+        "npm:vitest@^3.2.4",
         "npm:zod@^3.23.8"
       ]
     }

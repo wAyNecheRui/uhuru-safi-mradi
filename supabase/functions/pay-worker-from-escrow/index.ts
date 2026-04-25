@@ -272,6 +272,49 @@ serve(async (req) => {
 
     if (updateError) throw updateError
 
+    // 8b. Credit worker's in-house wallet (Phase 1 — coin ledger)
+    try {
+      const { data: workerWalletId, error: workerWalletErr } = await supabaseAdmin.rpc(
+        'get_or_create_wallet',
+        { p_user_id: worker_id }
+      );
+      const { data: escrowWalletId, error: escrowWalletErr } = await supabaseAdmin.rpc(
+        'get_or_create_escrow_wallet',
+        { p_escrow_account_id: escrow.id }
+      );
+
+      if (workerWalletErr || escrowWalletErr) {
+        console.warn('[WORKER-ESCROW-PAY] Wallet lookup failed (non-fatal):', workerWalletErr || escrowWalletErr);
+      } else if (workerWalletId && escrowWalletId) {
+        // Top up escrow wallet from treasury so the transfer can settle
+        // (legacy escrows have no coin balance — sync from KES held)
+        const { data: treasuryId } = await supabaseAdmin.rpc('get_treasury_wallet_id');
+        if (treasuryId) {
+          await supabaseAdmin.rpc('execute_wallet_transfer', {
+            p_from_wallet_id: treasuryId,
+            p_to_wallet_id: escrowWalletId,
+            p_amount: totalAmount,
+            p_transaction_type: 'fund_escrow',
+            p_reference: escrow.id,
+            p_description: `Auto-sync escrow coins for worker payout (${job.title})`,
+            p_metadata: { auto_sync: true, escrow_account_id: escrow.id },
+          });
+          await supabaseAdmin.rpc('execute_wallet_transfer', {
+            p_from_wallet_id: escrowWalletId,
+            p_to_wallet_id: workerWalletId,
+            p_amount: totalAmount,
+            p_transaction_type: 'worker_payment',
+            p_reference: transactionRef,
+            p_description: `Wages for ${records.length} day(s) on "${job.title}"`,
+            p_metadata: { worker_id, job_id, records_count: records.length, period_start: periodStart, period_end: periodEnd },
+          });
+          console.log('[WORKER-ESCROW-PAY] ✅ Wallet credited:', workerWalletId);
+        }
+      }
+    } catch (walletErr) {
+      console.warn('[WORKER-ESCROW-PAY] Wallet credit failed (non-fatal):', walletErr);
+    }
+
     // 9. Create blockchain record for transparency
     await supabaseAdmin
       .from('blockchain_transactions')
