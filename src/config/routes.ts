@@ -22,6 +22,7 @@ export const routeConfigs: RouteConfig[] = [
   // Protected routes (all roles)
   { path: '/settings', component: 'SettingsPage', roles: ['citizen', 'contractor', 'government', 'admin'], title: 'Settings' },
   { path: '/profile', component: 'ProfilePage', roles: ['citizen', 'contractor', 'government', 'admin'], title: 'Profile' },
+  { path: '/wallet', component: 'WalletPage', roles: ['citizen', 'contractor', 'government', 'admin'], title: 'My Wallet' },
 
   // Government + Contractor routes
   { path: '/contractor-database', component: 'ContractorDatabasePage', roles: ['government', 'admin', 'contractor'], title: 'Contractor Database' },

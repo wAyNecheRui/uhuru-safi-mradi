@@ -68,6 +68,33 @@ const WalletPage: React.FC = () => {
           </p>
         </div>
 
+        {/* Context banner: clarifies relationship to existing modules */}
+        <Card className="mb-6 border-dashed bg-muted/30">
+          <CardContent className="p-4 text-sm text-muted-foreground">
+            {userType === 'citizen' && (
+              <>
+                <strong className="text-foreground">How this fits:</strong> This wallet shows your live
+                coin balance from completed work. <em>My Jobs</em> still tracks job assignments and
+                day-by-day records — wallet is the money side of the same activity.
+              </>
+            )}
+            {userType === 'contractor' && (
+              <>
+                <strong className="text-foreground">How this fits:</strong> Wallet shows your live coin
+                balance. <em>Project Financials</em> still shows per-project budgets, milestone
+                payments, and escrow status — wallet is your operating cash view.
+              </>
+            )}
+            {(userType === 'government' || userType === 'admin') && (
+              <>
+                <strong className="text-foreground">How this fits:</strong> The treasury wallet is the
+                source of all coins. <em>Escrow</em> and <em>Escrow Funding</em> still manage per-project
+                allocations; <em>Payment Audit</em> remains the immutable transaction record.
+              </>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Balance card */}
         <Card className="mb-6 border-primary/30 bg-gradient-to-br from-primary/10 to-primary/5">
           <CardContent className="p-6">
