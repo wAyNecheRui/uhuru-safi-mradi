@@ -399,6 +399,14 @@ const App = () => {
                             </ProtectedRoute>
                           }
                         />
+                        <Route
+                          path="/wallet"
+                          element={
+                            <ProtectedRoute>
+                              <WalletPage />
+                            </ProtectedRoute>
+                          }
+                        />
 
                         {/* Public Routes */}
                         <Route path="/transparency" element={<PublicTransparencyPortal />} />
