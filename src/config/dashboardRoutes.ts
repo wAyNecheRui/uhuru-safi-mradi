@@ -61,9 +61,15 @@ export const citizenDashboardRoutes: DashboardNavGroup[] = [
   {
     label: 'Work & Skills',
     items: [
-      { title: 'My Jobs', url: '/citizen/my-jobs', icon: Wallet },
+      { title: 'My Jobs', url: '/citizen/my-jobs', icon: Briefcase },
       { title: 'Skills Registration', url: '/citizen/skills', icon: Wrench },
       { title: 'Job Opportunities', url: '/citizen/workforce', icon: Briefcase },
+    ],
+  },
+  {
+    label: 'Wallet',
+    items: [
+      { title: 'My Wallet', url: '/wallet', icon: Wallet },
     ],
   },
   {
@@ -87,7 +93,8 @@ export const contractorDashboardRoutes: DashboardNavGroup[] = [
   {
     label: 'Operations',
     items: [
-      { title: 'Financials', url: '/contractor/financials', icon: Wallet },
+      { title: 'My Wallet', url: '/wallet', icon: Wallet },
+      { title: 'Project Financials', url: '/contractor/financials', icon: TrendingUp },
       { title: 'Bid Templates', url: '/contractor/templates', icon: ClipboardList },
       { title: 'Quality', url: '/contractor/quality', icon: CheckCircle },
       { title: 'Job Postings', url: '/contractor/jobs', icon: Briefcase },
@@ -117,9 +124,10 @@ export const governmentDashboardRoutes: DashboardNavGroup[] = [
   {
     label: 'Finance',
     items: [
+      { title: 'Treasury Wallet', url: '/wallet', icon: Wallet },
       { title: 'Escrow', url: '/government/escrow', icon: Shield },
       { title: 'Escrow Funding', url: '/government/escrow-funding', icon: CreditCard },
-      { title: 'Payments', url: '/government/payments', icon: Wallet },
+      { title: 'Payment Audit', url: '/government/payments', icon: FileText },
       { title: 'Payment Release', url: '/government/payment-release', icon: CreditCard },
       { title: 'Milestones', url: '/government/milestones', icon: Milestone },
       { title: 'LPO', url: '/government/lpo', icon: ClipboardList },
