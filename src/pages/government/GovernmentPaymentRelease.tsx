@@ -7,6 +7,7 @@ import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
 import PaymentReleaseManager from '@/components/government/PaymentReleaseManager';
 import BulkPaymentRelease from '@/components/government/BulkPaymentRelease';
+import LegacyPaymentBanner from '@/components/wallet/LegacyPaymentBanner';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 

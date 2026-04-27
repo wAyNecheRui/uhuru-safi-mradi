@@ -3,6 +3,7 @@ import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
 import EscrowManagement from '@/components/EscrowManagement';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
+import LegacyPaymentBanner from '@/components/wallet/LegacyPaymentBanner';
 
 const GovernmentEscrow = () => {
   const breadcrumbItems = [
@@ -18,6 +19,10 @@ const GovernmentEscrow = () => {
       <main>
         <ResponsiveContainer className="py-6 sm:py-8">
           <BreadcrumbNav items={breadcrumbItems} />
+          <LegacyPaymentBanner
+            feature="Escrow management"
+            replacement="Project escrows are now coin-backed wallets that fund instantly from the Treasury. Use the Wallet to view live balances and release worker payments. This page is kept for historical escrow records only."
+          />
           <EscrowManagement />
         </ResponsiveContainer>
       </main>
