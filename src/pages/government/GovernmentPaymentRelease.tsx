@@ -7,6 +7,7 @@ import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
 import PaymentReleaseManager from '@/components/government/PaymentReleaseManager';
 import BulkPaymentRelease from '@/components/government/BulkPaymentRelease';
+import LegacyPaymentBanner from '@/components/wallet/LegacyPaymentBanner';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -87,6 +88,10 @@ const GovernmentPaymentRelease = () => {
       <Header />
       <main className="container mx-auto px-4 py-8">
         <BreadcrumbNav items={breadcrumbItems} />
+        <LegacyPaymentBanner
+          feature="Manual payment release"
+          replacement="Worker and milestone payouts now settle instantly through the Coin Wallet — no M-Pesa STK delay. Use this page only to review legacy releases."
+        />
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">Payment Release</h1>
           <p className="text-muted-foreground">Review verified milestones and release payments to contractors.</p>

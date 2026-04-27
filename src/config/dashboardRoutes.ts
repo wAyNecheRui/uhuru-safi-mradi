@@ -94,7 +94,6 @@ export const contractorDashboardRoutes: DashboardNavGroup[] = [
     label: 'Operations',
     items: [
       { title: 'My Wallet', url: '/wallet', icon: Wallet },
-      { title: 'Project Financials', url: '/contractor/financials', icon: TrendingUp },
       { title: 'Bid Templates', url: '/contractor/templates', icon: ClipboardList },
       { title: 'Quality', url: '/contractor/quality', icon: CheckCircle },
       { title: 'Job Postings', url: '/contractor/jobs', icon: Briefcase },
@@ -125,10 +124,7 @@ export const governmentDashboardRoutes: DashboardNavGroup[] = [
     label: 'Finance',
     items: [
       { title: 'Treasury Wallet', url: '/wallet', icon: Wallet },
-      { title: 'Escrow', url: '/government/escrow', icon: Shield },
-      { title: 'Escrow Funding', url: '/government/escrow-funding', icon: CreditCard },
       { title: 'Payment Audit', url: '/government/payments', icon: FileText },
-      { title: 'Payment Release', url: '/government/payment-release', icon: CreditCard },
       { title: 'Milestones', url: '/government/milestones', icon: Milestone },
       { title: 'LPO', url: '/government/lpo', icon: ClipboardList },
     ],

@@ -11,6 +11,7 @@ import {
 import Header from '@/components/Header';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
+import LegacyPaymentBanner from '@/components/wallet/LegacyPaymentBanner';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -173,6 +174,10 @@ const ContractorFinancials = () => {
             </Button>
           </div>
           <BreadcrumbNav items={breadcrumbItems} />
+          <LegacyPaymentBanner
+            feature="Project financials"
+            replacement="Live earnings, instant payouts, and your transaction ledger now live in the Coin Wallet. This page still shows escrow allocations and historical M-Pesa releases for reference."
+          />
 
           <div className="mb-6">
             <h1 className="text-xl sm:text-2xl font-display font-bold text-foreground mb-1">Financial Management</h1>
