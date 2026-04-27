@@ -20,6 +20,8 @@ import { useWallet, type WalletTransaction } from '@/hooks/useWallet';
 import { useAuth } from '@/contexts/AuthContext';
 import { format, parseISO } from 'date-fns';
 import { Navigate } from 'react-router-dom';
+import SendByNationalIdDialog from '@/components/wallet/SendByNationalIdDialog';
+import WithdrawDialog from '@/components/wallet/WithdrawDialog';
 
 const formatKES = (n: number) => `KES ${Number(n ?? 0).toLocaleString()}`;
 
@@ -63,8 +65,8 @@ const WalletPage: React.FC = () => {
             My Wallet
           </h1>
           <p className="text-muted-foreground mt-1">
-            Internal coin balance — 1 coin = 1 KES. Instantly receive payments and (soon) withdraw or
-            send.
+            Internal coin balance — 1 coin = 1 KES. Send instantly by National ID, or withdraw to
+            M-Pesa or your bank.
           </p>
         </div>
 
@@ -121,20 +123,24 @@ const WalletPage: React.FC = () => {
                   </p>
                 </div>
                 <div className="flex gap-2">
-                  <Button disabled className="gap-2">
-                    <ArrowUpRight className="w-4 h-4" />
-                    Withdraw
-                    <Badge variant="secondary" className="ml-1 text-[10px]">
-                      Phase 2
-                    </Badge>
-                  </Button>
-                  <Button variant="outline" disabled className="gap-2">
-                    <ArrowDownLeft className="w-4 h-4 rotate-180" />
-                    Send
-                    <Badge variant="secondary" className="ml-1 text-[10px]">
-                      Phase 2
-                    </Badge>
-                  </Button>
+                  <WithdrawDialog
+                    availableBalance={Number(wallet.balance)}
+                    trigger={
+                      <Button className="gap-2">
+                        <ArrowUpRight className="w-4 h-4" />
+                        Withdraw
+                      </Button>
+                    }
+                  />
+                  <SendByNationalIdDialog
+                    availableBalance={Number(wallet.balance)}
+                    trigger={
+                      <Button variant="outline" className="gap-2">
+                        <ArrowDownLeft className="w-4 h-4 rotate-180" />
+                        Send
+                      </Button>
+                    }
+                  />
                 </div>
               </div>
             )}
