@@ -3067,6 +3067,14 @@ export type Database = {
         Args: { _amount: number; _project_id: string }
         Returns: boolean
       }
+      wallet_process_withdrawal: {
+        Args: {
+          p_new_status: string
+          p_notes?: string
+          p_withdrawal_id: string
+        }
+        Returns: Json
+      }
       wallet_request_withdrawal: {
         Args: {
           p_amount: number
