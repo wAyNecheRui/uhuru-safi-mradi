@@ -2168,6 +2168,75 @@ export type Database = {
           },
         ]
       }
+      wallet_withdrawals: {
+        Row: {
+          amount: number
+          created_at: string
+          destination_account: string
+          destination_name: string | null
+          destination_type: string
+          id: string
+          notes: string | null
+          processed_at: string | null
+          processed_by: string | null
+          reference: string
+          status: string
+          transaction_id: string | null
+          updated_at: string
+          user_id: string
+          wallet_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          destination_account: string
+          destination_name?: string | null
+          destination_type: string
+          id?: string
+          notes?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          reference: string
+          status?: string
+          transaction_id?: string | null
+          updated_at?: string
+          user_id: string
+          wallet_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          destination_account?: string
+          destination_name?: string | null
+          destination_type?: string
+          id?: string
+          notes?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          reference?: string
+          status?: string
+          transaction_id?: string | null
+          updated_at?: string
+          user_id?: string
+          wallet_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallet_withdrawals_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "wallet_transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wallet_withdrawals_wallet_id_fkey"
+            columns: ["wallet_id"]
+            isOneToOne: false
+            referencedRelation: "wallets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wallets: {
         Row: {
           balance: number
@@ -2997,6 +3066,23 @@ export type Database = {
       validate_escrow_funding: {
         Args: { _amount: number; _project_id: string }
         Returns: boolean
+      }
+      wallet_request_withdrawal: {
+        Args: {
+          p_amount: number
+          p_destination_account: string
+          p_destination_name?: string
+          p_destination_type: string
+        }
+        Returns: Json
+      }
+      wallet_send_by_national_id: {
+        Args: {
+          p_amount: number
+          p_note?: string
+          p_recipient_national_id: string
+        }
+        Returns: Json
       }
     }
     Enums: {
