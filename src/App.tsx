@@ -43,7 +43,7 @@ const ContractorProjects = lazy(() => import("./pages/contractor/ContractorProje
 const ContractorVerification = lazy(() => import("./pages/contractor/ContractorVerification"));
 const ContractorTemplates = lazy(() => import("./pages/contractor/ContractorTemplates"));
 const ContractorBidTracking = lazy(() => import("./pages/contractor/ContractorBidTracking"));
-const ContractorFinancials = lazy(() => import("./pages/contractor/ContractorFinancials"));
+
 const ContractorQuality = lazy(() => import("./pages/contractor/ContractorQuality"));
 const ContractorPerformance = lazy(() => import("./pages/contractor/ContractorPerformance"));
 const ContractorCommunications = lazy(() => import("./pages/contractor/ContractorCommunications"));
@@ -54,7 +54,7 @@ const ContractorJobsManagement = lazy(() => import("./pages/contractor/Contracto
 const GovernmentDashboard = lazy(() => import("./pages/government/GovernmentDashboard"));
 const GovernmentProjects = lazy(() => import("./pages/government/GovernmentProjects"));
 const GovernmentReports = lazy(() => import("./pages/government/GovernmentReports"));
-const GovernmentEscrow = lazy(() => import("./pages/government/GovernmentEscrow"));
+
 const GovernmentVerification = lazy(() => import("./pages/government/GovernmentVerification"));
 const GovernmentPaymentTransparency = lazy(() => import("./pages/government/GovernmentPaymentTransparency"));
 const GovernmentBlockchain = lazy(() => import("./pages/government/GovernmentBlockchain"));
@@ -70,9 +70,8 @@ const GovernmentUserManagement = lazy(() => import("./pages/government/Governmen
 const GovernmentBidApproval = lazy(() => import("./pages/government/GovernmentBidApproval"));
 const GovernmentMilestones = lazy(() => import("./pages/government/GovernmentMilestones"));
 const GovernmentNotifications = lazy(() => import("./pages/government/GovernmentNotifications"));
-const GovernmentEscrowFunding = lazy(() => import("./pages/government/GovernmentEscrowFunding"));
 const GovernmentLPO = lazy(() => import("./pages/government/GovernmentLPO"));
-const GovernmentPaymentRelease = lazy(() => import("./pages/government/GovernmentPaymentRelease"));
+const GovernmentWithdrawals = lazy(() => import("./pages/government/GovernmentWithdrawals"));
 
 // Public Routes
 const PublicTransparencyPortal = lazy(() => import("./pages/public/PublicTransparencyPortal"));
@@ -310,11 +309,7 @@ const App = () => {
                         />
                         <Route
                           path="/contractor/financials"
-                          element={
-                            <ProtectedRoute allowedRoles={["contractor"]}>
-                              <ContractorFinancials />
-                            </ProtectedRoute>
-                          }
+                          element={<Navigate to="/wallet" replace />}
                         />
                         <Route
                           path="/contractor/quality"
@@ -366,7 +361,8 @@ const App = () => {
                                   <Route index element={<GovernmentDashboard />} />
                                   <Route path="projects" element={<GovernmentProjects />} />
                                   <Route path="reports" element={<GovernmentReports />} />
-                                  <Route path="escrow" element={<GovernmentEscrow />} />
+                                  <Route path="escrow" element={<Navigate to="/wallet" replace />} />
+                                  <Route path="withdrawals" element={<GovernmentWithdrawals />} />
                                   <Route path="verification" element={<GovernmentVerification />} />
                                   <Route path="payments" element={<GovernmentPaymentTransparency />} />
                                   <Route path="blockchain" element={<GovernmentBlockchain />} />
@@ -381,10 +377,10 @@ const App = () => {
                                   <Route path="users" element={<GovernmentUserManagement />} />
                                   <Route path="bid-approval" element={<GovernmentBidApproval />} />
                                   <Route path="milestones" element={<GovernmentMilestones />} />
-                                  <Route path="escrow-funding" element={<GovernmentEscrowFunding />} />
+                                  <Route path="escrow-funding" element={<Navigate to="/wallet" replace />} />
                                   <Route path="notifications" element={<GovernmentNotifications />} />
                                   <Route path="lpo" element={<GovernmentLPO />} />
-                                  <Route path="payment-release" element={<GovernmentPaymentRelease />} />
+                                  <Route path="payment-release" element={<Navigate to="/government/withdrawals" replace />} />
                                   <Route path="info-requests" element={<GovernmentInformationRequests />} />
                                 </Routes>
                               </GovernmentRoleGuard>
