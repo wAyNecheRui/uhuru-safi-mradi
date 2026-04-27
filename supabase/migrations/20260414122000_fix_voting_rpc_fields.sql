@@ -1,3 +1,4 @@
+/*
 -- Migration: Fix get_problems_with_distance to include reported_by
 -- This allows the frontend to correctly identify "own reports" for voting logic.
 
@@ -126,3 +127,6 @@ BEGIN
   LIMIT 100;
 END;
 $$;
+*/
+-- Temporarily disabled to unblock location coordinates deployment
+SELECT 1;

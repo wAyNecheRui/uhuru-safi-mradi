@@ -128,291 +128,308 @@ const App = () => {
                     */}
                     <ErrorBoundary>
                       <Suspense fallback={<PageLoader />}>
-                      <Routes>
-                        <Route path="/" element={<Landing />} />
-                        <Route path="/about" element={<About />} />
-                        <Route path="/how-it-works" element={<HowItWorks />} />
-                        <Route path="/contact" element={<Contact />} />
-                        <Route path="/auth" element={<Auth />} />
-                        <Route path="/user-guide" element={<UserGuide />} />
-                        <Route path="/terms" element={<Terms />} />
-                        <Route path="/privacy" element={<Privacy />} />
-                        <Route path="/settings" element={
-                          <ProtectedRoute allowedRoles={["citizen", "contractor", "government", "admin"]}>
-                            <SettingsPage />
-                          </ProtectedRoute>
-                        } />
-                        <Route path="/profile" element={
-                          <ProtectedRoute allowedRoles={["citizen", "contractor", "government", "admin"]}>
-                            <ProfilePage />
-                          </ProtectedRoute>
-                        } />
-                        <Route path="/contractor-database" element={
-                          <ProtectedRoute allowedRoles={["government", "admin", "contractor"]}>
-                            <ContractorDatabasePage />
-                          </ProtectedRoute>
-                        } />
-                        <Route path="/workforce" element={
-                          <ProtectedRoute allowedRoles={["government", "admin", "contractor"]}>
-                            <WorkforcePage />
-                          </ProtectedRoute>
-                        } />
-                        <Route path="/analytics" element={
-                          <ProtectedRoute allowedRoles={["government", "admin"]}>
-                            <AnalyticsPage />
-                          </ProtectedRoute>
-                        } />
-                        <Route path="/visuals" element={
-                          <ProtectedRoute allowedRoles={["citizen", "contractor", "government", "admin"]}>
-                            <VisualAnalytics />
-                          </ProtectedRoute>
-                        } />
-
-                        {/* Citizen Routes */}
-                        <Route
-                          path="/citizen"
-                          element={
-                            <ProtectedRoute allowedRoles={["citizen"]}>
-                              <CitizenDashboard />
+                        <Routes>
+                          <Route path="/" element={<Landing />} />
+                          <Route path="/about" element={<About />} />
+                          <Route path="/how-it-works" element={<HowItWorks />} />
+                          <Route path="/contact" element={<Contact />} />
+                          <Route path="/auth" element={<Auth />} />
+                          <Route path="/user-guide" element={<UserGuide />} />
+                          <Route path="/terms" element={<Terms />} />
+                          <Route path="/privacy" element={<Privacy />} />
+                          <Route path="/settings" element={
+                            <ProtectedRoute allowedRoles={["citizen", "contractor", "government", "admin"]}>
+                              <SettingsPage />
                             </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/citizen/report"
-                          element={
-                            <ProtectedRoute allowedRoles={["citizen"]}>
-                              <CitizenReportIssue />
+                          } />
+                          <Route path="/profile" element={
+                            <ProtectedRoute allowedRoles={["citizen", "contractor", "government", "admin"]}>
+                              <ProfilePage />
                             </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/citizen/track"
-                          element={
-                            <ProtectedRoute allowedRoles={["citizen"]}>
-                              <CitizenTrackReports />
+                          } />
+                          <Route path="/contractor-database" element={
+                            <ProtectedRoute allowedRoles={["government", "admin", "contractor"]}>
+                              <ContractorDatabasePage />
                             </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/citizen/voting"
-                          element={
-                            <ProtectedRoute allowedRoles={["citizen"]}>
-                              <CitizenCommunityVoting />
+                          } />
+                          <Route path="/workforce" element={
+                            <ProtectedRoute allowedRoles={["government", "admin", "contractor"]}>
+                              <WorkforcePage />
                             </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/citizen/skills"
-                          element={
-                            <ProtectedRoute allowedRoles={["citizen"]}>
-                              <CitizenSkillsRegistration />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/citizen/workforce"
-                          element={
-                            <ProtectedRoute allowedRoles={["citizen"]}>
-                              <CitizenWorkforce />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/citizen/my-jobs"
-                          element={
-                            <ProtectedRoute allowedRoles={["citizen"]}>
-                              <CitizenMyJobs />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/citizen/projects"
-                          element={
-                            <ProtectedRoute allowedRoles={["citizen"]}>
-                              <CitizenProjects />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/citizen/transparency"
-                          element={
-                            <ProtectedRoute allowedRoles={["citizen"]}>
-                              <CitizenTransparency />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/citizen/notifications"
-                          element={
-                            <ProtectedRoute allowedRoles={["citizen"]}>
-                              <CitizenNotifications />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/citizen/guide"
-                          element={
-                            <ProtectedRoute allowedRoles={["citizen"]}>
-                              <CitizenGuide />
-                            </ProtectedRoute>
-                          }
-                        />
-
-                        {/* Contractor Routes */}
-                        <Route
-                          path="/contractor"
-                          element={
-                            <ProtectedRoute allowedRoles={["contractor"]}>
-                              <ContractorDashboard />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/contractor/bidding"
-                          element={
-                            <ProtectedRoute allowedRoles={["contractor"]}>
-                              <ContractorBidding />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/contractor/projects"
-                          element={
-                            <ProtectedRoute allowedRoles={["contractor"]}>
-                              <ContractorProjects />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/contractor/verification"
-                          element={
-                            <ProtectedRoute allowedRoles={["contractor"]}>
-                              <ContractorVerification />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/contractor/templates"
-                          element={
-                            <ProtectedRoute allowedRoles={["contractor"]}>
-                              <ContractorTemplates />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/contractor/tracking"
-                          element={
-                            <ProtectedRoute allowedRoles={["contractor"]}>
-                              <ContractorBidTracking />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/contractor/financials"
-                          element={<Navigate to="/wallet" replace />}
-                        />
-                        <Route
-                          path="/contractor/quality"
-                          element={
-                            <ProtectedRoute allowedRoles={["contractor"]}>
-                              <ContractorQuality />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/contractor/performance"
-                          element={
-                            <ProtectedRoute allowedRoles={["contractor"]}>
-                              <ContractorPerformance />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/contractor/communications"
-                          element={
-                            <ProtectedRoute allowedRoles={["contractor"]}>
-                              <ContractorCommunications />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/contractor/notifications"
-                          element={
-                            <ProtectedRoute allowedRoles={["contractor"]}>
-                              <ContractorNotifications />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/contractor/jobs"
-                          element={
-                            <ProtectedRoute allowedRoles={["contractor"]}>
-                              <ContractorJobsManagement />
-                            </ProtectedRoute>
-                          }
-                        />
-
-                        <Route
-                          path="/government/*"
-                          element={
+                          } />
+                          <Route path="/analytics" element={
                             <ProtectedRoute allowedRoles={["government", "admin"]}>
-                              <GovernmentRoleGuard>
-                                <Routes>
-                                  <Route index element={<GovernmentDashboard />} />
-                                  <Route path="projects" element={<GovernmentProjects />} />
-                                  <Route path="reports" element={<GovernmentReports />} />
-                                  <Route path="escrow" element={<Navigate to="/wallet" replace />} />
-                                  <Route path="withdrawals" element={<GovernmentWithdrawals />} />
-                                  <Route path="verification" element={<GovernmentVerification />} />
-                                  <Route path="payments" element={<GovernmentPaymentTransparency />} />
-                                  <Route path="blockchain" element={<GovernmentBlockchain />} />
-                                  <Route path="eacc" element={<GovernmentEACC />} />
-                                  <Route path="benchmarks" element={<GovernmentBenchmarks />} />
-                                  <Route path="verification-requests" element={<GovernmentVerificationRequests />} />
-                                  <Route path="portfolio" element={<GovernmentPortfolio />} />
-                                  <Route path="approvals" element={<GovernmentApprovalDashboard />} />
-                                  <Route path="contractors" element={<GovernmentContractorManagement />} />
-                                  <Route path="analytics" element={<GovernmentAnalytics />} />
-                                  <Route path="compliance" element={<GovernmentCompliance />} />
-                                  <Route path="users" element={<GovernmentUserManagement />} />
-                                  <Route path="bid-approval" element={<GovernmentBidApproval />} />
-                                  <Route path="milestones" element={<GovernmentMilestones />} />
-                                  <Route path="escrow-funding" element={<Navigate to="/wallet" replace />} />
-                                  <Route path="notifications" element={<GovernmentNotifications />} />
-                                  <Route path="lpo" element={<GovernmentLPO />} />
-                                  <Route path="payment-release" element={<Navigate to="/government/withdrawals" replace />} />
-                                  <Route path="info-requests" element={<GovernmentInformationRequests />} />
-                                </Routes>
-                              </GovernmentRoleGuard>
+                              <AnalyticsPage />
                             </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/disputes"
-                          element={
-                            <ProtectedRoute>
-                              <DisputeResolution />
+                          } />
+                          <Route path="/visuals" element={
+                            <ProtectedRoute allowedRoles={["citizen", "contractor", "government", "admin"]}>
+                              <VisualAnalytics />
                             </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/wallet"
-                          element={
-                            <ProtectedRoute>
-                              <WalletPage />
-                            </ProtectedRoute>
-                          }
-                        />
+                          } />
 
-                        {/* Public Routes */}
-                        <Route path="/transparency" element={<PublicTransparencyPortal />} />
-                        <Route path="/transparency/request-information" element={<InformationRequestPage />} />
-                        <Route path="/projects" element={<PublicProjects />} />
+                          {/* Citizen Routes */}
+                          <Route
+                            path="/citizen"
+                            element={
+                              <ProtectedRoute allowedRoles={["citizen"]}>
+                                <CitizenDashboard />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route
+                            path="/citizen/report"
+                            element={
+                              <ProtectedRoute allowedRoles={["citizen"]}>
+                                <CitizenReportIssue />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route
+                            path="/citizen/track"
+                            element={
+                              <ProtectedRoute allowedRoles={["citizen"]}>
+                                <CitizenTrackReports />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route
+                            path="/citizen/voting"
+                            element={
+                              <ProtectedRoute allowedRoles={["citizen"]}>
+                                <CitizenCommunityVoting />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route
+                            path="/citizen/skills"
+                            element={
+                              <ProtectedRoute allowedRoles={["citizen"]}>
+                                <CitizenSkillsRegistration />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route
+                            path="/citizen/workforce"
+                            element={
+                              <ProtectedRoute allowedRoles={["citizen"]}>
+                                <CitizenWorkforce />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route
+                            path="/citizen/my-jobs"
+                            element={
+                              <ProtectedRoute allowedRoles={["citizen"]}>
+                                <CitizenMyJobs />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route
+                            path="/citizen/projects"
+                            element={
+                              <ProtectedRoute allowedRoles={["citizen"]}>
+                                <CitizenProjects />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route
+                            path="/citizen/transparency"
+                            element={
+                              <ProtectedRoute allowedRoles={["citizen"]}>
+                                <CitizenTransparency />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route
+                            path="/citizen/notifications"
+                            element={
+                              <ProtectedRoute allowedRoles={["citizen"]}>
+                                <CitizenNotifications />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route
+                            path="/citizen/guide"
+                            element={
+                              <ProtectedRoute allowedRoles={["citizen"]}>
+                                <CitizenGuide />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route
+                            path="/citizen/wallet"
+                            element={
+                              <ProtectedRoute allowedRoles={["citizen"]}>
+                                <WalletPage />
+                              </ProtectedRoute>
+                            }
+                          />
 
-                        {/* Catch-all route */}
-                        <Route path="*" element={<NotFound />} />
-                      </Routes>
-                    </Suspense>
+                          {/* Contractor Routes */}
+                          <Route
+                            path="/contractor"
+                            element={
+                              <ProtectedRoute allowedRoles={["contractor"]}>
+                                <ContractorDashboard />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route
+                            path="/contractor/bidding"
+                            element={
+                              <ProtectedRoute allowedRoles={["contractor"]}>
+                                <ContractorBidding />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route
+                            path="/contractor/projects"
+                            element={
+                              <ProtectedRoute allowedRoles={["contractor"]}>
+                                <ContractorProjects />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route
+                            path="/contractor/verification"
+                            element={
+                              <ProtectedRoute allowedRoles={["contractor"]}>
+                                <ContractorVerification />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route
+                            path="/contractor/templates"
+                            element={
+                              <ProtectedRoute allowedRoles={["contractor"]}>
+                                <ContractorTemplates />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route
+                            path="/contractor/tracking"
+                            element={
+                              <ProtectedRoute allowedRoles={["contractor"]}>
+                                <ContractorBidTracking />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route
+                            path="/contractor/financials"
+                            element={<Navigate to="/contractor/wallet" replace />}
+                          />
+                          <Route
+                            path="/contractor/wallet"
+                            element={
+                              <ProtectedRoute allowedRoles={["contractor"]}>
+                                <WalletPage />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route
+                            path="/contractor/quality"
+                            element={
+                              <ProtectedRoute allowedRoles={["contractor"]}>
+                                <ContractorQuality />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route
+                            path="/contractor/performance"
+                            element={
+                              <ProtectedRoute allowedRoles={["contractor"]}>
+                                <ContractorPerformance />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route
+                            path="/contractor/communications"
+                            element={
+                              <ProtectedRoute allowedRoles={["contractor"]}>
+                                <ContractorCommunications />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route
+                            path="/contractor/notifications"
+                            element={
+                              <ProtectedRoute allowedRoles={["contractor"]}>
+                                <ContractorNotifications />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route
+                            path="/contractor/jobs"
+                            element={
+                              <ProtectedRoute allowedRoles={["contractor"]}>
+                                <ContractorJobsManagement />
+                              </ProtectedRoute>
+                            }
+                          />
+
+                          <Route
+                            path="/government/*"
+                            element={
+                              <ProtectedRoute allowedRoles={["government", "admin"]}>
+                                <GovernmentRoleGuard>
+                                  <Routes>
+                                    <Route index element={<GovernmentDashboard />} />
+                                    <Route path="projects" element={<GovernmentProjects />} />
+                                    <Route path="reports" element={<GovernmentReports />} />
+                                    <Route path="escrow" element={<Navigate to="/government/wallet" replace />} />
+                                    <Route path="wallet" element={<WalletPage />} />
+                                    <Route path="withdrawals" element={<GovernmentWithdrawals />} />
+                                    <Route path="verification" element={<GovernmentVerification />} />
+                                    <Route path="payments" element={<GovernmentPaymentTransparency />} />
+                                    <Route path="blockchain" element={<GovernmentBlockchain />} />
+                                    <Route path="eacc" element={<GovernmentEACC />} />
+                                    <Route path="benchmarks" element={<GovernmentBenchmarks />} />
+                                    <Route path="verification-requests" element={<GovernmentVerificationRequests />} />
+                                    <Route path="portfolio" element={<GovernmentPortfolio />} />
+                                    <Route path="approvals" element={<GovernmentApprovalDashboard />} />
+                                    <Route path="contractors" element={<GovernmentContractorManagement />} />
+                                    <Route path="analytics" element={<GovernmentAnalytics />} />
+                                    <Route path="compliance" element={<GovernmentCompliance />} />
+                                    <Route path="users" element={<GovernmentUserManagement />} />
+                                    <Route path="bid-approval" element={<GovernmentBidApproval />} />
+                                    <Route path="milestones" element={<GovernmentMilestones />} />
+                                    <Route path="escrow-funding" element={<Navigate to="/government/wallet" replace />} />
+                                    <Route path="notifications" element={<GovernmentNotifications />} />
+                                    <Route path="lpo" element={<GovernmentLPO />} />
+                                    <Route path="payment-release" element={<Navigate to="/government/withdrawals" replace />} />
+                                    <Route path="info-requests" element={<GovernmentInformationRequests />} />
+                                  </Routes>
+                                </GovernmentRoleGuard>
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route
+                            path="/disputes"
+                            element={
+                              <ProtectedRoute>
+                                <DisputeResolution />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route
+                            path="/wallet"
+                            element={
+                              <ProtectedRoute>
+                                <WalletPage />
+                              </ProtectedRoute>
+                            }
+                          />
+
+                          {/* Public Routes */}
+                          <Route path="/transparency" element={<PublicTransparencyPortal />} />
+                          <Route path="/transparency/request-information" element={<InformationRequestPage />} />
+                          <Route path="/projects" element={<PublicProjects />} />
+
+                          {/* Catch-all route */}
+                          <Route path="*" element={<NotFound />} />
+                        </Routes>
+                      </Suspense>
                     </ErrorBoundary>
                   </ConditionalLayout>
                 </AppLayout>

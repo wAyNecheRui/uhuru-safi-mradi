@@ -23,6 +23,9 @@ export const routeConfigs: RouteConfig[] = [
   { path: '/settings', component: 'SettingsPage', roles: ['citizen', 'contractor', 'government', 'admin'], title: 'Settings' },
   { path: '/profile', component: 'ProfilePage', roles: ['citizen', 'contractor', 'government', 'admin'], title: 'Profile' },
   { path: '/wallet', component: 'WalletPage', roles: ['citizen', 'contractor', 'government', 'admin'], title: 'My Wallet' },
+  { path: '/citizen/wallet', component: 'WalletPage', roles: ['citizen'], title: 'My Wallet' },
+  { path: '/contractor/wallet', component: 'WalletPage', roles: ['contractor'], title: 'My Wallet' },
+  { path: '/government/wallet', component: 'WalletPage', roles: ['government', 'admin'], title: 'Treasury Wallet' },
 
   // Government + Contractor routes
   { path: '/contractor-database', component: 'ContractorDatabasePage', roles: ['government', 'admin', 'contractor'], title: 'Contractor Database' },
@@ -47,7 +50,7 @@ export const routeConfigs: RouteConfig[] = [
   { path: '/contractor/bidding', component: 'ContractorBidding', roles: ['contractor'], title: 'Browse Projects' },
   { path: '/contractor/tracking', component: 'ContractorBidTracking', roles: ['contractor'], title: 'My Bids' },
   { path: '/contractor/projects', component: 'ContractorProjects', roles: ['contractor'], title: 'My Projects' },
-  
+
   { path: '/contractor/templates', component: 'ContractorTemplates', roles: ['contractor'], title: 'Bid Templates' },
   { path: '/contractor/quality', component: 'ContractorQuality', roles: ['contractor'], title: 'Quality Management' },
   { path: '/contractor/jobs', component: 'ContractorJobsManagement', roles: ['contractor'], title: 'Job Postings' },

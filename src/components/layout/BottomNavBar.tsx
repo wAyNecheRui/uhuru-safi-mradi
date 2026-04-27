@@ -3,9 +3,9 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import {
-  LayoutDashboard, AlertTriangle, FileText, Map, Users,
-  Briefcase, Eye, FolderOpen, Wallet,
-  Shield, CheckCircle, BarChart3
+  LayoutDashboard, AlertTriangle, FileText, Map,
+  Briefcase, FolderOpen, Wallet,
+  CheckCircle, BarChart3
 } from 'lucide-react';
 
 interface BottomNavItem {
@@ -19,14 +19,14 @@ const citizenBottomNav: BottomNavItem[] = [
   { title: 'Report', url: '/citizen/report', icon: AlertTriangle },
   { title: 'Projects', url: '/citizen/projects', icon: Map },
   { title: 'Track', url: '/citizen/track', icon: FileText },
-  { title: 'More', url: '/citizen/transparency', icon: Eye },
+  { title: 'Wallet', url: '/citizen/wallet', icon: Wallet },
 ];
 
 const contractorBottomNav: BottomNavItem[] = [
   { title: 'Home', url: '/contractor', icon: LayoutDashboard },
   { title: 'Bids', url: '/contractor/bidding', icon: Briefcase },
   { title: 'Projects', url: '/contractor/projects', icon: FolderOpen },
-  { title: 'Finance', url: '/contractor/financials', icon: Wallet },
+  { title: 'Wallet', url: '/contractor/wallet', icon: Wallet },
   { title: 'Stats', url: '/contractor/performance', icon: BarChart3 },
 ];
 
@@ -34,7 +34,7 @@ const governmentBottomNav: BottomNavItem[] = [
   { title: 'Home', url: '/government', icon: LayoutDashboard },
   { title: 'Projects', url: '/government/projects', icon: FolderOpen },
   { title: 'Approve', url: '/government/approvals', icon: CheckCircle },
-  { title: 'Wallet', url: '/wallet', icon: Shield },
+  { title: 'Wallet', url: '/government/wallet', icon: Wallet },
   { title: 'Analytics', url: '/government/analytics', icon: BarChart3 },
 ];
 

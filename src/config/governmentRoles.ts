@@ -17,7 +17,7 @@ export interface DepartmentPermission {
 export const GOVERNMENT_DEPARTMENTS: DepartmentPermission[] = [
     {
         department: 'The National Treasury',
-        allowedRoutes: ['/wallet', '/government/lpo', '/government/analytics'],
+        allowedRoutes: ['/government/wallet', '/government/lpo', '/government/analytics'],
         primaryFocus: 'Exchequer Funding & Budgeting'
     },
     {

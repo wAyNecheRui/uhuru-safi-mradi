@@ -69,7 +69,7 @@ export const citizenDashboardRoutes: DashboardNavGroup[] = [
   {
     label: 'Wallet',
     items: [
-      { title: 'My Wallet', url: '/wallet', icon: Wallet },
+      { title: 'My Wallet', url: '/citizen/wallet', icon: Wallet },
     ],
   },
   {
@@ -93,7 +93,7 @@ export const contractorDashboardRoutes: DashboardNavGroup[] = [
   {
     label: 'Operations',
     items: [
-      { title: 'My Wallet', url: '/wallet', icon: Wallet },
+      { title: 'My Wallet', url: '/contractor/wallet', icon: Wallet },
       { title: 'Bid Templates', url: '/contractor/templates', icon: ClipboardList },
       { title: 'Quality', url: '/contractor/quality', icon: CheckCircle },
       { title: 'Job Postings', url: '/contractor/jobs', icon: Briefcase },
@@ -123,7 +123,7 @@ export const governmentDashboardRoutes: DashboardNavGroup[] = [
   {
     label: 'Finance',
     items: [
-      { title: 'Treasury Wallet', url: '/wallet', icon: Wallet },
+      { title: 'Treasury Wallet', url: '/government/wallet', icon: Wallet },
       { title: 'Withdrawals Queue', url: '/government/withdrawals', icon: Wallet },
       { title: 'Payment Audit', url: '/government/payments', icon: FileText },
       { title: 'Milestones', url: '/government/milestones', icon: Milestone },

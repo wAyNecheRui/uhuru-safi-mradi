@@ -25,8 +25,10 @@ import { useMemo } from 'react';
 
 export function DashboardSidebar() {
   const { user, signOut } = useAuth();
-  const { state } = useSidebar();
-  const collapsed = state === 'collapsed';
+  const { state, isMobile: sidebarIsMobile } = useSidebar();
+  // On mobile the sidebar renders as a full-width Sheet drawer,
+  // so always show text labels regardless of collapsed state
+  const collapsed = sidebarIsMobile ? false : state === 'collapsed';
   const location = useLocation();
   const navigate = useNavigate();
 
