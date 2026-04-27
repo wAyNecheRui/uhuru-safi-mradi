@@ -34,7 +34,7 @@ const governmentBottomNav: BottomNavItem[] = [
   { title: 'Home', url: '/government', icon: LayoutDashboard },
   { title: 'Projects', url: '/government/projects', icon: FolderOpen },
   { title: 'Approve', url: '/government/approvals', icon: CheckCircle },
-  { title: 'Escrow', url: '/government/escrow', icon: Shield },
+  { title: 'Wallet', url: '/wallet', icon: Shield },
   { title: 'Analytics', url: '/government/analytics', icon: BarChart3 },
 ];
 

@@ -187,8 +187,8 @@ const GovernmentDashboard = () => {
     { label: 'Contractor Mgmt', icon: Building2, path: '/government/contractors' },
     { label: 'Analytics', icon: BarChart3, path: '/government/analytics' },
     { label: 'Compliance', icon: Scale, path: '/government/compliance' },
-    { label: 'Escrow Funding', icon: Wallet, path: '/government/escrow-funding' },
-    { label: 'Release Payments', icon: Wallet, path: '/government/payment-release' },
+    { label: 'Treasury Wallet', icon: Wallet, path: '/wallet' },
+    { label: 'Withdrawals Queue', icon: Wallet, path: '/government/withdrawals' },
     { label: 'Issue LPO', icon: FileText, path: '/government/lpo' },
   ];
 

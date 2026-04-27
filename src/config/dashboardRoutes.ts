@@ -124,6 +124,7 @@ export const governmentDashboardRoutes: DashboardNavGroup[] = [
     label: 'Finance',
     items: [
       { title: 'Treasury Wallet', url: '/wallet', icon: Wallet },
+      { title: 'Withdrawals Queue', url: '/government/withdrawals', icon: Wallet },
       { title: 'Payment Audit', url: '/government/payments', icon: FileText },
       { title: 'Milestones', url: '/government/milestones', icon: Milestone },
       { title: 'LPO', url: '/government/lpo', icon: ClipboardList },

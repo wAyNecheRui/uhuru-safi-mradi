@@ -160,8 +160,8 @@ const GovernmentProjects = () => {
                   projectId={selectedProject.id}
                   onAction={(step) => {
                     if (step.actionBy === 'government') {
-                      if (step.name.includes('Escrow')) navigate('/government/escrow-funding');
-                      else if (step.name.includes('Payment')) navigate('/government/payment-release');
+                      if (step.name.includes('Escrow')) navigate('/wallet');
+                      else if (step.name.includes('Payment')) navigate('/government/withdrawals');
                       else if (step.name.includes('Complete')) setCompletionProject(selectedProject);
                     }
                   }}

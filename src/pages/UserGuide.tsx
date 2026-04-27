@@ -673,35 +673,33 @@ const UserGuide = () => {
                     <div className="grid md:grid-cols-2 gap-4">
                       <div className="p-4 border rounded-lg">
                         <h4 className="font-semibold mb-2 flex items-center gap-2">
-                          <Wallet className="h-4 w-4" /> Fund Escrow (C2B):
+                          <Wallet className="h-4 w-4" /> Treasury Wallet:
                         </h4>
                         <ol className="text-sm text-gray-600 space-y-1 list-decimal list-inside">
-                          <li>Go to <strong>/government/escrow-funding</strong></li>
-                          <li>Select project to fund</li>
-                          <li>Enter funding amount</li>
-                          <li>Add treasury reference</li>
-                          <li>Confirm M-Pesa payment</li>
+                          <li>Go to <strong>/wallet</strong></li>
+                          <li>View live treasury balance</li>
+                          <li>Coins fund project escrows automatically</li>
+                          <li>Worker payouts settle instantly</li>
                         </ol>
                       </div>
                       <div className="p-4 border rounded-lg">
                         <h4 className="font-semibold mb-2 flex items-center gap-2">
-                          <ArrowRight className="h-4 w-4" /> Release Payment (B2C):
+                          <ArrowRight className="h-4 w-4" /> Withdrawals Queue:
                         </h4>
                         <ol className="text-sm text-gray-600 space-y-1 list-decimal list-inside">
-                          <li>Go to <strong>/government/payment-release</strong></li>
-                          <li>View verified milestones</li>
-                          <li>Check citizen verifications (min 2)</li>
-                          <li>Approve payment release</li>
-                          <li>Funds sent to contractor M-Pesa</li>
+                          <li>Go to <strong>/government/withdrawals</strong></li>
+                          <li>Review pending payout requests</li>
+                          <li>Send cash via M-Pesa B2C or bank</li>
+                          <li>Mark Paid (or Failed → auto-refund)</li>
                         </ol>
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <Button onClick={() => navigate('/government/escrow-funding')} variant="outline">
-                        Fund Escrow
+                      <Button onClick={() => navigate('/wallet')} variant="outline">
+                        Treasury Wallet
                       </Button>
-                      <Button onClick={() => navigate('/government/payment-release')} variant="outline">
-                        Release Payments
+                      <Button onClick={() => navigate('/government/withdrawals')} variant="outline">
+                        Withdrawals Queue
                       </Button>
                     </div>
                   </CardContent>
@@ -756,8 +754,8 @@ const UserGuide = () => {
                         { path: '/government/portfolio', label: 'Portfolio', icon: Building2 },
                         { path: '/government/bid-approval', label: 'Bid Approval', icon: CheckCircle },
                         { path: '/government/verification-requests', label: 'Verify Contractors', icon: Shield },
-                        { path: '/government/escrow-funding', label: 'Fund Escrow', icon: Wallet },
-                        { path: '/government/payment-release', label: 'Release Payments', icon: Wallet },
+                        { path: '/wallet', label: 'Treasury Wallet', icon: Wallet },
+                        { path: '/government/withdrawals', label: 'Withdrawals', icon: Wallet },
                         { path: '/government/milestones', label: 'Milestones', icon: Clock },
                         { path: '/government/analytics', label: 'Analytics', icon: TrendingUp },
                         { path: '/government/lpo', label: 'LPO Management', icon: FileText },

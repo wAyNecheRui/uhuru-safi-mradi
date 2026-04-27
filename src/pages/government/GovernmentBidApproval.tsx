@@ -185,7 +185,7 @@ const GovernmentBidApproval = () => {
 
         // Redirect to escrow funding page
         setTimeout(() => {
-          navigate('/government/escrow-funding');
+          navigate('/wallet');
         }, 1500);
       } else {
         throw new Error('Failed to select contractor');

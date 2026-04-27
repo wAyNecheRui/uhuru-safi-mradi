@@ -58,7 +58,7 @@ const routeLabels: Record<string, string> = {
   'user-management': 'User Management',
   'bid-approval': 'Bid Approval',
   'milestones': 'Milestones',
-  'escrow-funding': 'Escrow Funding',
+  'withdrawals': 'Withdrawals Queue',
   'lpo': 'Purchase Orders',
 };
 
