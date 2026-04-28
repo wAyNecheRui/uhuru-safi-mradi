@@ -31,8 +31,8 @@ export const CountyAssignmentGate: React.FC = () => {
 
   const needsCounty = useMemo(() => {
     if (!user || !userProfile) return false;
-    // Citizens only — government uses assigned_counties, contractors are optional
-    if (user.user_type !== 'citizen') return false;
+    // Citizens & government must set a home/jurisdiction county. Contractors optional.
+    if (user.user_type !== 'citizen' && user.user_type !== 'government') return false;
     return !userProfile.county?.trim();
   }, [user, userProfile]);
 
