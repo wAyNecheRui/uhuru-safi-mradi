@@ -88,8 +88,8 @@ export const CountyAssignmentGate: React.FC = () => {
           <Alert>
             <ShieldAlert className="h-4 w-4" />
             <AlertDescription className="text-xs">
-              <strong>This is permanent.</strong> After saving, only an administrator
-              can change your county.
+              <strong>Choose carefully.</strong> Your county determines which local
+              issues you can validate and vote on.
             </AlertDescription>
           </Alert>
 
