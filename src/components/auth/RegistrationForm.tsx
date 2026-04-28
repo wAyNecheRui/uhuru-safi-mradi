@@ -148,7 +148,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
             </Select>
             {formData.type !== 'contractor' && (
               <p className="text-[11px] text-slate-500">
-                Permanent — only an admin can change it later.
+                This will be locked to your account once saved.
               </p>
             )}
           </div>

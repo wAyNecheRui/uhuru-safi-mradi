@@ -643,7 +643,7 @@ const Profile = () => {
                                   className="mt-1 bg-muted"
                                 />
                                 <p className="text-[11px] text-muted-foreground mt-1">
-                                  Permanent — contact an administrator to change.
+                                  Locked to your account.
                                 </p>
                               </>
                             ) : (
