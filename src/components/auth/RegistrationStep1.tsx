@@ -222,8 +222,8 @@ const RegistrationStep1: React.FC<RegistrationStep1Props> = ({
           {countyRequired && (
             <p className="text-[11px] text-muted-foreground">
               {role === 'government'
-                ? 'Your jurisdiction. Permanent — only an admin can change it later.'
-                : 'Your home county. Permanent — only an admin can change it later.'}
+                ? 'Your jurisdiction. This will be locked to your account once saved.'
+                : 'Your home county. This will be locked to your account once saved.'}
             </p>
           )}
           {role === 'contractor' && (

@@ -20,8 +20,8 @@ import { toast } from 'sonner';
  * Contractors are also exempt — their county is optional.
  *
  * Backfills legacy citizen users who registered before the county-required rule.
- * Once set, the database trigger `enforce_county_lock_and_sync` permanently
- * locks the value (admin-only override).
+ * Once set, the database trigger `enforce_county_lock_and_sync` locks the value
+ * to the user's account.
  */
 export const CountyAssignmentGate: React.FC = () => {
   const { user } = useAuth();
@@ -56,7 +56,7 @@ export const CountyAssignmentGate: React.FC = () => {
 
       if (error) throw error;
 
-      toast.success('County set successfully. This is now permanent.');
+      toast.success('County set successfully.');
       await refreshProfiles();
     } catch (err: any) {
       console.error('CountyAssignmentGate save failed:', err);
@@ -88,8 +88,8 @@ export const CountyAssignmentGate: React.FC = () => {
           <Alert>
             <ShieldAlert className="h-4 w-4" />
             <AlertDescription className="text-xs">
-              <strong>This is permanent.</strong> After saving, only an administrator
-              can change your county.
+              <strong>Choose carefully.</strong> Your county determines which local
+              issues you can validate and vote on.
             </AlertDescription>
           </Alert>
 
