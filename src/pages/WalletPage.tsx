@@ -148,6 +148,13 @@ const WalletPage: React.FC = () => {
           </CardContent>
         </Card>
 
+        {/* Government-only: Treasury allocation actions */}
+        {userType === 'government' && (
+          <div className="mb-6">
+            <GovernmentTreasuryActions />
+          </div>
+        )}
+
         {/* Stats */}
         {wallet && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
