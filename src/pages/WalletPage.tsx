@@ -22,6 +22,7 @@ import { format, parseISO } from 'date-fns';
 import { Navigate } from 'react-router-dom';
 import SendByNationalIdDialog from '@/components/wallet/SendByNationalIdDialog';
 import WithdrawDialog from '@/components/wallet/WithdrawDialog';
+import GovernmentTreasuryActions from '@/components/government/GovernmentTreasuryActions';
 
 const formatKES = (n: number) => `KES ${Number(n ?? 0).toLocaleString()}`;
 
@@ -146,6 +147,13 @@ const WalletPage: React.FC = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Government-only: Treasury allocation actions */}
+        {userType === 'government' && (
+          <div className="mb-6">
+            <GovernmentTreasuryActions />
+          </div>
+        )}
 
         {/* Stats */}
         {wallet && (

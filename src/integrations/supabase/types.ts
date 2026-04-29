@@ -3084,12 +3084,20 @@ export type Database = {
         }
         Returns: Json
       }
+      wallet_send_by_business_reg: {
+        Args: { p_amount: number; p_business_reg: string; p_note?: string }
+        Returns: Json
+      }
       wallet_send_by_national_id: {
         Args: {
           p_amount: number
           p_note?: string
           p_recipient_national_id: string
         }
+        Returns: Json
+      }
+      wallet_topup_project_escrow: {
+        Args: { p_amount: number; p_project_id: string; p_reason?: string }
         Returns: Json
       }
     }

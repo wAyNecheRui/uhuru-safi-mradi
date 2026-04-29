@@ -23,6 +23,7 @@ import { WorkflowGuardService, WORKFLOW_STATUS, MIN_VOTES_THRESHOLD } from '@/se
 import { LiveNotificationService } from '@/services/LiveNotificationService';
 import { supabase } from '@/integrations/supabase/client';
 import BulkApprovalPanel from '@/components/government/BulkApprovalPanel';
+import GovernmentTreasuryActions from '@/components/government/GovernmentTreasuryActions';
 import BulkBiddingPanel from '@/components/government/BulkBiddingPanel';
 
 // Component for Approved Reports that are ready to open for bidding
@@ -243,6 +244,9 @@ const GovernmentDashboard = () => {
           ))}
         </div>
       </div>
+
+      {/* Treasury Quick Actions — auto-allocation status + manual top-up */}
+      <GovernmentTreasuryActions />
 
       {/* Budget Overview */}
       <Card>
