@@ -244,6 +244,9 @@ const GovernmentDashboard = () => {
         </div>
       </div>
 
+      {/* Treasury Quick Actions — auto-allocation status + manual top-up */}
+      <GovernmentTreasuryActions />
+
       {/* Budget Overview */}
       <Card>
         <CardHeader className="pb-3">
