@@ -6,6 +6,8 @@ import { Building, ShieldCheck } from 'lucide-react';
 
 interface ContractorBannerProps {
   contractorId: string | null;
+  /** Optional report/project status — used to show an accurate stage label when no contractor is yet assigned */
+  reportStatus?: string | null;
   compact?: boolean;
 }
 
