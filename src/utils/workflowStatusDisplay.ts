@@ -123,7 +123,7 @@ const STAGE_MAP: Record<string, WorkflowStageDisplay> = {
  * Uses report.status as the source of truth.
  */
 export const getWorkflowStageDisplay = (status: string | null | undefined): WorkflowStageDisplay => {
-  const normalised = (status || 'pending').toLowerCase().trim();
+  const normalised = normaliseStatus(status);
   return STAGE_MAP[normalised] || STAGE_MAP.pending;
 };
 
