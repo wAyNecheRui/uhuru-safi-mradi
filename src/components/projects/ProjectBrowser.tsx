@@ -8,8 +8,9 @@ import { Search, SlidersHorizontal, LayoutGrid, List, ChevronLeft, ChevronRight,
 import { CATEGORIES } from '@/constants/problemReporting';
 import ProjectCard, { type ProjectCardData } from './ProjectCard';
 import { cn } from '@/lib/utils';
+import { getLifecycleBucket, LIFECYCLE_BUCKETS, type LifecycleBucket } from '@/utils/workflowStatusDisplay';
 
-type TabKey = 'all' | 'in_progress' | 'planning' | 'completed';
+type TabKey = 'all' | LifecycleBucket;
 
 interface ProjectBrowserProps {
   projects: ProjectCardData[];
@@ -23,10 +24,8 @@ interface ProjectBrowserProps {
 }
 
 const TABS: { key: TabKey; label: string }[] = [
-  { key: 'all', label: 'All Projects' },
-  { key: 'in_progress', label: 'Ongoing' },
-  { key: 'planning', label: 'Pending' },
-  { key: 'completed', label: 'Completed' },
+  { key: 'all', label: 'All' },
+  ...LIFECYCLE_BUCKETS.map(b => ({ key: b.key as TabKey, label: b.label })),
 ];
 
 const ProjectBrowser: React.FC<ProjectBrowserProps> = ({
@@ -48,15 +47,9 @@ const ProjectBrowser: React.FC<ProjectBrowserProps> = ({
   const filtered = useMemo(() => {
     let result = projects;
 
-    // Tab filter
+    // Tab filter — lifecycle bucket
     if (activeTab !== 'all') {
-      result = result.filter(p => {
-        const s = p.status?.toLowerCase().replace(/\s+/g, '_');
-        if (activeTab === 'in_progress') return s === 'in_progress' || s === 'active';
-        if (activeTab === 'planning') return s === 'planning' || s === 'pending' || s === 'pending_review';
-        if (activeTab === 'completed') return s === 'completed';
-        return true;
-      });
+      result = result.filter(p => getLifecycleBucket(p.status) === activeTab);
     }
 
     // Category filter
