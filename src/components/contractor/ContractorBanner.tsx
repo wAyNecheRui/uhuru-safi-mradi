@@ -72,14 +72,15 @@ const ContractorBanner: React.FC<ContractorBannerProps> = ({ contractorId, repor
   }, [contractorId]);
 
   if (!contractorId) {
+    const stage = getWorkflowStageDisplay(reportStatus);
     return (
       <div className="flex items-center gap-3 py-2 px-3 rounded-lg bg-muted/50 mb-3">
         <div className="h-9 w-9 rounded-full bg-muted flex items-center justify-center">
           <Building className="h-4 w-4 text-muted-foreground" />
         </div>
         <div>
-          <p className="text-sm font-medium text-muted-foreground">No Contractor Assigned</p>
-          <p className="text-xs text-muted-foreground">Pending bid selection</p>
+          <p className="text-sm font-medium text-foreground">{stage.label}</p>
+          <p className="text-xs text-muted-foreground">{stage.description}</p>
         </div>
       </div>
     );
