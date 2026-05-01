@@ -67,7 +67,7 @@ const getCategoryLabel = (category: string | null) => {
 };
 
 const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick, className, compact = false }) => {
-  const sc = getStatusConfig(project.status);
+  const sc = getBadge(project.status);
 
   return (
     <div
