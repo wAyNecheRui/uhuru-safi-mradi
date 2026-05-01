@@ -18,7 +18,7 @@ interface ContractorInfo {
   specialization: string[] | null;
 }
 
-const ContractorBanner: React.FC<ContractorBannerProps> = ({ contractorId, compact = false }) => {
+const ContractorBanner: React.FC<ContractorBannerProps> = ({ contractorId, reportStatus, compact = false }) => {
   const [contractor, setContractor] = useState<ContractorInfo | null>(null);
   const [loading, setLoading] = useState(true);
 
