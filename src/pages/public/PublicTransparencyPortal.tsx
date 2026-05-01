@@ -363,7 +363,7 @@ export default function PublicTransparencyPortal() {
                     </div>
                   )}
                   <CardContent className="p-6">
-                    <ContractorBanner contractorId={project.contractor_id || null} />
+                    <ContractorBanner contractorId={project.contractor_id || null} reportStatus={project.status} />
                     <div className="flex flex-col lg:flex-row gap-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">

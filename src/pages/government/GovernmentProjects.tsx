@@ -127,7 +127,7 @@ const GovernmentProjects = () => {
               </div>
             )}
             <CardHeader>
-              <ContractorBanner contractorId={selectedProject.contractor_id} />
+              <ContractorBanner contractorId={selectedProject.contractor_id} reportStatus={selectedProject.status} />
               <div className="flex justify-between items-start">
                 <div>
                   <CardTitle className="text-xl mb-2">{selectedProject.title}</CardTitle>
