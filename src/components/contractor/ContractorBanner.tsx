@@ -3,9 +3,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Building, ShieldCheck } from 'lucide-react';
+import { getWorkflowStageDisplay } from '@/utils/workflowStatusDisplay';
 
 interface ContractorBannerProps {
   contractorId: string | null;
+  /** Optional report/project status — used to show an accurate stage label when no contractor is yet assigned */
+  reportStatus?: string | null;
   compact?: boolean;
 }
 
@@ -16,7 +19,7 @@ interface ContractorInfo {
   specialization: string[] | null;
 }
 
-const ContractorBanner: React.FC<ContractorBannerProps> = ({ contractorId, compact = false }) => {
+const ContractorBanner: React.FC<ContractorBannerProps> = ({ contractorId, reportStatus, compact = false }) => {
   const [contractor, setContractor] = useState<ContractorInfo | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -69,14 +72,15 @@ const ContractorBanner: React.FC<ContractorBannerProps> = ({ contractorId, compa
   }, [contractorId]);
 
   if (!contractorId) {
+    const stage = getWorkflowStageDisplay(reportStatus);
     return (
       <div className="flex items-center gap-3 py-2 px-3 rounded-lg bg-muted/50 mb-3">
         <div className="h-9 w-9 rounded-full bg-muted flex items-center justify-center">
           <Building className="h-4 w-4 text-muted-foreground" />
         </div>
         <div>
-          <p className="text-sm font-medium text-muted-foreground">No Contractor Assigned</p>
-          <p className="text-xs text-muted-foreground">Pending bid selection</p>
+          <p className="text-sm font-medium text-foreground">{stage.label}</p>
+          <p className="text-xs text-muted-foreground">{stage.description}</p>
         </div>
       </div>
     );

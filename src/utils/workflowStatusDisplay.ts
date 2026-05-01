@@ -11,6 +11,56 @@ export interface WorkflowStageDisplay {
   icon: 'pending' | 'review' | 'approved' | 'bidding' | 'contractor' | 'progress' | 'verification' | 'completed' | 'rejected';
 }
 
+/**
+ * Lifecycle bucket — coarse 5-stage grouping used for navigation tabs and filters.
+ * Every canonical status maps to exactly one bucket.
+ */
+export type LifecycleBucket =
+  | 'awaiting_action'
+  | 'in_procurement'
+  | 'active_delivery'
+  | 'completed'
+  | 'closed';
+
+export const LIFECYCLE_BUCKETS: { key: LifecycleBucket; label: string; description: string }[] = [
+  { key: 'awaiting_action', label: 'Awaiting Action', description: 'Pending validation, review or approval' },
+  { key: 'in_procurement', label: 'In Procurement', description: 'Open for bids or contractor selected' },
+  { key: 'active_delivery', label: 'Active Delivery', description: 'Funded, in progress or under verification' },
+  { key: 'completed', label: 'Completed', description: 'All milestones paid and closed' },
+  { key: 'closed', label: 'Closed / Rejected', description: 'Cancelled or rejected projects' },
+];
+
+/**
+ * Normalise any legacy / UI-cased status string to the canonical workflow status key.
+ * Keeps every consumer in sync with one source of truth.
+ */
+export const normaliseStatus = (status: string | null | undefined): string => {
+  const s = (status || 'pending').toLowerCase().trim().replace(/\s+/g, '_');
+  // Legacy aliases → canonical
+  const aliases: Record<string, string> = {
+    planning: 'bidding_open',          // legacy "planning" was used while bidding was open
+    pending_review: 'under_review',
+    active: 'in_progress',
+    submitted: 'pending',
+    community_review: 'pending',
+    government_review: 'under_review',
+  };
+  return aliases[s] || s;
+};
+
+/**
+ * Map a canonical (or legacy) status to its lifecycle bucket.
+ */
+export const getLifecycleBucket = (status: string | null | undefined): LifecycleBucket => {
+  const s = normaliseStatus(status);
+  if (['pending', 'under_review', 'approved'].includes(s)) return 'awaiting_action';
+  if (['bidding_open', 'contractor_selected'].includes(s)) return 'in_procurement';
+  if (['funded', 'in_progress', 'under_verification', 'verification', 'payment_released'].includes(s)) return 'active_delivery';
+  if (s === 'completed') return 'completed';
+  if (['rejected', 'cancelled'].includes(s)) return 'closed';
+  return 'awaiting_action';
+};
+
 const STAGE_MAP: Record<string, WorkflowStageDisplay> = {
   pending: {
     label: 'Awaiting Community Votes',
@@ -73,7 +123,7 @@ const STAGE_MAP: Record<string, WorkflowStageDisplay> = {
  * Uses report.status as the source of truth.
  */
 export const getWorkflowStageDisplay = (status: string | null | undefined): WorkflowStageDisplay => {
-  const normalised = (status || 'pending').toLowerCase().trim();
+  const normalised = normaliseStatus(status);
   return STAGE_MAP[normalised] || STAGE_MAP.pending;
 };
 

@@ -123,7 +123,7 @@ const CategoryRow = ({
 
               {/* Contractor Banner - compact */}
               <div className="px-3 pt-2">
-                <ContractorBanner contractorId={project.contractor_id} compact />
+                <ContractorBanner contractorId={project.contractor_id} reportStatus={project.status} compact />
               </div>
               
               <CardContent className="p-3 pt-2">

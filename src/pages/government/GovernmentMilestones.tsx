@@ -9,6 +9,7 @@ import { Target, Loader2, Building2, Wallet, Calendar, CheckCircle } from 'lucid
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { calculateProjectProgress } from '@/utils/progressCalculation';
+import { getWorkflowStageDisplay } from '@/utils/workflowStatusDisplay';
 
 interface Milestone {
   id: string;
@@ -211,13 +212,23 @@ const GovernmentMilestones = () => {
                           <Progress value={getMilestoneProgress(project.milestones)} className="h-2" />
                         </div>
                       </div>
-                    ) : (
-                      <div className="border rounded-lg p-6 bg-orange-50 border-orange-200 text-center">
-                        <Target className="h-8 w-8 text-orange-400 mx-auto mb-2" />
-                        <p className="text-orange-800 font-medium">Awaiting Milestone Configuration</p>
-                        <p className="text-sm text-orange-600">The contractor has not yet configured milestones for this project.</p>
-                      </div>
-                    )}
+                    ) : (() => {
+                      const stage = getWorkflowStageDisplay(project.status);
+                      const hasContractor = !!project.contractor_id;
+                      const headline = hasContractor
+                        ? 'Awaiting Milestone Configuration'
+                        : stage.label;
+                      const detail = hasContractor
+                        ? 'The contractor has not yet configured milestones for this project.'
+                        : stage.description;
+                      return (
+                        <div className="border rounded-lg p-6 bg-orange-50 border-orange-200 text-center">
+                          <Target className="h-8 w-8 text-orange-400 mx-auto mb-2" />
+                          <p className="text-orange-800 font-medium">{headline}</p>
+                          <p className="text-sm text-orange-600">{detail}</p>
+                        </div>
+                      );
+                    })()}
                   </CardContent>
                 </Card>
               ))}

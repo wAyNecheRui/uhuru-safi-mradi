@@ -249,7 +249,7 @@ const CitizenProjects = () => {
                       <ArrowLeft className="h-4 w-4 mr-1" /> Back to list
                     </Button>
                   </div>
-                  <ContractorBanner contractorId={expandedProject.contractor_id} />
+                  <ContractorBanner contractorId={expandedProject.contractor_id} reportStatus={expandedProject.status} />
                   <CardTitle className="text-xl">{expandedProject.title}</CardTitle>
                   <p className="text-muted-foreground text-sm">{expandedProject.description}</p>
                   <div className="flex flex-wrap gap-2 mt-2">
