@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { MapPin, Wallet, Users, Calendar, ImageOff, Building, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CATEGORIES } from '@/constants/problemReporting';
+import { getWorkflowStageDisplay, normaliseStatus } from '@/utils/workflowStatusDisplay';
 
 export interface ProjectCardData {
   id: string;
@@ -29,18 +30,28 @@ interface ProjectCardProps {
   compact?: boolean;
 }
 
-const statusConfig: Record<string, { label: string; classes: string }> = {
-  completed: { label: 'Completed', classes: 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800' },
-  in_progress: { label: 'In Progress', classes: 'bg-primary/10 text-primary border-primary/20' },
-  planning: { label: 'Planning', classes: 'bg-accent/15 text-accent-foreground border-accent/20' },
-  pending: { label: 'Pending', classes: 'bg-muted text-muted-foreground border-border' },
-  active: { label: 'Active', classes: 'bg-primary/10 text-primary border-primary/20' },
-  cancelled: { label: 'Cancelled', classes: 'bg-destructive/10 text-destructive border-destructive/20' },
+// Map canonical status → tailwind classes for the badge pill.
+const STATUS_BADGE_CLASSES: Record<string, string> = {
+  pending: 'bg-amber-50 text-amber-800 border-amber-200',
+  under_review: 'bg-blue-50 text-blue-800 border-blue-200',
+  approved: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+  bidding_open: 'bg-purple-50 text-purple-800 border-purple-200',
+  contractor_selected: 'bg-indigo-50 text-indigo-800 border-indigo-200',
+  funded: 'bg-indigo-50 text-indigo-800 border-indigo-200',
+  in_progress: 'bg-sky-50 text-sky-800 border-sky-200',
+  under_verification: 'bg-orange-50 text-orange-800 border-orange-200',
+  completed: 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800',
+  rejected: 'bg-red-50 text-red-800 border-red-200',
+  cancelled: 'bg-destructive/10 text-destructive border-destructive/20',
 };
 
-const getStatusConfig = (status: string) => {
-  const key = status?.toLowerCase().replace(/\s+/g, '_');
-  return statusConfig[key] || statusConfig.pending;
+const getBadge = (status: string) => {
+  const canonical = normaliseStatus(status);
+  const display = getWorkflowStageDisplay(status);
+  return {
+    label: display.label,
+    classes: STATUS_BADGE_CLASSES[canonical] || 'bg-muted text-muted-foreground border-border',
+  };
 };
 
 const getCategoryIcon = (category: string | null) => {
