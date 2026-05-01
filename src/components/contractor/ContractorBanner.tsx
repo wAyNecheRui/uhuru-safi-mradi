@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Building, ShieldCheck } from 'lucide-react';
+import { getWorkflowStageDisplay } from '@/utils/workflowStatusDisplay';
 
 interface ContractorBannerProps {
   contractorId: string | null;
