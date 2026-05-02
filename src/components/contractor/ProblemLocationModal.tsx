@@ -126,20 +126,18 @@ const ProblemLocationModal = ({ isOpen, onClose, problem }: ProblemLocationModal
             )}
           </div>
 
-          {/* Map View */}
-          <div className="rounded-lg overflow-hidden border bg-muted">
+          <div className="rounded-lg overflow-hidden">
             {coords ? (
-              <iframe
-                src={getMapUrl()}
-                width="100%"
-                height="300"
-                style={{ border: 0 }}
-                loading="lazy"
-                title="Problem Location Map"
-                className="rounded-lg"
+              <InteractiveMap
+                markers={mapMarkers}
+                center={[coords.lat, coords.lng]}
+                zoom={16}
+                height="300px"
+                fitToMarkers={false}
+                showLocateMe
               />
             ) : (
-              <div className="h-[300px] flex flex-col items-center justify-center text-muted-foreground">
+              <div className="h-[300px] flex flex-col items-center justify-center text-muted-foreground border bg-muted rounded-lg">
                 <MapPin className="h-12 w-12 mb-2 opacity-50" />
                 <p className="text-sm">No GPS coordinates available</p>
                 <p className="text-xs mt-1">Location: {problem.location || 'Not specified'}</p>
