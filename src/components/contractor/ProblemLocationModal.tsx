@@ -9,6 +9,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MapPin, Wallet, Users, Navigation, ExternalLink } from 'lucide-react';
+import InteractiveMap, { MapMarker } from '@/components/maps/InteractiveMapLazy';
 
 interface Problem {
   id: string;
@@ -43,15 +44,21 @@ const ProblemLocationModal = ({ isOpen, onClose, problem }: ProblemLocationModal
 
   const coords = getCoordinates();
 
-  // Create map URL
-  const getMapUrl = () => {
-    if (coords) {
-      const bbox = `${coords.lng - 0.01}%2C${coords.lat - 0.01}%2C${coords.lng + 0.01}%2C${coords.lat + 0.01}`;
-      return `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${coords.lat}%2C${coords.lng}`;
-    }
-    // Default to Nairobi if no coords
-    return `https://www.openstreetmap.org/export/embed.html?bbox=36.7%2C-1.35%2C36.9%2C-1.2&layer=mapnik`;
-  };
+  const mapMarkers: MapMarker[] = coords
+    ? [{
+        id: problem.id,
+        lat: coords.lat,
+        lng: coords.lng,
+        title: problem.title,
+        description: problem.location || undefined,
+        status: problem.priority || 'pending',
+        budget: problem.estimated_cost || undefined,
+        color: problem.priority === 'critical' ? '#ef4444'
+          : problem.priority === 'high' ? '#f97316'
+          : problem.priority === 'medium' ? '#eab308'
+          : '#22c55e',
+      }]
+    : [];
 
   // Get Google Maps directions URL
   const getDirectionsUrl = () => {
@@ -119,20 +126,18 @@ const ProblemLocationModal = ({ isOpen, onClose, problem }: ProblemLocationModal
             )}
           </div>
 
-          {/* Map View */}
-          <div className="rounded-lg overflow-hidden border bg-muted">
+          <div className="rounded-lg overflow-hidden">
             {coords ? (
-              <iframe
-                src={getMapUrl()}
-                width="100%"
-                height="300"
-                style={{ border: 0 }}
-                loading="lazy"
-                title="Problem Location Map"
-                className="rounded-lg"
+              <InteractiveMap
+                markers={mapMarkers}
+                center={[coords.lat, coords.lng]}
+                zoom={16}
+                height="300px"
+                fitToMarkers={false}
+                showLocateMe
               />
             ) : (
-              <div className="h-[300px] flex flex-col items-center justify-center text-muted-foreground">
+              <div className="h-[300px] flex flex-col items-center justify-center text-muted-foreground border bg-muted rounded-lg">
                 <MapPin className="h-12 w-12 mb-2 opacity-50" />
                 <p className="text-sm">No GPS coordinates available</p>
                 <p className="text-xs mt-1">Location: {problem.location || 'Not specified'}</p>

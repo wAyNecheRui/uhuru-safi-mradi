@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Map, MapPin, Loader2, CheckCircle, AlertTriangle, RefreshCw, Plane } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,7 @@ import { ReportData } from '@/types/problemReporting';
 import { getFullLocationByCoordinates } from '@/constants/kenyaAdminData';
 import { useProfile } from '@/hooks/useProfile';
 import { findNearestCounty } from '@/constants/countyCentroids';
+import InteractiveMap, { MapMarker } from '@/components/maps/InteractiveMapLazy';
 
 interface LocationSectionProps {
   reportData: ReportData;
@@ -134,11 +135,26 @@ const LocationSection = ({ reportData, onInputChange, onLocationDataChange }: Lo
     detectLocation();
   }, []);
 
-  const getMapUrl = () => {
-    if (!reportData.coordinates) return null;
-    const [lat, lng] = reportData.coordinates.split(',').map(s => s.trim());
-    return `https://www.openstreetmap.org/export/embed.html?bbox=${parseFloat(lng) - 0.005}%2C${parseFloat(lat) - 0.005}%2C${parseFloat(lng) + 0.005}%2C${parseFloat(lat) + 0.005}&layer=mapnik&marker=${lat}%2C${lng}`;
-  };
+  const reportMarker: MapMarker[] = useMemo(() => {
+    if (!reportData.coordinates) return [];
+    const [lat, lng] = reportData.coordinates.split(',').map(s => parseFloat(s.trim()));
+    if (isNaN(lat) || isNaN(lng)) return [];
+    return [{
+      id: 'report-location',
+      lat,
+      lng,
+      title: reportData.location || 'Reported location',
+      status: 'pending',
+      color: '#006400',
+    }];
+  }, [reportData.coordinates, reportData.location]);
+
+  const reportCenter: [number, number] | undefined = useMemo(() => {
+    if (!reportData.coordinates) return undefined;
+    const [lat, lng] = reportData.coordinates.split(',').map(s => parseFloat(s.trim()));
+    if (isNaN(lat) || isNaN(lng)) return undefined;
+    return [lat, lng];
+  }, [reportData.coordinates]);
 
   return (
     <div className="space-y-4">
@@ -227,15 +243,14 @@ const LocationSection = ({ reportData, onInputChange, onLocationDataChange }: Lo
             <code className="text-sm font-mono">{reportData.coordinates}</code>
           </div>
 
-          <div className="border rounded-lg overflow-hidden bg-muted">
-            <iframe
-              src={getMapUrl() || ''}
-              width="100%"
-              height="200"
-              style={{ border: 0 }}
-              loading="lazy"
-              title="Problem Location Map"
-              className="rounded-lg"
+          <div className="rounded-lg overflow-hidden">
+            <InteractiveMap
+              markers={reportMarker}
+              center={reportCenter}
+              zoom={16}
+              height="220px"
+              fitToMarkers={false}
+              showLocateMe
             />
           </div>
           <p className="text-xs text-muted-foreground text-center">
