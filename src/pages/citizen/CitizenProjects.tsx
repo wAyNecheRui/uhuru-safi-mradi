@@ -22,6 +22,7 @@ import ProjectSpatialTimeline from '@/components/citizen/ProjectSpatialTimeline'
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { useContractorNames } from '@/hooks/useContractorNames';
 import type { ProjectCardData } from '@/components/projects/ProjectCard';
 
 interface Project {
@@ -178,22 +179,29 @@ const CitizenProjects = () => {
 
   const calculateProgress = (projectMilestones: Milestone[]) => calculateProjectProgress(projectMilestones);
 
+  const contractorLookup = useContractorNames(projects.map(p => p.contractor_id));
+
   // Transform to ProjectCardData for the browser
   const cardData: ProjectCardData[] = useMemo(() =>
-    projects.map(p => ({
-      id: p.id,
-      title: p.title,
-      description: p.description,
-      status: p.status,
-      budget: p.budget,
-      progress: calculateProgress(milestones[p.id] || []),
-      photo_url: p.photo_urls?.[0] || null,
-      location: p.location,
-      category: p.category,
-      contractor_id: p.contractor_id,
-      created_at: p.created_at,
-    })),
-    [projects, milestones]
+    projects.map(p => {
+      const c = p.contractor_id ? contractorLookup[p.contractor_id] : null;
+      return {
+        id: p.id,
+        title: p.title,
+        description: p.description,
+        status: p.status,
+        budget: p.budget,
+        progress: calculateProgress(milestones[p.id] || []),
+        photo_url: p.photo_urls?.[0] || null,
+        location: p.location,
+        category: p.category,
+        contractor_id: p.contractor_id,
+        contractor_name: c?.company_name || null,
+        contractor_verified: c?.verified || false,
+        created_at: p.created_at,
+      };
+    }),
+    [projects, milestones, contractorLookup]
   );
 
   // When a project is selected from browser, show detail

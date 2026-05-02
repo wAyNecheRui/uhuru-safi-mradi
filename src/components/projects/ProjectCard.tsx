@@ -161,15 +161,27 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick, className, 
           )}
         </div>
 
-        {/* Contractor badge */}
-        {!compact && project.contractor_name && (
+        {/* Contractor row — always shown for clear identification */}
+        {!compact && (
           <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border/40">
             <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
               <Building className="h-3 w-3 text-primary" />
             </div>
-            <span className="text-xs font-medium text-foreground truncate">{project.contractor_name}</span>
-            {project.contractor_verified && (
-              <ShieldCheck className="h-3.5 w-3.5 text-green-600 flex-shrink-0" />
+            {project.contractor_name ? (
+              <>
+                <span className="text-xs font-medium text-foreground truncate" title={project.contractor_name}>
+                  {project.contractor_name}
+                </span>
+                {project.contractor_verified && (
+                  <ShieldCheck className="h-3.5 w-3.5 text-green-600 flex-shrink-0" />
+                )}
+              </>
+            ) : (
+              <span className="text-xs italic text-muted-foreground truncate">
+                {sc.label === 'Open for Bidding' || normaliseStatus(project.status) === 'bidding_open'
+                  ? 'Awaiting contractor bids'
+                  : 'No contractor assigned yet'}
+              </span>
             )}
           </div>
         )}
