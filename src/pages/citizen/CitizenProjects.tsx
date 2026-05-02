@@ -22,6 +22,7 @@ import ProjectSpatialTimeline from '@/components/citizen/ProjectSpatialTimeline'
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { useContractorNames } from '@/hooks/useContractorNames';
 import type { ProjectCardData } from '@/components/projects/ProjectCard';
 
 interface Project {
