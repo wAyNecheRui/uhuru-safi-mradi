@@ -135,11 +135,26 @@ const LocationSection = ({ reportData, onInputChange, onLocationDataChange }: Lo
     detectLocation();
   }, []);
 
-  const getMapUrl = () => {
-    if (!reportData.coordinates) return null;
-    const [lat, lng] = reportData.coordinates.split(',').map(s => s.trim());
-    return `https://www.openstreetmap.org/export/embed.html?bbox=${parseFloat(lng) - 0.005}%2C${parseFloat(lat) - 0.005}%2C${parseFloat(lng) + 0.005}%2C${parseFloat(lat) + 0.005}&layer=mapnik&marker=${lat}%2C${lng}`;
-  };
+  const reportMarker: MapMarker[] = useMemo(() => {
+    if (!reportData.coordinates) return [];
+    const [lat, lng] = reportData.coordinates.split(',').map(s => parseFloat(s.trim()));
+    if (isNaN(lat) || isNaN(lng)) return [];
+    return [{
+      id: 'report-location',
+      lat,
+      lng,
+      title: reportData.location || 'Reported location',
+      status: 'pending',
+      color: '#006400',
+    }];
+  }, [reportData.coordinates, reportData.location]);
+
+  const reportCenter: [number, number] | undefined = useMemo(() => {
+    if (!reportData.coordinates) return undefined;
+    const [lat, lng] = reportData.coordinates.split(',').map(s => parseFloat(s.trim()));
+    if (isNaN(lat) || isNaN(lng)) return undefined;
+    return [lat, lng];
+  }, [reportData.coordinates]);
 
   return (
     <div className="space-y-4">
