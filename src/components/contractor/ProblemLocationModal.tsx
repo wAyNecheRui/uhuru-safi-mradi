@@ -44,15 +44,21 @@ const ProblemLocationModal = ({ isOpen, onClose, problem }: ProblemLocationModal
 
   const coords = getCoordinates();
 
-  // Create map URL
-  const getMapUrl = () => {
-    if (coords) {
-      const bbox = `${coords.lng - 0.01}%2C${coords.lat - 0.01}%2C${coords.lng + 0.01}%2C${coords.lat + 0.01}`;
-      return `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${coords.lat}%2C${coords.lng}`;
-    }
-    // Default to Nairobi if no coords
-    return `https://www.openstreetmap.org/export/embed.html?bbox=36.7%2C-1.35%2C36.9%2C-1.2&layer=mapnik`;
-  };
+  const mapMarkers: MapMarker[] = coords
+    ? [{
+        id: problem.id,
+        lat: coords.lat,
+        lng: coords.lng,
+        title: problem.title,
+        description: problem.location || undefined,
+        status: problem.priority || 'pending',
+        budget: problem.estimated_cost || undefined,
+        color: problem.priority === 'critical' ? '#ef4444'
+          : problem.priority === 'high' ? '#f97316'
+          : problem.priority === 'medium' ? '#eab308'
+          : '#22c55e',
+      }]
+    : [];
 
   // Get Google Maps directions URL
   const getDirectionsUrl = () => {
