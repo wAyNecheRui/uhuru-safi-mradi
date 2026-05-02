@@ -61,21 +61,28 @@ const GovernmentProjects = () => {
     }
   };
 
+  const contractorLookup = useContractorNames(projects.map(p => p.contractor_id));
+
   const cardData: ProjectCardData[] = useMemo(() =>
-    projects.map(p => ({
-      id: p.id,
-      title: p.title,
-      description: p.description,
-      status: p.effectiveStatus || p.status || 'planning',
-      budget: p.budget,
-      progress: 0,
-      photo_url: p.problem_reports?.photo_urls?.[0] || null,
-      location: p.problem_reports?.location || null,
-      category: p.problem_reports?.category || null,
-      contractor_id: p.contractor_id,
-      created_at: p.created_at,
-    })),
-    [projects]
+    projects.map(p => {
+      const c = p.contractor_id ? contractorLookup[p.contractor_id] : null;
+      return {
+        id: p.id,
+        title: p.title,
+        description: p.description,
+        status: p.effectiveStatus || p.status || 'planning',
+        budget: p.budget,
+        progress: 0,
+        photo_url: p.problem_reports?.photo_urls?.[0] || null,
+        location: p.problem_reports?.location || null,
+        category: p.problem_reports?.category || null,
+        contractor_id: p.contractor_id,
+        contractor_name: c?.company_name || null,
+        contractor_verified: c?.verified || false,
+        created_at: p.created_at,
+      };
+    }),
+    [projects, contractorLookup]
   );
 
   const handleSelectProject = (projectId: string) => {
