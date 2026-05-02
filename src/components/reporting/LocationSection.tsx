@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Map, MapPin, Loader2, CheckCircle, AlertTriangle, RefreshCw, Plane } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,7 @@ import { ReportData } from '@/types/problemReporting';
 import { getFullLocationByCoordinates } from '@/constants/kenyaAdminData';
 import { useProfile } from '@/hooks/useProfile';
 import { findNearestCounty } from '@/constants/countyCentroids';
+import InteractiveMap, { MapMarker } from '@/components/maps/InteractiveMapLazy';
 
 interface LocationSectionProps {
   reportData: ReportData;
