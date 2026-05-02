@@ -243,15 +243,14 @@ const LocationSection = ({ reportData, onInputChange, onLocationDataChange }: Lo
             <code className="text-sm font-mono">{reportData.coordinates}</code>
           </div>
 
-          <div className="border rounded-lg overflow-hidden bg-muted">
-            <iframe
-              src={getMapUrl() || ''}
-              width="100%"
-              height="200"
-              style={{ border: 0 }}
-              loading="lazy"
-              title="Problem Location Map"
-              className="rounded-lg"
+          <div className="rounded-lg overflow-hidden">
+            <InteractiveMap
+              markers={reportMarker}
+              center={reportCenter}
+              zoom={16}
+              height="220px"
+              fitToMarkers={false}
+              showLocateMe
             />
           </div>
           <p className="text-xs text-muted-foreground text-center">
