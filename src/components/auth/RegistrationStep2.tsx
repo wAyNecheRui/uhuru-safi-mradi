@@ -162,13 +162,15 @@ const RegistrationStep2: React.FC<RegistrationStep2Props> = ({
       }
 
       if (role === 'government') {
-        // Save government profile
+        // Save minimal government profile — only department (selectable) +
+        // optional employee number. Position/supervisor/clearance are not
+        // collected; they're irrelevant under the wallet/escrow workflow.
         const { error: govError } = await supabase
           .from('government_profiles')
           .upsert({
             user_id: user.id,
             department: department || 'Pending Assignment',
-            position: 'Pending Verification',
+            position: 'Pending Assignment',
             employee_number: employeeNumber || null,
           }, { onConflict: 'user_id' });
 
@@ -176,7 +178,7 @@ const RegistrationStep2: React.FC<RegistrationStep2Props> = ({
           await supabase.from('government_profiles').insert({
             user_id: user.id,
             department: department || 'Pending Assignment',
-            position: 'Pending Verification',
+            position: 'Pending Assignment',
             employee_number: employeeNumber || null,
           });
         }
