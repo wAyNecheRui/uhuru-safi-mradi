@@ -131,18 +131,16 @@ export const signUpUser = async (email: string, password: string, userData: Sign
         }
       }
       
-      // Government profile with GHRIS-aligned fields
+      // Government profile — minimal placeholder. Department is assigned by admin,
+      // and position/supervisor/clearance are not collected at sign-up under the
+      // wallet/escrow flow. All government access requires admin verification.
       if (userData.type === 'government') {
         await supabase.from('government_profiles').upsert({
           user_id: data.user.id,
           department: userData.department || 'Pending Assignment',
-          position: userData.position || 'Pending Assignment',
-          employee_number: userData.employee_number || null,
-          office_phone: userData.office_phone || null,
-          supervisor_name: userData.supervisor_name || null,
-          clearance_level: 'standard', // Default, to be upgraded by admin
+          position: 'Pending Assignment',
           assigned_counties: userData.county ? [userData.county] : [],
-          verified: false // Requires manual verification
+          verified: false
         });
       }
     }
